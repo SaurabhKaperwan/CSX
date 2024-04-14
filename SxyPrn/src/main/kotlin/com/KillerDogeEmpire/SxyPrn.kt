@@ -83,7 +83,7 @@ class SxyPrn : MainAPI() {
         val document = app.get(url).document
         val title = document.selectFirst("div.post_text")?.text()?.trim().toString()
         val poster = fixUrlNull(
-            document.selectFirst("div#vid_container_id meta[itemprop=thumbnailUrl]")
+            document.selectFirst("img.mini_post_vid_thumb")
                 ?.attr("content")
         )
 
