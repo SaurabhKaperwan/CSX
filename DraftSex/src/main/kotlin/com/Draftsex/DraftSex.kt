@@ -80,18 +80,28 @@ class DraftSex : MainAPI() {
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
         val document = app.get(data).document
-        //val sources = mutableListOf<String>()
-        document.select("article > div > div > button").forEach { button ->
-            val onclickAttr = button.attr("onclick")
-            val regex = Regex("""playEmbed\('([^']+)'\)""")
-            val matchResult = regex.find(onclickAttr)
-            val playlistUrl = matchResult?.groups?.get(1)?.value
-            playlistUrl?.let {
-                //println(it) // Print the extracted URL
-                //sources.add(it) // Add the URL to the sources list
-                loadExtractor(it, subtitleCallback, callback)
+        val urlPatterns = listOf(
+            Regex("""<source title='Best Quality' src="(.+?\.mp4)"""")
+        )
+        var episodeUrl = ""
+        for (pattern in urlPatterns) {
+            val matchResult = pattern.find(document)
+            if (matchResult != null) {
+                episodeUrl = matchResult.groupValues[1]
+                break
             }
         }
+        callback.invoke(
+                   ExtractorLink(
+                       source = this.name,
+                       name = this.name,
+                       url = episodeUrl,
+                       referer = "",
+                       quality = Qualities.Unknown.value,
+                       isM3u8 = false
+                   )
+               )
+       }
         return true
     }
 }
