@@ -6,7 +6,7 @@ import com.lagradost.cloudstream3.utils.*
 
 class DraftSex : MainAPI() {
     override var mainUrl              = "https://draftsex.porn"
-    override var name                 = "Internetchicks"
+    override var name                 = "DraftSex"
     override val hasMainPage          = true
     override var lang                 = "en"
     override val hasQuickSearch       = false
@@ -34,8 +34,8 @@ class DraftSex : MainAPI() {
 
     private fun Element.toSearchResult(): SearchResponse {
 
-        val title = this.select("div.item_inner > a").attr("title")
-        val href  =     fixUrl(this.select("div.item_inner > a").attr("href"))
+        val title = this.select("a").attr("title")
+        val href  =     fixUrl(this.select("a").attr("href"))
         val posterUrl = fixUrlNull(this.select("img").attr("src"))
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
