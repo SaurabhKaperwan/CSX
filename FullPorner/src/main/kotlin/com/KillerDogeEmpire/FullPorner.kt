@@ -150,7 +150,6 @@ class FullPorner : MainAPI() {
                     this.name,
                     fixUrl(res.attr("src")),
                     referer = mainUrl,
-                    userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
                     quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
                 )) 
             }
