@@ -92,7 +92,7 @@ class DraftSex : MainAPI() {
                 break
             }
         }
-        Log.d("DraftSex:", episodeUrl)
+        Log.d("DraftSex", "Episode URL: $episodeUrl") // Log the episode URL
         callback.invoke(
             ExtractorLink(
                 source = this.name,
