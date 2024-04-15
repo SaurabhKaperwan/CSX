@@ -1,5 +1,6 @@
 package com.coxju
 
+import android.util.Log
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -91,6 +92,7 @@ class DraftSex : MainAPI() {
                 break
             }
         }
+        Log.d("DraftSex:", episodeUrl)
         callback.invoke(
             ExtractorLink(
                 source = this.name,
