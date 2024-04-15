@@ -78,25 +78,31 @@ class DraftSex : MainAPI() {
         }
     }
 
-    override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+        ): Boolean {
+
         val document = app.get(data).document.toString()
         val urlPatterns = listOf(
             Regex("""<source title='Best Quality' src="(.+?\.mp4)"""")
         )
-        var episodeUrl = ""
+        var url = ""
         for (pattern in urlPatterns) {
             val matchResult = pattern.find(document)
             if (matchResult != null) {
-                episodeUrl = matchResult.groupValues[1]
+                url = matchResult.groupValues[1]
                 break
             }
         }
         callback.invoke(
             ExtractorLink(
-                source = this.name,
-                name = this.name,
-                url = episodeUrl,
-                referer = "https://draftsex.porn/",
+                this.name,
+                this.name,
+                fixUrl(url),
+                referer = mainUrl,
                 quality = Qualities.Unknown.value,
             )
         )
