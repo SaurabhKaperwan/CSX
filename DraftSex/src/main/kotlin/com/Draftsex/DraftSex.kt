@@ -1,6 +1,5 @@
 package com.coxju
 
-import android.util.Log
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -92,15 +91,13 @@ class DraftSex : MainAPI() {
                 break
             }
         }
-        Log.d("DraftSex", "Episode URL: $episodeUrl") // Log the episode URL
         callback.invoke(
             ExtractorLink(
                 source = this.name,
                 name = this.name,
                 url = episodeUrl,
-                referer = "",
+                referer = "https://draftsex.porn/",
                 quality = Qualities.Unknown.value,
-                isM3u8 = false
             )
         )
         return true
