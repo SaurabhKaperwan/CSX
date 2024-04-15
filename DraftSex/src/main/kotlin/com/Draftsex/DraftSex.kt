@@ -34,7 +34,7 @@ class DraftSex : MainAPI() {
 
     private fun Element.toSearchResult(): SearchResponse {
 
-        val title = this.select("a").attr("title")
+        val title =     this.select("a").attr("title")
         val href  =     fixUrl(this.select("a").attr("href"))
         val posterUrl = fixUrlNull(this.select("img").attr("src"))
         return newMovieSearchResponse(title, href, TvType.Movie) {
@@ -65,9 +65,9 @@ class DraftSex : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document = app.get(url).document
 
-        val title       = document.selectFirst("meta[property=og:title]")?.attr("content")?.trim().toString()
+        val title       = document.selectFirst("meta[property=og:title]")?.attr("content")
         val poster      = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        val description = document.selectFirst("meta[property=og:description]")?.attr("content")?.trim()
+        val description = document.selectFirst("meta[property=og:description]")?.attr("content")
 
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
