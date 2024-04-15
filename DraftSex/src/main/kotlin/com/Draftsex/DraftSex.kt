@@ -65,8 +65,8 @@ class DraftSex : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document = app.get(url).document
 
-        val title       = document.selectFirst("meta[property=og:title]")?.attr("content")?.trim().toString()
-        val poster      = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val title       = document.selectFirst("meta[property=og:title]:eq(1)")?.attr("content")?.trim().toString()
+        val poster      = fixUrlNull(document.selectFirst("meta[property=og:image]:eq(1)")?.attr("content"))
         val description = document.selectFirst("meta[property=og:description]")?.attr("content")?.trim()
 
 
