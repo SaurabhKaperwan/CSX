@@ -92,16 +92,15 @@ class DraftSex : MainAPI() {
             }
         }
         callback.invoke(
-                   ExtractorLink(
-                       source = this.name,
-                       name = this.name,
-                       url = episodeUrl,
-                       referer = "",
-                       quality = Qualities.Unknown.value,
-                       isM3u8 = false
-                   )
-               )
-       }
+            ExtractorLink(
+                source = this.name,
+                name = this.name,
+                url = episodeUrl,
+                referer = "",
+                quality = Qualities.Unknown.value,
+                isM3u8 = false
+            )
+        )
         return true
     }
 }
