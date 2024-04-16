@@ -75,31 +75,16 @@ class FullPorner : MainAPI() {
 
         val poster: String?
 
-        if (iframeUrl.contains("videoh")) {
-            val iframeDocument = app.get(iframeUrl, interceptor = WebViewResolver(Regex("""mydaddy"""))).document
-
-            val videoHtml = iframeDocument.selectXpath("//script[contains(text(),'poster')]").first()?.html()?.substringAfter("else{ \$(\"#jw\").html(\"")?.substringBefore("\");}if(hasAdblock)")?.replace("\\", "")
-            val video     = Jsoup.parse(videoHtml.toString()).selectFirst("video")
-
-            poster        = fixUrlNull(video?.attr("poster"))
-        } else {
+        if(iframeUrl.contains("xiaoshenke")) {
             val iframeDocument = app.get(iframeUrl).document
             val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
-
-            poster        = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
+            poster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
+            val cleanPoster = poster.substring(2);
         }
 
-        val tags            = document.select("div.video-blockdiv.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
-        val description     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
-        val actors          = document.select("div.video-block div.single-video-left div.single-video-info-content p a").map { it.text() }
-        val recommendations = document.select("div.video-block div.video-recommendation div.video-card").mapNotNull { it.toSearchResult() }
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl       = poster
-            this.plot            = description
-            this.tags            = tags
-            this.recommendations = recommendations
-            addActors(actors)
+            this.posterUrl       =   cleanPoster
         }
     }
 
