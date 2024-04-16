@@ -73,13 +73,11 @@ class FullPorner : MainAPI() {
         val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
-        var poster: String?  =null
+        var poster: String?  = null
 
-        if(iframeUrl.contains("xiaoshenke")) {
-            val iframeDocument = app.get(iframeUrl).document
-            val fixedPoster = fixUrlNull(iframeDocument.select("video#flvv").attr("poster").toString())
-            poster = if (fixedPoster != null) fixedPoster.substring(2) else null
-        }
+        val iframeDocument = app.get(iframeUrl).document
+        val fixedPoster = fixUrlNull(iframeDocument.selectFirst("video#flvv")?.attr("poster").toString())
+        poster = if (fixedPoster != null) fixedPoster.substring(2) else null
 
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
@@ -93,47 +91,20 @@ class FullPorner : MainAPI() {
         val iframeUrl   = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
         val extlinkList = mutableListOf<ExtractorLink>()
-        if (iframeUrl.contains("videoh")) {
-            val iframeDocument = app.get(iframeUrl, interceptor = WebViewResolver(Regex("""mydaddy"""))).document
-            val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]").first()?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
 
-            videoDocument.select("source").map { res -> 
-                extlinkList.add(ExtractorLink(
-                    name,
-                    name,
-                    fixUrl(res.attr("src")),
-                    referer = "",
-                    quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
-                )) 
-            }
-        } else if (iframeUrl.contains("xiaoshenke")) {
-            val iframeDocument = app.get(iframeUrl).document
-            val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
+        val iframeDocument = app.get(iframeUrl).document
+        val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
 
-            val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
-            val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
-            if (video_url != null) {
-                extlinkList.add(ExtractorLink(
-                    name,
-                    name,
-                    video_url,
-                    referer = "",
-                    quality = Qualities.Unknown.value
-                ))
-            }
-        } else {
-            val iframeDocument = app.get(iframeUrl).document
-            val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]").first()?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
-
-            videoDocument.select("source").map { res -> 
-                extlinkList.add(ExtractorLink(
-                    this.name,
-                    this.name,
-                    fixUrl(res.attr("src")),
-                    referer = "",
-                    quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
-                )) 
-            }
+        val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
+        val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
+        if (video_url != null) {
+            extlinkList.add(ExtractorLink(
+                name,
+                name,
+                video_url,
+                referer = "",
+                quality = Qualities.Unknown.value
+            ))
         }
 
         extlinkList.forEach(callback)
