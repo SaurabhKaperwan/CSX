@@ -31,13 +31,13 @@ class FullPorner : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("${request.data}${page}").document
-        val home     = document.select("div.video-block div.video-card").mapNotNull { it.toSearchResult() }
+        val home = document.select("div.video-block div.video-card").mapNotNull { it.toSearchResult() }
 
         return newHomePageResponse(
-            list    = HomePageList(
-                name               = request.name,
-                list               = home,
-                isHorizontalImages = true
+            list = HomePageList(
+            name = request.name,
+            list = home,
+            isHorizontalImages = true
             ),
             hasNext = true
         )
@@ -78,13 +78,12 @@ class FullPorner : MainAPI() {
         if(iframeUrl.contains("xiaoshenke")) {
             val iframeDocument = app.get(iframeUrl).document
             val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
-            poster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
-            val cleanPoster = poster.substring(2);
+            poster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString()).substring(2)
         }
 
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = cleanPoster ?: ""
+            this.posterUrl = poster
         }
     }
 
