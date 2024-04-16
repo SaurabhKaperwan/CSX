@@ -132,6 +132,7 @@ class FullPorner : MainAPI() {
                     name,
                     fixUrl(res.attr("src")),
                     headers = headers,
+                    refere = "",
                     quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
                 )) 
             }
@@ -147,6 +148,7 @@ class FullPorner : MainAPI() {
                     name,
                     video_url,
                     headers = headers,
+                    referer = "",
                     quality = Qualities.Unknown.value
                 ))
             }
@@ -160,6 +162,7 @@ class FullPorner : MainAPI() {
                     this.name,
                     fixUrl(res.attr("src")),
                     headers = headers,
+                    referer = "",
                     quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
                 )) 
             }
