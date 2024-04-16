@@ -95,7 +95,7 @@ class DraftSex : MainAPI() {
             ExtractorLink(
                 this.name,
                 this.name,
-                fixUrl(url),
+                fixUrl(src),
                 referer = mainUrl,
                 quality = Qualities.Unknown.value,
             )
