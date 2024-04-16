@@ -46,11 +46,12 @@ class DraftSex : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
+        const queryString = query.replace(/ /g, '-');
 
         for (i in 1..5) {
-            val document = app.get("${mainUrl}/page/$i/?s=$query&id=5036").document
+            val document = app.get("${mainUrl}/search/$kwstring/").document
 
-            val results = document.select("article").mapNotNull { it.toSearchResult() }
+            val results = document.select("div.item.col").mapNotNull { it.toSearchResult() }
 
             if (!searchResponse.containsAll(results)) {
                 searchResponse.addAll(results)
