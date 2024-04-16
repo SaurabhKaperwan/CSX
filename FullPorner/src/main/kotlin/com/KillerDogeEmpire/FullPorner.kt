@@ -70,18 +70,15 @@ class FullPorner : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document = app.get(url).document
 
-        val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
+        //val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
-
-        var poster: String?  = null
-
         val iframeDocument = app.get(iframeUrl).document
-        val fixedPoster = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster"))
-        poster = fixedPoster?.substring(2)
+        var title = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster"))
 
+        //val posterUrl = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster"))
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = poster ?: ""
+            //this.posterUrl = poster ?: ""
         }
     }
 
