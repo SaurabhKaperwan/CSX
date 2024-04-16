@@ -77,8 +77,7 @@ class FullPorner : MainAPI() {
 
         if(iframeUrl.contains("xiaoshenke")) {
             val iframeDocument = app.get(iframeUrl).document
-            val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
-            val fixedPoster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
+            val fixedPoster = fixUrlNull(iframeDocument.select("video#flvv").attr("poster").toString())
             poster = if (fixedPoster != null) fixedPoster.substring(2) else null
         }
 
