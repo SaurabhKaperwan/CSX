@@ -73,10 +73,10 @@ class FullPorner : MainAPI() {
         val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
         val iframeDocument = app.get(iframeUrl).document
-        val posterUrl = fixUrlNull(iframeDocument.selectFirst("div#jwd div#jw div#fluid_video_wrapper_flvv video#flvv")?.attr("poster"))
+        val posterUrl = "https://www.porntrex.com/contents/videos_screenshots/2241000/2241112/preview.jpg"
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = posterUrl?.substring(2) ?: ""
+            this.posterUrl = posterUrl
         }
     }
 
