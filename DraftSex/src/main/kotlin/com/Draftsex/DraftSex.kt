@@ -46,7 +46,7 @@ class DraftSex : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
-        const queryString = query.replace(" ", "-")
+        val queryString = query.replace(" ", "-")
 
         for (i in 1..5) {
             val document = app.get("$mainUrl/search/$queryString/").document
