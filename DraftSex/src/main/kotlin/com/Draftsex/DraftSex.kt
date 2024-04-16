@@ -85,10 +85,11 @@ class DraftSex : MainAPI() {
         callback: (ExtractorLink) -> Unit
         ): Boolean {
 
-        val document = app.get(data).document
-        val urlPattern = Regex("""<source title='Best Quality' src="(.+?\.mp4)"""")
-        val matchResult = urlPattern.find(document)
-        val url = matchResult?.groupValues?.get(1) ?: ""
+        val document = app.get(data).document.toString()
+        val sourceRegex = Regex("""<source title="Best Quality" src="([^"]+)" type="video/mp4">""")
+        val matchResult = sourceRegex.find(document)
+
+        val src = matchResult?.groupValues?.get(1) ?: ""
 
         callback.invoke(
             ExtractorLink(
