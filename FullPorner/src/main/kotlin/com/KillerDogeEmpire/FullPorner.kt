@@ -110,16 +110,6 @@ class FullPorner : MainAPI() {
         val document    = app.get(data).document
 
         val iframeUrl   = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
-        val headers =
-            mapOf(
-                    "accept" to "*/*",
-                    "accept-encoding" to "identity;q=1, *;q=1, *;q=0",
-                    "accept-language" to "en-GB,en;q=0.5",
-                    "Sec-Fetch-Dest" to "video",
-                    "Sec-Fetch-Mode" to "no-cors",
-                    "Sec-Fetch-Site" to "cross-site",
-                    "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/244.178.44.111 Safari/537.36",
-                )
 
         val extlinkList = mutableListOf<ExtractorLink>()
         if (iframeUrl.contains("videoh")) {
@@ -131,8 +121,7 @@ class FullPorner : MainAPI() {
                     name,
                     name,
                     fixUrl(res.attr("src")),
-                    headers = headers,
-                    refere = "",
+                    referer = "",
                     quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
                 )) 
             }
@@ -147,7 +136,6 @@ class FullPorner : MainAPI() {
                     name,
                     name,
                     video_url,
-                    headers = headers,
                     referer = "",
                     quality = Qualities.Unknown.value
                 ))
@@ -161,7 +149,6 @@ class FullPorner : MainAPI() {
                     this.name,
                     this.name,
                     fixUrl(res.attr("src")),
-                    headers = headers,
                     referer = "",
                     quality = Regex("(\\d+.)").find(res.attr("title"))?.groupValues?.get(1).let { getQualityFromName(it) }
                 )) 
