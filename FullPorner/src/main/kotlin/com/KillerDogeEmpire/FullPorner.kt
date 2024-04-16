@@ -76,8 +76,8 @@ class FullPorner : MainAPI() {
         var poster: String?  = null
 
         val iframeDocument = app.get(iframeUrl).document
-        val fixedPoster = fixUrlNull(iframeDocument.selectFirst("video#flvv")?.attr("poster").toString())
-        poster = if (fixedPoster != null) fixedPoster.substring(2) else null
+        val fixedPoster = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster"))
+        poster = fixedPoster?.substring(2)
 
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
