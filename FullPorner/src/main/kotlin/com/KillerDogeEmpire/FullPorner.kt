@@ -73,7 +73,7 @@ class FullPorner : MainAPI() {
         //val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
         val iframeDocument = app.get(iframeUrl).document
-        var title = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster"))
+        var title = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster")) ?: ""
 
         //val posterUrl = fixUrlNull(iframeDocument.selectFirst("video")?.attr("poster"))
 
