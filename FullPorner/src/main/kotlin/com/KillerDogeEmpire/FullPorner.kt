@@ -74,7 +74,7 @@ class FullPorner : MainAPI() {
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
         val poster: String?
-        val posterHeaders: Map<String, String>
+
         if (iframeUrl.contains("videoh")) {
             val iframeDocument = app.get(iframeUrl, interceptor = WebViewResolver(Regex("""mydaddy"""))).document
 
@@ -82,13 +82,11 @@ class FullPorner : MainAPI() {
             val video     = Jsoup.parse(videoHtml.toString()).selectFirst("video")
 
             poster        = fixUrlNull(video?.attr("poster"))
-            posterHeaders = mapOf(Pair("referer", "https://mydaddy.cc/"))
         } else {
             val iframeDocument = app.get(iframeUrl).document
             val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
 
             poster        = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
-            posterHeaders = mapOf(Pair("referer", "https://xiaoshenke.net/"))
         }
 
         val tags            = document.select("div.video-blockdiv.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
@@ -98,7 +96,6 @@ class FullPorner : MainAPI() {
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
             this.posterUrl       = poster
-            this.posterHeaders   = posterHeaders
             this.plot            = description
             this.tags            = tags
             this.recommendations = recommendations
