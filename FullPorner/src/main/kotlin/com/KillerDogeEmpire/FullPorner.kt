@@ -73,17 +73,18 @@ class FullPorner : MainAPI() {
         val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
-        var poster: String?
+        var poster: String?  =null
 
         if(iframeUrl.contains("xiaoshenke")) {
             val iframeDocument = app.get(iframeUrl).document
             val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
-            poster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString().substring(2))
+            val fixedPoster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
+            poster = if (fixedPoster != null) fixedPoster.substring(2) else null
         }
 
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = poster
+            this.posterUrl = poster ?: ""
         }
     }
 
