@@ -84,7 +84,7 @@ class FullPorner : MainAPI() {
 
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl       =   cleanPoster
+            this.posterUrl = cleanPoster ?: ""
         }
     }
 
@@ -109,7 +109,7 @@ class FullPorner : MainAPI() {
             }
         } else if (iframeUrl.contains("xiaoshenke")) {
             val iframeDocument = app.get(iframeUrl).document
-            val videoID        = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
+            val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
 
             val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
             val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
