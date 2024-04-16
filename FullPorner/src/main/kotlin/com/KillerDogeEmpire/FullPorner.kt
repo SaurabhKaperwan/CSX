@@ -73,10 +73,25 @@ class FullPorner : MainAPI() {
         val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
         val iframeDocument = app.get(iframeUrl).document
-        val posterUrl = "https://www.porntrex.com/contents/videos_screenshots/2241000/2241112/preview.jpg"
+        val videoDocument  = Jsoup.parse("<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>")
+        val posterHeaders: Map<String, String>
+        val poster: String?
+
+        poster        = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster").toString())
+        posterHeaders = mapOf(Pair("referer", "https://xiaoshenke.net/"))
+
+        val tags            = document.select("div.video-blockdiv.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
+        val description     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
+        val actors          = document.select("div.video-block div.single-video-left div.single-video-info-content p a").map { it.text() }
+        val recommendations = document.select("div.video-block div.video-recommendation div.video-card").mapNotNull { it.toSearchResult() }
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = posterUrl
+            this.posterUrl       = poster
+            this.posterHeaders   = posterHeaders
+            this.plot            = description
+            this.tags            = tags
+            this.recommendations = recommendations
+            addActors(actors)
         }
     }
 
