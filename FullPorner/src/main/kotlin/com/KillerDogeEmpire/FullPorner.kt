@@ -76,7 +76,7 @@ class FullPorner : MainAPI() {
         val posterUrl = fixUrlNull(iframeDocument.selectFirst("div#jwd div#jw div#fluid_video_wrapper_flvv video#flvv")?.attr("poster"))
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = posterUrl.substring(2) ?: ""
+            this.posterUrl = posterUrl?.substring(2) ?: ""
         }
     }
 
