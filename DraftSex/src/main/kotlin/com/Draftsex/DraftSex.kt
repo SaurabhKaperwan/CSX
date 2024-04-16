@@ -16,6 +16,8 @@ class DraftSex : MainAPI() {
 
     override val mainPage = mainPageOf(
         "" to "Latest",
+        "$mainUrl/most-viewed/" to "Most Viewed",
+        "$mainUrl/top-rated/" to "Top Rated",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
