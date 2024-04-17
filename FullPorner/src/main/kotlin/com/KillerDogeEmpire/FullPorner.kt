@@ -101,30 +101,38 @@ class FullPorner : MainAPI() {
 
 
 
-    override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
-        val document    = app.get(data).document
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        val document = app.get(data).document
 
-        val iframeUrl   = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
+        val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
         val extlinkList = mutableListOf<ExtractorLink>()
 
         val iframeDocument = app.get(iframeUrl).document
-        val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
+        val videoID = Regex("""var id = \"(.+?)\"").find(iframeDocument.html())?.groupValues?.get(1)
+        val pornTrexDocument = app.get("https://www.porntrex.com/embed/$id").document
+        val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
 
-        val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
-        val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
-        if (video_url != null) {
-            extlinkList.add(ExtractorLink(
-                name,
-                name,
-                video_url,
-                referer = "",
-                quality = Qualities.Unknown.value
-            ))
-        }
+        val videoUrls = videoUrlsRegex.findAll(pornTrexDocument.html()).map { it.groupValues[1] }.toList()
 
-        extlinkList.forEach(callback)
+            videoUrls.forEach { videoUrl ->
+                extlinkList.add(
+                    ExtractorLink(
+                        name,
+                        name,
+                        videoUrl,
+                        referer = "",
+                        quality = Qualities.Unknown.value
+                    )
+                )
+            }
 
-        return true
+        return extlinkList.isNotEmpty()
     }
+
 }
