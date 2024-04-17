@@ -73,10 +73,9 @@ class FullPorner : MainAPI() {
         val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
         val iframeDocument = app.get(iframeUrl).document
-        val videoElement  = iframeDocument.selectFirst("/html/body/div[2]/div/div/video")
         val poster: String?
 
-        poster  = fixUrlNull(videoElement?.attr("poster").toString())
+        poster  = fixUrlNull(Regex("""poster=\"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1))
 
         val tags            = document.select("div.video-blockdiv.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
         val description     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
@@ -85,7 +84,7 @@ class FullPorner : MainAPI() {
 
         return newMovieLoadResponse(title, url, TvType.NSFW, url) {
             this.posterUrl       = poster
-            this.plot            = description
+            this.plot            = poster
             this.tags            = tags
             this.recommendations = recommendations
             addActors(actors)
