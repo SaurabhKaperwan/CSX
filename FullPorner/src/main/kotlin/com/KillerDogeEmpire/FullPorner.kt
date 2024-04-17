@@ -68,29 +68,40 @@ class FullPorner : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val document = app.get(url).document
+    val document = app.get(url).document
 
-        val title     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
-        val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
-        val iframeDocument = app.get(iframeUrl).document
-        val poster: String?
-        val videoHtml = "<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>"
-        val videoDocument = Jsoup.parse(videoHtml)
-        poster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster")).toString()
+    val title = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
 
-        val tags            = document.select("div.video-blockdiv.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
-        val description     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
-        val actors          = document.select("div.video-block div.single-video-left div.single-video-info-content p a").map { it.text() }
-        val recommendations = document.select("div.video-block div.video-recommendation div.video-card").mapNotNull { it.toSearchResult() }
+    val iframeUrlElement = document.selectFirst("div.video-block div.single-video-left div.single-video iframe")
+    val iframeUrl = iframeUrlElement?.attr("src") ?: ""
+    val iframeDocument = app.get(iframeUrl).document
 
-        return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl       = poster
-            this.plot            = poster
-            this.tags            = tags
-            this.recommendations = recommendations
-            addActors(actors)
-        }
+    val poster: String?
+
+    val pattern = "\\/(\\d+)\\/(\\d+)\\/preview\\.jpg".toRegex()
+    val matchResult = pattern.find(iframeDocument.html())
+
+    val posterUrl = if (matchResult != null) {
+        val (firstId, secondId) = matchResult.destructured
+        "https://ptx.cdntrex.com/contents/videos_screenshots/$firstId/$secondId/preview.jpg"
+    } else {
+        null
     }
+
+    val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
+    val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
+    val actors = document.select("div.video-block div.single-video-left div.single-video-info-content p a").map { it.text() }
+    val recommendations = document.select("div.video-block div.video-recommendation div.video-card").mapNotNull { it.toSearchResult() }
+
+    return newMovieLoadResponse(title, url, TvType.NSFW, url) {
+        this.posterUrl = posterUrl
+        this.plot = description
+        this.tags = tags
+        this.recommendations = recommendations
+        addActors(actors)
+    }
+}
+
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
         val document    = app.get(data).document
