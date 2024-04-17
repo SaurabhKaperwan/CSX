@@ -1,4 +1,5 @@
-<button src="https://raw.githubusercontent.com/SaurabhKaperwan/CS/builds/CS.json">Installation Link</button>
+
+<a href="https://raw.githubusercontent.com/SaurabhKaperwan/CS/builds/CS.json">Install</a>
 # `Cloudstream3 Plugin Repo Template`
 
 Template for a [Cloudstream3](https://github.com/recloudstream) plugin repo
