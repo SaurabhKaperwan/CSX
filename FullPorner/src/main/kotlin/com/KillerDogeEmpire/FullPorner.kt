@@ -99,64 +99,38 @@ class FullPorner : MainAPI() {
 }
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val document = app.get(data).document
-        val iframeUrl   = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
-        val extlinkList = mutableListOf<ExtractorLink>()
-        val iframeDocument = app.get(iframeUrl).document
-        val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
-        val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    val document = app.get(data).document
+    val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
+    val extlinkList = mutableListOf<ExtractorLink>()
+    val iframeDocument = app.get(iframeUrl).document
+    val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.getOrNull(1)
+
+    if (videoID != null) {
+        val pornTrexDocument = app.get("https://www.porntrex.com/embed/$videoID").document
         val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
         val matchResult = videoUrlsRegex.find(pornTrexDocument.html())
 
-        val videoUrl1 = matchResult?.groupValues?.get(1)
-        val videoUrl2 = matchResult?.groupValues?.get(2)
-        val videoUrl3 = matchResult?.groupValues?.get(3)
-        val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
+        val videoUrls = matchResult?.groupValues?.getOrNull(1)?.let { listOf(it) } ?: emptyList()
 
-        if (video_url != null) {
-            callback.invoke(ExtractorLink(
-                name,
-                name,
-                video_url,
-                referer = "",
-                quality = Qualities.Unknown.value
-            ))
+        videoUrls.forEach { videoUrl ->
+            callback.invoke(
+                ExtractorLink(
+                    name,
+                    name,
+                    videoUrl,
+                    referer = "",
+                    quality = Qualities.Unknown.value
+                )
+            )
         }
+    }
 
-        if (videoUrl1 != null) {
-            callback.invoke(ExtractorLink(
-                name,
-                name,
-                videoUrl1,
-                referer = "",
-                quality = Qualities.Unknown.value
-            ))
-        }
-        if (videoUrl2 != null) {
-            callback.invoke(ExtractorLink(
-                name,
-                name,
-                videoUrl2,
-                referer = "",
-                quality = Qualities.Unknown.value
-            ))
-        }
-        if (videoUrl3 != null) {
-            callback.invoke(ExtractorLink(
-                name,
-                name,
-                videoUrl3,
-                referer = "",
-                quality = Qualities.Unknown.value
-            ))
-        }
-
-        return true
+    return true
     }
 
 }
