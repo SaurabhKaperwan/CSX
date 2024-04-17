@@ -72,12 +72,11 @@ class FullPorner : MainAPI() {
 
     val title = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
 
-    val iframeUrlElement = document.selectFirst("div.video-block div.single-video-left div.single-video iframe")
-    val iframeUrl = iframeUrlElement?.attr("src") ?: ""
+    val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
+
     val iframeDocument = app.get(iframeUrl).document
 
     val poster: String?
-    val posterHeaders: Map<String, String>
 
     val pattern = "\\/(\\d+)\\/(\\d+)\\/preview\\.jpg".toRegex()
     val matchResult = pattern.find(iframeDocument.html())
@@ -88,7 +87,6 @@ class FullPorner : MainAPI() {
     } else {
         "https://ptx.cdntrex.com/contents/videos_screenshots/2240000/2240332/preview.jpg"
     }
-    posterHeaders = mapOf(Pair("referer", "https://xiaoshenke.net/"))
 
     val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
     val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
@@ -97,7 +95,6 @@ class FullPorner : MainAPI() {
 
     return newMovieLoadResponse(title, url, TvType.NSFW, url) {
         this.posterUrl = posterUrl
-        this.posterHeaders   = posterHeaders
         this.plot = description
         this.tags = tags
         this.recommendations = recommendations
