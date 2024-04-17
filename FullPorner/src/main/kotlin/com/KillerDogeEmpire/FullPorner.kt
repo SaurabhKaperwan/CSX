@@ -99,40 +99,41 @@ class FullPorner : MainAPI() {
 }
 
 
+override suspend fun loadLinks(
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    val document = app.get(data).document
 
+    val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val document = app.get(data).document
+    val extlinkList = mutableListOf<ExtractorLink>()
 
-        val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
+    val iframeDocument = app.get(iframeUrl).document
+    val videoID = Regex("""var id = \"(.+?)\"").find(iframeDocument.html())?.groupValues?.get(1)
 
-        val extlinkList = mutableListOf<ExtractorLink>()
-
-        val iframeDocument = app.get(iframeUrl).document
-        val videoID = Regex("""var id = \"(.+?)\"").find(iframeDocument.html())?.groupValues?.get(1)
-        val pornTrexDocument = app.get("https://www.porntrex.com/embed/$id").document
+    if (videoID != null) {
+        val pornTrexDocument = app.get("https://www.porntrex.com/embed/$videoID").document
         val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
-
         val videoUrls = videoUrlsRegex.findAll(pornTrexDocument.html()).map { it.groupValues[1] }.toList()
 
-            videoUrls.forEach { videoUrl ->
-                extlinkList.add(
-                    ExtractorLink(
-                        name,
-                        name,
-                        videoUrl,
-                        referer = "",
-                        quality = Qualities.Unknown.value
-                    )
+        videoUrls.forEach { videoUrl ->
+            extlinkList.add(
+                ExtractorLink(
+                    name,
+                    name,
+                    videoUrl,
+                    referer = "",
+                    quality = Qualities.Unknown.value
                 )
-            }
-
-        return extlinkList.isNotEmpty()
+            )
+        }
     }
+
+    return extlinkList.isNotEmpty()
+}
+
 
 }
