@@ -112,7 +112,7 @@ class FullPorner : MainAPI() {
 
     if (videoID != null) {
         val pornTrexDocument = app.get("https://www.porntrex.com/embed/$videoID").document
-        val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
+        val videoUrlsRegex = Regex("""(?:video_alt_url2): \'(.+?)\',""")
         val matchResult = videoUrlsRegex.find(pornTrexDocument.html())
 
         val videoUrls = matchResult?.groupValues?.getOrNull(1)?.let { listOf(it) } ?: emptyList()
