@@ -74,8 +74,9 @@ class FullPorner : MainAPI() {
         val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
         val iframeDocument = app.get(iframeUrl).document
         val poster: String?
-
-        poster  = fixUrlNull(Regex("""<video[^>]*?poster=["']([^"']+)["'][^>]*>""").find(iframeDocument.html())?.groupValues?.getOrNull(1))
+        val videoHtml = "<video" + iframeDocument.selectXpath("//script[contains(text(),'\$(\"#jw\").html(')]")[0]?.toString()?.replace("\\", "")?.substringAfter("<video")?.substringBefore("</video>") + "</video>"
+        val videoDocument = Jsoup.parse(videoHtml)
+        poster = fixUrlNull(videoDocument.selectFirst("video")?.attr("poster"))
 
         val tags            = document.select("div.video-blockdiv.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
         val description     = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
