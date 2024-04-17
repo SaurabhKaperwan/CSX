@@ -113,9 +113,9 @@ class FullPorner : MainAPI() {
         val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
         val matchResult = videoUrlsRegex.find(pornTrexDocument.html())
 
-        val videoUrl1 = matchResult?.groupValues?.get(1)
-        val videoUrl2 = matchResult?.groupValues?.get(2)
-        val videoUrl3 = matchResult?.groupValues?.get(3)
+        val videoUrl1 = matchResult?.groupValues?.get(1)?.value
+        val videoUrl2 = matchResult?.groupValues?.get(2)?.value
+        val videoUrl3 = matchResult?.groupValues?.get(3)?.value
 
         if (videoUrl1 != null) {
             extlinkList.add(ExtractorLink(
