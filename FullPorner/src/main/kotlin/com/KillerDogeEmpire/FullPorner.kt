@@ -113,12 +113,23 @@ class FullPorner : MainAPI() {
         val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
         val matchResult = videoUrlsRegex.find(pornTrexDocument.html())
 
-        val videoUrl1 = matchResult?.groupValues?.get(1)?.value
-        val videoUrl2 = matchResult?.groupValues?.get(2)?.value
-        val videoUrl3 = matchResult?.groupValues?.get(3)?.value
+        val videoUrl1 = matchResult?.groupValues?.get(1)
+        val videoUrl2 = matchResult?.groupValues?.get(2)
+        val videoUrl3 = matchResult?.groupValues?.get(3)
+        val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
+
+        if (video_url != null) {
+            callback.invoke(ExtractorLink(
+                name,
+                name,
+                video_url,
+                referer = "",
+                quality = Qualities.Unknown.value
+            ))
+        }
 
         if (videoUrl1 != null) {
-            extlinkList.add(ExtractorLink(
+            callback.invoke(ExtractorLink(
                 name,
                 name,
                 videoUrl1,
@@ -127,7 +138,7 @@ class FullPorner : MainAPI() {
             ))
         }
         if (videoUrl2 != null) {
-            extlinkList.add(ExtractorLink(
+            callback.invoke(ExtractorLink(
                 name,
                 name,
                 videoUrl2,
@@ -136,7 +147,7 @@ class FullPorner : MainAPI() {
             ))
         }
         if (videoUrl3 != null) {
-            extlinkList.add(ExtractorLink(
+            callback.invoke(ExtractorLink(
                 name,
                 name,
                 videoUrl3,
@@ -144,8 +155,6 @@ class FullPorner : MainAPI() {
                 quality = Qualities.Unknown.value
             ))
         }
-
-        extlinkList.forEach(callback)
 
         return true
     }
