@@ -124,7 +124,7 @@ class FullPorner : MainAPI() {
                     name,
                     videoUrl,
                     referer = "",
-                    quality = Qualities.Unknown.value
+                    quality = Regex("([0-9]+p)").find(videoUrl)?.groupValues?.getOrNull(1) ?: Qualities.Unknown.value,
                 )
             )
         }
