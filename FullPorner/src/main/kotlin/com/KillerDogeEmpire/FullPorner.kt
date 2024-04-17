@@ -83,7 +83,7 @@ class FullPorner : MainAPI() {
 
     val posterUrl = if (matchResult != null) {
         val (firstId, secondId) = matchResult.destructured
-        "https://ptx.cdntrex.com/contents/videos_screenshots/$firstId/$secondId/preview.jpg"
+        "ptx.cdntrex.com/contents/videos_screenshots/$firstId/$secondId/preview.jpg"
     } else {
         null
     }
