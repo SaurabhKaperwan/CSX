@@ -124,8 +124,7 @@ class FullPorner : MainAPI() {
                     name,
                     videoUrl,
                     referer = "",
-                    quality = Regex("""_(1080|720|480|360)p\.mp4""")..find(videoUrl)?.groupValues?.get(1)
-                                    .let { getQualityFromName(it) } ?: Qualities.Unknown.value,
+                    quality = Regex("""_(1080|720|480|360)p\.mp4""").find(videoUrl)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: Qualities.Unknown.value,
                 )
             )
         }
