@@ -91,7 +91,7 @@ class FullPorner : MainAPI() {
 
     return newMovieLoadResponse(title, url, TvType.NSFW, url) {
         this.posterUrl = posterUrl
-        this.plot = poster ?: ""
+        this.plot = description
         this.tags = tags
         this.recommendations = recommendations
         addActors(actors)
