@@ -79,7 +79,7 @@ class FullPorner : MainAPI() {
     val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
     val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
     val imgTag = pornTrexDocument.selectFirst("#kt_player > div.fp-player > div.fp-poster > img")
-    val poster = imgTag?.src
+    val poster = imgTag?.attr("src")
     val posterUrl = fixUrlNull("https:$poster")
 
     val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
