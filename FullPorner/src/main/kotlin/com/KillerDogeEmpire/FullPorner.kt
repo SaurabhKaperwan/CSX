@@ -109,14 +109,37 @@ class FullPorner : MainAPI() {
         val extlinkList = mutableListOf<ExtractorLink>()
         val iframeDocument = app.get(iframeUrl).document
         val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
-
         val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
-        val video_url = fixUrlNull(Regex("""video_url: \'(.+?)\',""").find(pornTrexDocument.html())?.groupValues?.get(1))
-        if (video_url != null) {
+        val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
+        val matchResult = videoUrlsRegex.find(pornTrexDocument.html())
+
+        val videoUrl1 = matchResult?.groupValues?.get(1)
+        val videoUrl2 = matchResult?.groupValues?.get(2)
+        val videoUrl3 = matchResult?.groupValues?.get(3)
+
+        if (videoUrl1 != null) {
             extlinkList.add(ExtractorLink(
                 name,
                 name,
-                video_url,
+                videoUrl1,
+                referer = "",
+                quality = Qualities.Unknown.value
+            ))
+        }
+        if (videoUrl2 != null) {
+            extlinkList.add(ExtractorLink(
+                name,
+                name,
+                videoUrl2,
+                referer = "",
+                quality = Qualities.Unknown.value
+            ))
+        }
+        if (videoUrl3 != null) {
+            extlinkList.add(ExtractorLink(
+                name,
+                name,
+                videoUrl3,
                 referer = "",
                 quality = Qualities.Unknown.value
             ))
