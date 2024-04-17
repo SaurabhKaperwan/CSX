@@ -78,9 +78,11 @@ class FullPorner : MainAPI() {
 
     val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
     val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
-    val poster = fixUrlNull(Regex("""src=["']([^"']+\.(?:jpg|png))["']""").find(pornTrexDocument.html())?.groupValues?.get(1))
-
+    val matchResult = Regex("""src=["']([^"']+\.(?:jpg|png))["']""").find(pornTrexDocument.html())
+    val poster = matchResult?.groupValues?.get(1)
     val posterUrl = fixUrlNull("https:$poster")
+
+
 
     val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
     val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
