@@ -87,6 +87,7 @@ class FullPorner : MainAPI() {
     } else {
         "https://ptx.cdntrex.com/contents/videos_screenshots/2240000/2240332/preview.jpg"
     }
+    val videoID   = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
 
     val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
     val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
@@ -95,7 +96,7 @@ class FullPorner : MainAPI() {
 
     return newMovieLoadResponse(title, url, TvType.NSFW, url) {
         this.posterUrl = posterUrl
-        this.plot = description
+        this.plot = videoID
         this.tags = tags
         this.recommendations = recommendations
         addActors(actors)
