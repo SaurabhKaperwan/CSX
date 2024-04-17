@@ -76,18 +76,12 @@ class FullPorner : MainAPI() {
 
     val iframeDocument = app.get(iframeUrl).document
 
-    val poster: String?
-
-    val pattern = "\\/(\\d+)\\/(\\d+)\\/preview\\.jpg".toRegex()
-    val matchResult = pattern.find(iframeDocument.html())
-
-    val posterUrl = if (matchResult != null) {
-        val (firstId, secondId) = matchResult.destructured
-        "https://ptx.cdntrex.com/contents/videos_screenshots/$firstId/$secondId/preview.jpg"
-    } else {
-        "https://ptx.cdntrex.com/contents/videos_screenshots/2240000/2240332/preview.jpg"
-    }
-    val videoID   = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
+    val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
+    val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
+    val pattern = """src=["']([^"']+\.(?:jpg|png))["']""".toRegex()
+    val matchResult = pattern.find(pornTrexDocument.html())
+    val poster = matchResult?.groups?.get(1)?.value
+    val posterUrl = fixUrlNull("https:$poster")
 
     val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
     val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
@@ -96,12 +90,14 @@ class FullPorner : MainAPI() {
 
     return newMovieLoadResponse(title, url, TvType.NSFW, url) {
         this.posterUrl = posterUrl
-        this.plot = videoID
+        this.plot = poster ?: ""
         this.tags = tags
         this.recommendations = recommendations
         addActors(actors)
     }
 }
+
+
 
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
