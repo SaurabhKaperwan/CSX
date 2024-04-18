@@ -32,7 +32,7 @@ class LuxMovies : MainAPI() {
 
     private fun Element.toSearchResult(): SearchResponse {
 
-        val title = this.select("h3 > a").attr("title")?.let { it } ?: return null
+        val title = this.select("h3 > a").attr("title") ?: ""
         val href  =     fixUrl(this.select("h3 > a").attr("href"))
         val posterUrl = fixUrlNull(this.select("img.block-picture").attr("data-src"))
         return newMovieSearchResponse(title, href, TvType.Movie) {
