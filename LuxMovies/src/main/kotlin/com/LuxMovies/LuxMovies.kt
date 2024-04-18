@@ -4,7 +4,7 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-class DraftSex : MainAPI() {
+class LuxMovies : MainAPI() {
     override var mainUrl              = "https://luxmovies.art/"
     override var name                 = "LuxMovies"
     override val hasMainPage          = true
