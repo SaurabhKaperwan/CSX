@@ -1,4 +1,4 @@
-package com.megix
+package com.coxju
 
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
@@ -8,11 +8,9 @@ class LuxMovies : MainAPI() {
     override var mainUrl              = "https://luxmovies.art/"
     override var name                 = "LuxMovies"
     override val hasMainPage          = true
-    override var lang                 = "en"
-    override val hasQuickSearch       = false
+    override var lang                 = "hi"
     override val hasDownloadSupport   = true
-    override val supportedTypes       = setOf(TvType.NSFW)
-    override val vpnStatus            = VPNStatus.MightBeNeeded
+    override val supportedTypes       = setOf(TvType.Movie, TvType.TvSeries,)
 
     override val mainPage = mainPageOf(
         "" to "Latest",

@@ -1,4 +1,4 @@
-package com.megix
+package com.coxju
 
 import android.content.Context
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
