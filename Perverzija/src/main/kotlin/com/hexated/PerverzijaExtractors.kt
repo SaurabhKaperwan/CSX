@@ -3,9 +3,8 @@ package com.hexated
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
-import com.lagradost.cloudstream3.utils.M3u8Helper
 
-open class Xtremestream : ExtractorApi() {
+class Xtremestream : ExtractorApi() {
     override var name = "Xtremestream"
     override var mainUrl = "xtremestream.co"
     override val requiresReferer = false
@@ -25,15 +24,27 @@ open class Xtremestream : ExtractorApi() {
                 playerScript.substringAfter("var m3u8_loader_url = `").substringBefore("`;")
 
             if (videoId.isNotBlank() && m3u8LoaderUrl.isNotBlank()) {
-                M3u8Helper.generateM3u8(
+                callback.invoke(
+                    ExtractorLink(
+                    name,
+                    "$m3u8LoaderUrl/$videoId",
+                    "$m3u8LoaderUrl/$videoId",
+                    Qualities.Unknown.value,
+                    isM3u8 = true,
+                )
+            }
+        }
+    }
+}
+
+/*
+
+ M3u8Helper.generateM3u8(
                     name,
                     "$m3u8LoaderUrl/$videoId",
                     "$m3u8LoaderUrl/$videoId"
                 ).forEach { link ->
                     sources.add(link)
                 }
-            }
-        }
-        return sources
-    }
-}
+
+*/
