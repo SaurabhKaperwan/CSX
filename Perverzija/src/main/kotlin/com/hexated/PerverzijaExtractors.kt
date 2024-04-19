@@ -28,9 +28,8 @@ open class Xtremestream : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         name,
-                        name,
                         "$m3u8LoaderUrl/$videoId",
-                        url,
+                        "$m3u8LoaderUrl/$videoId",
                         Qualities.Unknown.value,
                         isM3u8 = true,
                     )
