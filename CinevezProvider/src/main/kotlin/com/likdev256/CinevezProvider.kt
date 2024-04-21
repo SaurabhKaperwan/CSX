@@ -36,6 +36,7 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
+
         val document = app.get(request.data + page).document
         val home = document.select(".post-item").mapNotNull {
             it.toSearchResult()
@@ -125,7 +126,7 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
     }
 }
 
-class Shavetape : StreamTape() {
+class ShaveTape : StreamTape() {
     override var mainUrl = "https://shavetape.cash"
 }
 
