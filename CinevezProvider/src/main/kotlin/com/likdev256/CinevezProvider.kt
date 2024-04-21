@@ -102,7 +102,7 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
                     loadExtractor(
-                        it.attr("href"),
+                           it.attr("href").replace("/([a-z])/".toRegex(),"/e/"),
                         "$mainUrl/",
                         subtitleCallback,
                         callback
