@@ -21,5 +21,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://www.google.com/s2/favicons?domain=ww1.cinevez.mx&sz=%size%"
+    iconUrl = "https://www.cinevez.pm/wp-content/uploads/2020/11/logo.png"
 }

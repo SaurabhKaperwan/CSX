@@ -3,6 +3,8 @@ package com.likdev256
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.extractors.StreamTape
+import com.lagradost.cloudstream3.extractors.MixDrop
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -123,10 +125,15 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
     }
 }
 
-class StreamTapeTo : StreamTape() {
-    override var mainUrl = "https://streamtape.to"
+class Shavetape : StreamTape() {
+    override var mainUrl = "https://shavetape.cash"
 }
 
-class SlTube : StreamTape() {
-    override var mainUrl = "https://sltube.org"
+class JodWish : StreamWishExtractor() {
+    override var mainUrl = "https://jodwish.com"
 }
+
+class MDrop : MixDrop() {
+    override var mainUrl = "https://mixdrop.nu"
+}
+
