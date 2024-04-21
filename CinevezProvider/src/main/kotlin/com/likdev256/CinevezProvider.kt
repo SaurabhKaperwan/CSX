@@ -103,11 +103,25 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
-                loadExtractor(
-                    it.attr("href"),
-                    subtitleCallback,
-                    callback
-                )
+                if (it.attr("href").contains("send.cm")) {
+                    val url = app.get(it.attr("href")).document.select("source").attr("src")
+                    callback.invoke(
+                        ExtractorLink(
+                            this.name,
+                            this.name,
+                            url,
+                            mainUrl,
+                            quality = Qualities.Unknown.value,
+                        )
+                    )
+                } else {
+                    loadExtractor(
+                        it.attr("href").replace("/([a-z])/".toRegex(),"/e/"),
+                        "$mainUrl/",
+                        subtitleCallback,
+                        callback
+                    )
+                }
             }
         return true
     }
@@ -122,7 +136,7 @@ class JodWish : StreamWishExtractor() {
 }
 
 class MDrop : MixDrop() {
-    override var mainUrl = "https://mixdrop.is"
+    override var mainUrl = "https://mixdrop.nu"
 }
 
 class GFile : Gofile() {
