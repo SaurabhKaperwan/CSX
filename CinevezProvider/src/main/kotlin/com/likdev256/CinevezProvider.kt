@@ -5,6 +5,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.MixDrop
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.extractors.Gofile
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -102,10 +103,8 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
-
                 loadExtractor(
                     it.attr("href"),
-                    "$mainUrl/",
                     subtitleCallback,
                     callback
                 )
@@ -123,6 +122,9 @@ class JodWish : StreamWishExtractor() {
 }
 
 class MDrop : MixDrop() {
-    override var mainUrl = "https://mixdrop.nu"
+    override var mainUrl = "https://mixdrop.is"
 }
 
+class GFile : Gofile() {
+    override var mainUrl = "https://gofile.io"
+}
