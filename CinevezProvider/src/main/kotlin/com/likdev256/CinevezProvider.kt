@@ -17,8 +17,7 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
     override var lang = "hi"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
-        TvType.Movie,
-        TvType.TvSeries
+        TvType.Movie
     )
 
     override val mainPage = mainPageOf(
@@ -102,25 +101,12 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
-                if (it.attr("href").contains("send.cm")) {
-                    val url = app.get(it.attr("href")).document.select("source").attr("src")
-                    callback.invoke(
-                        ExtractorLink(
-                            this.name,
-                            this.name,
-                            url,
-                            mainUrl,
-                            quality = Qualities.Unknown.value,
-                        )
-                    )
-                } else {
                     loadExtractor(
-                        it.attr("href").replace("/([a-z])/".toRegex(),"/e/"),
+                        it.attr("href"),
                         "$mainUrl/",
                         subtitleCallback,
                         callback
                     )
-                }
             }
         return true
     }
