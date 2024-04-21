@@ -5,7 +5,6 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.MixDrop
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
-import com.lagradost.cloudstream3.extractors.Gofile
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -128,10 +127,12 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 }
 
 class ShaveTape : StreamTape() {
+    override var name = "ShaveTape"
     override var mainUrl = "https://shavetape.cash"
 }
 
 class JodWish : StreamWishExtractor() {
+    override var name = "JodWish"
     override var mainUrl = "https://jodwish.com"
 }
 
@@ -139,6 +140,3 @@ class MDrop : MixDrop() {
     override var mainUrl = "https://mixdrop.nu"
 }
 
-class GFile : Gofile() {
-    override var mainUrl = "https://gofile.io"
-}
