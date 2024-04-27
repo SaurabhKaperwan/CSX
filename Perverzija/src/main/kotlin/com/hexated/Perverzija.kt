@@ -168,8 +168,12 @@ class Perverzija : MainAPI() {
 
         val poster = document.select("div#featured-img-id img").attr("src")
         val title = document.select("div.title-info h1.light-title.entry-title").text()
-        val description =
-            document.select("div.item-content div.bialty-container div.bigta-container p").text()
+        val pTags = document.select("div.item-content p")
+        val description = StringBuilder().apply {
+            pTags.forEach {
+                append(it.text())
+            }
+        }.toString()
 
         val tags = document.select("div.item-tax-list div a").map { it.text() }
 
