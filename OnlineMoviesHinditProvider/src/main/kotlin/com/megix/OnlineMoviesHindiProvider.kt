@@ -19,7 +19,7 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/year/2022/page/" to "Latest Movies",
+        "$mainUrl/year/2024/page/" to "Latest Movies",
         "$mainUrl/best-rating/page/" to "Popular Movies",
         "$mainUrl/hollywood-movies/page/" to "Hollywood Movies",
         "$mainUrl/bollywood-movies/page/" to "Bollywood Movies",
