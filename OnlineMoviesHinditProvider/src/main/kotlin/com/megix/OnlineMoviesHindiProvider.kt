@@ -1,9 +1,6 @@
-
 package com.megix
 
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 
@@ -12,6 +9,7 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
     override var name = "Online Movies Hindi"
     override val hasMainPage = true
     override var lang = "hi"
+    override val vpnStatus = VPNStatus.MightBeNeeded
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -60,15 +58,10 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
 
         val title = document.selectFirst("h2.entry-title")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("div.gmr-movie-data img")?.attr("src"))
-        val year = document.select("div.gmr-moviedata time").text().trim().split(" ").last()
-            .toIntOrNull()
         val tvType = if (document.selectFirst("div.gmr-listseries a")?.text()
                 ?.contains(Regex("(?i)(Eps\\s?[0-9]+)|(episode\\s?[0-9]+)")) == true
         ) TvType.TvSeries else TvType.Movie
         val description = document.selectFirst("div.entry-content p")?.text()?.trim()
-        val trailer = fixUrlNull(document.select("iframe").attr("src"))
-        val rating = document.select("div.gmr-meta-rating > span:nth-child(3)").text().toRatingInt()
-        val actors = document.select("div.clearfix.content-moviedata > div:nth-child(7) a").map { it.text() }
         val recommendations = document.select("article").mapNotNull {
             it.toSearchResult()
         }
@@ -89,23 +82,14 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
 
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
-                this.year = year
                 this.plot = description
-                this.rating = rating
-                addActors(actors)
                 this.recommendations = recommendations
-                addTrailer(trailer)
             }
         } else {
             newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
-                this.year = year
                 this.plot = description
-                //this.tags = tags
-                this.rating = rating
-                addActors(actors)
                 this.recommendations = recommendations
-                addTrailer(trailer)
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.KillerDogeEmpire
+package com.megix
 
 import android.content.Context
 import com.KillerDogeEmpire.SxyPrn
