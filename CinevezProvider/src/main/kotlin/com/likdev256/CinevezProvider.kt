@@ -4,6 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.MixDrop
+import com.lagradost.cloudstream3.extractors.Gofile
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
@@ -17,7 +18,8 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
     override var lang = "hi"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
-        TvType.Movie
+        TvType.Movie,
+        TvType.TvSeries
     )
 
     override val mainPage = mainPageOf(
@@ -101,28 +103,31 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
-                    loadExtractor(
-                           it.attr("href").replace("/([a-z])/".toRegex(),"/e/"),
-                        "$mainUrl/",
-                        subtitleCallback,
-                        callback
-                    )
+                loadExtractor(
+                    it.attr("href").replace("/([a-z])/".toRegex(),"/e/"),
+                    "$mainUrl/",
+                    subtitleCallback,
+                    callback
+                )
             }
         return true
     }
 }
 
 class ShaveTape : StreamTape() {
-    override var name = "ShaveTape"
-    override var mainUrl = "https://shavetape.cash"
+    override val name = "ShaveTape"
+    override val mainUrl = "https://shavetape.cash"
 }
 
 class JodWish : StreamWishExtractor() {
-    override var name = "JodWish"
-    override var mainUrl = "https://jodwish.com"
+    override val name = "JodWish"
+    override val mainUrl = "https://jodwish.com"
 }
 
 class MDrop : MixDrop() {
-    override var mainUrl = "https://mixdrop.nu"
+    override val mainUrl = "https://mixdrop.nu"
 }
 
+class GFile : Gofile() {
+    override val mainUrl = "https://gofile.io"
+}
