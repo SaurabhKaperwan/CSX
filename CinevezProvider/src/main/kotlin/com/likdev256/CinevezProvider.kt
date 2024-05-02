@@ -115,19 +115,19 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 }
 
 class ShaveTape : StreamTape() {
-    override val name = "ShaveTape"
-    override val mainUrl = "https://shavetape.cash"
+    override var name = "ShaveTape"
+    override var mainUrl = "https://shavetape.cash"
 }
 
 class JodWish : StreamWishExtractor() {
-    override val name = "JodWish"
-    override val mainUrl = "https://jodwish.com"
+    override var name = "JodWish"
+    override var mainUrl = "https://jodwish.com"
 }
 
 class MDrop : MixDrop() {
-    override val mainUrl = "https://mixdrop.nu"
+    override var mainUrl = "https://mixdrop.nu"
 }
 
 class GFile : Gofile() {
-    override val mainUrl = "https://gofile.io"
+    override var mainUrl = "https://gofile.io"
 }
