@@ -56,29 +56,47 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         val title = document.selectFirst("h1.title")?.text() ?: return null
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
-        return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-            this.posterUrl = posterUrl
+
+        val tvType =  if(document.selectFirst("meta[property=article:section]")?.attr("content") == "Web series") TvType.TvSeries else TvType.Movie
+
+        return if (tvType == TvType.TvSeries) {
+
+            val regex = Regex("""<a\s+href="([^"]*)"[^>]*>WCH<\/a>""")
+            val urls = regex.findAll(document.html()).map { it.groupValues[1] }.toList()
+
+            val episodes = urls.mapNotNull {
+                Episode(it, "Episode ${urls.indexOf(it) + 1}")
+            }
+            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                this.posterUrl = posterUrl
+            }
+        }
+        else {
+            val movieUrl = Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(document.html())?.groupValues?.get(1) ?: ""
+            return newMovieLoadResponse(title, url, TvType.Movie, movieUrl) {
+                this.posterUrl = posterUrl
+            }
         }
     }
 
- override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
 
-    val document = app.get(data).document
-    val url = Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(document.html())?.groupValues?.get(1) ?: ""
-    val nextDocument = app.get(url).document
-    val href = nextDocument.select("iframe").attr("src")
-    if(href.contains("watchx.top")) {
-        val link = href.replace("watchx.top", "boltx.stream")
-        loadExtractor(link, subtitleCallback, callback)
+        val document = app.get(data).document
+        val href = document.select("iframe").attr("src")
+        if(href.contains("watchx.top")) {
+            val link = href.replace("watchx.top", "boltx.stream")
+            loadExtractor(link, subtitleCallback, callback)
+        }
+        else {
+            loadExtractor(href, subtitleCallback, callback)
+        }
+
+        return true
     }
-    loadExtractor(href, subtitleCallback, callback)
-
-    return true
-}
 
 }

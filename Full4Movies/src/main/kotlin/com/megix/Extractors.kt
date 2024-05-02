@@ -8,22 +8,19 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.M3u8Helper
 
 class Vectorx : Chillx() {
+    override val name = "Vectorx"
     override val mainUrl = "https://vectorx.top"
 }
 
-class Bestx : Chillx() {
-    override val mainUrl = "https://bestx.stream"
-}
-
-class Watchx : Chillx() {
-    override val mainUrl = "https://watchx.top"
-}
-
 class Boltx : Chillx() {
+    override val name = "Boltx"
     override val mainUrl = "https://boltx.stream"
 }
 
-
+class Bestx : Chillx() {
+    override val name = "Bestx"
+    override val mainUrl = "https://bestx.top"
+}
 
 
 open class Chillx : ExtractorApi() {
@@ -90,5 +87,4 @@ open class Chillx : ExtractorApi() {
     data class Keys(
         @JsonProperty("chillx") val key: List<String>
     )
-
 }

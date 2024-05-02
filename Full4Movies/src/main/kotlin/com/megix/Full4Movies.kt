@@ -11,8 +11,7 @@ class Full4Movies: Plugin() {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(Full4MoviesProvider())
         registerExtractorAPI(Vectorx())
-        registerExtractorAPI(Watchx())
-        registerExtractorAPI(Bestx())
         registerExtractorAPI(Boltx())
+        registerExtractorAPI(Bestx())
     }
 }
