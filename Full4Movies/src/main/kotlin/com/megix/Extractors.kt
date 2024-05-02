@@ -8,19 +8,19 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.M3u8Helper
 
 class Vectorx : Chillx() {
-    override var mainUrl = "https://vectorx.top"
+    override val mainUrl = "https://vectorx.top"
 }
 
 class Bestx : Chillx() {
-    override var mainUrl = "https://bestx.stream"
+    override val mainUrl = "https://bestx.stream"
 }
 
 class Watchx : Chillx() {
-    override var mainUrl = "https://watchx.top"
+    override val mainUrl = "https://watchx.top"
 }
 
 class Boltx : Chillx() {
-    override var mainUrl = "https://boltx.stream"
+    override val mainUrl = "https://boltx.stream"
 }
 
 

@@ -72,7 +72,10 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     val url = Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(document.html())?.groupValues?.get(1) ?: ""
     val nextDocument = app.get(url).document
     val href = nextDocument.select("iframe").attr("src")
-
+    if(href.contains("watchx.top")) {
+        val link = href.replace("watchx.top", "boltx.stream")
+        loadExtractor(link, subtitleCallback, callback)
+    }
     loadExtractor(href, subtitleCallback, callback)
 
     return true
