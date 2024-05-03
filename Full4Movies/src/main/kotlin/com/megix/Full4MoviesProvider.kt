@@ -7,7 +7,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 class Full4MoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.full4movies.help"
+    override var mainUrl = "https://www.full4movie.wine"
     override var name = "Full4Movies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -20,6 +20,10 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
 
     override val mainPage = mainPageOf(
         "$mainUrl/page/%d/" to "Home",
+        "$mainUrl/category/web-series/page/%d/" to "Web Series",
+        "$mainUrl/category/south-indian-hindi-dubbed-movies/page/%d/" to "South Hindi Dubbed",
+        "$mainUrl/category/bollywood-movies-download/page/%d/" to "Bollywood Movies",
+        "$mainUrl/category/hollywood-movies/page/%d/" to "Hollywood Movies",
     )
 
     override suspend fun getMainPage(
@@ -90,6 +94,14 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         val href = document.select("iframe").attr("src")
         if(href.contains("watchx.top")) {
             val link = href.replace("watchx.top", "boltx.stream")
+            loadExtractor(link, subtitleCallback, callback)
+        }
+        else if(href.contains("bestx.stream")) {
+            val link = href.replace("bestx.stream", "boltx.stream")
+            loadExtractor(link, subtitleCallback, callback)
+        }
+        else if(href.contains("chillx.top")) {
+            val link = href.replace("chillx.top", "boltx.stream")
             loadExtractor(link, subtitleCallback, callback)
         }
         else {

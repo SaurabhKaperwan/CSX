@@ -12,6 +12,5 @@ class Full4Movies: Plugin() {
         registerMainAPI(Full4MoviesProvider())
         registerExtractorAPI(Vectorx())
         registerExtractorAPI(Boltx())
-        registerExtractorAPI(Bestx())
     }
 }

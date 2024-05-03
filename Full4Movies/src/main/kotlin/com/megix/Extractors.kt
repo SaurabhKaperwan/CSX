@@ -17,10 +17,6 @@ class Boltx : Chillx() {
     override val mainUrl = "https://boltx.stream"
 }
 
-class Bestx : Chillx() {
-    override val name = "Bestx"
-    override val mainUrl = "https://bestx.top"
-}
 
 
 open class Chillx : ExtractorApi() {
