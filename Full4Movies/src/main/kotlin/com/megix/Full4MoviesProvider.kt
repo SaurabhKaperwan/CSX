@@ -65,7 +65,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
 
         return if (tvType == TvType.TvSeries) {
 
-            val regex = Regex("""<a\s+href="([^"]*)"[^>]*>WCH<\/a>""")
+            val regex = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""")
             val urls = regex.findAll(document.html()).map { it.groupValues[1] }.toList()
 
             val episodes = urls.mapNotNull {
@@ -89,24 +89,26 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        val link = if (data.contains("full4u")) {
+            val document = app.get(data).document
+            val href = document.select("iframe").attr("src")
+            when {
+                href.contains("watchx.top") -> href.replace("watchx.top", "boltx.stream")
+                href.contains("bestx.stream") -> href.replace("bestx.stream", "boltx.stream")
+                href.contains("chillx.top") -> href.replace("chillx.top", "boltx.stream")
+                else -> href
+            }
+        } else {
+            when {
+                data.contains("watchx.top") -> data.replace("watchx.top", "boltx.stream")
+                data.contains("bestx.stream") -> data.replace("bestx.stream", "boltx.stream")
+                data.contains("chillx.top") -> data.replace("chillx.top", "boltx.stream")
+                else -> data
+            }
+        }
 
-        val document = app.get(data).document
-        val href = document.select("iframe").attr("src")
-        if(href.contains("watchx.top")) {
-            val link = href.replace("watchx.top", "boltx.stream")
-            loadExtractor(link, subtitleCallback, callback)
-        }
-        else if(href.contains("bestx.stream")) {
-            val link = href.replace("bestx.stream", "boltx.stream")
-            loadExtractor(link, subtitleCallback, callback)
-        }
-        else if(href.contains("chillx.top")) {
-            val link = href.replace("chillx.top", "boltx.stream")
-            loadExtractor(link, subtitleCallback, callback)
-        }
-        else {
-            loadExtractor(href, subtitleCallback, callback)
-        }
+        loadExtractor(link, subtitleCallback, callback)
+
 
         return true
     }
