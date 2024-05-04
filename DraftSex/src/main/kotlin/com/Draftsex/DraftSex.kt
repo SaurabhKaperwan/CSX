@@ -69,8 +69,7 @@ class DraftSex : MainAPI() {
         val document = app.get(url).document
 
         val title       = document.selectFirst("h1.mhead__h")?.text() ?: ""
-        val coverRegex = Regex("""posterImage: "(.+?)"""")
-        val coverMatchResult = coverRegex.find(document.html())
+        val coverMatchResult = Regex("""posterImage: "(.+?)"""").find(document.html())
         val poster      = coverMatchResult?.groupValues?.get(1) ?: ""
         val description = document.selectFirst("meta[property=og:description]")?.attr("content")?.trim()
 

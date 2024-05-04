@@ -48,11 +48,19 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/?s=$query").document
+        val searchResponse = mutableListOf<SearchResponse>()
 
-        return document.select("div.article-content-col").mapNotNull {
-            it.toSearchResult()
+        for (i in 1..6) {
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
+
+            val results = document.select("div.article-content-col").mapNotNull { it.toSearchResult() }
+
+            searchResponse.addAll(results)
+
+            if (results.isEmpty()) break
         }
+
+        return searchResponse
     }
 
     override suspend fun load(url: String): LoadResponse? {
