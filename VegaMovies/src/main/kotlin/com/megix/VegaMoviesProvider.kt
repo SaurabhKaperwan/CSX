@@ -98,7 +98,7 @@ override suspend fun load(url: String): LoadResponse? {
         }
 
         return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-            this.posterUrl = posterUrl,
+            this.posterUrl = posterUrl
             this.plot = firstUrl
         }
     }
