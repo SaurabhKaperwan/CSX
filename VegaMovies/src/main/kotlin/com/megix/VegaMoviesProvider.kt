@@ -3,8 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
-import org.jsoup.nodes.Element
-import org.jsoup.select.Anchor
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
@@ -84,8 +82,8 @@ override suspend fun load(url: String): LoadResponse? {
         val tvSeriesEpisodes = mutableListOf<Episode>()
 
         for(button in buttons) {
-            val parentAnchor = button.parent() as? Anchor
-            if (parentAnchor != null && parentAnchor.is("a")) {
+            val parentAnchor = button.parent()
+            if (parentAnchor != null && parentAnchor.tagName() == "a") {
                 val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
                 val document2 = app.get(url).document
                 val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
