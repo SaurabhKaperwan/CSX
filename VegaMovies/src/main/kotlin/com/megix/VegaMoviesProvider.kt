@@ -79,9 +79,9 @@ override suspend fun load(url: String): LoadResponse? {
     if (tvType == TvType.TvSeries) {
         val regex = Regex("""<a.*?formsubmit\(\'(.*?)\'.*?>.*?V-Cloud \[Resumable\].*?<\/a>""")
         val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
+        val firstUrl = urls.firstOrNull()
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
-
         for (url in urls) {
             val document2 = app.get(url).document
             val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
@@ -99,8 +99,10 @@ override suspend fun load(url: String): LoadResponse? {
 
         return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
             this.posterUrl = posterUrl,
+            this.plot = firstUrl
         }
-    } else {
+    }
+    else {
         return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
             this.posterUrl = posterUrl
         }
