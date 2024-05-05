@@ -77,32 +77,34 @@ override suspend fun load(url: String): LoadResponse? {
     val tvType = if (regexTV.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
 
     if (tvType == TvType.TvSeries) {
-        //val regex = Regex("""<a.*?formsubmit\('([^']*)'\).*?V-Cloud \[Resumable\].*?<\/a>""")
-        //val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
-        val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
-        val urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
-        val desiredUrls = urls.filterIndexed { index, _ -> setOf(1, 4, 7, 10, 13, 16).contains(index) }
-        //val firstUrl = urls.firstOrNull()
+        val buttons = document.select("button[style=\"background:linear-gradient(135deg,#ed0b0b,#f2d152); color: white;\"]")
         var seasonNum = 1
-        val tvSeriesEpisodes = mutableListOf<Episode>()
-        for (url in desiredUrls) {
-            val document2 = app.get(url).document
-            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
-            val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-            val episodes = vcloudLinks.withIndex().map { (index, vcloudlink) ->
-                Episode(
-                    data = vcloudlink,
-                    season = seasonNum,
-                    episode = index + 1,
-                )
+        if(buttons.isNotEmpty()) {
+            for(button in buttons) {
+                val parentAnchor = button.parent()
+                if (parentAnchor.is("a")) {
+                    val tvSeriesEpisodes = mutableListOf<Episode>()
+                    val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
+                    val document2 = app.get(url).document
+                    val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
+                    val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    val episodes = vcloudLinks.withIndex().map { (index, vcloudlink) ->
+                        Episode(
+                            data = vcloudlink,
+                            season = seasonNum,
+                            episode = index + 1,
+                        )
+                    }
+                    tvSeriesEpisodes.addAll(episodes)
+                    seasonNum++
+                    return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+                        this.posterUrl = posterUrl
+                    }
+                }
+
             }
-            tvSeriesEpisodes.addAll(episodes)
-            seasonNum++
         }
 
-        return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-            this.posterUrl = posterUrl
-        }
     }
     else {
         return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
