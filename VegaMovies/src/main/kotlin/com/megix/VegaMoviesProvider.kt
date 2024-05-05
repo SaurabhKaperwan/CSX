@@ -86,11 +86,11 @@ override suspend fun load(url: String): LoadResponse? {
             val document2 = app.get(url).document
             val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
             val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-            val episodes = vcloudLinks.mapNotNull { vcloudlink ->
+            val episodes = vcloudLinks.withIndex().map { (index, vcloudlink) ->
                 Episode(
                     data = vcloudlink,
                     season = seasonNum,
-                    episode = vcloudLinks.indexOf(vcloudlink) + 1,
+                    episode = index + 1,
                 )
             }
             tvSeriesEpisodes.addAll(episodes)
@@ -98,7 +98,7 @@ override suspend fun load(url: String): LoadResponse? {
         }
 
         return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-            this.posterUrl = posterUrl
+            this.posterUrl = posterUrl,
         }
     } else {
         return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
