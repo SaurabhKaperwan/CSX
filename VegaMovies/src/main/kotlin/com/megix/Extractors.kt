@@ -3,8 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-
-
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
     override val mainUrl: String = "https://vcloud.lol"
@@ -44,10 +42,11 @@ open class VCloud : ExtractorApi() {
                         INFER_TYPE
                     )
                 )
-            } else {
-                val direct = if (link.contains("gofile.io")) app.get(link).url else link
-                loadExtractor(direct, referer, subtitleCallback, callback)
             }
+            // else {
+            //     val direct = if (link.contains("gofile.io")) app.get(link).url else link
+            //     loadExtractor(direct, referer, subtitleCallback, callback)
+            // }
         }
 
     }
