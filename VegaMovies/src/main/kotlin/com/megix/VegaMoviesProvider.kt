@@ -101,7 +101,7 @@ override suspend fun load(url: String): LoadResponse? {
         return true
     } else {
         val document1 = app.get(data).document
-        val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+        val regex = Regex("""<a.*?formsubmit\(\'(.*?)\'.*?>.*?V-Cloud \[Resumable\].*?<\/a>""")
         val links = regex.findAll(document1.html()).mapNotNull { it.value }.toList()
 
         links.mapNotNull { link ->
