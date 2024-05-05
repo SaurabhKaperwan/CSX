@@ -51,60 +51,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 }
 
-override suspend fun search(query: String): List<SearchResponse> {
-    val document = app.get("$mainUrl/?s=$query", interceptor = cfInterceptor).document
+    override suspend fun search(query: String): List<SearchResponse> {
+        val document = app.get("$mainUrl/?s=$query", interceptor = cfInterceptor).document
 
-    return document.select("article.post-item").mapNotNull {
-        it.toSearchResult()
-    }
-}
-
-override suspend fun load(url: String): LoadResponse? {
-  val document = app.get(url).document
-
-  // Handle missing og:image meta tag
-  val posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")?.let { fixUrlNull(it) } ?: ""
-
-  val regexTV = Regex("""Series-SYNOPSIS\/PLOT""")
-
-  val tvType = if (regexTV.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
-
-  if (tvType == TvType.TvSeries) {
-    val buttons = document.select("button[style=\"background:linear-gradient(135deg,#ed0b0b,#f2d152); color: white;\"]")
-    var seasonNum = 1
-    if (buttons.isNotEmpty()) {
-        for (button in buttons) {
-            val parentAnchor = button.parent()
-            if (parentAnchor.is("a")) {
-            val tvSeriesEpisodes = mutableListOf<Episode>()
-            val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
-            val document2 = app.get(url).document // Use a more descriptive name? (e.g., episodeDoc)
-            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
-            val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-            val episodes = vcloudLinks.withIndex().map { (index, vcloudlink) ->
-                Episode(
-                    data = vcloudlink,
-                    season = seasonNum,
-                    episode = index + 1,
-                )
-            }
-            tvSeriesEpisodes.addAll(episodes)
-            seasonNum++
-            }
+        return document.select("article.post-item").mapNotNull {
+            it.toSearchResult()
         }
     }
-}
-    return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-            this.posterUrl = posterUrl
-    }
-  }
-  else {
-    return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
-      this.posterUrl = posterUrl
-    }
-  }
-}
-
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
@@ -126,33 +79,29 @@ override suspend fun load(url: String): LoadResponse? {
     if (tvType == TvType.TvSeries) {
         val buttons = document.select("button[style=\"background:linear-gradient(135deg,#ed0b0b,#f2d152); color: white;\"]")
         var seasonNum = 1
-        if(buttons.isNotEmpty()) {
-            val tvSeriesEpisodes = mutableListOf<Episode>()
-            for(button in buttons) {
-                val parentAnchor = button.parent()
-                if (parentAnchor.is("a")) {
+        val tvSeriesEpisodes = mutableListOf<Episode>()
 
-                    val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
-                    val document2 = app.get(url).document
-                    val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
-                    val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                    val episodes = vcloudLinks.withIndex().map { (index, vcloudlink) ->
-                        Episode(
-                            data = vcloudlink,
-                            season = seasonNum,
-                            episode = index + 1,
-                        )
-                    }
-                    tvSeriesEpisodes.addAll(episodes)
-                    seasonNum++
+        for(button in buttons) {
+            val parentAnchor = button.parent()
+            if (parentAnchor.is("a")) {
+                val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
+                val document2 = app.get(url).document
+                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
+                val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                val episodes = vcloudLinks.withIndex().map { (index, vcloudlink) ->
+                    Episode(
+                        data = vcloudlink,
+                        season = seasonNum,
+                        episode = index + 1,
+                    )
                 }
-                return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-                        this.posterUrl = posterUrl
-                }
-
+                tvSeriesEpisodes.addAll(episodes)
+                seasonNum++
             }
         }
-
+        return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+            this.posterUrl = posterUrl
+        }
     }
     else {
         return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
@@ -166,7 +115,7 @@ override suspend fun load(url: String): LoadResponse? {
     isCasting: Boolean,
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
-    ): Boolean {
+): Boolean {
     if (data.contains("vcloud.lol")) {
         loadExtractor(data, subtitleCallback, callback)
         return true
