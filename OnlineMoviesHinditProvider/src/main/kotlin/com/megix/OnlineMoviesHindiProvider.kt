@@ -44,55 +44,56 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
             this.posterUrl = posterUrl
         }
     }
+    private fun Element.toSearchResult(): SearchResponse? {
+    val title = this.selectFirst("p.entry-title")?.text()?.trim() ?: return null
+    val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
+    val posterUrl = fixUrlNull(this.selectFirst("article img")?.attr("src"))
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/?s=$query&post_type%5B%5D=post&post_type%5B%5D=tv").document
-
-        return document.select("article").mapNotNull {
-            it.toSearchResult()
-        }
+    return newMovieSearchResponse(title, href, TvType.Movie) {
+        this.posterUrl = posterUrl
     }
+}
 
-    override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+override suspend fun load(url: String): LoadResponse? {
+    val document = app.get(url).document
 
-        val title = document.selectFirst("h2.entry-title")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("div.gmr-movie-data img")?.attr("src"))
-        val tvType = if (document.selectFirst("div.gmr-listseries a")?.text()
-                ?.contains(Regex("(?i)(Eps\\s?[0-9]+)|(episode\\s?[0-9]+)")) == true
+    val title = document.selectFirst("h2.entry-title")?.text()?.trim() ?: return null
+    val poster = fixUrlNull(document.selectFirst("div.gmr-movie-data img")?.attr("src"))
+    val tvType = if (document.selectFirst("div.gmr-listseries a")?.text()
+            ?.contains(Regex("(?i)(Eps\\s?[0-9]+)|(episode\\s?[0-9]+)")) == true
         ) TvType.TvSeries else TvType.Movie
-        val description = document.selectFirst("div.entry-content p")?.text()?.trim()
-        val recommendations = document.select("article").mapNotNull {
-            it.toSearchResult()
+    val description = document.selectFirst("div.entry-content p")?.text()?.trim()
+    val recommendations = document.select("article").mapNotNull {
+        it.toSearchResult()
+    }
+
+    return if (tvType == TvType.TvSeries) {
+        val episodes = document.select("a.button-shadow").mapNotNull {
+            val href = fixUrl(it.attr("href") ?: return null)
+            val name = it.text()?.trim() ?: return null
+            val season = name.substringAfter("S").substringBefore(' ').toIntOrNull() ?: 0
+            val episode = name.substringAfterLast("Eps").toIntOrNull() ?: 0
+            Episode(
+                href,
+                name,
+                season,
+                episode
+            )
         }
 
-        return if (tvType == TvType.TvSeries) {
-            val episodes = document.select("a.button-shadow").mapNotNull {
-                val href = fixUrl(it.attr("href")?: return null)
-                val name = it.text()?.trim()?: return null
-                val season = name.substringAfter("S").substringBefore(' ').toInt() ?: return null
-                val episode = name.substringAfterLast("Eps").toInt()?: return null
-                Episode(
-                    href,
-                    name,
-                    season,
-                    episode
-                )
-            }
-
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-                this.plot = description
-                this.recommendations = recommendations
-            }
-        } else {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-                this.plot = description
-                this.recommendations = recommendations
-            }
+        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            this.posterUrl = poster
+            this.plot = description
+            this.recommendations = recommendations
+        }
+    } else {
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = description
+            this.recommendations = recommendations
         }
     }
+}
 
  override suspend fun loadLinks(
     data: String,
