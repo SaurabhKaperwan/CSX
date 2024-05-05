@@ -82,7 +82,7 @@ override suspend fun load(url: String): LoadResponse? {
         val tvSeriesEpisodes = mutableListOf<Episode>()
 
         for(button in buttons) {
-            val parentAnchor = button.parent()
+            val parentAnchor = button.parent() as? Anchor
             if (parentAnchor != null && parentAnchor.is("a")) {
                 val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
                 val document2 = app.get(url).document
