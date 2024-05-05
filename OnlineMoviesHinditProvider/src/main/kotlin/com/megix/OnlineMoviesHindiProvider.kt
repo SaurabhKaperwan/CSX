@@ -68,10 +68,10 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
 
         return if (tvType == TvType.TvSeries) {
             val episodes = document.select("a.button-shadow").mapNotNull {
-                val href = fixUrl(it.attr("href")?: return null)
-                val name = it.text()?.trim()?: return null
-                val season = name.substringAfter("S").substringBefore(' ').toInt() ?: return null
-                val episode = name.substringAfterLast("Eps").toInt()?: return null
+                val href = fixUrl(it.attr("href"))
+                val name = it.text()?.trim()?: ""
+                val season = name.substringAfter("S").substringBefore(' ').toInt() ?: 1
+                val episode = name.substringAfterLast("Eps").toInt()?: 1
                 Episode(
                     href,
                     name,

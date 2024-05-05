@@ -83,7 +83,7 @@ override suspend fun load(url: String): LoadResponse? {
 
         for(button in buttons) {
             val parentAnchor = button.parent()
-            if (parentAnchor.is("a")) {
+            if (parentAnchor != null && parentAnchor.is("a")) {
                 val url = parentAnchor.attr("onclick").substringAfter("'").substringBefore("'")
                 val document2 = app.get(url).document
                 val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
