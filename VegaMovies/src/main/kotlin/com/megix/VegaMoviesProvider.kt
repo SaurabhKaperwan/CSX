@@ -77,14 +77,15 @@ override suspend fun load(url: String): LoadResponse? {
     val tvType = if (regexTV.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
 
     if (tvType == TvType.TvSeries) {
-        val regex = Regex("""<a.*?formsubmit\('([^']*)'\).*?V-Cloud \[Resumable\].*?<\/a>""")
-        val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
-        //val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
-        //val urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
-        val firstUrl = urls.firstOrNull()
+        //val regex = Regex("""<a.*?formsubmit\('([^']*)'\).*?V-Cloud \[Resumable\].*?<\/a>""")
+        //val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
+        val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+        val urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
+        val desiredUrls = urls.filterIndexed { index, _ -> setOf(1, 4, 7, 10, 13, 16).contains(index) }
+        //val firstUrl = urls.firstOrNull()
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
-        for (url in urls) {
+        for (url in desiredUrls) {
             val document2 = app.get(url).document
             val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
             val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
@@ -101,7 +102,6 @@ override suspend fun load(url: String): LoadResponse? {
 
         return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
             this.posterUrl = posterUrl
-            this.plot = firstUrl
         }
     }
     else {
