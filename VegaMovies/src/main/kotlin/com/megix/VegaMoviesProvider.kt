@@ -77,10 +77,10 @@ override suspend fun load(url: String): LoadResponse? {
     val tvType = if (regexTV.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
 
     if (tvType == TvType.TvSeries) {
-        //val regex = Regex("""<a.*?formsubmit\(\'(.*?)\'.*?>.*?V-Cloud \[Resumable\].*?<\/a>""")
-        //val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
-        val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
-        val urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
+        val regex = Regex("""<a.*?formsubmit\('([^']*)'\).*?V-Cloud \[Resumable\].*?<\/a>""")
+        val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
+        //val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+        //val urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
         val firstUrl = urls.firstOrNull()
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
