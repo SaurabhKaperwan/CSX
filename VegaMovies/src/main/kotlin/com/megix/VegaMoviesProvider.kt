@@ -33,23 +33,23 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     private suspend fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a")?.attr("title")
-        val trimTitle = title?.let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            }
-            else {
-                it
-            }
+    val title = this.selectFirst("a")?.attr("title")
+    val trimTitle = title?.let {
+        if (it.contains("Download ")) {
+            it.replace("Download ", "")
+        } else {
+            it
         }
-        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val document = app.get(href).document
-        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+    } ?: ""
 
-        return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
-            this.posterUrl = posterUrl
-        }
+    val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
+    val document = app.get(href).document
+    val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+
+    return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
+        this.posterUrl = posterUrl
     }
+}
 
     override suspend fun search(query: String): List<SearchResponse> {
         val document = app.get("$mainUrl/?s=$query", interceptor = cfInterceptor).document
@@ -78,7 +78,7 @@ override suspend fun load(url: String): LoadResponse? {
 
     if (tvType == TvType.TvSeries) {
         val regex = Regex("""<a.*?formsubmit\(\'(.*?)\'.*?>.*?V-Cloud \[Resumable\].*?<\/a>""")
-        val urls = regex.findAll(document).mapNotNull { it.groupValues[1] }.toList()
+        val urls = regex.findAll(document.html()).mapNotNull { it.groupValues[1] }.toList()
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
 
