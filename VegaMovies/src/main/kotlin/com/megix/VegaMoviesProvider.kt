@@ -34,7 +34,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     private suspend fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
-        val trimTitle = if(title.contains("Download ")) title.replace("Download ", "") else title
+        val trimTitle = title?.let {
+            if (it.contains("Download ")) {
+                it.replace("Download ", "")
+            }
+            else {
+                it
+            }
+        }
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val document = app.get(href).document
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
@@ -54,8 +61,15 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val title = document.selectFirst("meta[property=og:title]")?.attr("content")
-    val trimTitle = if(title.contains("Download ")) title.replace("Download ", "") else title
+    val title = this.selectFirst("a")?.attr("title")
+        val trimTitle = title?.let {
+            if (it.contains("Download ")) {
+                it.replace("Download ", "")
+            }
+            else {
+                it
+            }
+        }
 
     val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
     val regexTV = Regex("""Series-SYNOPSIS\/PLOT""")
