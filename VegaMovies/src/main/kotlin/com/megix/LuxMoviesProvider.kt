@@ -33,11 +33,12 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a")?.attr("title") ?: return null
+        val title = this.selectFirst("a")?.attr("title")
+        val trimTitle = if(title.contains("Download ")) title.replace("Download ", "") else title
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
 
-        return newMovieSearchResponse(title, href, TvType.Movie) {
+        return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
