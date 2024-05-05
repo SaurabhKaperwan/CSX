@@ -61,7 +61,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val title = document.selectFirst("a")?.attr("title")
+    val title = document.selectFirst("meta[property='og:title']")?.attr("content")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
                 it.replace("Download ", "")
@@ -84,7 +84,7 @@ override suspend fun load(url: String): LoadResponse? {
 
         for (url in urls) {
             val document2 = app.get(url).document
-            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s\"]+""")
             val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
             val episodes = vcloudLinks.mapNotNull { vcloudlink ->
                 Episode(
