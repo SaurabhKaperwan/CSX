@@ -20,6 +20,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override val mainPage = mainPageOf(
         "$mainUrl/page/%d/" to "Home",
+        "$mainUrl/category/featured/page/%d/" to "Amazon Prime",
+        "$mainUrl/category/web-series/netflix/page/%d/" to "Netflix",
+        "$mainUrl/category/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
+        "$mainUrl/category/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
+        "$mainUrl/category/web-series/mx-original/page/%d/" to " MX Original",
+        "$mainUrl/category/anime-series/page/%d/" to "Anime Series",
+        "$mainUrl/category/korean-series/page/%d/" to "Korean Series",
     )
 
     override suspend fun getMainPage(
@@ -53,16 +60,31 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/?s=$query", interceptor = cfInterceptor).document
+        val searchResponse = mutableListOf<SearchResponse>()
 
-        return document.select("article.post-item").mapNotNull {
-            it.toSearchResult()
+        for (i in 1..5) {
+            val document = app.get("$mainUrl/?s=$query", interceptor = cfInterceptor).document
+
+            val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
+
+            searchResponse.addAll(results)
+
+            if (results.isEmpty()) break
         }
+
+        return searchResponse
     }
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val title = document.selectFirst("meta[property=og:title]")?.attr("content") ?: return null
+    val title = this.selectFirst("a")?.attr("title")
+    val trimTitle = title?.let {
+        if (it.contains("Download ")) {
+            it.replace("Download ", "")
+        } else {
+            it
+        }
+    } ?: ""
     val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
     val regexTV = Regex("""Series-SYNOPSIS\/PLOT""")
 
@@ -89,7 +111,7 @@ override suspend fun load(url: String): LoadResponse? {
             seasonNum++
         }
 
-        return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
+        return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
             this.posterUrl = posterUrl
         }
     } else {
@@ -115,8 +137,8 @@ override suspend fun load(url: String): LoadResponse? {
 
         links.mapNotNull { link ->
             val document2 = app.get(link).document
-            val vcloudRegex = Regex("""<a.*?href="(https:\/\/vcloud.lol\/.*?)".*?V-Cloud \[Resumable\].*?<\/a>""")
-            val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.groupValues[1] }.toList()
+            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+            val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
 
             if (vcloudLinks.isNotEmpty()) {
                 loadExtractor(vcloudLinks.first(), subtitleCallback, callback)
