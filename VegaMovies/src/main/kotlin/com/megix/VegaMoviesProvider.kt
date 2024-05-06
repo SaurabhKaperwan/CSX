@@ -85,9 +85,10 @@ override suspend fun load(url: String): LoadResponse? {
         }
     } ?: ""
     val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-    val regexTV = Regex("""Series-SYNOPSIS\/PLOT""")
+    val regexTV1 = Regex("""Series-SYNOPSIS\/PLOT""")
+    val regexTV2 = Regex("""Series\s+Info""")
 
-    val tvType = if (regexTV.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
+    val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
 
     if (tvType == TvType.TvSeries) {
         val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
@@ -95,6 +96,10 @@ override suspend fun load(url: String): LoadResponse? {
         if(urls.isEmpty()) {
             val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
             urls = newRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+            if(urls.isEmpty()) {
+                val lastRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+                urls = lastRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+            }
         }
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
