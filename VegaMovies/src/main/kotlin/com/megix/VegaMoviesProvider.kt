@@ -39,7 +39,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse? {
     val title = this.selectFirst("a")?.attr("title")
     val trimTitle = title?.let {
         if (it.contains("Download ")) {
@@ -50,8 +50,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     } ?: ""
 
     val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-    val document = app.get(href).document
-    val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+    val posterUrl = fixUrlNull(document.selectFirst("img.block-picture")?.attr("src"))
 
     return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
         this.posterUrl = posterUrl
@@ -88,7 +87,7 @@ override suspend fun load(url: String): LoadResponse? {
     val regexTV1 = Regex("""Series-SYNOPSIS\/PLOT""")
     val regexTV2 = Regex("""Series\s+Info""")
 
-    val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html())) TvType.TvSeries else TvType.Movie
+    val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html()) || url.contains(season)) TvType.TvSeries else TvType.Movie
 
     if (tvType == TvType.TvSeries) {
         val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
