@@ -2,7 +2,6 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.extractors.Gofile
 
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
@@ -41,7 +40,7 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("link.contains("pixeldrain")")) {
+            else if(link.contains(link.contains("pixeldrain"))) {
                 callback.invoke(
                     ExtractorLink(
                         "PixelDrain",
