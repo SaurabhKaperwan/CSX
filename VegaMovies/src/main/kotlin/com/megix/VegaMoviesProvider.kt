@@ -62,7 +62,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..5) {
+        for (i in 1..3) {
             val document = app.get("$mainUrl/?s=$query", interceptor = cfInterceptor).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
@@ -77,7 +77,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val title = document.selectFirst("a")?.attr("title")
+    val title = document.selectFirst("meta[property=og:title]")?.attr("content")
     val trimTitle = title?.let {
         if (it.contains("Download ")) {
             it.replace("Download ", "")
