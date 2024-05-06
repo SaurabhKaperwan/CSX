@@ -50,8 +50,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     } ?: ""
 
     val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-    val posterUrl = fixUrlNull(document.selectFirst("img.block-picture")?.attr("src"))
-
+    val posterUrl = fixUrlNull(this.selectFirst("img.block-picture")?.attr("src"))
     return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
         this.posterUrl = posterUrl
     }
