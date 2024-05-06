@@ -28,10 +28,7 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || link.contains(
-                    "/dl.php?"
-                )
-            ) {
+            if (link.contains("workers.dev")) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
@@ -43,10 +40,19 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            // else {
-            //     val direct = if (link.contains("gofile.io")) app.get(link).url else link
-            //     loadExtractor(direct, referer, subtitleCallback, callback)
-            // }
+            val download = "[Download]"
+            if (link.contains("/dl.php?")) {
+                callback.invoke(
+                    ExtractorLink(
+                        this.name = this.name + download,
+                        this.name = this.name + download,
+                        link,
+                        "",
+                        getIndexQuality(header),
+                        INFER_TYPE
+                    )
+                )
+            }
         }
 
     }
