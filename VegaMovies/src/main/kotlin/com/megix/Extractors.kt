@@ -66,11 +66,6 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else {
-                if(link.contains("gofile.io")) {
-                    loadExtractor(link, subtitleCallback, callback)
-                }
-            }
         }
 
     }
