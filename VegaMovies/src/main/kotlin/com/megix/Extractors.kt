@@ -40,12 +40,12 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            val download = "[Download]"
+            val download = "V-Cloud[Download]"
             if (link.contains("/dl.php?")) {
                 callback.invoke(
                     ExtractorLink(
-                        this.name = this.name + download,
-                        this.name = this.name + download,
+                        download,
+                        download,
                         link,
                         "",
                         getIndexQuality(header),
