@@ -91,7 +91,7 @@ override suspend fun load(url: String): LoadResponse? {
 
     if (tvType == TvType.TvSeries) {
         val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
-        val urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
+        var urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
         if(urls.isEmpty()) {
             val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
             urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
@@ -102,7 +102,7 @@ override suspend fun load(url: String): LoadResponse? {
         for (url in urls) {
             val document2 = app.get(url).document
             val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-            val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+            var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
             if(vcloudLinks.isEmpty()) {
                 val newRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
                 vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
@@ -145,7 +145,7 @@ override suspend fun load(url: String): LoadResponse? {
         links.mapNotNull { link ->
             val document2 = app.get(link).document
             val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-            val vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+            var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
             if(vcloudLinks.isEmpty()) {
                 val newRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
                 vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
