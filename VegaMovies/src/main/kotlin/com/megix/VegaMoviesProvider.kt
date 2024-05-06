@@ -87,7 +87,7 @@ override suspend fun load(url: String): LoadResponse? {
     val regexTV1 = Regex("""Series-SYNOPSIS\/PLOT""")
     val regexTV2 = Regex("""Series\s+Info""")
 
-    val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html()) || url.contains(season)) TvType.TvSeries else TvType.Movie
+    val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html()) || url.contains("season")) TvType.TvSeries else TvType.Movie
 
     if (tvType == TvType.TvSeries) {
         val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
