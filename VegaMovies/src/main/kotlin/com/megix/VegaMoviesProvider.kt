@@ -115,7 +115,7 @@ override suspend fun load(url: String): LoadResponse? {
             this.posterUrl = posterUrl
         }
     } else {
-        return newMovieLoadResponse(title, url, TvType.Movie, url) {
+        return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
             this.posterUrl = posterUrl
         }
     }
