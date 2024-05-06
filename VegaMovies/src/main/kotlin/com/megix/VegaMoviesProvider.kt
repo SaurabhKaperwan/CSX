@@ -3,6 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
+import java.util.regex.Pattern
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
@@ -93,10 +94,9 @@ override suspend fun load(url: String): LoadResponse? {
                         null
                     }
                 }
-            }
-
-            if (unilinks != null) {
-                links.add(url)
+                if (unilinks != null) {
+                    links.add(unilinks)
+                }
             }
         }
 
