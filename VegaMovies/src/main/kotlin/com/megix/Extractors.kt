@@ -2,6 +2,7 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.extractors.Gofile
 
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
@@ -40,18 +41,34 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            val download = "V-Cloud[Download]"
-            if (link.contains("/dl.php?")) {
+            else if(link.contains("link.contains("pixeldrain")")) {
                 callback.invoke(
                     ExtractorLink(
-                        download,
-                        download,
+                        "PixelDrain",
+                        "PixelDrain",
                         link,
                         "",
                         getIndexQuality(header),
                         INFER_TYPE
                     )
                 )
+            }
+            else if (link.contains("/dl.php?")) {
+                callback.invoke(
+                    ExtractorLink(
+                        "V-Cloud[Download]",
+                        "V-Cloud[Download]",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                        INFER_TYPE
+                    )
+                )
+            }
+            else {
+                if(link.contains("gofile.io")) {
+                    loadExtractor(link, subtitleCallback, callback)
+                }
             }
         }
 
