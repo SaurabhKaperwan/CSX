@@ -41,10 +41,11 @@ open class VCloud : ExtractorApi() {
                 )
             }
             else if(link.contains(link.contains("pixeldrain"))) {
+                val pixelText = "Pixeldrain"
                 callback.invoke(
                     ExtractorLink(
-                        "PixelDrain",
-                        "PixelDrain",
+                        pixelText,
+                        pixelText,
                         link,
                         "",
                         getIndexQuality(header),
@@ -53,10 +54,11 @@ open class VCloud : ExtractorApi() {
                 )
             }
             else if (link.contains("/dl.php?")) {
+                val downText = "V-Cloud[Download]"
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud[Download]",
-                        "V-Cloud[Download]",
+                        downText,
+                        downText,
                         link,
                         "",
                         getIndexQuality(header),
