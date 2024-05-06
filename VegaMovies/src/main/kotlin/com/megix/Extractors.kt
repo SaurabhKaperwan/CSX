@@ -40,7 +40,7 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains(link.contains("pixeldrain"))) {
+            else if((link.contains("pixeldrain")) {
                 val pixelText = "Pixeldrain"
                 callback.invoke(
                     ExtractorLink(
