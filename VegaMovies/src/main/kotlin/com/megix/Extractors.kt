@@ -28,37 +28,11 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if (link.contains("workers.dev")) {
+            if (link.contains("workers.dev") || link.contains("pixeldrain") || link.contains("/dl.php?")) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
                         this.name,
-                        link,
-                        "",
-                        getIndexQuality(header),
-                        INFER_TYPE
-                    )
-                )
-            }
-            else if(link.contains("pixeldrain")) {
-                val pixelText = "Pixeldrain"
-                callback.invoke(
-                    ExtractorLink(
-                        pixelText,
-                        pixelText,
-                        link,
-                        "",
-                        getIndexQuality(header),
-                        INFER_TYPE
-                    )
-                )
-            }
-            else if (link.contains("/dl.php?")) {
-                val downText = "V-Cloud[Download]"
-                callback.invoke(
-                    ExtractorLink(
-                        downText,
-                        downText,
                         link,
                         "",
                         getIndexQuality(header),
