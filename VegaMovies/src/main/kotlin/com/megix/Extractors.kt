@@ -36,7 +36,6 @@ open class VCloud : ExtractorApi() {
                         link,
                         "",
                         getIndexQuality(header),
-                        INFER_TYPE
                     )
                 )
             }

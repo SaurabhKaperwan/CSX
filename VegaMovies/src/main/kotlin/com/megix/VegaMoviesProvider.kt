@@ -40,23 +40,23 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     private suspend fun Element.toSearchResult(): SearchResponse? {
-    val title = this.selectFirst("a")?.attr("title")
-    val trimTitle = title?.let {
-        if (it.contains("Download ")) {
-            it.replace("Download ", "")
-        } else {
-            it
+        val title = this.selectFirst("a")?.attr("title")
+        val trimTitle = title?.let {
+            if (it.contains("Download ")) {
+                it.replace("Download ", "")
+            } else {
+                it
+            }
+        } ?: ""
+
+        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
+        val document = app.get(href).document
+        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+
+        return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
+            this.posterUrl = posterUrl
         }
-    } ?: ""
-
-    val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-    val document = app.get(href).document
-    val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-
-    return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
-        this.posterUrl = posterUrl
     }
-}
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
@@ -74,93 +74,97 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return searchResponse
     }
 
-override suspend fun load(url: String): LoadResponse? {
-    val document = app.get(url).document
-    val title = document.selectFirst("meta[property=og:title]")?.attr("content")
-    val trimTitle = title?.let {
-        if (it.contains("Download ")) {
-            it.replace("Download ", "")
-        } else {
-            it
-        }
-    } ?: ""
-    val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-    val regexTV1 = Regex("""Series-SYNOPSIS\/PLOT""")
-    val regexTV2 = Regex("""Series\s+Info""")
+    override suspend fun load(url: String): LoadResponse? {
+        val document = app.get(url).document
+        val title = document.selectFirst("meta[property=og:title]")?.attr("content")
+        val trimTitle = title?.let {
+            if (it.contains("Download ")) {
+                it.replace("Download ", "")
+            } else {
+                it
+            }
+        } ?: ""
+        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val regexTV1 = Regex("""Series-SYNOPSIS\/PLOT""")
+        val regexTV2 = Regex("""Series\s+Info""")
 
-    val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html()) || url.contains("season")) TvType.TvSeries else TvType.Movie
+        val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html()) || url.contains("season")) TvType.TvSeries else TvType.Movie
 
-    if (tvType == TvType.TvSeries) {
-        val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
-        var urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
-        if(urls.isEmpty()) {
-            val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
-            urls = newRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+        if (tvType == TvType.TvSeries) {
+            val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
+            var urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
             if(urls.isEmpty()) {
-                val lastRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
-                urls = lastRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+                val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct||.*E)""")
+                urls = newRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+                if(urls.isEmpty()) {
+                    val new2Regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+                    urls = new2Regex.findAll(document.html()).mapNotNull { it.value }.toList()
+                }
+                if(urls.isEmpty()) {
+                    val lastRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Links)""")
+                    urls = lastRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+                }
             }
-        }
-        var seasonNum = 1
-        val tvSeriesEpisodes = mutableListOf<Episode>()
+            var seasonNum = 1
+            val tvSeriesEpisodes = mutableListOf<Episode>()
 
-        for (url in urls) {
-            val document2 = app.get(url).document
-            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-            var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-            if(vcloudLinks.isEmpty()) {
-                val newRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
-                vcloudLinks = newRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+            for (url in urls) {
+                val document2 = app.get(url).document
+                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                if(vcloudLinks.isEmpty()) {
+                    val newRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
+                    vcloudLinks = newRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                }
+                val episodes = vcloudLinks.mapNotNull { vcloudlink ->
+                    Episode(
+                        data = vcloudlink,
+                        season = seasonNum,
+                        episode = vcloudLinks.indexOf(vcloudlink) + 1,
+                    )
+                }
+                tvSeriesEpisodes.addAll(episodes)
+                seasonNum++
             }
-            val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                Episode(
-                    data = vcloudlink,
-                    season = seasonNum,
-                    episode = vcloudLinks.indexOf(vcloudlink) + 1,
-                )
-            }
-            tvSeriesEpisodes.addAll(episodes)
-            seasonNum++
-        }
 
-        return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-            this.posterUrl = posterUrl
-        }
-    } else {
-        return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
-            this.posterUrl = posterUrl
+            return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+                this.posterUrl = posterUrl
+            }
+        } else {
+                return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
+                    this.posterUrl = posterUrl
+            }
         }
     }
-}
 
     override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
-    if (data.contains("vcloud.lol")) {
-        loadExtractor(data, subtitleCallback, callback)
-        return true
-    } else {
-        val document1 = app.get(data).document
-        val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
-        val links = regex.findAll(document1.html()).mapNotNull { it.value }.toList()
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        if (data.contains("vcloud.lol")) {
+            loadExtractor(data, subtitleCallback, callback)
+            return true
+        } else {
+            val document1 = app.get(data).document
+            val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+            val links = regex.findAll(document1.html()).mapNotNull { it.value }.toList()
 
-        links.mapNotNull { link ->
-            val document2 = app.get(link).document
-            val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-            var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-            if(vcloudLinks.isEmpty()) {
-                val newRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
-                vcloudLinks = newRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-            }
+            links.mapNotNull { link ->
+                val document2 = app.get(link).document
+                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                if(vcloudLinks.isEmpty()) {
+                    val newRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
+                    vcloudLinks = newRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                }
 
-            if (vcloudLinks.isNotEmpty()) {
-                loadExtractor(vcloudLinks.first(), subtitleCallback, callback)
+                if (vcloudLinks.isNotEmpty()) {
+                    loadExtractor(vcloudLinks.first(), subtitleCallback, callback)
+                }
             }
+            return true
         }
-        return true
     }
-}
 }
