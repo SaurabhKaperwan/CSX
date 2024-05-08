@@ -91,18 +91,18 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val tvType = if (regexTV1.containsMatchIn(document.html()) || regexTV2.containsMatchIn(document.html()) || url.contains("season")) TvType.TvSeries else TvType.Movie
 
         if (tvType == TvType.TvSeries) {
-            val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)(?!.*Zip\/Batch)""")
+            val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
             var urls = regex.findAll(document.html()).mapNotNull { it.value }.toList()
             if(urls.isEmpty()) {
-                val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct||.*E)(?!.*Zip\/Batch)""")
-                urls = newRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+                val lastRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
+                urls = lastRegex.findAll(document.html()).mapNotNull { it.value }.toList()
                 if(urls.isEmpty()) {
-                    val new2Regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*Zip\/Batch)""")
+                    val new2Regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
                     urls = new2Regex.findAll(document.html()).mapNotNull { it.value }.toList()
                 }
                 if(urls.isEmpty()) {
-                    val lastRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*Zip\/Batch)""")
-                    urls = lastRegex.findAll(document.html()).mapNotNull { it.value }.toList()
+                    val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct||.*E)""")
+                    urls = newRegex.findAll(document.html()).mapNotNull { it.value }.toList()
                 }
             }
             var seasonNum = 1
