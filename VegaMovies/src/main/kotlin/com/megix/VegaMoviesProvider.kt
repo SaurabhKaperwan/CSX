@@ -101,7 +101,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     urls = new2Regex.findAll(document.html()).mapNotNull { it.value }.toList()
                 }
                 if(urls.isEmpty()) {
-                    val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct||.*E)""")
+                    val newRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
                     urls = newRegex.findAll(document.html()).mapNotNull { it.value }.toList()
                 }
             }
