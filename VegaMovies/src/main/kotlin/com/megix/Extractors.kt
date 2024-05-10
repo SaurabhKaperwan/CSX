@@ -43,18 +43,6 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("pixeldrain")) {
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        this.name,
-                        link,
-                        referer = link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }
         }
 
     }
