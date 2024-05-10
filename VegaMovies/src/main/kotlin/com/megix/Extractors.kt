@@ -3,7 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
     override val mainUrl: String = "https://vcloud.lol"
@@ -42,9 +41,6 @@ open class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            }
-             else {
-                loadExtractor(link, link, subtitleCallback, callback)
             }
         }
 
