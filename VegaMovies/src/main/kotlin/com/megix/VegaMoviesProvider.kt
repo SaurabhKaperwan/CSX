@@ -109,59 +109,60 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                         qualities.add(quality)
                     }
                 }
-                val pairs = seasons.zip(qualities)
+            }
+            val pairs = seasons.zip(qualities)
 
-                val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
-                val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
-                val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
-                val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
+            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
+            val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
+            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
 
-                var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
+            var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
+            if(urls.isEmpty()) {
+                urls = regex2.findAll(div.html()).mapNotNull { it.value }.toList()
                 if(urls.isEmpty()) {
-                    urls = regex2.findAll(div.html()).mapNotNull { it.value }.toList()
-                    if(urls.isEmpty()) {
-                        urls = regex3.findAll(div.html()).mapNotNull { it.value }.toList()
-                    }
-                    if(urls.isEmpty()) {
-                        urls = regex4.findAll(div.html()).mapNotNull { it.value }.toList()
-                    }
+                    urls = regex3.findAll(div.html()).mapNotNull { it.value }.toList()
                 }
-                var seasonNum = 1
-                var i = 0
-
-                for (url in urls) {
-                    val document2 = app.get(url).document
-                    val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                    val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
-
-                    var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                    if(vcloudLinks.isEmpty()) {
-                        vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                    }
-                    val pair = pairs[i]
-                    val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                        Episode(
-                            name = "Season ${pair.first} Episode ${vcloudLinks.indexOf(vcloudlink) + 1} ${pair.second}",
-                            data = vcloudlink,
-                            season = seasonNum,
-                            episode = vcloudLinks.indexOf(vcloudlink) + 1,
-                        )
-                    }
-                    tvSeriesEpisodes.addAll(episodes)
-                    seasonNum++
-                    i++
+                if(urls.isEmpty()) {
+                    urls = regex4.findAll(div.html()).mapNotNull { it.value }.toList()
                 }
             }
+            var seasonNum = 1
+            var i = 0
 
+            for (url in urls) {
+                val document2 = app.get(url).document
+                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
+
+                var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                if(vcloudLinks.isEmpty()) {
+                    vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                }
+                val pair = pairs[i]
+                val episodes = vcloudLinks.mapNotNull { vcloudlink ->
+                    Episode(
+                        name = "Season ${pair.first} Episode ${vcloudLinks.indexOf(vcloudlink) + 1} ${pair.second}",
+                        data = vcloudlink,
+                        season = seasonNum,
+                        episode = vcloudLinks.indexOf(vcloudlink) + 1,
+                    )
+                }
+                tvSeriesEpisodes.addAll(episodes)
+                seasonNum++
+                i++
+            }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
             }
-        } else {
-                return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
-                    this.posterUrl = posterUrl
+        }
+        else {
+            return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
+                this.posterUrl = posterUrl
             }
         }
     }
+
 
     override suspend fun loadLinks(
         data: String,
