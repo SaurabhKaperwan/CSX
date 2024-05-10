@@ -96,7 +96,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val qualities = mutableListOf<String>()
             val regex = Regex("""<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p)).*<\/h3>""")
             val matches = regex.findAll(div.html()).mapNotNull { it.value }.toList()
-            if(!matches.isNotEmpty()) {
+            if(matches.isNotEmpty()) {
                 for(match in matches) {
                     val realSeasonRegex = Regex("""Season (\d+)""")
                     val realSeason = realSeasonRegex.find(match)?.groupValues?.get(1)
@@ -104,15 +104,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     val qualityRegex = Regex("""1080p|720p|480p""")
                     val quality = qualityRegex.find(match)?.groupValues?.get(1)
 
-                    if(realSeason == null) {
-                        seasons.add(quality)
-                        qualities.add(quality)
-                    }
-                    else if(quality == null) {
-                        seasons.add(realSeason)
-                        qualities.add(realSeason)
-                    }
-                    else{
+                    if(realSeason != null && quality != null) {
                         seasons.add(realSeason)
                         qualities.add(quality)
                     }
