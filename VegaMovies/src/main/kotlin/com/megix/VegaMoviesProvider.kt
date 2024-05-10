@@ -90,7 +90,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         if (tvType == TvType.TvSeries) {
 
-            val entry = res.select("div.entry-content > h3:matches((?i).*480p|720p|1080p|2160p.*)").first() ?.text()
+            val entry = document.select("div.entry-content > h3:matches((?i).*480p|720p|1080p|2160p.*)").first()
+            val disc = entry ?.text()
 
 
             val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
