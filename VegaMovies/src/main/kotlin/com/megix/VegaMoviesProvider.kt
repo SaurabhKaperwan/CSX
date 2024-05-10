@@ -3,6 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
+import org.jsoup.select.Selector.select
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
@@ -50,7 +51,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } ?: ""
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val posterUrl = fixUrl(this.selectFirst("img.blog-picture")?.attr("data-src"))
+        val posterUrl = this.selectFirst("img.blog-picture")?.attr("data-src")
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -65,7 +66,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 
-            searchResponse.addAll(results )
+            searchResponse.addAll(results)
 
             if (results.isEmpty()) break
         }
