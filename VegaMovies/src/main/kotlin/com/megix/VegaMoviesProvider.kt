@@ -62,7 +62,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
+        for (i in 1..2) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
@@ -87,14 +87,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } ?: ""
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
-        val tvType = if (url.contains("season")) TvType.TvSeries else TvType.Movie
+        val tvType = if (url.contains("season") || title.contains("Season")) TvType.TvSeries else TvType.Movie
 
         if (tvType == TvType.TvSeries) {
             val div = document.selectFirst("div.entry-content")
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val seasons = mutableListOf<String>()
             val qualities = mutableListOf<String>()
-            val regex = Regex("""<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p)).*<\/h3>""")
+            val regex = Regex("""<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p|2160p|4K)).*<\/h3>""")
             val matches = regex.findAll(div.html()).mapNotNull { it.value }.toList()
             if(matches.isNotEmpty()) {
                 for(match in matches) {
