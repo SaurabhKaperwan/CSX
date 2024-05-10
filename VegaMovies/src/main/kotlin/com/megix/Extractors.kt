@@ -28,7 +28,7 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if (link?.contains("/dl.php?") ?: false)) {
+            if (link.contains("/dl.php?")) {
                 callback.invoke(
                     ExtractorLink(
                         "V-Cloud[Download]",
@@ -39,7 +39,7 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else if (link.contains?.("workers.dev") ?: false) {
+            else if (link.contains("workers.dev") || it.text("[Server : 1]") || it.text("[Server : 2]")) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
