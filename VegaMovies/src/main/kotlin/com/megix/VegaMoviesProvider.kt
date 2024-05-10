@@ -110,9 +110,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
             }
-            val allRegex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
-            val allUrls =  allRegex.find(div.html()).mapNotNull { it.value }.toList()
-
             val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
             val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
             val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)""")
@@ -136,10 +133,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             var i = 0
 
             for (url in urls) {
-                while(!url.equals(allUrls[i])) {
-                    i++
-                    if(i >= allUrls.size) break
-                }
                 val document2 = app.get(url).document
                 val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
                 val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
