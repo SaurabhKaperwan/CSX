@@ -39,7 +39,7 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else if (link.contains("workers.dev") || it.text("[Server : 1]") || it.text("[Server : 2]")) {
+            else if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || it.text().contains("[Server : 2]")) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
