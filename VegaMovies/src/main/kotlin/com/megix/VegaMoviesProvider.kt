@@ -139,6 +139,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 if(vcloudLinks.isEmpty()) {
                     vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
                 }
+                if(pairs.size <= i) break
                 val pair = pairs[i]
                 val episodes = vcloudLinks.mapNotNull { vcloudlink ->
                     Episode(
