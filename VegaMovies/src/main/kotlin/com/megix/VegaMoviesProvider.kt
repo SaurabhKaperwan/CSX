@@ -137,7 +137,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             var i = 0
 
             for (url in urls) {
-                while(url != allUrls[i]) {
+                while(!url.equals(allUrls)) {
                     i++
                     if(i >= allUrls.size) break
                 }
