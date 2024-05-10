@@ -3,7 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
-import org.jsoup.select.Selector.select
+import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
