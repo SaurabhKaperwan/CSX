@@ -32,7 +32,6 @@ open class VCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "V-Cloud[Download]",
-                        "V-Cloud[Download]",
                         link,
                         "",
                         getIndexQuality(header),
@@ -42,7 +41,6 @@ open class VCloud : ExtractorApi() {
             else if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || it.text().contains("[Server : 2]")) {
                 callback.invoke(
                     ExtractorLink(
-                        this.name,
                         this.name,
                         link,
                         "",
