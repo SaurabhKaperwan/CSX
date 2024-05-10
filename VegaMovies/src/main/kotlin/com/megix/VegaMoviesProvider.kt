@@ -110,12 +110,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
             }
-            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)""")
-            val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
-            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)""")
-            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
-            val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)""")
-            val regex6 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
+            val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*G-Direct)""")
+            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)""")
+            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)""")
+            val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)""")
 
             var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
             if(urls.isEmpty()) {
@@ -128,9 +127,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
                 if(urls.isEmpty()) {
                     urls = regex5.findAll(div.html()).mapNotNull { it.value }.toList()
-                }
-                if(urls.isEmpty()) {
-                    urls = regex6.findAll(div.html()).mapNotNull { it.value }.toList()
                 }
             }
             var seasonNum = 1
