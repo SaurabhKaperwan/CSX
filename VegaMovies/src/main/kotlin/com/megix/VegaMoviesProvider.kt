@@ -98,7 +98,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val matches = regex.findAll(div.html()).mapNotNull { it.value }.toList()
             if(matches.isNotEmpty()) {
                 for(match in matches) {
-                    val realSeasonRegex = Regex("""S(\d+)(\d+)""")
+                    val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                     val realSeason = realSeasonRegex.find(match)?.groupValues?.get(1)
 
                     val qualityRegex = Regex("""1080p|720p|480p""")
@@ -110,7 +110,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
             }
-            val pairs = seasons.zip(qualities)
 
             val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
             val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
@@ -139,11 +138,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 if(vcloudLinks.isEmpty()) {
                     vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
                 }
-                if(pairs.size <= i) break
-                val pair = pairs[i]
+                if(seasons.size <= i || qualities.size <= i) break
                 val episodes = vcloudLinks.mapNotNull { vcloudlink ->
                     Episode(
-                        name = "Season ${pair.first} Episode ${vcloudLinks.indexOf(vcloudlink) + 1} ${pair.second}",
+                        name = "${seasons[i]} Episode ${vcloudLinks.indexOf(vcloudlink) + 1} ${qualities[i]}",
                         data = vcloudlink,
                         season = seasonNum,
                         episode = vcloudLinks.indexOf(vcloudlink) + 1,
