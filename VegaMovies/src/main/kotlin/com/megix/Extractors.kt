@@ -50,6 +50,19 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
+            else if(link.contains("gofile.io")){
+                val document = app.get(link).document
+                val direct = document.selectFirst("a.dropdown-item target=")?.attr("href")
+                callback.invoke(
+                    ExtractorLink(
+                        "V-Cloud",
+                        "Gofile",
+                        direct,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
             else if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || it.text().contains("[Server : 2]")) {
                 callback.invoke(
                     ExtractorLink(
@@ -60,8 +73,6 @@ open class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            } else {
-                loadExtractor(link, referer, subtitleCallback, callback)
             }
 
         }
