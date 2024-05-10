@@ -28,41 +28,32 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if(link.contains("pixeldrain")) {
+
+            if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || link.contains(
+                    "/dl.php?"
+                )
+            ) {
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud",
-                        "PixelDrain",
+                        this.name,
+                        this.name,
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
+            else if(link.contains("pixeldrain")) {
+                callback.invoke(
+                    ExtractorLink(
+                        this.name,
+                        this.name,
                         link,
                         referer = link,
-                        quality = getIndexQuality(header),
-                    )
-                )
-            }
-            else if (link.contains("/dl.php?")) {
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        "V-Cloud[Download]",
-                        link,
                         "",
                         getIndexQuality(header),
                     )
                 )
-            }
-            else if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || it.text().contains("[Server : 2]")) {
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        this.name,
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }
-            else {
-                loadExtractor(link, referer, subtitleCallback, callback)
             }
         }
 
