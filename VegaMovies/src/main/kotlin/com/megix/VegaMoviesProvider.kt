@@ -104,17 +104,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     val qualityRegex = Regex("""1080p|720p|480p""")
                     val quality = qualityRegex.find(match)?.groupValues?.get(1)
 
-                    if (realSeason != null || quality != null) {
-                        if(realSeason == null) {
-                            seasons.add("Unknown")
-                            qualities.add(quality)
-                        } else if(quality == null) {
-                            seasons.add(realSeason)
-                            qualities.add("Unknown")
-                        } else {
-                            seasons.add(realSeason)
-                            qualities.add(quality)
-                        }
+                    if (realSeason != null && quality != null) {
+                        seasons.add(realSeason)
+                        qualities.add(quality)
                     }
                 }
             }
