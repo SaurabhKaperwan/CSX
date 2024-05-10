@@ -43,6 +43,9 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
+             else {
+                loadExtractor(link, link, subtitleCallback, callback)
+            }
         }
 
     }
