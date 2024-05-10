@@ -110,11 +110,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
             }
+            val allRegex = Regex("""<a[^>]*?\s+onclick="formsubmit\('https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/'\); return false;"[^>]*>.*?<\/a>""")
+            val allUrls= mainRegex.find(div.html()).mapNotNull { it.value }. toList()
 
             val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
             val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
-            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
-            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
+            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)""")
+            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+            val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
 
             var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
             if(urls.isEmpty()) {
@@ -125,11 +128,18 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 if(urls.isEmpty()) {
                     urls = regex4.findAll(div.html()).mapNotNull { it.value }.toList()
                 }
+                if(urls.isEmpty()) {
+                    urls = regex5.findAll(div.html()).mapNotNull { it.value }.toList()
+                }
             }
             var seasonNum = 1
             var i = 0
 
             for (url in urls) {
+                while(url != allUrls[i]) {
+                    i++
+                    if(i >= allUrls.size) break
+                }
                 val document2 = app.get(url).document
                 val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
                 val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
@@ -141,7 +151,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 if(seasons.size <= i || qualities.size <= i) break
                 val episodes = vcloudLinks.mapNotNull { vcloudlink ->
                     Episode(
-                        name = "${seasons[i]} Episode ${vcloudLinks.indexOf(vcloudlink) + 1} ${qualities[i]}",
+                        name = "S${seasons[i]} E${vcloudLinks.indexOf(vcloudlink) + 1} ${qualities[i]}",
                         data = vcloudlink,
                         season = seasonNum,
                         episode = vcloudLinks.indexOf(vcloudlink) + 1,
@@ -194,8 +204,3 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
     }
 }
-
-
-//<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p)).*<\/h3>
-//Season (\d+)
-//(\d+p)

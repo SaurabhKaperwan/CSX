@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://vegamovies.ph/wp-content/uploads/2022/03/Logo.png"
+    iconUrl = "https://vegamovies.yt/wp-content/uploads/2022/03/Logo.png"
 }
