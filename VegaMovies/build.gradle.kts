@@ -1,4 +1,4 @@
-version = 3
+version = 1
 
 cloudstream {
     language = "hi"

@@ -25,7 +25,7 @@ class DraftSex : MainAPI() {
         val home = document.select("div.item.col").mapNotNull { it.toSearchResult() }
 
         return newHomePageResponse(
-            list    = HomePageList(
+            list = HomePageList(
                 name               = request.name,
                 list               = home,
                 isHorizontalImages = true
@@ -35,7 +35,6 @@ class DraftSex : MainAPI() {
     }
 
     private fun Element.toSearchResult(): SearchResponse {
-
         val title =     this.select("a").attr("title")
         val href  =     fixUrl(this.select("a").attr("href"))
         val posterUrl = fixUrlNull(this.select("img").attr("src"))
