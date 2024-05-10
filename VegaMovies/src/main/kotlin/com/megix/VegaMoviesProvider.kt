@@ -111,7 +111,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
             }
             val allRegex = Regex("""<a[^>]*?\s+onclick="formsubmit\('https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/'\); return false;"[^>]*>.*?<\/a>""")
-            val allUrls = allRegex.find(div.html()).mapNotNull { it.value }.toList()
+            val urlsList = allRegex.find(div.html())?.value
+            val allUrls = urlsList ?.let { listOf(it) } ?: emptyList()
 
             val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
             val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
