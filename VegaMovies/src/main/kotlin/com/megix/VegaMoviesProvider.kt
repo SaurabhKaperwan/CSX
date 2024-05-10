@@ -98,11 +98,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val matches = regex.findAll(div.html()).mapNotNull { it.value }.toList()
             if(matches.isNotEmpty()) {
                 for(match in matches) {
-                    val realSeasonRegex = Regex("""Season (\d+)""")
+                    val realSeasonRegex = Regex("""S(\d+)(\d+)""")
                     val realSeason = realSeasonRegex.find(match)?.groupValues?.get(1)
 
                     val qualityRegex = Regex("""1080p|720p|480p""")
-                    val quality = qualityRegex.find(match)?.groupValues?.get(1)
+                    val quality = qualityRegex.find(match)?.value
 
                     if(realSeason != null && quality != null) {
                         seasons.add(realSeason)
