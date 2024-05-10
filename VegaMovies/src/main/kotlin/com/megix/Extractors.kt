@@ -50,9 +50,6 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("gofile.io")){
-                loadExtractor(links, referer, subtitleCallback, callback)
-            }
             else if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || it.text().contains("[Server : 2]")) {
                 callback.invoke(
                     ExtractorLink(
@@ -64,7 +61,9 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-
+            else {
+                loadExtractor(link, referer, subtitleCallback, callback)
+            }
         }
 
     }

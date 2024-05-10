@@ -94,14 +94,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val seasons = mutableListOf<String>()
             val qualities = mutableListOf<String>()
-            val regex = Regex("""<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p|2160p|4K)).*<\/h3>""")
+            val regex = Regex("""<h3.*>(?=.*S)(?=.*(?:1080p|720p|480p|2160p|4K))(?=.*(?:MB|GB)).*<\/h3>""")
             val matches = regex.findAll(div.html()).mapNotNull { it.value }.toList()
             if(matches.isNotEmpty()) {
                 for(match in matches) {
                     val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                     val realSeason = realSeasonRegex.find(match)?.groupValues?.get(1)
 
-                    val qualityRegex = Regex("""1080p|720p|480p""")
+                    val qualityRegex = Regex("""1080p|720p|480p|2160p|4K""")
                     val quality = qualityRegex.find(match)?.value
 
                     if(realSeason != null && quality != null) {
@@ -110,11 +110,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
             }
-            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
+            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)""")
             val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
             val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)""")
             val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
-            val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+            val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)""")
+            val regex6 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
 
             var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
             if(urls.isEmpty()) {
@@ -127,6 +128,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
                 if(urls.isEmpty()) {
                     urls = regex5.findAll(div.html()).mapNotNull { it.value }.toList()
+                }
+                if(urls.isEmpty()) {
+                    urls = regex6.findAll(div.html()).mapNotNull { it.value }.toList()
                 }
             }
             var seasonNum = 1
