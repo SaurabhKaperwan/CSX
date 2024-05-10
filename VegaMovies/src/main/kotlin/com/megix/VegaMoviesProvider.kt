@@ -89,52 +89,58 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val tvType = if (url.contains("season")) TvType.TvSeries else TvType.Movie
 
         if (tvType == TvType.TvSeries) {
+            val div = document.selectFirst("div.entry-content")
+            val regex = Regex("""<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p)).*<\/h3>""")
+            val matches = regex.findAll(div.html()).mapNotNull { it.value }.toList()
+            if(!matches.isEmpty()) {
+                for(match in matches) {
+                    val realSeasonRegex = Regex("""Season (\d+)""")
+                    val realSeason = realSeasonRegex.find(match)?.groupValues?.get(1)
+                    val qualityRegex = Regex("""1080p|720p|480p""")
+                    val quality = qualityRegex.find(match)?.value ?: "Unknown"
+                    val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
+                    val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
+                    val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
+                    val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
 
-            val entry = document.select("div.entry-content > h3:matches((?i).*480p|720p|1080p|2160p.*)").first()
-            val disc = entry ?.text()
+                    var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
+                    if(urls.isEmpty()) {
+                        urls = regex2.findAll(div.html()).mapNotNull { it.value }.toList()
+                        if(urls.isEmpty()) {
+                            urls = regex3.findAll(div.html()).mapNotNull { it.value }.toList()
+                        }
+                        if(urls.isEmpty()) {
+                            urls = regex4.findAll(div.html()).mapNotNull { it.value }.toList()
+                        }
+                    }
+                    var seasonNum = 1
+                    val tvSeriesEpisodes = mutableListOf<Episode>()
 
+                    for (url in urls) {
+                        val document2 = app.get(url).document
+                        val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                        val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
 
-            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
-            val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)""")
-            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)""")
-            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
-
-            var urls = regex1.findAll(document.html()).mapNotNull { it.value }.toList()
-            if(urls.isEmpty()) {
-                urls = regex2.findAll(document.html()).mapNotNull { it.value }.toList()
-                if(urls.isEmpty()) {
-                    urls = regex3.findAll(document.html()).mapNotNull { it.value }.toList()
+                        var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                        if(vcloudLinks.isEmpty()) {
+                            vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                        }
+                        val episodes = vcloudLinks.mapNotNull { vcloudlink ->
+                            Episode(
+                                name = "${realSeason} Episode ${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}",
+                                data = vcloudlink,
+                                season = seasonNum,
+                                episode = vcloudLinks.indexOf(vcloudlink) + 1,
+                            )
+                        }
+                        tvSeriesEpisodes.addAll(episodes)
+                        seasonNum++
+                    }
                 }
-                if(urls.isEmpty()) {
-                    urls = regex4.findAll(document.html()).mapNotNull { it.value }.toList()
-                }
-            }
-            var seasonNum = 1
-            val tvSeriesEpisodes = mutableListOf<Episode>()
-
-            for (url in urls) {
-                val document2 = app.get(url).document
-                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
-
-                var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                if(vcloudLinks.isEmpty()) {
-                    vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                }
-                val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                    Episode(
-                        data = vcloudlink,
-                        season = seasonNum,
-                        episode = vcloudLinks.indexOf(vcloudlink) + 1,
-                    )
-                }
-                tvSeriesEpisodes.addAll(episodes)
-                seasonNum++
             }
 
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
-                this.plot = entry
             }
         } else {
                 return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
@@ -174,3 +180,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
     }
 }
+
+
+//<h3.*>(?=.*(?:S))(?=.*(?:1080p|720p|480p)).*<\/h3>
+//Season (\d+)
+//(\d+p)
