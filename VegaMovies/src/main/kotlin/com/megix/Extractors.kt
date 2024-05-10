@@ -61,7 +61,7 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             } else {
-                loadExtractor(direct, referer, subtitleCallback, callback)
+                loadExtractor(link, referer, subtitleCallback, callback)
             }
 
         }
