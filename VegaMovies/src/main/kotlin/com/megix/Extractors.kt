@@ -28,18 +28,7 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if(link.contains("pixeldrain.net")) {
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        "PixelDrain",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }
-            else if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || link.contains("/dl.php?")) {
+            if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || link.contains("/dl.php?") || link.contains("pixeldrain")) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
