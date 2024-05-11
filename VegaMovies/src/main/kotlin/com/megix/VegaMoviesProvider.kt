@@ -110,25 +110,32 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
             }
-            val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
-            val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*G-Direct)""")
-            val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)""")
-            val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)""")
-            val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)""")
+            val pRegex = Regex("""<p.*?class="(dwd-button|btn btn-sm btn-outline)".*?<\/p>""")
+            var pTags = pRegex.findAll(div.html()).mapNotNull { it.value }.toList()
+            val urls = mutableListOf<String>()
 
-            var urls = regex1.findAll(div.html()).mapNotNull { it.value }.toList()
-            if(urls.isEmpty()) {
-                urls = regex2.findAll(div.html()).mapNotNull { it.value }.toList()
+            for(pTag in pTags) {
+                val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
+                val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*G-Direct)""")
+                val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)""")
+                val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)""")
+                val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)""")
+
+                urls.addAll(regex1.findAll(pTag).mapNotNull { it.value }.toList())
                 if(urls.isEmpty()) {
-                    urls = regex3.findAll(div.html()).mapNotNull { it.value }.toList()
+                    urls.addAll(regex2.findAll(pTag).mapNotNull { it.value }.toList())
                 }
                 if(urls.isEmpty()) {
-                    urls = regex4.findAll(div.html()).mapNotNull { it.value }.toList()
+                    urls.addAll(regex3.findAll(pTag).mapNotNull { it.value }.toList())
                 }
                 if(urls.isEmpty()) {
-                    urls = regex5.findAll(div.html()).mapNotNull { it.value }.toList()
+                    urls.addAll(regex4.findAll(pTag).mapNotNull { it.value }.toList())
+                }
+                if(urls.isEmpty()) {
+                    urls.addAll(regex5.findAll(pTag).mapNotNull { it.value }.toList())
                 }
             }
+
             var seasonNum = 1
             var i = 0
 
