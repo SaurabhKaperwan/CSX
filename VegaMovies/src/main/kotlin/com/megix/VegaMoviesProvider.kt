@@ -128,12 +128,16 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
 
                 val document2 = app.get(Eurl).document
-                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                val vcloudRegex1 = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                val vcloud2Regex2 = Regex("""https:\/\/vcloud\.lol\/\w+""")
                 val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
 
-                var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                var vcloudLinks = vcloudRegex1.findAll(document2.html()).mapNotNull { it.value }.toList()
                 if(vcloudLinks.isEmpty()) {
-                    vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    vcloudLinks = vcloud2Regex2.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    if(vcloudLinks.isEmpty()){
+                        vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    }
                 }
                 val episodes = vcloudLinks.mapNotNull { vcloudlink ->
                     Episode(
