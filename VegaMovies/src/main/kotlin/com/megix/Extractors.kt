@@ -28,7 +28,9 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if (!link.contains("gofile.io")) {
+            if ( link.contains("workers.dev") || link.contains("cloudflare") || link.contains("pixeldrain")
+                || link.contains("dl.php") || it.text().contains("Download")
+             ) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
