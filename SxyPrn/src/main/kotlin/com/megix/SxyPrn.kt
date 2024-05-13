@@ -7,7 +7,7 @@ import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.utils.loadExtractor
 
-import com.lagradost.cloudstream3.extractors.DoodLaExtractor
+
 
 class SxyPrn : MainAPI() {
     override var mainUrl = "https://sxyprn.com"
@@ -125,14 +125,20 @@ class SxyPrn : MainAPI() {
 
         val postDiv = document.selectFirst("div.post_text")
         val links = postDiv.select("a.extlink_icon")
-        val allLinks = links.mapNotNull { it.attr("href") }
+        val allLinks = links.mapNotNull { it.attr("href") }.toList()
 
-        allLinks?.forEach {
+        allLinks.forEach { link ->
+            when {
+                link.contains("doodstream") -> link.replace("doodstream", "d000d")
+                link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
+                link.contains("voe.sx") -> link.replace("voe.sx", "michaelapplysome.com")
+                else -> link
+                }
             loadExtractor(
-            it,
-            referer = "",
-            subtitleCallback,
-            callback
+                link,
+                referer = "",
+                subtitleCallback,
+                callback
             )
         }
 
@@ -157,9 +163,4 @@ class SxyPrn : MainAPI() {
         return true
     }
 
-}
-
-
-class MyDood : DoodLaExtractor() {
-    override var mainUrl = "https://d000d.com"
 }
