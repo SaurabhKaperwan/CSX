@@ -66,24 +66,23 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
             it.toSearchResult()
         }
 
-        return if (tvType == TvType.TvSeries) {
+        if (tvType == TvType.TvSeries) {
             val episodes = document.select("a.button-shadow").mapNotNull {
                 val href = fixUrl(it.attr("href"))
                 val name = it.text()?.trim()
-                val season = name.substringAfter("S").substringBefore(' ').toInt()
-                val episode = name.substringAfterLast("Eps").toInt()
-                Episode(
-                    href,
-                    name,
-                    season,
-                    episode
-                )
+                if (name != null && href != null) {
+                    val season = name.substringAfter("S").substringBefore(' ').toIntOrNull() ?: 1
+                    val episode = name.substringAfterLast("Eps").toIntOrNull() ?: 1
+                    Episode(
+                        href,
+                        name,
+                        season,
+                        episode
+                    )
+                }
             }
-
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
-                this.plot = description
-                this.recommendations = recommendations
             }
         } else {
             newMovieLoadResponse(title, url, TvType.Movie, url) {
