@@ -28,7 +28,7 @@ open class VCloud : ExtractorApi() {
             )
         ).document.select("p.text-success ~ a").apmap {
             val link = it.attr("href")
-            if (link.contains("workers.dev") || it.text().contains("[Server : 1]") || link.contains("/dl.php?") || link.contains("pixeldrain")) {
+            if (!link.contains("gofile.io")) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,
@@ -38,10 +38,6 @@ open class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            }
-            else {
-                val direct = if (link.contains("gofile.io")) app.get(link).url else link
-                    loadExtractor(direct, referer, subtitleCallback, callback)
             }
         }
 
