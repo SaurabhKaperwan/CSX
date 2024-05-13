@@ -23,7 +23,6 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
     override val mainPage = mainPageOf(
         "$mainUrl/featured/page/" to "Popular Movies",
-        "$mainUrl/latest-series/page/" to "Popular Series",
         "$mainUrl/language/english/page/" to "English",
         "$mainUrl/language/hindi/page/" to "Hindi",
         "$mainUrl/language/tamil/page/" to "Tamil",
@@ -114,12 +113,10 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 }
 
 class ShaveTape : StreamTape() {
-    override var name = "ShaveTape"
     override var mainUrl = "https://shavetape.cash"
 }
 
 class JodWish : StreamWishExtractor() {
-    override var name = "JodWish"
     override var mainUrl = "https://jodwish.com"
 }
 

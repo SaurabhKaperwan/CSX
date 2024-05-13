@@ -11,7 +11,6 @@ class CinevezPlugin: Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(CinevezProvider())
-        registerExtractorAPI(GFile())
         registerExtractorAPI(ShaveTape())
         registerExtractorAPI(MDrop())
         registerExtractorAPI(JodWish())
