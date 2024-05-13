@@ -7,11 +7,7 @@ import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.utils.loadExtractor
 
-import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.DoodLaExtractor
-import com.lagradost.cloudstream3.extractors.Vidguardto
-import com.lagradost.cloudstream3.extractors.Vtbe
-
 
 class SxyPrn : MainAPI() {
     override var mainUrl = "https://sxyprn.com"

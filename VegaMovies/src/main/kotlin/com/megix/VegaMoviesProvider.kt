@@ -89,7 +89,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
-                  Regex("Series synopsis").containsMatchIn(url ?: "")) {
+                  Regex("Series synopsis").containsMatchIn(url)) {
             TvType.TvSeries
         } else {
             TvType.Movie
@@ -98,7 +98,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         if (tvType == TvType.TvSeries) {
             val div = document.selectFirst("div.entry-content")
             val HPRegex = Regex("""<(?:h3|h5).*?>.*?(?:1080p|720p|480p|2160p|4K).*?(?:MB|GB).*?\s*<p.*?class="(?:dwd-button|btn btn-sm btn-outline)".*?<\/p>""")
-            val HPTags = HPRegex.findAll(div.html()).mapNotNull { it.value }.toList()
+            val HPTags = HPRegex.findAll(div?.html()).mapNotNull { it.value }.toList()
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
