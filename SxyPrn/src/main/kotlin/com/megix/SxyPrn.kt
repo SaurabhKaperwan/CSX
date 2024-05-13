@@ -130,7 +130,7 @@ class SxyPrn : MainAPI() {
         allLinks?.forEach {
             loadExtractor(
             it,
-            it,
+            referer = "",
             subtitleCallback,
             callback
             )
@@ -150,7 +150,7 @@ class SxyPrn : MainAPI() {
 
         callback.invoke(
             ExtractorLink(
-                this.name, this.name, url, referer = "", quality = Qualities.Unknown.value
+                this.name, this.name, url, referer = data, quality = Qualities.Unknown.value
             )
         )
 
