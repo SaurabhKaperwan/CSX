@@ -13,5 +13,6 @@ class SxyPrnProvider : Plugin() {
         registerExtractorAPI(DoodLaExtractor())
         registerExtractorAPI(Vidguardto())
         registerExtractorAPI(Vtbe())
+        registerExtractorAPI(MyDood())
     }
 }

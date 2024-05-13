@@ -126,6 +126,20 @@ class SxyPrn : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val document = app.get(data).document
+
+        val postDiv = document?.selectFirst("div.post_text")
+        val links = postDiv?.select("a.extlink_icon")
+        val allLinks = links?.mapNotNull { it.attr("href") }
+
+        allLinks?.forEach {
+            loadExtractor(
+            it,
+            it,
+            subtitleCallback,
+            callback
+            )
+        }
+
         val parsed = AppUtils.parseJson<Map<String, String>>(
             document.select("span.vidsnfo").attr("data-vnfo")
         )
@@ -143,17 +157,6 @@ class SxyPrn : MainAPI() {
                 this.name, this.name, url, referer = "", quality = Qualities.Unknown.value
             )
         )
-
-        val postDiv = document.selectFirst("div.post_text").document
-        val link = postDiv.select("a.extlink_icon")?.attr("href")
-            .mapNotNull {
-                loadExtractor(
-                    it,
-                    it,
-                    subtitleCallback,
-                    callback
-                )
-            }
 
         return true
     }
