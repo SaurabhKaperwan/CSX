@@ -86,9 +86,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             }
         } ?: ""
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        val div = document.selectFirst("div.entry-content")
-        val element = div.selectFirst("h3:containsOwn(plot), h4:containsOwn(plot)")
-        val description = element?.nextElementSibling()?.select("p")?.first()?.text() ?: "Empty"
 
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
@@ -99,6 +96,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvType == TvType.TvSeries) {
+            val div = document.selectFirst("div.entry-content")
             val HPRegex = Regex("""<(?:h3|h5).*?>.*?(?:1080p|720p|480p|2160p|4K).*?(?:MB|GB).*?\s*<p.*?class="(?:dwd-button|btn btn-sm btn-outline)".*?<\/p>""")
             val HPTags = HPRegex.findAll(div.html()).mapNotNull { it.value }.toList()
             val tvSeriesEpisodes = mutableListOf<Episode>()
@@ -154,13 +152,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
-                this.plot = description
             }
         }
         else {
             return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
-                this.plot = description
             }
         }
     }
