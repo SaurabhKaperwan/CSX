@@ -4,7 +4,6 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.MixDrop
-import com.lagradost.cloudstream3.extractors.Gofile
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
@@ -126,8 +125,4 @@ class JodWish : StreamWishExtractor() {
 
 class MDrop : MixDrop() {
     override var mainUrl = "https://mixdrop.nu"
-}
-
-class GFile : Gofile() {
-    override var mainUrl = "https://gofile.io"
 }

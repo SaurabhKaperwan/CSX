@@ -86,6 +86,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             }
         } ?: ""
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val div = document.selectFirst("div.entry-content")
+        val element = div.selectFirst("h3:containsOwn(plot), h4:containsOwn(plot)")
+        val description = element.nextElementSibling()?.select("p")?.first()?.text() ?: "Empty"
 
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
@@ -96,14 +99,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvType == TvType.TvSeries) {
-            val div = document.selectFirst("div.entry-content")
             val HPRegex = Regex("""<(?:h3|h5).*?>.*?(?:1080p|720p|480p|2160p|4K).*?(?:MB|GB).*?\s*<p.*?class="(?:dwd-button|btn btn-sm btn-outline)".*?<\/p>""")
             val HPTags = HPRegex.findAll(div.html()).mapNotNull { it.value }.toList()
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
             for(HPTag in HPTags) {
-                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                val realSeasonRegex = Regex("""(?:Season|S|Season 0| S0)(\d+)""")
                 val realSeason = realSeasonRegex.find(HPTag)?.groupValues?.get(1) ?: "Unknown"
                 val qualityRegex = Regex("""1080p|720p|480p|2160p|4K""")
                 val quality = qualityRegex.find(HPTag)?.value ?: "Unknown"
@@ -152,11 +154,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
+                this.plot = description
             }
         }
         else {
             return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
+                this.plot = description
             }
         }
     }
@@ -167,7 +171,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if (data.contains("vcloud.lol")) {
+        if (data.contains("vcloud.lol") || data.contains("filebee")) {
             loadExtractor(data, subtitleCallback, callback)
             return true
         } else {
