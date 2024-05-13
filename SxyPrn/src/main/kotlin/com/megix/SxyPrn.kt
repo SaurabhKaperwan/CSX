@@ -123,9 +123,9 @@ class SxyPrn : MainAPI() {
     ): Boolean {
         val document = app.get(data).document
 
-        val postDiv = document?.selectFirst("div.post_text")
-        val links = postDiv?.select("a.extlink_icon")
-        val allLinks = links?.mapNotNull { it.attr("href") }
+        val postDiv = document.selectFirst("div.post_text")
+        val links = postDiv.select("a.extlink_icon")
+        val allLinks = links.mapNotNull { it.attr("href") }
 
         allLinks?.forEach {
             loadExtractor(
