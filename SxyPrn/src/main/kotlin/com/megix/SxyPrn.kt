@@ -5,6 +5,13 @@ import com.lagradost.cloudstream3.utils.AppUtils
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.nodes.Element
+import com.lagradost.cloudstream3.utils.loadExtractor
+
+import com.lagradost.cloudstream3.extractors.StreamTape
+import com.lagradost.cloudstream3.extractors.DoodLaExtractor
+import com.lagradost.cloudstream3.extractors.Vidguardto
+import com.lagradost.cloudstream3.extractors.Vtbe
+
 
 class SxyPrn : MainAPI() {
     override var mainUrl = "https://sxyprn.com"
@@ -133,11 +140,27 @@ class SxyPrn : MainAPI() {
 
         callback.invoke(
             ExtractorLink(
-                this.name, this.name, url, referer = data, quality = Qualities.Unknown.value
+                this.name, this.name, url, referer = "", quality = Qualities.Unknown.value
             )
         )
+
+        val postDiv = document.selectFirst("div.post_text").document
+        val link = postDiv.select("a.extlink_icon")?.attr("href")
+            .mapNotNull {
+                loadExtractor(
+                    it,
+                    it,
+                    subtitleCallback,
+                    callback
+                )
+            }
 
         return true
     }
 
+}
+
+
+class MyDood : DoodLaExtractor() {
+    override var mainUrl = "https://d000d.com"
 }
