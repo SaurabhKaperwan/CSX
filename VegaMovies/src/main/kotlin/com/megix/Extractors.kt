@@ -54,7 +54,7 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else {
+            else if(link.contains("dl.php")) {
                 callback.invoke(
                     ExtractorLink(
                         "V-Cloud[Download] $size",
