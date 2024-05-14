@@ -143,7 +143,7 @@ class SxyPrn : MainAPI() {
             )
         }
 
-       /* val parsed = AppUtils.parseJson<Map<String, String>>(
+        val parsed = AppUtils.parseJson<Map<String, String>>(
             document.select("span.vidsnfo").attr("data-vnfo")
         )
         parsed[parsed.keys.toList()[0]]
@@ -153,21 +153,19 @@ class SxyPrn : MainAPI() {
         tmp[1] += "8"
         tmp = updateUrl(tmp)
 
-        url = fixUrl(tmp.joinToString("/"))*/
-
-        val videoTag = document.selectFirst("video")
-        val url = fixUrl(videoTag.attr("src"))
-        val realUrl = "https://sxyprn.com" + url
+        url = fixUrl(tmp.joinToString("/"))
 
         callback.invoke(
             ExtractorLink(
                 this.name,
                 this.name,
-                realUrl,
-                referer = data,
+                url,
+                referer = "",
                 quality = Qualities.Unknown.value
             )
         )
         return true
     }
 }
+
+
