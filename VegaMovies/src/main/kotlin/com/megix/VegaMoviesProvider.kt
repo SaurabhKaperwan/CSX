@@ -105,8 +105,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             for(HPTag in HPTags) {
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(HPTag)?.groupValues?.get(1) ?: "Unknown"
-                val qualityRegex = Regex("""1080p|720p|480p|2160p|4K""")
-                val quality = qualityRegex.find(HPTag)?.value ?: "Unknown"
+                val qualityRegex = Regex("""(1080p|720p|480p|2160p|4K|[0-9]*0p)""")
+                val quality = qualityRegex.find(HPTag)?.groupValues?.get(1) ?: "Unknown"
 
                 var Eurl = ""
 
