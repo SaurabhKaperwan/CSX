@@ -130,6 +130,7 @@ class SxyPrn : MainAPI() {
         allLinks.forEach { link ->
             when {
                 link.contains("doodstream") -> link.replace("doodstream", "d000d")
+                link.contains("vidguard") -> link.replace("vidguard.to", "listeamed.net")
                 link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
                 link.contains("voe.sx") -> link.replace("voe.sx", "michaelapplysome.com")
                 else -> link
@@ -156,7 +157,7 @@ class SxyPrn : MainAPI() {
 
         callback.invoke(
             ExtractorLink(
-                this.name, this.name, url, referer = data, quality = Qualities.Unknown.value
+                this.name, this.name, url, referer = mainUrl, quality = Qualities.Unknown.value
             )
         )
 

@@ -3,9 +3,9 @@ package com.megix
 import android.content.Context
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
-import com.lagradost.cloudstream3.extractors.DoodLaExtractor
 import com.lagradost.cloudstream3.extractors.Vidguardto
 import com.lagradost.cloudstream3.extractors.Vtbe
+import com.lagradost.cloudstream3.extractors.Filesim
 
 
 @CloudstreamPlugin
@@ -18,5 +18,6 @@ class SxyPrnProvider : Plugin() {
         registerExtractorAPI(Vtbe())
         registerExtractorAPI(MyVoe())
         registerExtractorAPI(MyDood())
+        registerExtractorAPI(Filesim())
     }
 }
