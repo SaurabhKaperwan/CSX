@@ -35,7 +35,7 @@ open class VCloud : ExtractorApi() {
             if (link.contains("pixeldrain")) {
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud $size",
+                        "Pixeldrain",
                         "Pixeldrain $size",
                         link,
                         "",
@@ -46,7 +46,7 @@ open class VCloud : ExtractorApi() {
             else if(link.contains("workers.dev") || link.contains("cloudflare")) {
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud $size",
+                        "V-Cloud",
                         "V-Cloud $size",
                         link,
                         "",
@@ -57,7 +57,7 @@ open class VCloud : ExtractorApi() {
             else if(link.contains("dl.php")) {
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud[Download] $size",
+                        "V-Cloud[Download]",
                         "V-Cloud[Download] $size",
                         link,
                         "",
