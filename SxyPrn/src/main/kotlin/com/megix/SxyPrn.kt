@@ -168,8 +168,8 @@ class SxyPrn : MainAPI() {
                     referer = referer,
                     quality = Qualities.Unknown.value
                 )
-                i++
             )
+            i++
         }
 
         extlinkList.forEach(callback)
