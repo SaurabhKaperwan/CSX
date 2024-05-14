@@ -133,6 +133,7 @@ class SxyPrn : MainAPI() {
                 link.contains("vidguard") -> link.replace("vidguard.to", "listeamed.net")
                 link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
                 link.contains("voe.sx") -> link.replace("voe.sx", "michaelapplysome.com")
+                else -> link
                 }
             loadExtractor(
                 link,

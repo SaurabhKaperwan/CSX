@@ -2,8 +2,6 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
 
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
@@ -28,7 +26,7 @@ open class VCloud : ExtractorApi() {
             base64Decode(changedLink ?: return), cookies = res.cookies, headers = mapOf(
                 "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
             )
-        )
+        ).document
         val div = document.selectFirst("div.card-body")
         val aTag = div.select("a").MapNotNull { it->
             val link = it.attr("href")
