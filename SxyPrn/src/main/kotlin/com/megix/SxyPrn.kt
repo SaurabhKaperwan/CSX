@@ -156,16 +156,17 @@ class SxyPrn : MainAPI() {
         url = fixUrl(tmp.joinToString("/"))
 
         val referers = listOf(url, mainUrl, "")
+        val links = listOf(url, url, url)
         val extlinkList = mutableListOf<ExtractorLink>()
-        var i = 1
+        var i = 0
 
-        referers.apmap {
+        links.apmap {
             callback.invoke(
                 ExtractorLink(
-                    "Sxyprn $i",
-                    "Sxyprn $i",
-                    url,
-                    referer = it,
+                    "Sxyprn ${i+1}",
+                    "Sxyprn ${i+1}",
+                    it,
+                    referer = links[i],
                     quality = Qualities.Unknown.value
                 )
             )
