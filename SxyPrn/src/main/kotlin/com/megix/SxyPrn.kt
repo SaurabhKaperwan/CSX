@@ -157,13 +157,14 @@ class SxyPrn : MainAPI() {
 
         callback.invoke(
             ExtractorLink(
-                this.name, this.name, url, referer = mainUrl, quality = Qualities.Unknown.value
+                this.name, this.name, url, referer = url, quality = Qualities.Unknown.value
             )
         )
 
+
         callback.invoke(
             ExtractorLink(
-                this.name, this.name, url, referer = url, quality = Qualities.Unknown.value
+                this.name, this.name, url, referer = mainUrl, quality = Qualities.Unknown.value
             )
         )
 
