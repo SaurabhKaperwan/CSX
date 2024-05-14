@@ -22,15 +22,16 @@ open class VCloud : ExtractorApi() {
             regex.find(doc2)?.groupValues?.get(1)?.substringAfter("r=")
         }
         val header = doc.selectFirst("div.card-header")?.text()
-        app.get(
+        val document = app.get(
             base64Decode(changedLink ?: return), cookies = res.cookies, headers = mapOf(
                 "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
             )
-        ).document.select("p.text-success ~ a").apmap {
+        )
+        val div = document.selectFirst("div.card-body")
+        val aTag = div.select("a").apmap {
             val link = it.attr("href")
             if ( link.contains("workers.dev") || link.contains("cloudflare") || link.contains("pixeldrain")
-                || link.contains("dl.php") || it.text().contains("Download")
-             ) {
+                || link.contains("dl.php") ) {
                 callback.invoke(
                     ExtractorLink(
                         this.name,

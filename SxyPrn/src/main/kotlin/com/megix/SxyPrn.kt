@@ -155,18 +155,22 @@ class SxyPrn : MainAPI() {
 
         url = fixUrl(tmp.joinToString("/"))
 
-        callback.invoke(
-            ExtractorLink(
-                this.name, this.name, url, referer = url, quality = Qualities.Unknown.value
-            )
-        )
+        val referers = listOf(url, mainUrl, "")
+        val extlinkList = mutableListOf<ExtractorLink>()
 
-
-        callback.invoke(
-            ExtractorLink(
-                this.name, this.name, url, referer = mainUrl, quality = Qualities.Unknown.value
+        referers.forEach { referer ->
+            extlinkList.add(
+                ExtractorLink(
+                    this.name,
+                    this.name,
+                    url,
+                    referer = referer,
+                    quality = Qualities.Unknown.value
+                )
             )
-        )
+        }
+
+        extlinkList.forEach(callback)
 
         return true
     }
