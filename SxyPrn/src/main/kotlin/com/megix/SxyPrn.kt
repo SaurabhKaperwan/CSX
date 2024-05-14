@@ -166,7 +166,7 @@ class SxyPrn : MainAPI() {
                     "Sxyprn ${i+1}",
                     "Sxyprn ${i+1}",
                     it,
-                    referer = links[i],
+                    referer = referers[i],
                     quality = Qualities.Unknown.value
                 )
             )
