@@ -28,7 +28,7 @@ open class VCloud : ExtractorApi() {
             )
         ).document
         val div = document.selectFirst("div.card-body")
-        val aTag = div.select("a").MapNotNull { it->
+        val aTag = div.select("a").apmap {
             val link = it.attr("href")
             if ( link.contains("workers.dev") || link.contains("cloudflare") || link.contains("pixeldrain")
                 || link.contains("dl.php") ) {
