@@ -161,6 +161,12 @@ class SxyPrn : MainAPI() {
             )
         )
 
+        callback.invoke(
+            ExtractorLink(
+                this.name, this.name, url, referer = url, quality = Qualities.Unknown.value
+            )
+        )
+
         return true
     }
 
