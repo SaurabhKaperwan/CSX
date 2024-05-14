@@ -115,7 +115,7 @@ class SxyPrn : MainAPI() {
         return sut
     }
 
-    override suspend fun loadLinks(
+   override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -134,7 +134,7 @@ class SxyPrn : MainAPI() {
                 link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
                 link.contains("voe.sx") -> link.replace("voe.sx", "michaelapplysome.com")
                 else -> link
-                }
+            }
             loadExtractor(
                 link,
                 referer = "",
@@ -155,14 +155,14 @@ class SxyPrn : MainAPI() {
 
         url = fixUrl(tmp.joinToString("/"))
 
-       callback.invoke(
+        callback.invoke(
             ExtractorLink(
                 this.name,
                 this.name,
                 url,
                 referer = url,
                 quality = Qualities.Unknown.value,
-                val headers = mapOf(
+                headers = mapOf(
                     "Accept" to "*/*",
                     "Accept-Encoding" to "identity;q=1, *;q=0",
                     "Accept-Language" to "en-GB,en;q=0.8",
