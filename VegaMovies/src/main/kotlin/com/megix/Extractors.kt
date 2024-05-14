@@ -2,6 +2,8 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
+import org.jsoup.nodes.Element
+import org.jsoup.select.Elements
 
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
@@ -28,7 +30,7 @@ open class VCloud : ExtractorApi() {
             )
         )
         val div = document.selectFirst("div.card-body")
-        val aTag = div.select("a").apmap {
+        val aTag = div.select("a").MapNotNull { it->
             val link = it.attr("href")
             if ( link.contains("workers.dev") || link.contains("cloudflare") || link.contains("pixeldrain")
                 || link.contains("dl.php") ) {

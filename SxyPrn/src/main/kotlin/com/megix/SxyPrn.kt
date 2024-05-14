@@ -124,7 +124,7 @@ class SxyPrn : MainAPI() {
         val document = app.get(data).document
 
         val postDiv = document.selectFirst("div.post_text")
-        val links = postDiv.select("a.extlink_icon")
+        val links = fixUrlNull(postDiv.select("a.extlink_icon"))
         val allLinks = links.mapNotNull { it.attr("href") }.toList()
 
         allLinks.forEach { link ->
@@ -133,7 +133,6 @@ class SxyPrn : MainAPI() {
                 link.contains("vidguard") -> link.replace("vidguard.to", "listeamed.net")
                 link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
                 link.contains("voe.sx") -> link.replace("voe.sx", "michaelapplysome.com")
-                else -> link
                 }
             loadExtractor(
                 link,
