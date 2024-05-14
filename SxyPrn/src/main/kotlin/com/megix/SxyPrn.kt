@@ -161,9 +161,18 @@ class SxyPrn : MainAPI() {
                 this.name,
                 url,
                 referer = url,
-                    quality = Qualities.Unknown.value
+                quality = Qualities.Unknown.value
+                headers = mapOf(
+                    "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                    "Accept" to "*/*",
+                    "Accept-Encoding" to "identity;q=1, *;q=0",
+                    "Accept-Language" to "en-GB,en;q=0.8",
+                    "Cache-Control" to "no-cache",
+                    "Connection" to "keep-alive",
+                    "Host" to "c7.trafficdeposit.com"
                 )
             )
+        )
 
         return true
     }
