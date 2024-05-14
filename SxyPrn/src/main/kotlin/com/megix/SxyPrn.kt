@@ -155,23 +155,37 @@ class SxyPrn : MainAPI() {
 
         url = fixUrl(tmp.joinToString("/"))
 
-        val referers = listOf(url, mainUrl, "")
-        val urls = listOf(url, url, url)
-        val extlinkList = mutableListOf<ExtractorLink>()
-        var i = 0
-
-        urls.forEach { link ->
-            callback.invoke(
-                ExtractorLink(
-                    "Sxyprn ${i+1}",
-                    "Sxyprn ${i+1}",
-                    link,
-                    referer = referers.getOrNull(i) ?: "",
-                    quality = Qualities.Unknown.value
-                )
+        callback.invoke(
+            ExtractorLink(
+                "Sxyprn 1",
+                "Sxyprn 1",
+                url,
+                referer = url,
+                quality = Qualities.Unknown.value
             )
-            i++
-        }
+        )
+
+        callback.invoke(
+            ExtractorLink(
+                "Sxyprn 2",
+                "Sxyprn 2",
+                url,
+                referer = mainUrl,
+                quality = Qualities.Unknown.value
+            )
+        )
+
+        callback.invoke(
+            ExtractorLink(
+                "Sxyprn 3",
+                "Sxyprn 3",
+                url,
+                referer = "",
+                quality = Qualities.Unknown.value
+            )
+        )
+
+
         return true
     }
 
