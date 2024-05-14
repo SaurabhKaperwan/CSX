@@ -124,7 +124,7 @@ class SxyPrn : MainAPI() {
         val document = app.get(data).document
 
         val postDiv = document.selectFirst("div.post_text")
-        val links = postDiv.select("a.extlink_icon")
+        val links = postDiv.select("a.extlink_icon").mapNotNull { it.attr("href") }.toList()
         val allLinks = links.mapNotNull { it.attr("href") }.toList()
 
         allLinks.forEach { link ->
@@ -156,17 +156,17 @@ class SxyPrn : MainAPI() {
         url = fixUrl(tmp.joinToString("/"))
 
         val referers = listOf(url, mainUrl, "")
-        val links = listOf(url, url, url)
+        val urls = listOf(url, url, url)
         val extlinkList = mutableListOf<ExtractorLink>()
         var i = 0
 
-        links.forEach { link ->
+        urls.forEach { link ->
             callback.invoke(
                 ExtractorLink(
                     "Sxyprn ${i+1}",
                     "Sxyprn ${i+1}",
                     link,
-                    referer = referers[i],
+                    referer = referers.getOrNull(i) ?: "",
                     quality = Qualities.Unknown.value
                 )
             )
