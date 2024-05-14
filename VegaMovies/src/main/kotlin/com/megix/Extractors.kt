@@ -28,49 +28,46 @@ open class VCloud : ExtractorApi() {
             )
         ).document
 
-        val links = document.selectFirst("div.card-body > h2 > a").attr("href")
         val size = document.selectFirst("i#size")?.text()
-        if (links.contains("pixeldrain"))
-        {
-            callback.invoke(
-                ExtractorLink(
-                    "V-Cloud",
-                    "PixelDrain $size",
-                    links,
-                    referer = links,
-                    quality = getIndexQuality(header),
-                    type = INFER_TYPE
+        val div = document.selectFirst("div.card-body")
+        div.select("a").apmap {
+            val link = it.attr("href")
+            if (link.contains("pixeldrain")) {
+                callback.invoke(
+                    ExtractorLink(
+                        "V-Cloud $size",
+                        "Pixeldrain $size",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
                 )
-            )
-        }
-        else if (links.contains("gofile")) {
-            loadExtractor(links, subtitleCallback, callback)
-        }
-        else if(links.contains("dl.php")) {
-            callback.invoke(
-                ExtractorLink(
-                    "V-Cloud",
-                    "V-Cloud[Download] $size",
-                    links,
-                    referer = "",
-                    quality = getIndexQuality(header),
-                    type = INFER_TYPE
+            }
+            else if(link.contains("workers.dev") || link.contains("cloudflare")) {
+                callback.invoke(
+                    ExtractorLink(
+                        "V-Cloud $size",
+                        "V-Cloud $size",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
                 )
-            )
-        }
-        else {
-            callback.invoke(
-                ExtractorLink(
-                    "V-Cloud",
-                    "V-Cloud $size",
-                    links,
-                    referer = "",
-                    quality = getIndexQuality(header),
-                    type = INFER_TYPE
+            }
+            else {
+                callback.invoke(
+                    ExtractorLink(
+                        "V-Cloud[Download] $size",
+                        "V-Cloud[Download] $size",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
                 )
-            )
+            }
         }
     }
+
 
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
