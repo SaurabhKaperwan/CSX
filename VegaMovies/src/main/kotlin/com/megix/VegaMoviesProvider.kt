@@ -87,9 +87,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } ?: ""
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
+        val documentText = document.text()
+
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
-                  Regex("Series synopsis").containsMatchIn(document) || Regex("Series Name").containsMatchIn(document)) {
+                  Regex("Series synopsis").containsMatchIn(documentText) || Regex("Series Name").containsMatchIn(documentText)) {
             TvType.TvSeries
         } else {
             TvType.Movie
