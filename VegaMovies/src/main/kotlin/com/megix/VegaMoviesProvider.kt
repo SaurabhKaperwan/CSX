@@ -62,7 +62,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..2) {
+        for (i in 1..3) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
@@ -118,8 +118,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)""")
                 val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)""")
                 val regex6 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
+                val regex7 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
 
-                val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6)
+                val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6, regex7)
 
                 for (regex in regexList) {
                     val match = regex.find(HPTag)
@@ -169,7 +170,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if (data.contains("vcloud.lol") || data.contains("filebee")) {
+        if (data.contains("vcloud.lol") {
             loadExtractor(data, subtitleCallback, callback)
             return true
         } else {
