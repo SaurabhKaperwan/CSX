@@ -170,7 +170,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if (data.contains("vcloud.lol") {
+        if (data.contains("vcloud.lol")) {
             loadExtractor(data, subtitleCallback, callback)
             return true
         } else {
