@@ -51,6 +51,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } ?: ""
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
+        val noscriptTag = this.selectFirst("noscript")
         val posterUrl = if (noscriptTag != null) {
             fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
         } else {
