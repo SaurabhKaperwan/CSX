@@ -40,7 +40,7 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    private suspend fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -51,8 +51,12 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         } ?: ""
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val dataSrcset = this.selectFirst("img.blog-picture")?.attr("data-srcset")
-        val posterUrl = fixUrlNull(dataSrcset.split(",").first().trim().split(" ").first())
+        var posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
+
+        if(posterUrl == null) {
+            val document = app.get(url).document
+            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
