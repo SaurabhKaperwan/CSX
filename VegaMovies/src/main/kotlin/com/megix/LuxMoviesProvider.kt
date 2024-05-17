@@ -54,7 +54,7 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         var posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
 
         if(posterUrl == null) {
-            val document = app.get(url).document
+            val document = app.get(href).document
             posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         }
 

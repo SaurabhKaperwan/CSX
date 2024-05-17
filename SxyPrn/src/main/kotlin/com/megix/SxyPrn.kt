@@ -127,8 +127,8 @@ class SxyPrn : MainAPI() {
         val links = postDiv?.select("a.extlink_icon")
         val allLinks = links?.mapNotNull { it.attr("href") }?.toList() ?: emptyList()
 
-        allLinks.forEach { link ->
-            when {
+       allLinks.forEach { link ->
+            val fixedLink = when {
                 link.contains("doodstream") -> link.replace("doodstream", "d000d")
                 link.contains("vidguard") -> link.replace("vidguard.to", "listeamed.net")
                 link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
@@ -136,12 +136,13 @@ class SxyPrn : MainAPI() {
                 else -> link
             }
             loadExtractor(
-                link,
+                fixedLink,
                 referer = "",
                 subtitleCallback,
                 callback
             )
         }
+
 
         val parsed = AppUtils.parseJson<Map<String, String>>(
             document.select("span.vidsnfo").attr("data-vnfo")
