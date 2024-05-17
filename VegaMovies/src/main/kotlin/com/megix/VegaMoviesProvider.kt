@@ -51,8 +51,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } ?: ""
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val noscriptTag = this.selectFirst("noscript")
-        val posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+        val posterUrl = if (noscriptTag != null) {
+            fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+        } else {
+            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
+        }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -62,8 +65,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..2) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
+        for (i in 1..3) {
+            val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 
@@ -132,12 +135,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
                 val document2 = app.get(Eurl).document
                 val vcloudRegex1 = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                val vcloud2Regex2 = Regex("""https:\/\/vcloud\.lol\/\w+""")
+                val vcloudRegex2 = Regex("""https:\/\/vcloud\.lol\/\w+""")
                 val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
 
                 var vcloudLinks = vcloudRegex1.findAll(document2.html()).mapNotNull { it.value }.toList()
                 if(vcloudLinks.isEmpty()) {
-                    vcloudLinks = vcloud2Regex2.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    vcloudLinks = vcloudRegex2.findAll(document2.html()).mapNotNull { it.value }.toList()
                     if(vcloudLinks.isEmpty()){
                         vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
                     }
@@ -170,7 +173,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if (data.contains("vcloud.lol")) {
+        if (data.contains("vcloud.lol") || data.contains("fastdl")) {
             loadExtractor(data, subtitleCallback, callback)
             return true
         } else {
