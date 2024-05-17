@@ -62,8 +62,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
-            val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
+        for (i in 1..2) {
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 
