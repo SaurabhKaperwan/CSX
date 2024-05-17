@@ -52,10 +52,16 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
-        val posterUrl = if (noscriptTag != null) {
-            fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
-        } else {
-            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
+        val posterUrl = when {
+            noscriptTag != null -> {
+                fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+            }
+            this.selectFirst("img.blog-picture") != null -> {
+                fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
+            }
+            else -> {
+                fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
+            }
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
