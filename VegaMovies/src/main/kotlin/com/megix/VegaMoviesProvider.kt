@@ -114,7 +114,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val qualityRegex = Regex("""(1080p|720p|480p|2160p|4K|[0-9]*0p)""")
                 val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
 
-                val unilinks = if (tag.tagName() == "h3") tag.nextElementSibling()?.toString() else tag?.toString()
+                val unilinks = tag.nextElementSibling()?.toString()
 
                 var Eurl = ""
 
