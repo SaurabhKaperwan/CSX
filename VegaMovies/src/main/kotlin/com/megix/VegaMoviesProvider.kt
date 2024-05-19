@@ -105,6 +105,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val div = document.select("div.entry-content")
             val sTag = "(Season|S0)"
             val hTags = div.select("h3:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K)), h5:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
+                .filter { element -> !element.text().contains("Download", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
@@ -135,29 +136,30 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                         break
                     }
                 }
+                if(Eurl != null){
+                    val document2 = app.get(Eurl).document
+                    val vcloudRegex1 = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                    val vcloudRegex2 = Regex("""https:\/\/vcloud\.lol\/\w+""")
+                    val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
 
-                val document2 = app.get(Eurl).document
-                val vcloudRegex1 = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                val vcloudRegex2 = Regex("""https:\/\/vcloud\.lol\/\w+""")
-                val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
-
-                var vcloudLinks = vcloudRegex1.findAll(document2.html()).mapNotNull { it.value }.toList()
-                if(vcloudLinks.isEmpty()) {
-                    vcloudLinks = vcloudRegex2.findAll(document2.html()).mapNotNull { it.value }.toList()
-                    if(vcloudLinks.isEmpty()){
-                        vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    var vcloudLinks = vcloudRegex1.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    if(vcloudLinks.isEmpty()) {
+                        vcloudLinks = vcloudRegex2.findAll(document2.html()).mapNotNull { it.value }.toList()
+                        if(vcloudLinks.isEmpty()){
+                            vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                        }
                     }
+                    val episodes = vcloudLinks.mapNotNull { vcloudlink ->
+                        Episode(
+                            name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}",
+                            data = vcloudlink,
+                            season = seasonNum,
+                            episode = vcloudLinks.indexOf(vcloudlink) + 1,
+                        )
+                    }
+                    tvSeriesEpisodes.addAll(episodes)
+                    seasonNum++
                 }
-                val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                    Episode(
-                        name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}",
-                        data = vcloudlink,
-                        season = seasonNum,
-                        episode = vcloudLinks.indexOf(vcloudlink) + 1,
-                    )
-                }
-                tvSeriesEpisodes.addAll(episodes)
-                seasonNum++
             }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
