@@ -114,28 +114,22 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val qualityRegex = Regex("""(1080p|720p|480p|2160p|4K|[0-9]*0p)""")
                 val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
 
-                var unilinks = ""
+                val unilinks = if (tag.tagName() == "h3") tag.nextElementSibling()?.toString() else tag?.toString()
 
-                if(tag.tagName() == "h3") {
-                    unilinks = tag.nextElementSibling().toString()
-                }
-                else {
-                    unilinks = tag.toString()
-                }
                 var Eurl = ""
 
-                val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
-                val regex2 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*G-Direct)""")
-                val regex3 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)""")
-                val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)""")
-                val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)""")
-                val regex6 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
-                val regex7 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)(?!.*G-Direct)""")
-                val regex8 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+                val regexList = listOf (
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+                )
 
-                val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6, regex7, regex8)
-
-                if(unilinks != null) {
+                if (unilinks != null) {
                     for (regex in regexList) {
                         val match = regex.find(unilinks)
                         if (match != null) {
@@ -145,16 +139,16 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     }
                 }
 
-                if(Eurl != null){
+                if (Eurl.isNotBlank()) {
                     val document2 = app.get(Eurl).document
                     val vcloudRegex1 = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
                     val vcloudRegex2 = Regex("""https:\/\/vcloud\.lol\/\w+""")
                     val fastDlRegex = Regex("""https:\/\/fastdl\.icu\/embed\?download=[a-zA-Z0-9]+""")
 
                     var vcloudLinks = vcloudRegex1.findAll(document2.html()).mapNotNull { it.value }.toList()
-                    if(vcloudLinks.isEmpty()) {
+                    if (vcloudLinks.isEmpty()) {
                         vcloudLinks = vcloudRegex2.findAll(document2.html()).mapNotNull { it.value }.toList()
-                        if(vcloudLinks.isEmpty()){
+                        if (vcloudLinks.isEmpty()) {
                             vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
                         }
                     }
@@ -166,8 +160,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                             episode = vcloudLinks.indexOf(vcloudlink) + 1,
                         )
                     }
-                    tvSeriesEpisodes.addAll(episodes)
-                    seasonNum++
+                    if(episodes != null) {
+                        tvSeriesEpisodes.addAll(episodes)
+                        seasonNum++
+                    }
                 }
             }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
