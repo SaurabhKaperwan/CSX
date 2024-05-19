@@ -104,6 +104,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         if (tvType == TvType.TvSeries) {
             val div = document.select("div.entry-content")
             val hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K)),h5:matches((?i)(480p|720p|1080p|2160p|4K))")
+                .filter { element -> !element.text().contains("Download", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
@@ -134,11 +135,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
                 val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6, regex7, regex8)
 
-                for (regex in regexList) {
-                    val match = regex.find(unilinks)
-                    if (match != null) {
-                        Eurl = match.value
-                        break
+                if(unilinks != null) {
+                    for (regex in regexList) {
+                        val match = regex.find(unilinks)
+                        if (match != null) {
+                            Eurl = match.value
+                            break
+                        }
                     }
                 }
 
