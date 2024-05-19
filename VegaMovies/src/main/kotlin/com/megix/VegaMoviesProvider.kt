@@ -52,9 +52,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+        var posterUrl = noscriptTag.selectFirst("img")?.attr("src")
         if(posterUrl == null) {
-            posterUrl = fixUrlNull(this.selectFirst("img.blog-picture").attr("src"))
+            posterUrl = fthis.selectFirst("img.blog-picture").attr("src")
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
@@ -170,10 +170,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                             episode = vcloudLinks.indexOf(vcloudlink) + 1,
                         )
                     }
-                    if(episodes != null) {
-                        tvSeriesEpisodes.addAll(episodes)
-                        seasonNum++
-                    }
+
+                    tvSeriesEpisodes.addAll(episodes)
+                    seasonNum++
                 }
             }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
