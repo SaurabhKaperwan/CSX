@@ -50,12 +50,12 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
             }
         } ?: ""
 
-        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        var posterUrl = this.selectFirst("img.blog-picture")?.attr("data-src")
+        val href = this.selectFirst("a")?.attr("href")?.toString()
+        var posterUrl = this.selectFirst("img.blog-picture")?.attr("data-src")?.toString()
 
-        if(posterUrl == null) {
+        if(posterUrl.isBlank()) {
             val document = app.get(href, interceptor = cfInterceptor).document
-            posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")
+            posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")?.toString()
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {

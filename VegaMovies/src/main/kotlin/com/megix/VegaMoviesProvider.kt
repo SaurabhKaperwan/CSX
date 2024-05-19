@@ -50,14 +50,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             }
         } ?: ""
 
-        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
+        val href = this.selectFirst("a")?.attr("href")?.toString()
         val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
-        if(posterUrl == null) {
-            posterUrl = fixUrlNull(this.selectFirst("img.blog-picture").attr("src"))
-            if(posterUrl == null) {
-                val document = app.get(href).document
-                posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        var posterUrl = noscriptTag.selectFirst("img")?.attr("src")?.toString()
+        if(posterUrl.isBlank()) {
+            posterUrl = this.selectFirst("img.blog-picture")?.attr("src")
+            if(posterUrl.isBlank()) {
+                val document = app.get(href, interceptor = cfInterceptor).document
+                posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")?.toString()
             }
         }
 
@@ -83,7 +83,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        val document = app.get(url, interceptor = cfInterceptor).document
         val title = document.selectFirst("meta[property=og:title]")?.attr("content")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
