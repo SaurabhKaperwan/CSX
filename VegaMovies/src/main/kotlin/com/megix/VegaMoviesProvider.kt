@@ -40,7 +40,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    private suspend fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -52,10 +52,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = if (noscriptTag != null) {
-            fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
-        } else {
-            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
+        var posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+
+        if(posterUrl == null) {
+            val document = app.get(href).document
+            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
@@ -132,6 +133,17 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 if (unilinks != null) {
                     for (regex in regexList) {
                         val match = regex.find(unilinks)
+                        if (match != null) {
+                            Eurl = match.value
+                            break
+                        }
+                    }
+                }
+
+                if(Eurl.isBlank()) {
+                    val newlinks = tag.toString()
+                    for (regex in regexList) {
+                        val match = regex.find(newlinks)
                         if (match != null) {
                             Eurl = match.value
                             break
