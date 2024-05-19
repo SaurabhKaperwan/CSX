@@ -3,9 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.AppUtils
 import com.lagradost.cloudstream3.utils.ExtractorLink
-import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.nodes.Element
-import com.lagradost.cloudstream3.utils.loadExtractor
 
 
 
@@ -122,28 +120,6 @@ class SxyPrn : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val document = app.get(data).document
-
-        val postDiv = document.selectFirst("div.post_text")
-        val links = postDiv?.select("a.extlink_icon")
-        val allLinks = links?.mapNotNull { it.attr("href") }?.toList() ?: emptyList()
-
-       allLinks.forEach { link ->
-            val fixedLink = when {
-                link.contains("doodstream") -> link.replace("doodstream", "d000d")
-                link.contains("vidguard") -> link.replace("vidguard.to", "listeamed.net")
-                link.contains("streamtape.com") -> link.replace("streamtape.com", "streamtape.to")
-                link.contains("voe.sx") -> link.replace("voe.sx", "michaelapplysome.com")
-                else -> link
-            }
-            loadExtractor(
-                fixedLink,
-                referer = "",
-                subtitleCallback,
-                callback
-            )
-        }
-
-
         val parsed = AppUtils.parseJson<Map<String, String>>(
             document.select("span.vidsnfo").attr("data-vnfo")
         )

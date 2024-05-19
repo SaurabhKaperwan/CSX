@@ -40,7 +40,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -53,10 +53,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
         var posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
-
         if(posterUrl == null) {
-            val document = app.get(href).document
-            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+            posterUrl = fixUrlNull(this.selectFirst("img.blog-picture").attr("src"))
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
@@ -67,7 +65,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
+        for (i in 1..2) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
