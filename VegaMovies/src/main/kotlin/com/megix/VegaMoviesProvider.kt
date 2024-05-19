@@ -40,7 +40,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -55,14 +55,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         var posterUrl = if (noscriptTag != null) {
             fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
         } else {
-            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
+            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
         }
-
-        if(posterUrl == null) {
-            val document = app.get(href).document
-            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        }
-
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -108,17 +102,19 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvType == TvType.TvSeries) {
-            val div = document.selectFirst("div.entry-content")
-            val HPRegex = Regex("""<(?:h3|h5).*?>.*?(?:1080p|720p|480p|2160p|4K).*?(?:MB|GB).*?\s*<p.*?class="(?:dwd-button|btn btn-sm btn-outline)".*?<\/p>""")
-            val HPTags = HPRegex.findAll(div.html()).mapNotNull { it.value }.toList()
+            val div = document.select("div.entry-content")
+            val sTag = "(Season|S0)"
+            val hTag = "(h3|h5)"
+            val hTags = div.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
-            for(HPTag in HPTags) {
+            for(tag in hTags) {
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(HPTag)?.groupValues?.get(1) ?: "Unknown"
+                val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
                 val qualityRegex = Regex("""(1080p|720p|480p|2160p|4K|[0-9]*0p)""")
-                val quality = qualityRegex.find(HPTag)?.groupValues?.get(1) ?: "Unknown"
+                val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
+                val nextPTag = tag.nextElementSibling()
 
                 var Eurl = ""
 
@@ -128,12 +124,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val regex4 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)""")
                 val regex5 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)""")
                 val regex6 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)""")
-                val regex7 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+                val regex7 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)(?!.*G-Direct)""")
+                val regex8 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
 
-                val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6, regex7)
+                val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6, regex7, regex8)
 
                 for (regex in regexList) {
-                    val match = regex.find(HPTag)
+                    val match = regex.find(nextPTag.toString())
                     if (match != null) {
                         Eurl = match.value
                         break
