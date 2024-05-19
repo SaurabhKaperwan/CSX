@@ -120,7 +120,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     unilinks = tag.nextElementSibling().toString()
                 }
                 else {
-                    unilinks = tag.selectFirst("p>a").toString()
+                    unilinks = tag.toString()
                 }
                 var Eurl = ""
 
