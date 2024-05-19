@@ -104,8 +104,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         if (tvType == TvType.TvSeries) {
             val div = document.select("div.entry-content")
             val sTag = "(Season|S0)"
-            val hTag = "(h3|h5)"
-            val hTags = div.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
+            val hTags = div.select("h3:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K)), h5:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
