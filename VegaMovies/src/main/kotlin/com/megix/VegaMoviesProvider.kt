@@ -40,7 +40,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    private suspend fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -52,9 +52,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = noscriptTag.selectFirst("img")?.attr("src")
+        var posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
         if(posterUrl == null) {
-            posterUrl = this.selectFirst("img.blog-picture").attr("src")
+            posterUrl = fixUrlNull(this.selectFirst("img.blog-picture").attr("src"))
+            if(posterUrl == null) {
+                val document = app.get(href).document
+                posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+            }
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
