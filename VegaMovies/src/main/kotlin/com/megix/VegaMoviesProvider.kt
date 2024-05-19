@@ -103,9 +103,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         if (tvType == TvType.TvSeries) {
             val div = document.select("div.entry-content")
-            val sTag = "(Season|S0)"
-            val hTags = div.select("h3:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K)), h5:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
-                .filter { element -> !element.text().contains("Download", true) }
+            val hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K)),h5:matches((?i)(480p|720p|1080p|2160p|4K))")
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
@@ -114,8 +112,15 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
                 val qualityRegex = Regex("""(1080p|720p|480p|2160p|4K|[0-9]*0p)""")
                 val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
-                val nextPTag = tag.nextElementSibling()
 
+                var unilinks = ""
+
+                if(tag.tagName() == "h3") {
+                    unilinks = tag.nextElementSibling().toString()
+                }
+                else {
+                    unilinks = tag.selectFirst("p>a").toString()
+                }
                 var Eurl = ""
 
                 val regex1 = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)""")
@@ -130,12 +135,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val regexList = listOf(regex1, regex2, regex3, regex4, regex5, regex6, regex7, regex8)
 
                 for (regex in regexList) {
-                    val match = regex.find(nextPTag.toString())
+                    val match = regex.find(unilinks)
                     if (match != null) {
                         Eurl = match.value
                         break
                     }
                 }
+
                 if(Eurl != null){
                     val document2 = app.get(Eurl).document
                     val vcloudRegex1 = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
