@@ -50,15 +50,17 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             }
         } ?: ""
 
-        val href = this.selectFirst("a")?.attr("href")?.toString()
+        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = noscriptTag.selectFirst("img")?.attr("src")?.toString()
-        if(posterUrl.isBlank()) {
-            posterUrl = this.selectFirst("img.blog-picture")?.attr("src")
-            if(posterUrl.isBlank()) {
-                val document = app.get(href, interceptor = cfInterceptor).document
-                posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")?.toString()
-            }
+        var posterUrl = if (noscriptTag != null) {
+            fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+        } else {
+            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
+        }
+
+        if(posterUrl == null) {
+            val document = app.get(href).document
+            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         }
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
