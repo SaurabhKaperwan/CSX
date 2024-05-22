@@ -106,6 +106,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         if (tvType == TvType.TvSeries) {
             val div = document.select("div.entry-content")
             val hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K)),h5:matches((?i)(480p|720p|1080p|2160p|4K))")
+                 .filter { element -> !element.text().contains("Zip", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
@@ -127,7 +128,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?!.*Zip)""")
                 )
 
                 if (unilinks != null) {

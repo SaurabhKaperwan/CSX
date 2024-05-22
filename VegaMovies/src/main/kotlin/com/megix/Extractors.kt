@@ -30,7 +30,7 @@ open class VegaCloud : ExtractorApi() {
 
         val size = document.selectFirst("i#size")?.text()
         val div = document.selectFirst("div.card-body")
-        div.select("a")?.apmap {
+        div.select("a").apmap {
             val link = it.attr("href")
             if (link.contains("pixeldra")) {
                 callback.invoke(
