@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
+
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://vegamovies.yt"
     override var name = "VegaMovies"
@@ -40,7 +41,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -58,11 +59,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
         }
 
-        if(posterUrl == null) {
-            val document = app.get(href).document
-            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        }
-
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
@@ -71,8 +67,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..2) {
-            val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
+        for (i in 1..3) {
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 
@@ -85,7 +81,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url, interceptor = cfInterceptor).document
+        val document = app.get(url).document
         val title = document.selectFirst("meta[property=og:title]")?.attr("content")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -109,7 +105,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         if (tvType == TvType.TvSeries) {
             val div = document.select("div.entry-content")
             val hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K)),h5:matches((?i)(480p|720p|1080p|2160p|4K))")
-                .filter { element -> !element.text().contains("Download", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
 
@@ -129,25 +124,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
                 )
 
                 if (unilinks != null) {
                     for (regex in regexList) {
                         val match = regex.find(unilinks)
-                        if (match != null) {
-                            Eurl = match.value
-                            break
-                        }
-                    }
-                }
-
-                if(Eurl.isBlank()) {
-                    val newlinks = tag.toString()
-                    for (regex in regexList) {
-                        val match = regex.find(newlinks)
                         if (match != null) {
                             Eurl = match.value
                             break

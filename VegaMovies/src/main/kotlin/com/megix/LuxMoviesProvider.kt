@@ -5,6 +5,7 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
+
 class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://luxmovies.lat"
     override var name = "LuxMovies"
@@ -40,7 +41,7 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a")?.attr("title")
         val trimTitle = title?.let {
             if (it.contains("Download ")) {
@@ -49,17 +50,27 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
                 it
             }
         } ?: ""
-
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        var posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src"))
-
-        if(posterUrl == null) {
-            val document = app.get(href).document
-            posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image:secure:url]")?.attr("content"))
-        }
+        val imgTag = this.selectFirst("img.blog-picture")
+        val posterUrl = imgTag.attr("data-src")
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
+    }
+    override suspend fun search(query: String): List<SearchResponse> {
+        val searchResponse = mutableListOf<SearchResponse>()
+
+        for (i in 1..3) {
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
+
+            val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
+
+            searchResponse.addAll(results)
+
+            if (results.isEmpty()) break
+        }
+
+        return searchResponse
     }
 }
