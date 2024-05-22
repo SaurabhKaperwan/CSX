@@ -32,7 +32,7 @@ open class VegaCloud : ExtractorApi() {
         val div = document.selectFirst("div.card-body")
         div.select("a")?.apmap {
             val link = it.attr("href")
-            if (link.contains("pixeldrain")) {
+            if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",

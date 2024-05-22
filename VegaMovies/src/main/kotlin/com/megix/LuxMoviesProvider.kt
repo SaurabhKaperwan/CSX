@@ -52,25 +52,10 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         } ?: ""
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val imgTag = this.selectFirst("img.blog-picture")
-        val posterUrl = imgTag.attr("data-src")
+        val posterUrl = imgTag?.attr("data-src")
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
-    }
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
-
-        for (i in 1..3) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
-
-            val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
-
-            searchResponse.addAll(results)
-
-            if (results.isEmpty()) break
-        }
-
-        return searchResponse
     }
 }

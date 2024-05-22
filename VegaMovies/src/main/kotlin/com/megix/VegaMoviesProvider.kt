@@ -72,9 +72,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 
+            if (results.isEmpty()) {
+                break
+            }
             searchResponse.addAll(results)
-
-            if (results.isEmpty()) break
         }
 
         return searchResponse
@@ -119,12 +120,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 var Eurl = ""
 
                 val regexList = listOf (
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)(?!.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)(?!.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)(?!.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)(?!.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)(?!.*G-Direct)"""),
-                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)(?!.*G-Direct)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*V-Cloud)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episode Link)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Episodes Link)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Single Episode)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download)"""),
+                    Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*Download Now)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/(?=.*G-Direct)"""),
                     Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
                 )
