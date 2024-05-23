@@ -121,7 +121,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
                 val pTag = tag.nextElementSibling()
                 var aTags: List<Element>? = null
-                if (pTag != null && pTag.tagName == "P") {
+                if (pTag != null && pTag.tagName() == "p") {
                     aTags = pTag.select("a")
                 } else {
                     aTags = tag?.select("a")
