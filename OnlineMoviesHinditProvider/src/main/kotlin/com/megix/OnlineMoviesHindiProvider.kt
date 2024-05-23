@@ -22,7 +22,7 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
         "$mainUrl/hollywood-movies/page/" to "Hollywood Movies",
         "$mainUrl/bollywood-movies/page/" to "Bollywood Movies",
         "$mainUrl/tv-show/page/" to "TV Shows"
-    )
+    ) 
 
     override suspend fun getMainPage(
         page: Int,
@@ -93,32 +93,29 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
         }
     }
 
- override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
 
-    val document = app.get(data).document
-    val elements = document.select("a.button-shadow")
-    val lastElement = elements.takeIf { it.isNotEmpty() }?.lastOrNull() //select last matched
-    val href = lastElement?.attr("href") ?: ""
+        val document = app.get(data).document
+        val elements = document.select("a.button-shadow")
+        val lastElement = elements.takeIf { it.isNotEmpty() }?.lastOrNull() //select last matched
+        val href = lastElement?.attr("href") ?: ""
 
-    callback.invoke(
-        ExtractorLink(
-            this.name,
-            this.name,
-            href,
-            referer = href,
-            quality = Qualities.Unknown.value,
-            //headers = mapOf("Range" to "bytes=0-"),
+        callback.invoke(
+            ExtractorLink(
+                this.name,
+                this.name,
+                href,
+                referer = href,
+                quality = Qualities.Unknown.value,
+                //headers = mapOf("Range" to "bytes=0-"),
+            )
         )
-    )
 
-    return true
-}
-
-
-
+        return true
+    }
 }
