@@ -120,8 +120,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
 
                 val pTag = tag.nextElementSibling()
-
-                val aTags = pTag?.select("a")
+                var aTags: List<Element>? = null
+                if (pTag != null && pTag.tagName == "P") {
+                    aTags = pTag.select("a")
+                } else {
+                    aTags = tag?.select("a")
+                }
 
                 var unilink = aTags?.find { 
                     it.text().contains("V-Cloud", ignoreCase = true) ||
