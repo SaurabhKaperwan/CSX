@@ -104,7 +104,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val rating = ratingText?.substringAfter("-")
                                 ?.substringBefore("/")
                                 ?.trim()
-                                ?.toDoubleOrNull()
+                                ?.toRatingInt()
 
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
