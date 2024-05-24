@@ -66,10 +66,18 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val infoDiv = document.selectFirst("div.wp-block-image")
-        //val imdbRating = doc.select("td:contains(IMDb) + td").text()
+        val imdbRating = infoDiv.select("td:contains(IMDb) + td").text().toRatingInt()
         val plot = infoDiv.select("td:contains(Plot) + td").text()
-        //val genres = doc.select("td:contains(Genres) + td").text()
-        //val cast = doc.select("td:contains(Cast) + td").text()
+        val genresText = infoDiv.select("td:contains(Genres) + td").text()
+        val genresList = genresText.split(",").map { it.trim() }
+        val castText = infoDiv.select("td:contains(Cast) + td").text()
+        val castList = castText.split(",").map { it.trim() }
+        val actors = castList.map {
+            ActorData(
+                Actor(it),
+            )
+        }
+        
         val title = document.selectFirst("h1.title")?.text() ?: return null
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
@@ -87,6 +95,9 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
                 this.plot = plot
+                this.rating = imdbRating
+                this.actors = actors
+                this.tags = genresList
             }
         }
         else {
@@ -94,6 +105,9 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
             return newMovieLoadResponse(title, url, TvType.Movie, movieUrl) {
                 this.posterUrl = posterUrl
                 this.plot = plot
+                this.rating = imdbRating
+                this.actors = actors
+                this.tags = genresList
             }
         }
     }
@@ -104,22 +118,16 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val link = if (data.contains("full4u")) {
+        var link = data
+        if (data.contains("full4u")) {
             val document = app.get(data).document
-            val href = document.select("iframe").attr("src")
-            when {
-                href.contains("watchx.top") -> href.replace("watchx.top", "boltx.stream")
-                href.contains("bestx.stream") -> href.replace("bestx.stream", "boltx.stream")
-                href.contains("chillx.top") -> href.replace("chillx.top", "boltx.stream")
-                else -> href
-            }
-        } else {
-            when {
-                data.contains("watchx.top") -> data.replace("watchx.top", "boltx.stream")
-                data.contains("bestx.stream") -> data.replace("bestx.stream", "boltx.stream")
-                data.contains("chillx.top") -> data.replace("chillx.top", "boltx.stream")
-                else -> data
-            }
+            link = document.select("iframe").attr("src")
+        }
+        link = when {
+            link.contains("watchx.top") -> link.replace("watchx.top", "boltx.stream")
+            link.contains("bestx.stream") -> link.replace("bestx.stream", "boltx.stream")
+            link.contains("chillx.top") -> link.replace("chillx.top", "boltx.stream")
+            else -> link
         }
 
         loadExtractor(link, subtitleCallback, callback)
