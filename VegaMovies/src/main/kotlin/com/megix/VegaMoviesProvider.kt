@@ -98,9 +98,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val hTagsDisc = div.select("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")
         val pTagDisc = hTagsDisc.first()?.nextElementSibling()
         val plot = pTagDisc?.text()
-        val aTagRating = div.select("a:matches((?i)(Rating))")
-        val ratingText = aTagRating.firstOrNull()?.text()
-        val rating = ratingText?.substringAfter(":")?.trim()?.toRatingInt()
+        val aTagRatings = div.select("a:matches((?i)(Rating))")
+        val aTagRating = aTagRatings.firstOrNull()
+        val ratingText = aTagRating?.selectFirst("span")?.text()
+        val rating = ratingText?.substringAfter("-")
+                                ?.substringBefore("/")
+                                ?.trim()
+                                ?.toDoubleOrNull()
 
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
@@ -111,7 +115,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvType == TvType.TvSeries) {
-            var hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K)),h5:matches((?i)(480p|720p|1080p|2160p|4K))")
+            var hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K|[0-9]*0p)),h5:matches((?i)(480p|720p|1080p|2160p|4K|[0-9]*0p))")
                  .filter { element -> !element.text().contains("Zip", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
@@ -123,11 +127,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
 
                 val pTag = tag.nextElementSibling()
-                var aTags: List<Element>? = null
-                if (pTag != null && pTag.tagName() == "p") {
-                    aTags = pTag.select("a")
+                
+                val aTags: List<Element>? = if (pTag != null && pTag.tagName() == "p") {
+                    pTag.select("a")
                 } else {
-                    aTags = tag?.select("a")
+                    tag?.select("a")
                 }
 
                 var unilink = aTags?.find { 
