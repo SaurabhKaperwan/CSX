@@ -98,6 +98,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val hTagsDisc = div.select("h3:matches((?i)(SYNOPSIS|PLOT))")
         val pTagDisc = hTagsDisc.first()?.nextElementSibling()
         val plot = pTagDisc?.text()
+        val aTagRating = div.select("a:matches((?i)(Rating))"
+        val ratingText = aTagRating.firstOrNull()?.text()
+        val rating = ratingText?.substringAfter(":")?.trim()?.toRatingInt()
 
         val tvType = if (url.contains("season") ||
                   (title?.contains("(Season") ?: false) ||
@@ -162,12 +165,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
                 this.plot = plot
+                this.rating = rating
             }
         }
         else {
             return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
                 this.plot = plot
+                this.rating = rating
             }
         }
     }
