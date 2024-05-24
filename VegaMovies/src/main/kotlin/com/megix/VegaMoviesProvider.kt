@@ -115,7 +115,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvType == TvType.TvSeries) {
-            var hTags = div.select("h3:matches((?i)(480p|720p|1080p|2160p|4K|[0-9]*0p)),h5:matches((?i)(480p|720p|1080p|2160p|4K|[0-9]*0p))")
+            var hTags = div.select("h3:matches((?i)(4K|[0-9]*0p)),h5:matches((?i)(4K|[0-9]*0p))")
                  .filter { element -> !element.text().contains("Zip", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
@@ -134,14 +134,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     tag.select("a")
                 }
 
-                var unilink = aTags?.find { 
+                var unilink = aTags ?.find { 
                     it.text().contains("V-Cloud", ignoreCase = true) ||
                     it.text().contains("Episode", ignoreCase = true) ||
                     it.text().contains("Download", ignoreCase = true)
                 }
 
                 if(unilink == null) {
-                    unilink = aTags?.find {
+                    unilink = aTags ?.find {
                         it.text().contains("G-Direct", ignoreCase = true)
                     }
                 }

@@ -43,7 +43,7 @@ open class VegaCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("workers.dev") || link.contains("cloudflare")) {
+            else if(link.contains("workers.dev") || link.contains("cloudflare") || link.contains("r2.dev")) {
                 callback.invoke(
                     ExtractorLink(
                         "V-Cloud",
