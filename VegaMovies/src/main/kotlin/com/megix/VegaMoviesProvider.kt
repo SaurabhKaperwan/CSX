@@ -95,10 +95,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         val documentText = document.text()
         val div = document.select("div.entry-content")
-        val hTagsDisc = div.select("h3:matches((?i)(SYNOPSIS|PLOT))")
+        val hTagsDisc = div.select("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")
         val pTagDisc = hTagsDisc.first()?.nextElementSibling()
         val plot = pTagDisc?.text()
-        val aTagRating = div.select("a:matches((?i)(Rating))"
+        val aTagRating = div.select("a:matches((?i)(Rating))")
         val ratingText = aTagRating.firstOrNull()?.text()
         val rating = ratingText?.substringAfter(":")?.trim()?.toRatingInt()
 
