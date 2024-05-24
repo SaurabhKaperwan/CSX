@@ -66,7 +66,8 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val infoDiv = document.selectFirst("div.wp-block-image")
-        val imdbRating = infoDiv.select("td:contains(IMDb) + td").text().toRatingInt()
+        val imdbRatingText = infoDiv.select("td:contains(IMDb) + td").text()
+        val imdbRating = imdbRatingText.substringBefore("/").toRatingInt()
         val plot = infoDiv.select("td:contains(Plot) + td").text()
         val genresText = infoDiv.select("td:contains(Genres) + td").text()
         val genresList = genresText.split(",").map { it.trim() }
@@ -81,12 +82,16 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         val title = document.selectFirst("h1.title")?.text() ?: return null
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
+        val regex = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""")
 
-        val tvType =  if(document.selectFirst("meta[property=article:section]")?.attr("content") == "Web series") TvType.TvSeries else TvType.Movie
+        val tvType = if (document.selectFirst("meta[property=article:section]")?.attr("content") == "Web series" || regex.containsMatchIn(document.html())) {
+            TvType.TvSeries
+        } else {
+            TvType.Movie
+        }
 
         return if (tvType == TvType.TvSeries) {
 
-            val regex = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""")
             val urls = regex.findAll(document.html()).map { it.groupValues[1] }.toList()
 
             val episodes = urls.mapNotNull {
