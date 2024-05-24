@@ -131,7 +131,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val aTags: List<Element>? = if (pTag != null && pTag.tagName() == "p") {
                     pTag.select("a")
                 } else {
-                    tag?.select("a")
+                    tag.select("a")
                 }
 
                 var unilink = aTags?.find { 
