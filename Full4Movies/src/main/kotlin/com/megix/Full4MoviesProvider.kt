@@ -67,7 +67,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         val document = app.get(url).document
         val infoDiv = document.selectFirst("div.wp-block-image")
         //val imdbRating = doc.select("td:contains(IMDb) + td").text()
-        val plot = doc.select("td:contains(Plot) + td").text()
+        val plot = infoDiv.select("td:contains(Plot) + td").text()
         //val genres = doc.select("td:contains(Genres) + td").text()
         //val cast = doc.select("td:contains(Cast) + td").text()
         val title = document.selectFirst("h1.title")?.text() ?: return null
@@ -86,12 +86,14 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
+                this.plot = plot
             }
         }
         else {
             val movieUrl = Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(document.html())?.groupValues?.get(1) ?: ""
             return newMovieLoadResponse(title, url, TvType.Movie, movieUrl) {
                 this.posterUrl = posterUrl
+                this.plot = plot
             }
         }
     }
