@@ -7,7 +7,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 class Full4MoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.full4movies.casa"
+    override var mainUrl = "https://www.full4movies.credit"
     override var name = "Full4Movies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -65,6 +65,11 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
+        val infoDiv = document.selectFirst("div.wp-block-image")
+        //val imdbRating = doc.select("td:contains(IMDb) + td").text()
+        val plot = doc.select("td:contains(Plot) + td").text()
+        //val genres = doc.select("td:contains(Genres) + td").text()
+        //val cast = doc.select("td:contains(Cast) + td").text()
         val title = document.selectFirst("h1.title")?.text() ?: return null
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
@@ -116,7 +121,6 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         }
 
         loadExtractor(link, subtitleCallback, callback)
-
 
         return true
     }
