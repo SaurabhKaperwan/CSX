@@ -84,7 +84,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val title = document.selectFirst("meta[property=og:title]")?.attr("content")
-        val trimTitle = title?.let {
+        val trimTitle = title ?.let {
             if (it.contains("Download ")) {
                 it.replace("Download ", "")
             } else {
@@ -97,11 +97,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val div = document.select("div.entry-content")
         val hTagsDisc = div.select("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")
         val pTagDisc = hTagsDisc.first()?.nextElementSibling()
-        val plot = pTagDisc?.text()
+        val plot = pTagDisc ?.text()
         val aTagRatings = div.select("a:matches((?i)(Rating))")
         val aTagRating = aTagRatings.firstOrNull()
-        val ratingText = aTagRating?.selectFirst("span")?.text()
-        val rating = ratingText?.substringAfter("-")
+        val ratingText = aTagRating ?.selectFirst("span")?.text()
+        val rating = ratingText ?.substringAfter("-")
                                 ?.substringBefore("/")
                                 ?.trim()
                                 ?.toRatingInt()
