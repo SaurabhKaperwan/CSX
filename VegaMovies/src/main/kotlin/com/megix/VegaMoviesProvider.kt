@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.yt"
+    override var mainUrl = "https://vegamovies.ist"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
