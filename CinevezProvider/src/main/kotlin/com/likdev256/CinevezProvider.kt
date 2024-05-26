@@ -102,8 +102,9 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
-                if(!it.attr("href").contains("gofile")) {
-                    val href = it.attr("href").replace("/([a-z])/".toRegex(),"/e/")
+                var href = it.attr("href")
+                if(!href.contains("gofile")) {
+                    href = href.replace("/([a-z])/".toRegex(),"/e/")
                 }
                 loadExtractor(
                     href,
