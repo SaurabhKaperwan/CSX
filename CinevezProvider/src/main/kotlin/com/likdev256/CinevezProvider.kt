@@ -5,13 +5,14 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.MixDrop
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
 
 class CinevezProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.cinevez.pm/"
+    override var mainUrl = "https://www.cinevez.pm"
     override var name = "Cinevez"
     override val hasMainPage = true
     override var lang = "hi"
@@ -101,8 +102,11 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
 
         app.get(data).document.select(".list-episodes a.bg-button")
             .mapNotNull {
+                if(!it.attr("href").contains("gofile")) {
+                    val href = it.attr("href").replace("/([a-z])/".toRegex(),"/e/")
+                }
                 loadExtractor(
-                    it.attr("href").replace("/([a-z])/".toRegex(),"/e/"),
+                    href,
                     "$mainUrl/",
                     subtitleCallback,
                     callback
@@ -120,6 +124,20 @@ class JodWish : StreamWishExtractor() {
     override var mainUrl = "https://jodwish.com"
 }
 
+class Swdyu : StreamWishExtractor() {
+    override var mainUrl = "https://swdyu.com"
+}
+
+
 class MDrop : MixDrop() {
     override var mainUrl = "https://mixdrop.nu"
+}
+
+class VidHidePre : VidhideExtractor() {
+    override var mainUrl = "https://vidhidepre.com"
+}
+
+
+class VidHidePro : VidhideExtractor() {
+    override var mainUrl = "https://vidhidepro.com"
 }
