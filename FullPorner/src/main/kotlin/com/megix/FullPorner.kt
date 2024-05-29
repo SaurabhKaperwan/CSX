@@ -67,70 +67,69 @@ class FullPorner : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-    val document = app.get(url).document
+        val document = app.get(url).document
 
-    val title = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
+        val title = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
 
-    val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
+        val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
 
-    val iframeDocument = app.get(iframeUrl).document
+        val iframeDocument = app.get(iframeUrl).document
 
-    val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
-    val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
-    val matchResult = Regex("""preview_url:\s*'([^']+)'""").find(pornTrexDocument.html())
-    val poster = matchResult?.groupValues?.get(1)
-    val posterUrl = fixUrlNull("https:$poster")
+        val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.get(1)
+        val pornTrexDocument = app.get("https://www.porntrex.com/embed/${videoID}").document
+        val matchResult = Regex("""preview_url:\s*'([^']+)'""").find(pornTrexDocument.html())
+        val poster = matchResult?.groupValues?.get(1)
+        val posterUrl = fixUrlNull("https:$poster")
 
 
 
-    val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
-    val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
-    val actors = document.select("div.video-block div.single-video-left div.single-video-info-content p a").map { it.text() }
-    val recommendations = document.select("div.video-block div.video-recommendation div.video-card").mapNotNull { it.toSearchResult() }
+        val tags = document.select("div.video-block div.single-video-left div.single-video-title p.tag-link span a").map { it.text() }
+        val description = document.selectFirst("div.video-block div.single-video-left div.single-video-title h2")?.text()?.trim().toString()
+        val actors = document.select("div.video-block div.single-video-left div.single-video-info-content p a").map { it.text() }
+        val recommendations = document.select("div.video-block div.video-recommendation div.video-card").mapNotNull { it.toSearchResult() }
 
-    return newMovieLoadResponse(title, url, TvType.NSFW, url) {
-        this.posterUrl = posterUrl
-        this.plot = description
-        this.tags = tags
-        this.recommendations = recommendations
-        addActors(actors)
-    }
-}
-
-    override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
-    val document = app.get(data).document
-    val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
-    val extlinkList = mutableListOf<ExtractorLink>()
-    val iframeDocument = app.get(iframeUrl).document
-    val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.getOrNull(1)
-
-    if (videoID != null) {
-        val pornTrexDocument = app.get("https://www.porntrex.com/embed/$videoID").document
-        val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
-        val matchResults = videoUrlsRegex.findAll(pornTrexDocument.html())
-
-        val videoUrls = matchResults.map { it.groupValues[1] }.toList()
-
-        videoUrls.forEach { videoUrl ->
-            extlinkList.add(
-                ExtractorLink(
-                    name,
-                    name,
-                    videoUrl,
-                    referer = "",
-                    quality = Regex("""_(1080|720|480|360)p\.mp4""").find(videoUrl)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: Qualities.Unknown.value,
-                )
-            )
+        return newMovieLoadResponse(title, url, TvType.NSFW, url) {
+            this.posterUrl = posterUrl
+            this.plot = description
+            this.tags = tags
+            this.recommendations = recommendations
+            addActors(actors)
         }
     }
-    extlinkList.forEach(callback)
 
-    return true
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        val document = app.get(data).document
+        val iframeUrl = fixUrlNull(document.selectFirst("div.video-block div.single-video-left div.single-video iframe")?.attr("src")) ?: ""
+        val extlinkList = mutableListOf<ExtractorLink>()
+        val iframeDocument = app.get(iframeUrl).document
+        val videoID = Regex("""var id = \"(.+?)\"""").find(iframeDocument.html())?.groupValues?.getOrNull(1)
+
+        if (videoID != null) {
+            val pornTrexDocument = app.get("https://www.porntrex.com/embed/$videoID").document
+            val videoUrlsRegex = Regex("""(?:video_url|video_alt_url2|video_alt_url3): \'(.+?)\',""")
+            val matchResults = videoUrlsRegex.findAll(pornTrexDocument.html())
+
+            val videoUrls = matchResults.map { it.groupValues[1] }.toList()
+
+            videoUrls.forEach { videoUrl ->
+                extlinkList.add(
+                    ExtractorLink(
+                        name,
+                        name,
+                        videoUrl,
+                        referer = "",
+                        quality = Regex("""_(1080|720|480|360)p\.mp4""").find(videoUrl)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: Qualities.Unknown.value,
+                    )
+                )
+            }
+        }
+        extlinkList.forEach(callback)
+
+        return true
     }
-
 }
