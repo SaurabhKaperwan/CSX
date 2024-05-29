@@ -1,7 +1,6 @@
 package com.megix
 
 import android.content.Context
-import com.KillerDogeEmpire.Porntrex
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 
