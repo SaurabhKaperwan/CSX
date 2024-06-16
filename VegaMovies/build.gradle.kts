@@ -1,4 +1,4 @@
-version = 22
+version = 23
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://vegamovies.ist/wp-content/uploads/2022/03/Logo.png"
+    iconUrl = "https://vegamovies3.com/wp-content/uploads/2024/04/logo.png"
 }

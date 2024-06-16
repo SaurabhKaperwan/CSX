@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.ist"
+    override var mainUrl = "https://vegamovies3.com"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -53,11 +53,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = if (noscriptTag != null) {
-            fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
-        } else {
-            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
-        }
+        var posterUrl = fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
+
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
