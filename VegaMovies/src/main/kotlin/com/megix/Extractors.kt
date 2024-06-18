@@ -14,10 +14,7 @@ open class VegaCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val res = app.get(
-            url, 
-            headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
-        )
+        val res = app.get(url)
         val doc = res.document
         val changedLink = doc.selectFirst("script:containsData(url =)")?.data()?.let {
             val regex = """url\s*=\s*['"](.*)['"];""".toRegex()
