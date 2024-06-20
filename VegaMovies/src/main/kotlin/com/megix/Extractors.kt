@@ -43,22 +43,14 @@ open class VegaCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("workers.dev") || link.contains("cloudflare") || link.contains("r2.dev")) {
-                callback.invoke(
-                    ExtractorLink(
-                        "V-Cloud",
-                        "V-Cloud $size",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
+            else if(link.contains("gofile")) {
+                loadExtractor(link, subtitleCallback, callback)
             }
             else if(link.contains("dl.php")) {
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud[Download]",
-                        "V-Cloud[Download] $size",
+                        "Vega-Cloud[Download]",
+                        "Vega-Cloud[Download] $size",
                         link,
                         "",
                         getIndexQuality(header),
@@ -66,7 +58,15 @@ open class VegaCloud : ExtractorApi() {
                 )
             }
             else {
-                loadExtractor(link, subtitleCallback, callback)
+                callback.invoke(
+                    ExtractorLink(
+                        "Vega-Cloud",
+                        "Vega-Cloud $size",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
             }
         }
     }

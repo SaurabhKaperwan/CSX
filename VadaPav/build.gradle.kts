@@ -1,10 +1,10 @@
-version = 2
+version = 3
 
 cloudstream {
     language = "en"
     // All of these properties are optional, you can safely remove them
 
-    description = "Contains Movies and TV Series upto 1080p"
+    description = "Contains Movies, TV Series and Anime upto 4K"
      authors = listOf("megix")
 
     /**

@@ -11,6 +11,11 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
     override val hasMainPage = true
     override var lang = "en"
     override val hasDownloadSupport = true
+    private val mirrors = listOf(
+        "https://vadapav.mov",
+        "https://dl1.vadapav.mov",
+        "https://dl2.vadapav.mov"
+    )
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -26,6 +31,7 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         "72be5227-4a91-4939-96b3-dc77a9563f55" to "Hollywood Series Hindi Dubbed",
         "716da8ac-ed44-4fd4-aedc-eacefd00eeec" to "Recent",
         "60ac9f3f-9a3b-417a-abe7-dac7d20e38f4" to "Airing Anime",
+        "54bc9bc8-3496-4091-8174-544de130ce21" to "South Hindi Dubbed"
     )
 
     override suspend fun getMainPage(
@@ -40,8 +46,8 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this ?. text() ?: ""
-        val link = this ?. attr("href") ?: ""
+        val title = this.text() ?: ""
+        val link = this.attr("href") ?: ""
         val href = "$mainUrl$link"
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
@@ -69,13 +75,14 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         val aTags = document.select("div.directory > ul > li > div > a.directory-entry").filter { element -> !element.text().contains("Parent Directory", true) }
         if(aTags.isNotEmpty()) {
             aTags.mapNotNull { element ->
-                val doc = app.get(mainUrl + element?.attr("href")).document
+                val doc = app.get(mainUrl + element.attr("href")).document
                 val tags = doc.select("div.directory > ul > li > div > a.file-entry")
                 val episodes = tags.mapNotNull { tag ->
                     Episode(
-                        name = tag?.text()?: "",
-                        data = mainUrl + tag?.attr("href"),
+                        name = tag.text()?: "",
+                        data = tag.attr("href"),
                         season = seasonNum,
+                        episode = tags.indexOf(tag) + 1,
                     )
                 }
                 tvSeriesEpisodes.addAll(episodes)
@@ -86,9 +93,10 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
             val tags = document.select("div.directory > ul > li > div > a.file-entry")
             val episodes = tags.mapNotNull { tag ->
                 Episode(
-                    name = tag?.text()?: "",
-                    data = mainUrl + tag?.attr("href"),
+                    name = tag.text()?: "",
+                    data = tag.attr("href"),
                     season = seasonNum,
+                    episode = tags.indexOf(tag) + 1,
                 )
             }
             tvSeriesEpisodes.addAll(episodes)
@@ -104,15 +112,17 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        callback.invoke(
-            ExtractorLink(
-                name,
-                name,
-                data,
-                referer = "",
-                quality = Qualities.Unknown.value,
+        for((index, mirror) in mirrors.withIndex()) {
+            callback.invoke(
+                ExtractorLink(
+                    name+ " $index",
+                    name+" $index",
+                    mirror + data,
+                    referer = "",
+                    quality = Qualities.Unknown.value,
+                )
             )
-        )
+        }
         return true
     }
 
