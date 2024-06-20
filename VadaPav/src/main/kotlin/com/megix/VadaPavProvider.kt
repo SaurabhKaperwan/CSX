@@ -18,11 +18,14 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
     )
 
     override val mainPage = mainPageOf(
-        "716da8ac-ed44-4fd4-aedc-eacefd00eeec" to "Recent",
         "f36be06f-8edd-4173-99df-77bc4c7c2626" to "Movies",
         "28dc7aeb-902b-4824-8be2-fa1e4f20383c" to "TV",
         "acb8953f-8a6a-480e-938f-2796213aa261" to "Bollywood Movies",
         "53e89fa0-5c79-47d9-a50c-ed7fd4b623c8" to "Bollywood TV",
+        "accac8e8-f794-47fd-b40b-8486bc8ab531" to "Hollywood Movies Hindi Dubbed",
+        "72be5227-4a91-4939-96b3-dc77a9563f55" to "Hollywood Series Hindi Dubbed",
+        "716da8ac-ed44-4fd4-aedc-eacefd00eeec" to "Recent",
+        "60ac9f3f-9a3b-417a-abe7-dac7d20e38f4" to "Airing Anime",
     )
 
     override suspend fun getMainPage(
@@ -73,7 +76,6 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
                         name = tag?.text()?: "",
                         data = mainUrl + tag?.attr("href"),
                         season = seasonNum,
-                        episode = tags.indexOf(tag) + 1,
                     )
                 }
                 tvSeriesEpisodes.addAll(episodes)
@@ -87,7 +89,6 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
                     name = tag?.text()?: "",
                     data = mainUrl + tag?.attr("href"),
                     season = seasonNum,
-                    episode = tags.indexOf(tag) + 1,
                 )
             }
             tvSeriesEpisodes.addAll(episodes)
