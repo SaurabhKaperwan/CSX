@@ -18,34 +18,49 @@ open class Gamerxyt : ExtractorApi() {
         val id=url.substringAfter("id=").substringBefore("&")
         val token=url.substringAfter("token=").substringBefore("&")
         val Cookie="$host; hostid=$id; hosttoken=$token"
-        val doc = app.get("$mainUrl/games/",headers = mapOf("Cookie" to Cookie)).document
-        val links = doc.select("div.card-body > h2 > a").attr("href")
-        val header = doc.selectFirst("div.card-header")?.text()
-        if (links.contains("pixeldrain"))
-        {
-            callback.invoke(
-                ExtractorLink(
-                    "Gamerxyt",
-                    "PixelDrain",
-                    links,
-                    referer = links,
-                    quality = getIndexQuality(header),
+        val document = app.get("$mainUrl/games/",headers = mapOf("Cookie" to Cookie)).document
+        val header = document.selectFirst("div.card-header")?.text()
+        val size = document.selectFirst("i#size")?.text()
+        val div = document.selectFirst("div.card-body")
+        div.select("a").apmap {
+            val link = it.attr("href")
+            if (link.contains("pixeldra")){
+                callback.invoke(
+                    ExtractorLink(
+                        "PixelDrain",
+                        "PixelDrain $size",
+                        link,
+                        referer = link,
+                        quality = getIndexQuality(header),
+                    )
                 )
-            )
-        }else if (links.contains("gofile")) {
-            loadExtractor(links, subtitleCallback, callback)
-        }
-        else {
-            callback.invoke(
-                ExtractorLink(
-                    "Gamerxyt",
-                    "HubCloud",
-                    links,
-                    referer = "",
-                    quality = getIndexQuality(header),
+            }else if (link.contains("gofile")) {
+                loadExtractor(link, subtitleCallback, callback)
+            }
+            else if (link.contains("dl.php")) {
+                callback.invoke(
+                    ExtractorLink(
+                        "HubCloud[Download]",
+                        "HubCloud[Download] $size",
+                        link,
+                        referer = "",
+                        quality = getIndexQuality(header),
+                    )
                 )
-            )
+            }
+            else {
+                callback.invoke(
+                    ExtractorLink(
+                        "HubCloud",
+                        "HubCloud $size",
+                        link,
+                        referer = "",
+                        quality = getIndexQuality(header),
+                    )
+                )
+            }
         }
+        
     }
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()

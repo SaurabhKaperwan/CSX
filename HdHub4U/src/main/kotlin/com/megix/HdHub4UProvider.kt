@@ -79,16 +79,18 @@ class HdHub4UProvider : MainAPI() { // all providers must be an instance of Main
         val document = app.get(data).document
         val regex = Regex("""https:\/\/hubdrive\.ws\/file\/\d+""")
         val links = regex.findAll(document.html()).mapNotNull { it.value }.toList()
-        val cookiesSSID = app.get(links.first()).cookies["PHPSESSID"]
-        val cookies = mapOf(
-            "PHPSESSID" to "$cookiesSSID"
-        )
-        val hubDocument = app.get(links.first(), cookies = cookies).document
-        val link = hubDocument.selectFirst("a.btn.btn-primary.btn-user.btn-success1.m-1")?.attr("href") ?: "Empty"
-        val newLink = link.replace(".lol", ".day")
-        val hubDocument2 = app.get(newLink).document
-        val lastLink = hubDocument2.selectFirst("div.vd > a")?.attr("href") ?: "Empty"
-        loadExtractor(lastLink, subtitleCallback, callback)
+        links.mapNotNull{
+            val cookiesSSID = app.get(it).cookies["PHPSESSID"]
+            val cookies = mapOf(
+                "PHPSESSID" to "$cookiesSSID"
+            )
+            val hubDocument = app.get(it, cookies = cookies).document
+            val link = hubDocument.selectFirst("a.btn.btn-primary.btn-user.btn-success1.m-1")?.attr("href") ?: "Empty"
+            val newLink = link.replace(".lol", ".day")
+            val hubDocument2 = app.get(newLink).document
+            val lastLink = hubDocument2.selectFirst("div.vd > a")?.attr("href") ?: "Empty"
+            loadExtractor(lastLink, subtitleCallback, callback)
+        }
         return true
     }
 }

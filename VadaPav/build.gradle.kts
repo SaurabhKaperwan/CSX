@@ -1,10 +1,10 @@
-version = 2
+version = 1
 
 cloudstream {
-    language = "hi"
+    language = "en"
     // All of these properties are optional, you can safely remove them
 
-    description = "Testing only movie right now"
+    description = "Contains Movies and TV Series upto 1080p"
      authors = listOf("megix")
 
     /**
@@ -16,9 +16,11 @@ cloudstream {
      * */
     status = 1 // will be 3 if unspecified
     tvTypes = listOf(
-        "TvSeries",
         "Movie",
+        "TvSeries",
+        "Anime",
+        "AsianDrama",
     )
 
-    iconUrl = "https://hdhub4u.wales/wp-content/uploads/2021/05/hdhub4ulogo.png"
+    iconUrl = "https://vadapav.mov/assets/favicon-32x32.png"
 }
