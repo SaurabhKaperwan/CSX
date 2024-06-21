@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies3.com"
+    override var mainUrl = "https://vegamovies.cn.com"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -52,12 +52,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } ?: ""
 
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val noscriptTag = this.selectFirst("noscript")
-        var posterUrl = if (noscriptTag != null) {
-            fixUrlNull(noscriptTag.selectFirst("img")?.attr("src"))
-        } else {
-            fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src"))
-        }
+        var posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src").toString())
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -119,12 +114,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                  .filter { element -> !element.text().contains("Zip", true) }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             var seasonNum = 1
+            val seasonList = mutableListOf<Pair<String, Int>>()
 
             for(tag in hTags) {
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
-                val qualityRegex = Regex("""(1080p|720p|480p|2160p|4K|[0-9]*0p)""")
+                val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
                 val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
+                seasonList.add("S $realSeason Q $quality" to seasonNum)
 
                 val pTag = tag.nextElementSibling()
                 
@@ -139,7 +136,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     it.text().contains("Episode", ignoreCase = true) ||
                     it.text().contains("Download", ignoreCase = true)
                 }
-
                 if(unilink == null) {
                     unilink = aTags ?.find {
                         it.text().contains("G-Direct", ignoreCase = true)
@@ -170,6 +166,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 this.posterUrl = posterUrl
                 this.plot = plot
                 this.rating = rating
+                this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
             }
         }
         else {

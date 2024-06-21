@@ -73,10 +73,17 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
         val aTags = document.select("div.directory > ul > li > div > a.directory-entry").filter { element -> !element.text().contains("Parent Directory", true) }
+        val seasonList = mutableListOf<Pair<String, Int>>()
         if(aTags.isNotEmpty()) {
             aTags.mapNotNull { element ->
                 val doc = app.get(mainUrl + element.attr("href")).document
                 val tags = doc.select("div.directory > ul > li > div > a.file-entry")
+
+                val insideSpan = doc.select("div > span")
+                val insideLastSpan = insideSpan.takeIf { it.isNotEmpty() }?.lastOrNull()
+                val insideTitle = insideLastSpan ?. text()?: ""
+                seasonList.add("$insideTitle" to seasonNum)
+                
                 val episodes = tags.mapNotNull { tag ->
                     Episode(
                         name = tag.text()?: "",
@@ -91,6 +98,7 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         }
         else {
             val tags = document.select("div.directory > ul > li > div > a.file-entry")
+            seasonList.add("$title" to seasonNum)
             val episodes = tags.mapNotNull { tag ->
                 Episode(
                     name = tag.text()?: "",
@@ -103,6 +111,7 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
             seasonNum++
         }
         return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
+            this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
         }
     }
 
@@ -115,8 +124,8 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         for((index, mirror) in mirrors.withIndex()) {
             callback.invoke(
                 ExtractorLink(
-                    name+ " $index",
-                    name+" $index",
+                    name+ " ${index+1}",
+                    name+" ${index+1}",
                     mirror + data,
                     referer = "",
                     quality = Qualities.Unknown.value,
