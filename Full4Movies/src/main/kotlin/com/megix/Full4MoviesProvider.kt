@@ -95,7 +95,10 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
             val urls = regex.findAll(document.html()).map { it.groupValues[1] }.toList()
 
             val episodes = urls.mapNotNull {
-                Episode(it, "Episode ${urls.indexOf(it) + 1}")
+                val doc = app.get(it).document
+                doc.selectFirst("iframe")?.attr("src")?.let { link ->
+                    Episode(link, "Episode ${urls.indexOf(it) + 1}")
+                }
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
@@ -107,7 +110,9 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         }
         else {
             val movieUrl = Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(document.html())?.groupValues?.get(1) ?: ""
-            return newMovieLoadResponse(title, url, TvType.Movie, movieUrl) {
+            val doc = app.get(movieUrl).document
+            val link = doc.selectFirst("iframe")?.attr("src")
+            return newMovieLoadResponse(title, url, TvType.Movie, link) {
                 this.posterUrl = posterUrl
                 this.plot = plot
                 this.rating = imdbRating
@@ -124,10 +129,6 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         var link = data
-        if (data.contains("full4u")) {
-            val document = app.get(data).document
-            link = document.select("iframe").attr("src")
-        }
         link = when {
             link.contains("watchx.top") -> link.replace("watchx.top", "boltx.stream")
             link.contains("bestx.stream") -> link.replace("bestx.stream", "boltx.stream")
