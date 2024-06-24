@@ -80,6 +80,7 @@ open class VegaCloud : ExtractorApi() {
 }
 
 
+
 open class FastDL : ExtractorApi() {
     override val name: String = "FastDl"
     override val mainUrl: String = "https://fastdl.icu"
