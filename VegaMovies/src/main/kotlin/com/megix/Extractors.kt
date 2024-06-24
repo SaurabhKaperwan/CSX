@@ -78,3 +78,27 @@ open class VegaCloud : ExtractorApi() {
     }
 
 }
+
+
+open class FastDL : ExtractorApi() {
+    override val name: String = "FastDl"
+    override val mainUrl: String = "https://fastdl.icu"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val cookiesSSID = app.get(url).cookies["PHPSESSID"]
+            val cookies = mapOf(
+                "PHPSESSID" to "$cookiesSSID"
+            )
+        val document = app.get(url, cookies = cookies).document
+        val link = document.selectFirst("a#vd") ?. attr("href")
+        if(link != null) {
+            callback.invoke(ExtractorLink("FastDL", "FastDL[Download]", link, "", Qualities.Unknown.value))
+        }
+    }
+}

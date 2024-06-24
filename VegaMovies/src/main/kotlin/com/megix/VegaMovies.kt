@@ -13,5 +13,6 @@ class VegaMovies: Plugin() {
         registerMainAPI(LuxMoviesProvider())
         registerExtractorAPI(VegaCloud())
         registerExtractorAPI(Gofile())
+        registerExtractorAPI(FastDL())
     }
 }

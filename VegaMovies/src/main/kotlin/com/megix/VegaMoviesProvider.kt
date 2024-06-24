@@ -121,10 +121,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
             for(tag in hTags) {
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
+                val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: " Unknown"
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
-                seasonList.add("S $realSeason Q $quality" to seasonNum)
+                val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: " Unknown"
+                seasonList.add("S$realSeason $quality" to seasonNum)
 
                 val pTag = tag.nextElementSibling()
                 
@@ -187,7 +187,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if (data.contains("vcloud.lol")) {
+        if (data.contains("vcloud.lol") || data.contains("fastdl")) {
             loadExtractor(data, subtitleCallback, callback)
             return true
         } else {
@@ -197,11 +197,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
             links.mapNotNull { link ->
                 val document2 = app.get(link).document
-                val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-
-                if (vcloudLinks.isNotEmpty()) {
-                    loadExtractor(vcloudLinks.first(), subtitleCallback, callback)
+                val serverLinks = document2.select("p > a")
+                serverLinks.mapNotNull {
+                    val url = it.attr("href")
+                    if(url.contains("vcloud") || url.contains("fastdl")) {
+                        loadExtractor(url, subtitleCallback, callback) 
+                    } 
                 }
             }
             return true
