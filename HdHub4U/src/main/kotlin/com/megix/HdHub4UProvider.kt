@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class HdHub4UProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://hdhub4u.wales"
+    override var mainUrl = "https://hdhub4u.durban"
     override var name = "HdHub4U"
     override val hasMainPage = true
     override var lang = "hi"

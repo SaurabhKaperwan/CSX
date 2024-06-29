@@ -134,53 +134,40 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     tag.select("a")
                 }
 
-                // var unilink = aTags ?.find { 
-                //     it.text().contains("V-Cloud", ignoreCase = true) ||
-                //     it.text().contains("Episode", ignoreCase = true) ||
-                //     it.text().contains("Download", ignoreCase = true)
-                // }
-
-                // var Eurl = unilink?.attr("href")
-
-                // Eurl?.let { eurl ->
-                //     val document2 = app.get(eurl).document     
-                //     val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                //     var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                //     val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                //         Episode(
-                //             name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}",
-                //             data = vcloudlink,
-                //             season = seasonNum,
-                //             episode = vcloudLinks.indexOf(vcloudlink) + 1,
-                //         )
-                //     }
-
-                //     tvSeriesEpisodes.addAll(episodes)
-                //     seasonNum++
-                // }
-                var unilink = aTags ?. find {
-                    it.text().contains("G-Direct", ignoreCase = true)||
+                var unilink = aTags ?. find { 
+                    it.text().contains("V-Cloud", ignoreCase = true) ||
                     it.text().contains("Episode", ignoreCase = true) ||
                     it.text().contains("Download", ignoreCase = true)
                 }
+
+                if (unilink == null) {
+                    unilink = aTags ?. find {
+                        it.text().contains("G-Direct", ignoreCase = true)
+                    }
+                }
+
                 var Eurl = unilink ?. attr("href")
-                Eurl?.let { eurl ->
+
+                Eurl ?. let { eurl ->
                     val document2 = app.get(eurl).document     
-                    val fastDlRegex = Regex("""https:\/\/fastdl.icu\/embed\?download=[a-zA-Z0-9]+""")
-                    var fastDLLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-                    
-                    val episodes = fastDLLinks.mapNotNull { fastdllink ->
+                    val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
+                    var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    if(vcloudLinks.isEmpty()) {
+                        val fastDlRegex = Regex("""https:\/\/fastdl.icu\/embed\?download=[a-zA-Z0-9]+""")
+                        vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    }
+                    val episodes = vcloudLinks.mapNotNull { vcloudlink ->
                         Episode(
-                            name = "S${realSeason} E${fastDLLinks.indexOf(fastdllink) + 1} ${quality}",
-                            data = fastdllink,
+                            name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}",
+                            data = vcloudlink,
                             season = seasonNum,
-                            episode = fastDLLinks.indexOf(fastdllink) + 1,
+                            episode = vcloudLinks.indexOf(vcloudlink) + 1,
                         )
                     }
 
                     tvSeriesEpisodes.addAll(episodes)
+                    seasonNum++
                 }
-                seasonNum++
             }
             return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl

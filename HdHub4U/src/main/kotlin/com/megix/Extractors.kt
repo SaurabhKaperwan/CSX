@@ -48,7 +48,7 @@ open class Gamerxyt : ExtractorApi() {
                     )
                 )
             }
-            else {
+            else if(link.contains(".dev")){
                 callback.invoke(
                     ExtractorLink(
                         "HubCloud",

@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://hdhub4u.wales/wp-content/uploads/2021/05/hdhub4ulogo.png"
+    iconUrl = "https://hdhub4u.durban/wp-content/uploads/2021/05/hdhub4ulogo.png"
 }

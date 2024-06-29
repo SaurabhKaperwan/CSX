@@ -7,7 +7,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 class Full4MoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.full4movies.fit"
+    override var mainUrl = "https://www.full4movies.college"
     override var name = "Full4Movies"
     override val hasMainPage = true
     override var lang = "hi"
