@@ -34,8 +34,6 @@ open class Gamerxyt : ExtractorApi() {
                         quality = getIndexQuality(header),
                     )
                 )
-            }else if (link.contains("gofile")) {
-                loadExtractor(link, subtitleCallback, callback)
             }
             else if (link.contains("dl.php")) {
                 callback.invoke(
@@ -58,6 +56,9 @@ open class Gamerxyt : ExtractorApi() {
                         quality = getIndexQuality(header),
                     )
                 )
+            }
+            else {
+                loadExtractor(link, subtitleCallback, callback)
             }
         }
         

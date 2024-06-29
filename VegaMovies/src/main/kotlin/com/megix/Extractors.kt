@@ -42,9 +42,6 @@ open class VegaCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("gofile")) {
-                loadExtractor(link, subtitleCallback, callback)
-            }
             else if(link.contains("dl.php")) {
                 callback.invoke(
                     ExtractorLink(
@@ -66,6 +63,9 @@ open class VegaCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
+            }
+            else {
+                loadExtractor(link, subtitleCallback, callback)
             }
         }
     }
