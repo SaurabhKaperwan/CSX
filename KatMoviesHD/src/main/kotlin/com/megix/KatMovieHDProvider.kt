@@ -153,7 +153,7 @@ class KatMovieHDProvider : MainAPI() { // all providers must be an instance of M
                 if(link.contains("https://gd.kmhd.net/file/")) {
                     link.replace("https://gd.kmhd.net/file/", "https://new2.gdflix.cfd/file/")
                 }
-                loadExtractor(it, subtitleCallback, callback)
+                loadExtractor(link, subtitleCallback, callback)
             }
         }
         else if(data.contains("kmhd.net/file")) {
