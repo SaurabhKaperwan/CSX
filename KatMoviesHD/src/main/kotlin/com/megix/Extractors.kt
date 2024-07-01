@@ -17,8 +17,8 @@ open class KMHD : ExtractorApi() {
     ) 
     {
         val document = app.get(url).document
-        val HubId = Regex("""hubdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1) ?: ""
-        val GDId = Regex("""gdflix_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1) ?: ""
+        val HubId = Regex("""hubdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
+        val GDId = Regex("""gdflix_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
         if(HubId != null) {
             val link = "https://hubcloud.day/drive/$HubId"
             loadExtractor(link, subtitleCallback, callback)
