@@ -19,16 +19,66 @@ open class KMHD : ExtractorApi() {
         val document = app.get(url).document
         val HubId = Regex("""hubdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
         val GDId = Regex("""gdflix_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
+        val KatId = Regex("""katdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
         if(HubId != null) {
             val link = "https://hubcloud.day/drive/$HubId"
             loadExtractor(link, subtitleCallback, callback)
         }
 
         if(GDId != null) {
-            val link = "https://new2.gdflix.cfd/file/$HubId"
+            val link = "https://new2.gdflix.cfd/file/$GDId"
             loadExtractor(link, subtitleCallback, callback)
         }
 
+        if(KatId != null) {
+            val link = "https://katdrive.in/file/$KatId"
+            loadExtractor(link, subtitleCallback, callback)
+        }
+
+    }
+}
+
+open class KatDrive : ExtractorApi() {
+    override val name: String = "KatDrive"
+    override val mainUrl: String = "https://katdrive.in"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) 
+    {
+        val cookiesSSID = app.get(url).cookies["PHPSESSID"]
+        val cookies = mapOf(
+            "PHPSESSID" to "$cookiesSSID"
+        )
+        val document = app.get(url, cookies = cookies).document
+        val link = document.selectFirst("h5 > a").attr("href").toString()
+        val fileId = link.substringAfter("drive/")
+        val hubLink = "https://hubcloud.day/drive/${fileId}"
+        loadExtractor(hubLink, subtitleCallback, callback)
+    }
+}
+
+open class KMHTNet : ExtractorApi() {
+    override val name: String = "KMHTNet"
+    override val mainUrl: String = "https://kmhd.net/archives/"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) 
+    {
+        val document = app.get(url).document
+        document.select("h3 > a").forEach {
+            val link = it.attr("href")
+            loadExtractor(link, subtitleCallback, callback)
+        }
     }
 }
 

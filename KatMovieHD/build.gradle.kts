@@ -4,7 +4,7 @@ cloudstream {
     language = "hi"
     // All of these properties are optional, you can safely remove them
 
-    description = "Contains Hindi Movies and TV Series upto 4K"
+    description = "Include PikaHD"
      authors = listOf("megix")
 
     /**
