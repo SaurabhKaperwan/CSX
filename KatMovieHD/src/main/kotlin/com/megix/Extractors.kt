@@ -75,7 +75,7 @@ open class KMHTNet : ExtractorApi() {
     ) 
     {
         val document = app.get(url).document
-        document.select("h3 > a").forEach {
+        document.select("h3 > a").apmap {
             val link = it.attr("href")
             loadExtractor(link, subtitleCallback, callback)
         }
@@ -192,7 +192,7 @@ open class GDFlix : ExtractorApi() {
         {
             url = url
         }
-        app.get(url).document.select("div.text-center a").forEach {
+        app.get(url).document.select("div.text-center a").apmap {
             if (it.select("a").text().contains("FAST CLOUD DOWNLOAD"))
             {
                 val link=it.attr("href")

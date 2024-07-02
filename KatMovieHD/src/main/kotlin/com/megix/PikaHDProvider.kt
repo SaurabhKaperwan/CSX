@@ -44,26 +44,60 @@ class PikaHDProvider : KatMovieHDProvider() { // all providers must be an instan
 
         if(tvType == TvType.TvSeries) {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            val episodesList = mutableListOf<Episode>()
+            
             val hTags = document.select("h3:matches((?i)(E[0-9]+))")
-            hTags.forEach { hTag ->
-                val hTagString = hTag.toString()
-                val details = hTag.text()
-                val episodes = Episode(
-                    name = details,
-                    data = hTagString,
-                )
-                episodesList.add(episodes)
+            if(hTags.isNotEmpty()) {
+                val episodesList = mutableListOf<Episode>()
+                hTags.apmap { hTag ->
+                    val hTagString = hTag.toString()
+                    val details = hTag.text()
+                    val episodes = Episode(
+                        name = details,
+                        data = hTagString,
+                    )
+                    episodesList.add(episodes)
+                }
+                tvSeriesEpisodes.addAll(episodesList)
+                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
+                    this.posterUrl = posterUrl
+                }
             }
-            tvSeriesEpisodes.addAll(episodesList)
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
-                this.posterUrl = posterUrl
+            else {
+                val aTags = document.select("h2 > a:matches((?i)(4K|[0-9]*0p))")
+                    .filter { element -> !element.text().contains("Pack", true) }
+                var seasonNum = 1
+                val seasonList = mutableListOf<Pair<String, Int>>()
+                aTags.apmap {
+                    val emText = it.selectFirst("em") ?. text() ?: ""
+                    val quality = Regex("(\\d{3,4})[pP]").find(emText ?: "") ?. groupValues ?. getOrNull(1) ?: "Unknown"
+                    seasonList.add("$quality" to seasonNum)
+                    val link = it . attr("href")
+                    val episodeDocument = app.get(link).document
+                    val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
+                    var kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
+                    val episodes = kmhdLinks.mapNotNull { kmhdLink ->
+                        Episode(
+                            name = "E${kmhdLinks.indexOf(kmhdLink) + 1} ${quality}",
+                            data = "https://links.kmhd.net/file/${kmhdLink}",
+                            season = seasonNum,
+                            episode = kmhdLinks.indexOf(kmhdLink) + 1,
+                        )
+                    }
+                    tvSeriesEpisodes.addAll(episodes)
+                    seasonNum++
+                }
+
+                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
+                    this.posterUrl = posterUrl
+                    this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
+                }
+            
             }
         }
         else {
             val hTags = document.select("h2:matches((?i)((1080p|720p|480p|2160p|4K|[0-9]*0p)))")
             var hTagString = ""
-            hTags.forEach { hTag ->
+            hTags.apmap { hTag ->
                 hTagString = hTag.toString()
             }
             return newMovieLoadResponse(title, url, TvType.Movie, hTagString) {
@@ -80,7 +114,7 @@ class PikaHDProvider : KatMovieHDProvider() { // all providers must be an instan
     ): Boolean {
         val regex = Regex("""<a href="([^"]+)">""")
         val links = regex.findAll(data).map { it.groupValues[1] }.toList()
-        links.mapNotNull {
+        links.apmap {
             loadExtractor(it, subtitleCallback, callback)
         }
         return true       

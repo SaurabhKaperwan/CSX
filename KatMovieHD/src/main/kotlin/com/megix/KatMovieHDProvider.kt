@@ -85,8 +85,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
             val pTags = document.select("p:matches((?i)(Episode [0-9]+)),h3:matches((?i)(E[0-9]+)),h2:matches((?i)(Episode [0-9]+))")
             if (pTags.isNotEmpty()) {
                 val episodesList = mutableListOf<Episode>()
-    
-                pTags.forEach { pTag ->
+                pTags.apmap { pTag ->
                     var hTagString = ""
                     var hTag = pTag
                     if(hTag.tagName() == "p") {
@@ -117,7 +116,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
                     val emText = it.selectFirst("em") ?. text() ?: ""
                     val quality = Regex("(\\d{3,4})[pP]").find(emText ?: "") ?. groupValues ?. getOrNull(1) ?: "Unknown"
                     seasonList.add("$quality" to seasonNum)
-                    val link = it . attr("href")
+                    val link = it.attr("href")
                     val episodeDocument = app.get(link).document
                     val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
                     var kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
@@ -155,7 +154,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
         if(data.contains("href")) {
             val regex = Regex("""<a href="([^"]+)">""")
             val links = regex.findAll(data).map { it.groupValues[1] }.toList()
-            links.mapNotNull {
+            links.apmap {
                 var link = it
                 if(link.contains("https://gd.kmhd.net/file/")) {
                     link.replace("https://gd.kmhd.net/file/", "https://new2.gdflix.cfd/file/")
@@ -169,7 +168,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
         else {
             val document = app.get(data).document
             val aTags = document.select("h2 > a")
-            aTags.mapNotNull {
+            aTags.apmap {
                 val link = it.attr("href")
                 loadExtractor(link, subtitleCallback, callback)
             }

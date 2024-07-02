@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.cn.com"
+    override var mainUrl = "https://vegamovies3.com"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -119,11 +119,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             var seasonNum = 1
             val seasonList = mutableListOf<Pair<String, Int>>()
 
-            for(tag in hTags) {
+             for(tag in hTags) {
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: " Unknown"
+                val realSeason = realSeasonRegex.find(tag.toString()) ?. groupValues ?. get(1) ?: " Unknown"
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: " Unknown"
+                val quality = qualityRegex.find(tag.toString()) ?. groupValues ?. get(1) ?: " Unknown"
                 seasonList.add("S$realSeason $quality" to seasonNum)
 
                 val pTag = tag.nextElementSibling()
@@ -199,10 +199,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
             val links = regex.findAll(document1.html()).mapNotNull { it.value }.toList()
 
-            links.mapNotNull { link ->
+            links.apmap { link ->
                 val document2 = app.get(link).document
                 val serverLinks = document2.select("p > a")
-                serverLinks.mapNotNull {
+                serverLinks.apmap {
                     val url = it.attr("href")
                     if(url.contains("vcloud") || url.contains("fastdl")) {
                         loadExtractor(url, subtitleCallback, callback) 
