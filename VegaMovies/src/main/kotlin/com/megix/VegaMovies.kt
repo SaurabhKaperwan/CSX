@@ -3,7 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 import android.content.Context
-import com.lagradost.cloudstream3.extractors.Gofile
+//import com.lagradost.cloudstream3.extractors.Gofile
 
 @CloudstreamPlugin
 class VegaMovies: Plugin() {
@@ -11,8 +11,8 @@ class VegaMovies: Plugin() {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(VegaMoviesProvider())
         registerMainAPI(LuxMoviesProvider())
-        registerExtractorAPI(VegaCloud())
+        registerExtractorAPI(VCloud())
         registerExtractorAPI(FastDL())
-        registerExtractorAPI(Gofile())
+        //registerExtractorAPI(Gofile())
     }
 }

@@ -192,7 +192,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         if (data.contains("vcloud.lol") || data.contains("fastdl")) {
-            loadExtractor(data, subtitleCallback, callback)
+            var url = data
+            if(data.contains("vcloud.lol/api")) {
+                val document = app.get(data).document         
+                url = document.selectFirst("h4 > a").attr("href")
+            }
+            loadExtractor(url, subtitleCallback, callback)
             return true
         } else {
             val document1 = app.get(data).document
