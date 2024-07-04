@@ -16,5 +16,6 @@ class KatMovieHD: Plugin() {
         registerExtractorAPI(GDFlix())
         registerExtractorAPI(KatDrive())
         registerExtractorAPI(KMHTNet())
+        registerExtractorAPI(HubCloudWS())
     }
 }

@@ -4,6 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import java.net.URI
 
+//Extractors
 open class KMHD : ExtractorApi() {
     override val name: String = "KMHD"
     override val mainUrl: String = "https://links.kmhd.net/file"
@@ -38,6 +39,24 @@ open class KMHD : ExtractorApi() {
     }
 }
 
+open class KMHTFile : ExtractorApi() {
+    override val name: String = "KMHTFile"
+    override val mainUrl: String = "https://gd.kmhd.net/file/"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    )
+    {
+        var link = url
+        link = link.replace("https://gd.kmhd.net/file/", "https://new2.gdflix.cfd/file/")
+        loadExtractor(link, subtitleCallback, callback)
+    }
+}
+
 open class KatDrive : ExtractorApi() {
     override val name: String = "KatDrive"
     override val mainUrl: String = "https://katdrive.in"
@@ -55,10 +74,21 @@ open class KatDrive : ExtractorApi() {
             "PHPSESSID" to "$cookiesSSID"
         )
         val document = app.get(url, cookies = cookies).document
-        val link = document.selectFirst("h5 > a").attr("href").toString()
-        val fileId = link.substringAfter("drive/")
-        val hubLink = "https://hubcloud.day/drive/${fileId}"
-        loadExtractor(hubLink, subtitleCallback, callback)
+        val link = document.selectFirst("h5 > a") ?. attr("href").toString()
+        var fileIdRegex = Regex("drive/([^/]+)")
+        var fileIdMatch = fileIdRegex.find(link)
+        var fileId = fileIdMatch ?. groupValues ?. get(1) ?: ""
+        if(fileId.isNotBlank()) {
+            val hubLink = "https://hubcloud.day/drive/${fileId}"
+            loadExtractor(hubLink, subtitleCallback, callback)
+        }
+        else {
+            fileIdRegex = Regex("video/([^/]+)")
+            fileIdMatch = fileIdRegex.find(link)
+            fileId = fileIdMatch ?. groupValues ?. get(1) ?: ""
+            val hubLink = "https://hubcloud.day/video/${fileId}"
+            loadExtractor(hubLink, subtitleCallback, callback)
+        } 
     }
 }
 
@@ -82,6 +112,49 @@ open class KMHTNet : ExtractorApi() {
     }
 }
 
+open class HubCloudLAT: ExtractorApi() {
+    override val name: String = "HubCloudLAT"
+    override val mainUrl: String = "https://hubcloud.lat"
+    override val requiresReferer = false
+
+    override suspend fun getUrl (
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    )
+    {
+        var link = url
+        link = link.replace(".lat", ".ws")
+        loadExtractor(link, subtitleCallback, callback)
+    }
+}
+
+open class HubCloudWS: ExtractorApi() {
+    override val name: String = "HubCloudWS"
+    override val mainUrl: String = "https://hubcloud.ws"
+    override val requiresReferer = false
+
+    override suspend fun getUrl (
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    )
+    {
+        val cookiesSSID = app.get(url).cookies["PHPSESSID"]
+        val cookies = mapOf(
+            "PHPSESSID" to "$cookiesSSID"
+        )
+        val hubDocument = app.get(url, cookies = cookies).document
+        val link = hubDocument.selectFirst("a.btn.btn-primary.btn-user.btn-success1.m-1") ?. attr("href") ?: "Empty"
+        val newLink = link.replace(".lol", ".day")
+        val hubDocument2 = app.get(newLink).document
+        val lastLink = hubDocument2.selectFirst("div.vd > a") ?. attr("href") ?: "Empty"
+        loadExtractor(lastLink, subtitleCallback, callback)
+    }
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "HubCloud"
     override val mainUrl: String = "https://hubcloud.day"
@@ -94,7 +167,8 @@ open class HubCloud : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val hubDocument = app.get(url).document
-        val gamerLink = hubDocument.selectFirst("div.vd > a")?.attr("href") ?: ""
+        val gamerDiv = hubDocument.selectFirst("div.vd")
+        val gamerLink = gamerDiv.selectFirst("a").attr("href").toString()
         val host = gamerLink.substringAfter("?").substringBefore("&")
         val id = gamerLink.substringAfter("id=").substringBefore("&")
         val token = gamerLink.substringAfter("token=").substringBefore("&")
@@ -145,11 +219,10 @@ open class HubCloud : ExtractorApi() {
         
     }
     private fun getIndexQuality(str: String?): Int {
-        return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
+        return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
             ?: Qualities.Unknown.value
     }
 }
-
 
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
@@ -199,7 +272,7 @@ open class GDFlix : ExtractorApi() {
                 val trueurl=app.get("https://new2.gdflix.cfd$link").document.selectFirst("a.btn-success")?.attr("href") ?:""
                 callback.invoke(
                     ExtractorLink(
-                        "GDFlix", "GDFLix $tagquality", trueurl
+                        "GDFlix[Fast Cloud]", "GDFLix[Fast Cloud] $tagquality", trueurl
                             ?: "", "", getQualityFromName(tags)
                     )
                 )
@@ -228,8 +301,8 @@ open class GDFlix : ExtractorApi() {
                 val link = finaldownloadlink
                 callback.invoke(
                     ExtractorLink(
-                        "GDFlix",
-                        "GDFlix $tagquality",
+                        "GDFlix[Instant Download]",
+                        "GDFlix[Instant Download] $tagquality",
                         url = link,
                         "",
                         getQualityFromName(tags)

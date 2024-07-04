@@ -64,10 +64,67 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
         return searchResponse
     }
 
+    //eg: the boys 4
+    private suspend fun type1(url: String): MutableList<Episode> {
+        val document = app.get(url).document
+        val episodesList = mutableListOf<Episode>()
+        val pTags = document.select("p:matches((?i)(Episode [0-9]+)),h3:matches((?i)(E[0-9]+)),h2:matches((?i)(Episode [0-9]+))")
+        
+        pTags.apmap { pTag ->
+            var hTagString = ""
+            var hTag = pTag
+            
+            if(hTag.tagName() == "p") {
+                hTag = pTag.nextElementSibling()
+            }
+            
+            while(hTag != null && hTag.tagName().matches(Regex("h\\d+"))) {
+                hTagString += hTag.toString()
+                hTag = hTag.nextElementSibling()
+            }
+            val details = pTag.text()
+            val episodes = Episode(
+                name = details,
+                data = hTagString,
+            )
+            episodesList.add(episodes)
+        }
+        return episodesList
+    }
+
+    private suspend fun type2(url: String, seasonList: MutableList<Pair<String, Int>>): MutableList<Episode> {
+        val document = app.get(url).document
+        val episodesList = mutableListOf<Episode>()
+
+        val aTags = document.select("h2 > a:matches((?i)(4K|[0-9]*0p))")
+                        .filter { element -> !element.text().contains("Pack", true) }
+        var seasonNum = 1
+        aTags.forEach { aTag ->
+            val emText = aTag.selectFirst("em")?.text() ?: ""
+            val quality = Regex("(\\d{3,4})[pP]").find(emText) ?.groupValues?.getOrNull(1) ?: "Unknown"
+            seasonList.add(Pair(quality, seasonNum))
+            val link = aTag.attr("href")
+            val episodeDocument = app.get(link).document
+            val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
+            val kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
+            val episodes = kmhdLinks.mapIndexed { index, kmhdLink ->
+                Episode(
+                    name = "E${index + 1} $quality",
+                    data = "https://links.kmhd.net/file/$kmhdLink",
+                    season = seasonNum,
+                    episode = index + 1,
+                )
+            }
+            episodesList.addAll(episodes)
+            seasonNum++
+        }
+        return episodesList
+    }
+ 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]") ?. attr("content") ?: "" 
-        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]") ?. attr("content"))
+        val title = document.selectFirst("meta[property=og:title]").attr("content")
+        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]").attr("content"))
 
         val tvType = if (
             title.contains("Episode", ignoreCase = true) || 
@@ -84,54 +141,16 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
 
             val pTags = document.select("p:matches((?i)(Episode [0-9]+)),h3:matches((?i)(E[0-9]+)),h2:matches((?i)(Episode [0-9]+))")
             if (pTags.isNotEmpty()) {
-                val episodesList = mutableListOf<Episode>()
-                pTags.apmap { pTag ->
-                    var hTagString = ""
-                    var hTag = pTag
-                    if(hTag.tagName() == "p") {
-                        hTag = pTag.nextElementSibling()
-                    }
-                    while(hTag != null && hTag.tagName().matches(Regex("h\\d+"))) {
-                        hTagString += hTag.toString()
-                        hTag = hTag.nextElementSibling()
-                    }
-                    val details = pTag.text()
-                    val episodes = Episode(
-                        name = details,
-                        data = hTagString,
-                    )
-                    episodesList.add(episodes)
-                }
+                val episodesList = type1(url)
                 tvSeriesEpisodes.addAll(episodesList)
                 return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                     this.posterUrl = posterUrl
                 }
             }
             else {
-                val aTags = document.select("h2 > a:matches((?i)(4K|[0-9]*0p))")
-                    .filter { element -> !element.text().contains("Pack", true) }
-                var seasonNum = 1
                 val seasonList = mutableListOf<Pair<String, Int>>()
-                aTags.mapNotNull {
-                    val emText = it.selectFirst("em") ?. text() ?: ""
-                    val quality = Regex("(\\d{3,4})[pP]").find(emText ?: "") ?. groupValues ?. getOrNull(1) ?: "Unknown"
-                    seasonList.add("$quality" to seasonNum)
-                    val link = it.attr("href")
-                    val episodeDocument = app.get(link).document
-                    val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
-                    var kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
-                    val episodes = kmhdLinks.mapNotNull { kmhdLink ->
-                        Episode(
-                            name = "E${kmhdLinks.indexOf(kmhdLink) + 1} ${quality}",
-                            data = "https://links.kmhd.net/file/${kmhdLink}",
-                            season = seasonNum,
-                            episode = kmhdLinks.indexOf(kmhdLink) + 1,
-                        )
-                    }
-                    tvSeriesEpisodes.addAll(episodes)
-                    seasonNum++
-                }
-
+                val episodesList = type2(url, seasonList)
+                tvSeriesEpisodes.addAll(episodesList)
                 return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                     this.posterUrl = posterUrl
                     this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
@@ -155,11 +174,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
             val regex = Regex("""<a href="([^"]+)">""")
             val links = regex.findAll(data).map { it.groupValues[1] }.toList()
             links.apmap {
-                var link = it
-                if(link.contains("https://gd.kmhd.net/file/")) {
-                    link.replace("https://gd.kmhd.net/file/", "https://new2.gdflix.cfd/file/")
-                }
-                loadExtractor(link, subtitleCallback, callback)
+                loadExtractor(it, subtitleCallback, callback)
             }
         }
         else if(data.contains("kmhd.net/file")) {
