@@ -14,21 +14,14 @@ open class VCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val res = app.get(url)
-        val doc = res.document
-        val changedLink = doc.selectFirst("script:containsData(url =)") ?. data() ?. let {
-            val regex = """url\s*=\s*['"](.*)['"];""".toRegex()
-            regex.find(it) ?. groupValues ?. get(1) ?. substringAfter("r=")
-        }
-        val header = doc.selectFirst("div.card-header") ?. text()
-        val document = app.get(
-            base64Decode(changedLink ?: return), cookies = res.cookies, headers = mapOf(
-                "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-            )
-        ).document
+        val doc = app.get(url).document
+        val scriptTag = doc.selectFirst("script:containsData(url)").toString()
+        val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+        val document = app.get(urlValue).document
 
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
+        val header = document.selectFirst("div.card-header") ?. text()
         div.select("a").apmap {
             val link = it.attr("href")
             if (link.contains("pixeldra")) {
@@ -65,7 +58,7 @@ open class VCloud : ExtractorApi() {
                 )
             }
             else {
-                //loadExtractor(link, subtitleCallback, callback)
+                loadExtractor(link, subtitleCallback, callback)
             }
         }
     }

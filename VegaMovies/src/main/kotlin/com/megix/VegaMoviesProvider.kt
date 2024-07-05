@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies3.com"
+    override var mainUrl = "https://vegamovies.com.ph"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -124,7 +124,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val realSeason = realSeasonRegex.find(tag.toString()) ?. groupValues ?. get(1) ?: " Unknown"
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
                 val quality = qualityRegex.find(tag.toString()) ?. groupValues ?. get(1) ?: " Unknown"
-                seasonList.add("S$realSeason $quality" to seasonNum)
+                val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:MB|GB)\b""")
+                val size = sizeRegex.find(tag.toString())?.value ?: ""
+                seasonList.add("S$realSeason $quality $size" to seasonNum)
 
                 val pTag = tag.nextElementSibling()
                 
@@ -200,11 +202,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             loadExtractor(url, subtitleCallback, callback)
             return true
         } else {
-            val document1 = app.get(data).document
-            val regex = Regex("""https:\/\/unilinks\.lol\/[a-zA-Z0-9]+\/""")
-            val links = regex.findAll(document1.html()).mapNotNull { it.value }.toList()
+            val document = app.get(data).document
+            val aTags = document.select("p > a")
 
-            links.apmap { link ->
+            aTags.apmap { aTag ->
+                val link = aTag.attr("href")
                 val document2 = app.get(link).document
                 val serverLinks = document2.select("p > a")
                 serverLinks.apmap {
