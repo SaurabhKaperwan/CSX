@@ -75,20 +75,11 @@ open class KatDrive : ExtractorApi() {
         )
         val document = app.get(url, cookies = cookies).document
         val link = document.selectFirst("h5 > a") ?. attr("href").toString()
-        var fileIdRegex = Regex("drive/([^/]+)")
+        var fileIdRegex = Regex("video/([^/]+)")
         var fileIdMatch = fileIdRegex.find(link)
         var fileId = fileIdMatch ?. groupValues ?. get(1) ?: ""
-        if(fileId.isNotBlank()) {
-            val hubLink = "https://hubcloud.day/drive/${fileId}"
-            loadExtractor(hubLink, subtitleCallback, callback)
-        }
-        else {
-            fileIdRegex = Regex("video/([^/]+)")
-            fileIdMatch = fileIdRegex.find(link)
-            fileId = fileIdMatch ?. groupValues ?. get(1) ?: ""
-            val hubLink = "https://hubcloud.day/video/${fileId}"
-            loadExtractor(hubLink, subtitleCallback, callback)
-        } 
+        var hubLink = "https://hubcloud.day/video/${fileId}"
+        loadExtractor(hubLink, subtitleCallback, callback)
     }
 }
 
@@ -166,14 +157,18 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val hubDocument = app.get(url).document
-        val gamerDiv = hubDocument.selectFirst("div.vd")
-        val gamerLink = gamerDiv.selectFirst("a").attr("href").toString()
-        val host = gamerLink.substringAfter("?").substringBefore("&")
-        val id = gamerLink.substringAfter("id=").substringBefore("&")
-        val token = gamerLink.substringAfter("token=").substringBefore("&")
-        val Cookie = "$host; hostid=$id; hosttoken=$token"
-        val document = app.get("https://gamerxyt.com/games/",headers = mapOf("Cookie" to Cookie)).document
+        val doc = app.get(url).document
+        //for katdrive
+        val vd = doc.selectFirst("div.vd > center > a")
+        var urlValue = ""
+        if(vd != null) {
+            urlValue = vd.attr("href") ?: "" 
+        }
+        else {
+            val scriptTag = doc.selectFirst("script:containsData(url)").toString()
+            urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+        }
+        val document = app.get(urlValue).document
         val header = document.selectFirst("div.card-header")?.text()
         val size = document.selectFirst("i#size")?.text()
         val div = document.selectFirst("div.card-body")
