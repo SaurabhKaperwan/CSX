@@ -12,10 +12,10 @@ class KatMovieHD: Plugin() {
         registerMainAPI(KatMovieHDProvider())
         registerMainAPI(PikaHDProvider())
         registerExtractorAPI(HubCloud())
+        registerExtractorAPI(Sendcm())
         registerExtractorAPI(KMHD())
         registerExtractorAPI(GDFlix())
-        registerExtractorAPI(KatDrive())
+        //registerExtractorAPI(KatDrive())
         registerExtractorAPI(KMHTNet())
-        registerExtractorAPI(HubCloudWS())
     }
 }
