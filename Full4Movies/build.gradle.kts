@@ -1,4 +1,4 @@
-version = 9
+version = 10
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://www.full4movies.college/wp-content/uploads/2023/12/cropped-cropped-admin-ajax-1.png"
+    iconUrl = "https://www.full4movies.email/wp-content/uploads/2023/12/cropped-cropped-admin-ajax-1.png"
 }
