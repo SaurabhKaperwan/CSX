@@ -21,5 +21,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://111.90.159.132/wp-content/uploads/2021/11/logo-web-online-movies-hindi.png"
+    iconUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/master/OnlineMoviesHinditProvider/icon.png"
 }

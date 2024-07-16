@@ -1,6 +1,5 @@
 version = 5
 
-
 cloudstream {
     language = "hi"
     // All of these properties are optional, you can safely remove them
@@ -21,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://www.cinevez.pm/wp-content/uploads/2020/11/logo.png"
+    iconUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/master/CinevezProvider/icon.png"
 }
