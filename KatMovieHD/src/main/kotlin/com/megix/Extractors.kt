@@ -22,11 +22,11 @@ open class KMHD : ExtractorApi() {
         val document = app.get(url).document
         val HubId = Regex("""hubdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
         val GDId = Regex("""gdflix_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
-        //val KatId = Regex("""katdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
+        val KatId = Regex("""katdrive_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
         val SendcmId = Regex("""sendcm_res:"([^"]+)""").find(document.html()) ?. groupValues ?. get(1)
 
         if(HubId != "None") {
-            val link = "https://hubcloud.day/drive/$HubId"
+            val link = "https://hubcloud.club/drive/$HubId"
             loadExtractor(link, subtitleCallback, callback)
         }
 
@@ -35,10 +35,10 @@ open class KMHD : ExtractorApi() {
             loadExtractor(link, subtitleCallback, callback)
         }
 
-        // if(KatId != "None") {
-        //     val link = "https://katdrive.in/file/$KatId"
-        //     loadExtractor(link, subtitleCallback, callback)
-        // }
+        if(KatId != "None") {
+            val link = "https://katdrive.in/file/$KatId"
+            loadExtractor(link, subtitleCallback, callback)
+        }
 
         if(SendcmId != "None") {
             val link = "https://send.cm/$SendcmId"
@@ -65,31 +65,31 @@ open class KMHTFile : ExtractorApi() {
     }
 }
 
-// open class KatDrive : ExtractorApi() {
-//     override val name: String = "KatDrive"
-//     override val mainUrl: String = "https://katdrive.in"
-//     override val requiresReferer = false
+open class KatDrive : ExtractorApi() {
+    override val name: String = "KatDrive"
+    override val mainUrl: String = "https://katdrive.in"
+    override val requiresReferer = false
 
-//     override suspend fun getUrl(
-//         url: String,
-//         referer: String?,
-//         subtitleCallback: (SubtitleFile) -> Unit,
-//         callback: (ExtractorLink) -> Unit
-//     ) 
-//     {
-//         val cookiesSSID = app.get(url).cookies["PHPSESSID"]
-//         val cookies = mapOf(
-//             "PHPSESSID" to "$cookiesSSID"
-//         )
-//         val document = app.get(url, cookies = cookies).document
-//         val link = document.selectFirst("h5 > a") ?. attr("href").toString()
-//         var fileIdRegex = Regex("video/([^/]+)")
-//         var fileIdMatch = fileIdRegex.find(link)
-//         var fileId = fileIdMatch ?. groupValues ?. get(1) ?: ""
-//         var hubLink = "https://hubcloud.day/video/${fileId}"
-//         loadExtractor(hubLink, subtitleCallback, callback)
-//     }
-// }
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) 
+    {
+        val cookiesSSID = app.get(url).cookies["PHPSESSID"]
+        val cookies = mapOf(
+            "PHPSESSID" to "$cookiesSSID"
+        )
+        val document = app.get(url, cookies = cookies).document
+        val link = document.selectFirst("h5 > a") ?. attr("href").toString()
+        var fileIdRegex = Regex("video/([^/]+)")
+        var fileIdMatch = fileIdRegex.find(link)
+        var fileId = fileIdMatch ?. groupValues ?. get(1) ?: ""
+        var hubLink = "https://hubcloud.club/video/${fileId}"
+        loadExtractor(hubLink, subtitleCallback, callback)
+    }
+}
 
 open class KMHTNet : ExtractorApi() {
     override val name: String = "KMHTNet"
@@ -112,8 +112,8 @@ open class KMHTNet : ExtractorApi() {
 }
 
 open class HubCloud : ExtractorApi() {
-    override val name: String = "HubCloud"
-    override val mainUrl: String = "https://hubcloud.day"
+    override val name: String = "Hub-Cloud"
+    override val mainUrl: String = "https://hubcloud.club"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -123,44 +123,52 @@ open class HubCloud : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val doc = app.get(url).document
-        val scriptTag = doc.selectFirst("script:containsData(url)").toString()
-        val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
-        val document = app.get(urlValue).document
-        val header = document.selectFirst("div.card-header")?.text()
-        val size = document.selectFirst("i#size")?.text()
+        var gamerLink = ""
+        if(url.contains("drive")) {
+            val scriptTag = doc.selectFirst("script:containsData(url)").toString()
+            gamerLink = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+        }
+        else {
+            gamerLink = doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
+        }
+        
+        val document = app.get(gamerLink).document
+
+        val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
+        val header = document.selectFirst("div.card-header") ?. text()
         div.select("a").apmap {
             val link = it.attr("href")
-            if (link.contains("pixeldra")){
+            if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
-                        "PixelDrain",
-                        "PixelDrain $size",
+                        "Pixeldrain",
+                        "Pixeldrain $size",
                         link,
-                        referer = link,
-                        quality = getIndexQuality(header),
+                        "",
+                        getIndexQuality(header),
                     )
                 )
             }
-            else if (link.contains("dl.php")) {
+            else if(link.contains("dl.php")) {
                 callback.invoke(
                     ExtractorLink(
-                        "HubCloud[Download]",
-                        "HubCloud[Download] $size",
+                        "Hub-Cloud[Download]",
+                        "Hub-Cloud[Download] $size",
                         link,
-                        referer = "",
-                        quality = getIndexQuality(header),
+                        "",
+                        getIndexQuality(header),
                     )
                 )
             }
-            else if(link.contains(".dev")){
+            else if(link.contains(".dev")) {
                 callback.invoke(
                     ExtractorLink(
-                        "HubCloud",
-                        "HubCloud $size",
+                        "Hub-Cloud",
+                        "Hub-Cloud $size",
                         link,
-                        referer = "",
-                        quality = getIndexQuality(header),
+                        "",
+                        getIndexQuality(header),
                     )
                 )
             }
@@ -168,12 +176,14 @@ open class HubCloud : ExtractorApi() {
                 loadExtractor(link, subtitleCallback, callback)
             }
         }
-        
     }
+
+
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
             ?: Qualities.Unknown.value
     }
+
 }
 
 open class GDFlix : ExtractorApi() {
@@ -269,7 +279,6 @@ open class GDFlix : ExtractorApi() {
     }
 }
 
-
 open class Sendcm : ExtractorApi() {
     override val name: String = "Sendcm"
     override val mainUrl: String = "https://send.cm"
@@ -282,27 +291,31 @@ open class Sendcm : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     )
     {
-        val id = url.substringAfterLast("/")
+        val doc = app.get(url).document
+        val op = doc.select("input[name=op]") ?. attr("value").toString()
+        val id = doc.select("input[name=id]") ?. attr("value").toString()
         val body = FormBody.Builder()
-            .addEncoded("op", "download2")
+            .addEncoded("op", op)
             .addEncoded("id", id)
             .build()
         val response = app.post(
             mainUrl,
-            requestBody = body,
+            requestBody = body,  
             allowRedirects = false
         )
 
         val locationHeader = response.headers["location"].toString()
 
-        callback.invoke(
-            ExtractorLink(
-                this.name,
-                this.name,
-                locationHeader,
-                referer = "https://send.cm/",
-                quality = Qualities.Unknown.value,
+        if(locationHeader.contains("watch")) {
+            callback.invoke(
+                ExtractorLink(
+                    this.name,
+                    this.name,
+                    locationHeader,
+                    referer = "https://send.cm/",
+                    quality = Qualities.Unknown.value,
+                )
             )
-        )
+        }
     }
 }

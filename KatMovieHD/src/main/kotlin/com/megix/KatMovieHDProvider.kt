@@ -77,6 +77,10 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
             if(hTag.tagName() == "p") {
                 hTag = pTag.nextElementSibling()
             }
+
+            if(hTag != null && hTag.tagName () == "div") {
+                hTag = hTag.nextElementSibling()
+            }
             
             while(hTag != null && hTag.tagName().matches(Regex("h\\d+"))) {
                 hTagString += hTag.toString()

@@ -1,10 +1,10 @@
-version = 31
+version = 1
 
 cloudstream {
     language = "hi"
     // All of these properties are optional, you can safely remove them
 
-    description = "Includes LuxMovies"
+    description = ""
      authors = listOf("megix")
 
     /**
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://vegamovies3.nz/wp-content/uploads/2024/04/logo.png"
+    iconUrl = "https://cinemaluxe.live/wp-content/uploads/2024/07/fresh-logo-dark-theme-.webp"
 }

@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 open class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesdrive.online"
+    override var mainUrl = "https://moviesdrive.website"
     override var name = "MoviesDrive"
     override val hasMainPage = true
     override var lang = "hi"
