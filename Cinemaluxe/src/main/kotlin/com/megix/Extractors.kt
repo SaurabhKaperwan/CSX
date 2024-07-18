@@ -70,7 +70,7 @@ open class GDFlix : ExtractorApi() {
         {
             url = url
         }
-        app.get(url).document.select("div.text-center a").amap {
+        app.get(url).document.select("div.text-center a").mapNotNull {
             if (it.select("a").text().contains("FAST CLOUD DOWNLOAD"))
             {
                 val link=it.attr("href")
