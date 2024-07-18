@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 open class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemaluxe.live"
+    override var mainUrl = "https://cinemaluxe.icu"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -19,7 +19,6 @@ open class CinemaluxeProvider : MainAPI() { // all providers must be an instance
     override val mainPage = mainPageOf(
         "$mainUrl/page/" to "Home",
         "$mainUrl/genre/hollywood/page/" to "Hollywood Movies",
-        "$mainUrl/genre/hollywood/page/" to "Hollywood",
         "$mainUrl/genre/south-indian-movies/page/" to "South Indian Movies",
         "$mainUrl/genre/hollywood-tv-show/page/" to "Hollywood TV Shows",
         "$mainUrl/genre/bollywood-tv-show/page/" to "Bollywood TV Shows",
@@ -67,7 +66,7 @@ open class CinemaluxeProvider : MainAPI() { // all providers must be an instance
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val title = document.selectFirst("div.sheader > div.data > h1") ?. text() ?: ""
-        val posterUrl = document.selectFirst("meta[property=og:image]") ?. attr("content")
+        val posterUrl = document.selectFirst("meta[property=og:image]") ?. attr("content") ?: document.selectFirst("div.sheader noscript img") ?. attr("src")
         val description = document.selectFirst("div[itemprop=description]")?.text() ?: document.selectFirst("div.wp-content")?.text() ?: ""
 
         val tvType = if (url.contains("tvshows")) { 
