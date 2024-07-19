@@ -4,10 +4,9 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import java.net.URI
 import okhttp3.FormBody
-import okhttp3.RequestBody
 
 //Extractors
-open class KMHD : ExtractorApi() {
+class KMHD : ExtractorApi() {
     override val name: String = "KMHD"
     override val mainUrl: String = "https://links.kmhd.net/file"
     override val requiresReferer = false
@@ -47,7 +46,7 @@ open class KMHD : ExtractorApi() {
     }
 }
 
-open class KMHTFile : ExtractorApi() {
+class KMHTFile : ExtractorApi() {
     override val name: String = "KMHTFile"
     override val mainUrl: String = "https://gd.kmhd.net/file/"
     override val requiresReferer = false
@@ -65,7 +64,7 @@ open class KMHTFile : ExtractorApi() {
     }
 }
 
-open class KatDrive : ExtractorApi() {
+class KatDrive : ExtractorApi() {
     override val name: String = "KatDrive"
     override val mainUrl: String = "https://katdrive.in"
     override val requiresReferer = false
@@ -91,7 +90,7 @@ open class KatDrive : ExtractorApi() {
     }
 }
 
-open class KMHTNet : ExtractorApi() {
+class KMHTNet : ExtractorApi() {
     override val name: String = "KMHTNet"
     override val mainUrl: String = "https://kmhd.net/archives/"
     override val requiresReferer = false
@@ -111,7 +110,7 @@ open class KMHTNet : ExtractorApi() {
     }
 }
 
-open class HubCloud : ExtractorApi() {
+class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
     override val mainUrl: String = "https://hubcloud.club"
     override val requiresReferer = false
@@ -186,7 +185,7 @@ open class HubCloud : ExtractorApi() {
 
 }
 
-open class GDFlix : ExtractorApi() {
+class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
     override val mainUrl: String = "https://new2.gdflix.cfd"
     override val requiresReferer = false
@@ -370,7 +369,7 @@ open class GDFlix : ExtractorApi() {
     }
 }
 
-open class Sendcm : ExtractorApi() {
+class Sendcm : ExtractorApi() {
     override val name: String = "Sendcm"
     override val mainUrl: String = "https://send.cm"
     override val requiresReferer = false

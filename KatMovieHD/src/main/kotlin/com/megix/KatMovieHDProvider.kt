@@ -40,8 +40,8 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
 
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a") ?. attr("title") ?: ""
-        val href = fixUrl(this.selectFirst("a") ?. attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val href = this.selectFirst("a") ?. attr("href").toString()
+        val posterUrl = this.selectFirst("img")?.attr("src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -128,7 +128,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val title = document.selectFirst("meta[property=og:title]").attr("content")
-        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]").attr("content"))
+        val posterUrl = document.selectFirst("meta[property=og:image]").attr("content")
 
         val tvType = if (
             title.contains("Episode", ignoreCase = true) || 

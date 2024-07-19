@@ -4,9 +4,8 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import java.net.URI
 import okhttp3.FormBody
-import okhttp3.RequestBody
 
-open class Sharepoint : ExtractorApi() {
+class Sharepoint : ExtractorApi() {
     override val name: String = "Sharepoint"
     override val mainUrl: String = "https://indjatin-my.sharepoint.com"
     override val requiresReferer = false
@@ -29,7 +28,7 @@ open class Sharepoint : ExtractorApi() {
     }
 }
 
-open class GDFlix : ExtractorApi() {
+class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
     override val mainUrl: String = "https://new2.gdflix.cfd"
     override val requiresReferer = false
@@ -213,7 +212,7 @@ open class GDFlix : ExtractorApi() {
     }
 }
 
-open class HubCloud : ExtractorApi() {
+class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
     override val mainUrl: String = "https://hubcloud.lol"
     override val requiresReferer = false
