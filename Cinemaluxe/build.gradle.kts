@@ -1,4 +1,4 @@
-version = 2
+version = 3
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://cinemaluxe.icu/wp-content/uploads/2024/07/fresh-logo-dark-theme-.webp"
+    iconUrl = "http://cinemaluxe.world/wp-content/uploads/2024/07/fresh-logo-dark-theme-.webp"
 }

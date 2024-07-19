@@ -11,5 +11,6 @@ class Cinemaluxe: Plugin() {
         registerMainAPI(CinemaluxeProvider())
         registerExtractorAPI(GDFlix())
         registerExtractorAPI(Sharepoint())
+        registerExtractorAPI(HubCloud())
     }
 }

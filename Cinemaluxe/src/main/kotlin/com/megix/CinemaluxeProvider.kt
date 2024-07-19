@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 open class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemaluxe.icu"
+    override var mainUrl = "https://cinemaluxe.world"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -130,8 +130,10 @@ open class CinemaluxeProvider : MainAPI() { // all providers must be an instance
             buttons.mapNotNull { button ->
                 val link = button.attr("href")
                 val doc = app.get(link).document
-                val source = doc.selectFirst("a.maxbutton").attr("href")
-                loadExtractor(source, subtitleCallback, callback)
+                val source = doc.select("a.maxbutton").mapNotNull {
+                    loadExtractor(it.attr("href"), subtitleCallback, callback)
+                }
+
             }
         }
         else {
