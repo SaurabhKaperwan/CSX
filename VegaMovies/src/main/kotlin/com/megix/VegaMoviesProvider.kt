@@ -66,7 +66,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..3) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
+            val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 
