@@ -104,13 +104,16 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
                         .filter { element -> !element.text().contains("Pack", true) }
         var seasonNum = 1
         aTags.forEach { aTag ->
-            val emText = aTag.selectFirst("em")?.text() ?: ""
-            val quality = Regex("(\\d{3,4})[pP]").find(emText) ?.groupValues?.getOrNull(1) ?: "Unknown"
+            val details = aTag ?. text() ?: ""
+            val quality = Regex("(\\d{3,4})[pP]").find(details) ?. groupValues ?. getOrNull(1) ?: "Unknown"
             seasonList.add(Pair(quality, seasonNum))
             val link = aTag.attr("href")
             val episodeDocument = app.get(link).document
             val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
-            val kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
+            var kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
+            if(kmhdLinks.isEmpty()) {
+                kmhdLinks = Regex("""([A-Za-z0-9]+_[a-z0-9]+):\s*\{name:"[^"]+""").findAll(episodeDocument.html()).mapNotNull { it.groups[1]?.value }.toList()
+            }
             val episodes = kmhdLinks.mapIndexed { index, kmhdLink ->
                 Episode(
                     name = "E${index + 1} $quality",

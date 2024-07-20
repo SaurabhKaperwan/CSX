@@ -136,7 +136,7 @@ class HubCloud : ExtractorApi() {
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
         val header = document.selectFirst("div.card-header") ?. text()
-        div.select("a").apmap {
+        div.select("a").amap {
             val link = it.attr("href")
             if (link.contains("pixeldra")) {
                 callback.invoke(
@@ -226,7 +226,7 @@ class GDFlix : ExtractorApi() {
         {
             url = url
         }
-        app.get(url).document.select("div.text-center a").mapNotNull {
+        app.get(url).document.select("div.text-center a").amap {
             if (it.select("a").text().contains("FAST CLOUD DOWNLOAD"))
             {
                 val link=it.attr("href")
