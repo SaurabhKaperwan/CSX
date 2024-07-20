@@ -58,7 +58,7 @@ class VCloud : ExtractorApi() {
                 )
             }
             else {
-                loadExtractor(link, subtitleCallback, callback)
+                //loadExtractor(link, subtitleCallback, callback)
             }
         }
     }

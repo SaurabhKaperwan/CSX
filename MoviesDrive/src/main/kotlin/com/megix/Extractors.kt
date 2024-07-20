@@ -69,7 +69,7 @@ class HubCloud : ExtractorApi() {
                 )
             }
             else {
-                loadExtractor(link, subtitleCallback, callback)
+                //loadExtractor(link, subtitleCallback, callback)
             }
         }
     }

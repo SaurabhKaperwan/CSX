@@ -3,7 +3,7 @@ package com.likdev256
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 import android.content.Context
-import com.lagradost.cloudstream3.extractors.Gofile
+//import com.lagradost.cloudstream3.extractors.Gofile
 
 
 @CloudstreamPlugin
@@ -14,6 +14,6 @@ class CinevezPlugin: Plugin() {
         registerExtractorAPI(ShaveTape())
         registerExtractorAPI(MDrop())
         registerExtractorAPI(JodWish())
-        registerExtractorAPI(Gofile())
+        //registerExtractorAPI(Gofile())
     }
 }
