@@ -95,61 +95,79 @@ open class MoviesDriveProvider : MainAPI() { // all providers must be an instanc
         }
         if(tvType == TvType.TvSeries) {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            var seasonNum = 1
             var buttons = document.select("h5 > a")
                 .filter { element -> !element.text().contains("Zip", true) }
-            val seasonList = mutableListOf<Pair<String, Int>>()
-            
-            buttons.forEach { button ->
-                val titleElement = button.parent() ?. previousElementSibling()
-                val mainTitle = titleElement ?. text() ?: ""
-                val episodeLink = button.attr("href") ?: ""
-                val qualityRegex = Regex("\\b(480p|720p|1080p|2160p)\\b", RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(mainTitle)?.value ?: ""
-                seasonList.add("$mainTitle" to seasonNum)
 
-                val doc = app.get(episodeLink).document
+            if(buttons.isNotEmpty()) {
+                val seasonList = mutableListOf<Pair<String, Int>>()
+                var seasonNum = 1
+                buttons.forEach { button ->
+                    val titleElement = button.parent() ?. previousElementSibling()
+                    val mainTitle = titleElement ?. text() ?: ""
+                    val episodeLink = button.attr("href") ?: ""
+                    seasonList.add("$mainTitle" to seasonNum)
 
-                var elements = doc.select("span:matches((?i)(Ep))")
-                if(elements.isEmpty()) {
-                    elements = doc.select("a:matches((?i)(HubCloud))")
-                }
-                val episodes = mutableListOf<Episode>()
-                elements.forEach { element ->
-                    var episodeString = ""
-                    var title = mainTitle
-                    if(element.tagName() == "span") {
-                        val titleTag = element.parent()
-                        title = titleTag ?. text() ?: ""
-                        var linkTag = titleTag ?. nextElementSibling()
+                    val doc = app.get(episodeLink).document
 
-                        while(linkTag != null && (linkTag.text()?.contains("HubCloud", ignoreCase = true) ?: false)) {
-                            episodeString += linkTag.toString()
-                            linkTag = linkTag.nextElementSibling()
+                    var elements = doc.select("span:matches((?i)(Ep))")
+                    if(elements.isEmpty()) {
+                        elements = doc.select("a:matches((?i)(HubCloud))")
+                    }
+                    val episodes = mutableListOf<Episode>()
+                    elements.forEach { element ->
+                        var episodeString = ""
+                        var title = mainTitle
+                        if(element.tagName() == "span") {
+                            val titleTag = element.parent()
+                            title = titleTag ?. text() ?: ""
+                            var linkTag = titleTag ?. nextElementSibling()
+
+                            while(linkTag != null && (linkTag.text()?.contains("HubCloud", ignoreCase = true) ?: false)) {
+                                episodeString += linkTag.toString()
+                                linkTag = linkTag.nextElementSibling()
+                            }
+                        }
+                        else {
+                            episodeString = element.toString()
+                        }
+
+                        if (episodeString.isNotEmpty()) {
+                            episodes.add(
+                                Episode(
+                                    name = "$title",
+                                    data = episodeString,
+                                    season = seasonNum,
+                                    episode = elements.indexOf(element) + 1
+                                )
+                            )
                         }
                     }
-                    else {
-                        episodeString = element.toString()
-                    }
-
-                    if (episodeString.isNotEmpty()) {
-                        episodes.add(
-                            Episode(
-                                name = "$title",
-                                data = episodeString,
-                                season = seasonNum,
-                                episode = elements.indexOf(element) + 1
-                            )
-                        )
-                    }
+                    tvSeriesEpisodes.addAll(episodes)
+                    seasonNum++
                 }
-                tvSeriesEpisodes.addAll(episodes)
-                seasonNum++
+                return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+                    this.posterUrl = posterUrl
+                    this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
+                }
             }
-            return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
-                this.posterUrl = posterUrl
-                this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
+            else {
+                val episodesList = mutableListOf<Episode>()
+                val pTags = document.select("p.p1")
+                pTags.forEach { pTag ->
+                    val text = pTag.text() ?: ""
+                    val nextTag = pTag.nextElementSibling()
+                    val nextTagString = nextTag.toString()
+                    val episodes = Episode(
+                        name = text,
+                        data = nextTagString,
+                    )
+                    episodesList.add(episodes)
+                }
+                return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, episodesList) {
+                    this.posterUrl = posterUrl
+                }
             }
+
         }
         else {
             return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
@@ -164,10 +182,21 @@ open class MoviesDriveProvider : MainAPI() { // all providers must be an instanc
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if(data.contains("moviesdrive")) {
+        if(data.contains("graph.")) {
+            val regex = Regex("""(?i)https?:\/\/[^\s"<]+""")
+            val links = regex.findAll(data).mapNotNull { it.value }.toList()
+            links.amap {
+                val doc = app.get(it).document
+                val srcs = doc.select("h3 > a").mapNotNull {
+                    val src = it.attr("href")
+                    loadExtractor(src, subtitleCallback, callback)
+                }
+            }
+        }
+        else if(data.contains("moviesdrive")) {
             val document = app.get(data).document
             val buttons = document.select("h5 > a")
-            buttons.mapNotNull { button ->
+            buttons.amap { button ->
                 val link = button.attr("href")
                 val doc = app.get(link).document
                 val innerButtons = doc.select("h5 > a")
