@@ -47,11 +47,13 @@ class HubCloud : ExtractorApi() {
                 )
             }
             else if(link.contains("dl.php")) {
+                val downloadPage = app.get(link).document
+                val downloadLink = downloadPage.selectFirst("a#vd").attr("href")
                 callback.invoke(
                     ExtractorLink(
                         "Hub-Cloud[Download]",
                         "Hub-Cloud[Download] $size",
-                        link,
+                        downloadLink,
                         "",
                         getIndexQuality(header),
                     )

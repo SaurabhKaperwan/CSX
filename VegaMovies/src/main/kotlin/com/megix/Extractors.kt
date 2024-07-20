@@ -36,11 +36,13 @@ class VCloud : ExtractorApi() {
                 )
             }
             else if(link.contains("dl.php")) {
+                val downloadPage = app.get(link).document
+                val downloadLink = downloadPage.selectFirst("a#vd").attr("href")
                 callback.invoke(
                     ExtractorLink(
                         "V-Cloud[Download]",
                         "V-Cloud[Download] $size",
-                        link,
+                        downloadLink,
                         "",
                         getIndexQuality(header),
                     )
@@ -58,7 +60,7 @@ class VCloud : ExtractorApi() {
                 )
             }
             else {
-                //loadExtractor(link, subtitleCallback, callback)
+                loadExtractor(link, subtitleCallback, callback)
             }
         }
     }
