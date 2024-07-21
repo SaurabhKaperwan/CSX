@@ -258,7 +258,7 @@ class HubCloud : ExtractorApi() {
                     ExtractorLink(
                         "Hub-Cloud[Download]",
                         "Hub-Cloud[Download] $size",
-                        downloadLink,
+                        downLoadlink,
                         "",
                         getIndexQuality(header),
                     )
