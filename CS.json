@@ -1,0 +1,8 @@
+{
+  "name": "CSX(Hindi & English)",
+  "description": "Hindi and English",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/plugins.json"
+  ]
+}
