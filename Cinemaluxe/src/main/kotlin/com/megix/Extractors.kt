@@ -214,7 +214,7 @@ class GDFlix : ExtractorApi() {
 
 class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.lol"
+    override val mainUrl: String = "https://hubcloud.club"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -223,18 +223,14 @@ class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val doc = app.get(url).text
-        val newLink = doc.substringAfter("url=").substringBefore("\"")
-        val newDoc = app.get(newLink).document
+        val doc = app.get(url).document
         var gamerLink = ""
-
-        if(newLink.contains("drive")) {
-            val scriptTag = newDoc.selectFirst("script:containsData(url)").toString()
+        if(url.contains("drive")) {
+            val scriptTag = doc.selectFirst("script:containsData(url)").toString()
             gamerLink = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         }
-
         else {
-            gamerLink = newDoc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
+            gamerLink = doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
         }
 
         val document = app.get(gamerLink).document
@@ -242,7 +238,7 @@ class HubCloud : ExtractorApi() {
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
         val header = document.selectFirst("div.card-header") ?. text()
-        div.select("a").apmap {
+        div.select("a").amap {
             val link = it.attr("href")
             if (link.contains("pixeldra")) {
                 callback.invoke(
@@ -256,11 +252,13 @@ class HubCloud : ExtractorApi() {
                 )
             }
             else if(link.contains("dl.php")) {
+                val response = app.get(link, allowRedirects = false)
+                val downLoadlink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
                     ExtractorLink(
                         "Hub-Cloud[Download]",
                         "Hub-Cloud[Download] $size",
-                        link,
+                        downloadLink,
                         "",
                         getIndexQuality(header),
                     )
