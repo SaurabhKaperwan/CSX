@@ -1,0 +1,243 @@
+[
+    {
+        "iconUrl": "https://0gomovies.movie/wp-content/themes/assets/images/logo-dark.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 11368,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 1,
+        "internalName": "0gomovies",
+        "description": "Indian Multilingual Provider",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/0gomovies.cs3",
+        "name": "0gomovies"
+    },
+    {
+        "iconUrl": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg6keB0Vjw3pV6mq9JhKZVKpIBEZXft11cFDS2ANbg8sL0SRyXJZEipVxWEepSs9xbCC95dyUhPvqGn_-H0sTKoU5rW5vvoC307-ffdOWYzDMyUzecwXDM_hkgtIiDOneTx9H-VQ_nATYcCsGzzM7Sp-wOJ6M3HIEpqJ9nfwj4Ssuf3GIJD0CeGBgg1liep/s800/anitime%20logo.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 14501,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "Movie,Anime,Cartoon"
+        ],
+        "version": 2,
+        "internalName": "Anitime",
+        "description": "Indian Multilingual Dubbed & Subbed Anime",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/Anitime.cs3",
+        "name": "Anitime"
+    },
+    {
+        "iconUrl": "http://cinemaluxe.world/wp-content/uploads/2024/07/fresh-logo-dark-theme-.webp",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 22297,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 5,
+        "internalName": "Cinemaluxe",
+        "description": "",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/Cinemaluxe.cs3",
+        "name": "Cinemaluxe"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/master/CinevezProvider/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 11474,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 5,
+        "internalName": "CinevezProvider",
+        "description": "This website support Hindi/English/Kannada/Malayalam/Tamil/Telugu",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/CinevezProvider.cs3",
+        "name": "CinevezProvider"
+    },
+    {
+        "iconUrl": "https://www.full4movies.email/wp-content/uploads/2023/12/cropped-cropped-admin-ajax-1.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 13591,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 10,
+        "internalName": "Full4Movies",
+        "description": "Contains Hindi Movies and TV Series upto 1080p",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/Full4Movies.cs3",
+        "name": "Full4Movies"
+    },
+    {
+        "iconUrl": "https://katmoviehd.foo/wp-content/uploads/2022/03/cropped-cropped-KatMovie-G-S1.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 33521,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 10,
+        "internalName": "KatMovieHD",
+        "description": "Include PikaHD",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/KatMovieHD.cs3",
+        "name": "KatMovieHD"
+    },
+    {
+        "iconUrl": "https://i.imgur.com/9bGkGMi.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 20353,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 5,
+        "internalName": "MoviesDrive",
+        "description": "High Quality Movies and TV Shows",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/MoviesDrive.cs3",
+        "name": "MoviesDrive"
+    },
+    {
+        "iconUrl": "https://iosmirror.cc/img/nf2/icon_x192.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 22918,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "Horis"
+        ],
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "version": 1,
+        "internalName": "NetflixMirrorProvider",
+        "description": "Netflix Content in Multiple Languages",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/NetflixMirrorProvider.cs3",
+        "name": "NetflixMirrorProvider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/master/OnlineMoviesHinditProvider/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 10312,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 4,
+        "internalName": "OnlineMoviesHinditProvider",
+        "description": "Use VPN",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/OnlineMoviesHinditProvider.cs3",
+        "name": "OnlineMoviesHinditProvider"
+    },
+    {
+        "iconUrl": "https://vadapav.mov/assets/favicon-32x32.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 13293,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "Movie",
+            "TvSeries",
+            "Anime",
+            "AsianDrama"
+        ],
+        "version": 6,
+        "internalName": "VadaPav",
+        "description": "Contains Movies, TV Series and Anime upto 4K",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/VadaPav.cs3",
+        "name": "VadaPav"
+    },
+    {
+        "iconUrl": "https://vegamovies.tw/wp-content/uploads/2024/04/logo.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 21347,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 36,
+        "internalName": "VegaMovies",
+        "description": "Includes LuxMovies",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/VegaMovies.cs3",
+        "name": "VegaMovies"
+    },
+    {
+        "iconUrl": "https://world4ufree.durban/wp-content/uploads/2021/01/world4ufree-Logo-1.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "fileSize": 23662,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 2,
+        "internalName": "World4uFree",
+        "description": "",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/World4uFree.cs3",
+        "name": "World4uFree"
+    }
+]
