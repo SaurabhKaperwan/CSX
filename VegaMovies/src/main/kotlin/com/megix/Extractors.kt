@@ -37,7 +37,7 @@ class VCloud : ExtractorApi() {
             }
             else if(link.contains("dl.php")) {
                 val response = app.get(link, allowRedirects = false)
-                val downLoadlink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
+                val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
                     ExtractorLink(
                         "V-Cloud[Download]",

@@ -151,12 +151,12 @@ class HubCloud : ExtractorApi() {
             }
             else if(link.contains("dl.php")) {
                 val response = app.get(link, allowRedirects = false)
-                val downLoadlink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
+                val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
                     ExtractorLink(
                         "Hub-Cloud[Download]",
                         "Hub-Cloud[Download] $size",
-                        downLoadlink,
+                        downloadLink,
                         "",
                         getIndexQuality(header),
                     )
