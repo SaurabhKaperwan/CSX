@@ -5,7 +5,7 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
-open class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
+class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://cinemaluxe.world"
     override var name = "Cinemaluxe"
     override val hasMainPage = true

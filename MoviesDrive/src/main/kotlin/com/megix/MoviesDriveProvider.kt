@@ -5,7 +5,7 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
-open class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
+class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesdrive.website"
     override var name = "MoviesDrive"
     override val hasMainPage = true
@@ -82,6 +82,12 @@ open class MoviesDriveProvider : MainAPI() { // all providers must be an instanc
             }
         } ?: ""
 
+        val plotElement = document.select(
+            "h2:contains(Storyline), h3:contains(Storyline), h5:contains(Storyline), h4:contains(Storyline), h4:contains(STORYLINE)"
+        ).firstOrNull() ?. nextElementSibling()
+
+        val plot = plotElement ?. text() ?: document.select(".ipc-html-content-inner-div").firstOrNull() ?. text() ?: ""
+
         val posterUrl = document.selectFirst("img[decoding=\"async\"]") ?. attr("src") ?: ""
         val seasonRegex = """(?i)season\s*\d+""".toRegex()
         val tvType = if (
@@ -147,6 +153,7 @@ open class MoviesDriveProvider : MainAPI() { // all providers must be an instanc
                 }
                 return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
                     this.posterUrl = posterUrl
+                    this.plot = plot
                     this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
                 }
             }
@@ -165,6 +172,7 @@ open class MoviesDriveProvider : MainAPI() { // all providers must be an instanc
                 }
                 return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, episodesList) {
                     this.posterUrl = posterUrl
+                    this.plot = plot
                 }
             }
 
@@ -172,6 +180,7 @@ open class MoviesDriveProvider : MainAPI() { // all providers must be an instanc
         else {
             return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
+                this.plot = plot
             }
         }
     }
