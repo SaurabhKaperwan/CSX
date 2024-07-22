@@ -4,6 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import okhttp3.FormBody
 import org.json.JSONObject
+import java.net.URI
 
 class FastLinks : ExtractorApi() {
     override val name: String = "FastLinks"
