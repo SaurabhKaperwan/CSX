@@ -287,49 +287,6 @@ class GDFlix : ExtractorApi() {
                         )
                     )
                 }
-
-                val drivebotlink = "https://drivebot.cfd/download?id=${id}&do=${doId}"
-                val drivebotresponse = app.get(drivebotlink, timeout = 60L)
-                if(drivebotresponse.isSuccessful) {
-                    val cookiesSSID = drivebotresponse.cookies["PHPSESSID"]
-                    val drivebotDoc = drivebotresponse.document
-                    val token = Regex("""formData\.append\('token', '([a-f0-9]+)'\)""").find(drivebotDoc.toString()) ?. groupValues ?. get(1) ?: "token"
-                    val postId = Regex("""fetch\('\/download\?id=([a-zA-Z0-9\/+]+)'""").find(drivebotDoc.toString()) ?. groupValues ?. get(1) ?: "postId"
-                
-                    val requestBody = FormBody.Builder()
-                        .add("token", token)
-                        .build()
-                
-                    val headers = mapOf(
-                        "Referer" to drivebotlink
-                    )
-                
-                    val cookies = mapOf(
-                        "PHPSESSID" to "$cookiesSSID",
-                    )
-                
-                    val response = app.post(
-                        "https://drivebot.cfd/download?id=${postId}",
-                        requestBody = requestBody,
-                        headers = headers,
-                        cookies = cookies,
-                        timeout = 60L
-                    ).toString()
-                
-                    var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""    
-
-                    downloadlink = downloadlink.replace("\\", "")                
-                
-                    callback.invoke(
-                        ExtractorLink(
-                            "DriveBot", 
-                            "DriveBot $tagquality", 
-                            downloadlink, 
-                            "https://drivebot.cfd/",
-                            getQualityFromName(tags)
-                        )
-                    )
-                }
             }
             else if (it.select("a").text().contains("Instant Download"))
             {
@@ -346,7 +303,7 @@ class GDFlix : ExtractorApi() {
                         "x-token" to "direct.zencloud.lol",
                         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
                     ),
-                    timeout = 100L,
+                    timeout = 60L,
                 )
                 val finaldownloadlink =
                     downloadlink.toString().substringAfter("url\":\"")
