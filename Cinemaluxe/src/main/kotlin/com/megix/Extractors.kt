@@ -120,8 +120,8 @@ class GDFlix : ExtractorApi() {
                 
                     callback.invoke(
                         ExtractorLink(
-                            "IndexBot", 
-                            "IndexBot $tagquality", 
+                            "GDFlix[IndexBot]", 
+                            "GDFlix[IndexBot] $tagquality", 
                             downloadlink, 
                             "https://indexbot.lol/",
                             getQualityFromName(tags)
@@ -163,7 +163,7 @@ class GDFlix : ExtractorApi() {
             }
             else
             {
-                val link=it.attr("href")
+
             }
         }
     }
@@ -183,7 +183,7 @@ class HubCloud : ExtractorApi() {
         val doc = app.get(url).document
         var gamerLink = ""
         if(url.contains("drive")) {
-            val scriptTag = doc.selectFirst("script:containsData(url)").toString()
+            val scriptTag = doc ?. selectFirst("script:containsData(url)").toString()
             gamerLink = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         }
         else {

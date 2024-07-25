@@ -110,8 +110,14 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 buttons.forEach { button ->
                     val titleElement = button.parent() ?. previousElementSibling()
                     val mainTitle = titleElement ?. text() ?: ""
+                    val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                    val realSeason = realSeasonRegex.find(mainTitle.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                    val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
+                    val quality = qualityRegex.find(mainTitle.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                    val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:MB|GB)\b""")
+                    val size = sizeRegex.find(mainTitle.toString())?.value ?: ""
+                    seasonList.add("S$realSeason $quality $size" to seasonNum)
                     val episodeLink = button.attr("href") ?: ""
-                    seasonList.add("$mainTitle" to seasonNum)
 
                     val doc = app.get(episodeLink).document
 
@@ -128,7 +134,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                             title = titleTag ?. text() ?: ""
                             var linkTag = titleTag ?. nextElementSibling()
 
-                            while(linkTag != null && (linkTag.text()?.contains("HubCloud", ignoreCase = true) ?: false)) {
+                            while(linkTag != null && (linkTag.text() ?. contains("HubCloud", ignoreCase = true) ?: false)) {
                                 episodeString += linkTag.toString()
                                 linkTag = linkTag.nextElementSibling()
                             }
@@ -163,7 +169,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 pTags.forEach { pTag ->
                     val text = pTag.text() ?: ""
                     val nextTag = pTag.nextElementSibling()
-                    val nextTagString = nextTag.toString()
+                    val nextTagString = nextTag ?. toString() ?: ""
                     val episodes = Episode(
                         name = text,
                         data = nextTagString,
@@ -196,7 +202,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
             val links = regex.findAll(data).mapNotNull { it.value }.toList()
             links.amap {
                 val doc = app.get(it).document
-                val srcs = doc.select("h3 > a").mapNotNull {
+                doc.select("h3 > a").mapNotNull {
                     val src = it.attr("href")
                     loadExtractor(src, subtitleCallback, callback)
                 }

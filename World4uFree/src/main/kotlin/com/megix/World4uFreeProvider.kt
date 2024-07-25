@@ -101,8 +101,15 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
             buttons.forEach { button ->
                 val titleElement = button.parent().parent().previousElementSibling()
                 val title = titleElement.text()
+                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                val realSeason = realSeasonRegex.find(title.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
+                val quality = qualityRegex.find(title.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:Mb|Gb|mb|gb)\b""")
+                val size = sizeRegex.find(title.toString())?.value ?: ""
+                seasonList.add("S$realSeason $quality $size" to seasonNum)
                 val wlinkz = button.attr("href")
-                seasonList.add("$title" to seasonNum)
+
                 val doc = app.get(wlinkz).document
                 val elements = doc.select("h3:matches((?i)(episode))")
                 val episodes = mutableListOf<Episode>()

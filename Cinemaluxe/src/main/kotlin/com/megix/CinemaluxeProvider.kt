@@ -37,9 +37,9 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("img").attr("alt") ?: ""
-        val href = this.selectFirst("a").attr("href") ?: ""
-        val posterUrl = this.selectFirst("img").attr("data-src") ?: ""
+        val title = this.selectFirst("img") ?. attr("alt") ?: ""
+        val href = this.selectFirst("a") ?. attr("href") ?: ""
+        val posterUrl = this.selectFirst("img") ?. attr("data-src") ?: ""
     
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -83,9 +83,15 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
 
             hTags.mapNotNull{ hTag ->
                 val seasonText = hTag.text() ?: "Unknown"
-                seasonList.add(seasonText to seasonNum)
+                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                val realSeason = realSeasonRegex.find(seasonText.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
+                val quality = qualityRegex.find(seasonText.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                val sizeRegex = Regex("""\b\d+(?:\.\d+)? (?:MB|GB)\b""")
+                val size = sizeRegex.find(seasonText.toString())?.value ?: ""
+                seasonList.add("S$realSeason $quality $size" to seasonNum)
                 val spanTag = hTag.nextElementSibling()
-                val seasonLink = spanTag.selectFirst("a").attr("href")
+                val seasonLink = spanTag ?. selectFirst("a") ?. attr("href") ?: ""
                 val doc = app.get(seasonLink).document
                 var aTags = doc.select("a:matches((?i)(Episode))")
                 val episodes = mutableListOf<Episode>()
@@ -130,7 +136,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             buttons.mapNotNull { button ->
                 val link = button.attr("href")
                 val doc = app.get(link).document
-                val source = doc.select("a.maxbutton").mapNotNull {
+                doc.select("a.maxbutton").mapNotNull {
                     loadExtractor(it.attr("href"), subtitleCallback, callback)
                 }
 
