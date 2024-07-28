@@ -87,10 +87,9 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
                 hTag = hTag.nextElementSibling()
             }
             val details = pTag.text()
-            val episodes = Episode(
-                name = details,
-                data = hTagString,
-            )
+            val episodes = newEpisode(hTagString){
+                name = details
+            }
             episodesList.add(episodes)
         }
         return episodesList
@@ -109,21 +108,33 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
             seasonList.add(Pair(quality, seasonNum))
             val link = aTag.attr("href")
             val episodeDocument = app.get(link).document
-            val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
-            var kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
-            if(kmhdLinks.isEmpty()) {
-                kmhdLinks = Regex("""([A-Za-z0-9]+_[a-z0-9]+):\s*\{name:"[^"]+""").findAll(episodeDocument.html()).mapNotNull { it.groups[1]?.value }.toList()
+            if(link.contains("kmhd.net/archives")) {
+                val episodes = episodeDocument.select("p > strong > a").mapIndexed { index, element ->
+                    newEpisode(element.attr("href")) {
+                        name = "E${index + 1} $quality"
+                        season = seasonNum
+                        episode = index + 1
+                    }
+                }
+                episodesList.addAll(episodes)
+                seasonNum++
             }
-            val episodes = kmhdLinks.mapIndexed { index, kmhdLink ->
-                Episode(
-                    name = "E${index + 1} $quality",
-                    data = "https://links.kmhd.net/file/$kmhdLink",
-                    season = seasonNum,
-                    episode = index + 1,
-                )
+            else {
+                val kmhdPackRegex = Regex("""My_[a-zA-Z0-9]+""")
+                var kmhdLinks = kmhdPackRegex.findAll(episodeDocument.html()).mapNotNull { it.value }.toList()
+                if(kmhdLinks.isEmpty()) {
+                    kmhdLinks = Regex("""([A-Za-z0-9]+_[a-z0-9]+):\s*\{name:"[^"]+""").findAll(episodeDocument.html()).mapNotNull { it.groups[1]?.value }.toList()
+                }
+                val episodes = kmhdLinks.mapIndexed { index, kmhdLink ->
+                    newEpisode("https://links.kmhd.net/file/$kmhdLink") {
+                        name = "E${index + 1} $quality"
+                        season = seasonNum
+                        episode = index + 1
+                    }
+                }
+                episodesList.addAll(episodes)
+                seasonNum++
             }
-            episodesList.addAll(episodes)
-            seasonNum++
         }
         return episodesList
     }
@@ -132,6 +143,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
         val document = app.get(url).document
         val title = document.selectFirst("meta[property=og:title]").attr("content")
         val posterUrl = document.selectFirst("meta[property=og:image]").attr("content")
+        val discription = document.selectFirst("div.more-details-label").text() ?: document.selectFirst("div.content").text() ?: ""
 
         val tvType = if (
             title.contains("Episode", ignoreCase = true) || 
@@ -152,6 +164,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
                 tvSeriesEpisodes.addAll(episodesList)
                 return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                     this.posterUrl = posterUrl
+                    this.plot = discription
                 }
             }
             else {
@@ -160,6 +173,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
                 tvSeriesEpisodes.addAll(episodesList)
                 return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                     this.posterUrl = posterUrl
+                    this.plot = discription
                     this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
                 }
             }
@@ -167,6 +181,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
         else {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
+                this.plot = discription
             }
         }
     }
@@ -184,7 +199,7 @@ open class KatMovieHDProvider : MainAPI() { // all providers must be an instance
                 loadExtractor(it, subtitleCallback, callback)
             }
         }
-        else if(data.contains("kmhd.net/file")) {
+        else if(data.contains("kmhd.net/file") || data.contains("gdflix")) {
             loadExtractor(data, subtitleCallback, callback)
         }
         else {
