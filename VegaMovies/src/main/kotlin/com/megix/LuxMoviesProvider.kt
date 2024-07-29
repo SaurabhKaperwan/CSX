@@ -7,7 +7,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 
 
 class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://luxmovies.live"
+    override var mainUrl = "https://luxmovies.wiki"
     override var name = "LuxMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -52,7 +52,7 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         } ?: ""
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val imgTag = this.selectFirst("img.blog-picture")
-        val posterUrl = imgTag?.attr("data-src")
+        val posterUrl = imgTag ?. attr("data-src")
 
         return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -60,9 +60,16 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     }
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.186 Mobile Safari/537.36"
+        )
 
         for (i in 1..3) {
-            val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
+            val document = app.get(
+                "$mainUrl/page/$i/?s=$query", 
+                interceptor = cfInterceptor,
+                headers = headers
+            ).document
 
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
 

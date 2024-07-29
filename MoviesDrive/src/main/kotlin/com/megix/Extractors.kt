@@ -35,6 +35,7 @@ class HubCloud : ExtractorApi() {
         val header = document.selectFirst("div.card-header") ?. text()
         div.select("a").apmap {
             val link = it.attr("href")
+            val text = it.text()
             if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
@@ -46,7 +47,7 @@ class HubCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(link.contains("dl.php")) {
+            else if(text.contains("Download [Server : 10Gbps]")) {
                 val response = app.get(link, allowRedirects = false)
                 val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(

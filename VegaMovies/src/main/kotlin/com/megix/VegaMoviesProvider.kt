@@ -6,9 +6,8 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
-
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.nz"
+    override var mainUrl = "https://vegamovies.tw"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -159,12 +158,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                         vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
                     }
                     val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                        Episode(
-                            name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}",
-                            data = vcloudlink,
-                            season = seasonNum,
-                            episode = vcloudLinks.indexOf(vcloudlink) + 1,
-                        )
+                        newEpisode(vcloudlink) {
+                            name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}"
+                            season = seasonNum
+                            episode = vcloudLinks.indexOf(vcloudlink) + 1
+                        }
                     }
 
                     tvSeriesEpisodes.addAll(episodes)
