@@ -3,6 +3,9 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.json.JSONObject
 import java.net.URI
 
@@ -39,6 +42,7 @@ class WLinkFast : ExtractorApi() {
     override val name: String = "WLinkFast"
     override val mainUrl: String = "https://wlinkfast.store"
     override val requiresReferer = false
+    private val client = OkHttpClient()
 
     override suspend fun getUrl(
         url: String,
@@ -63,21 +67,45 @@ class WLinkFast : ExtractorApi() {
             url,
             requestBody = formBody,
             cookies = cookies
-        ).text
-
-        val jsonObject = JSONObject(response)
-        val link = jsonObject.getString("download")
-
-        callback.invoke (
-            ExtractorLink (
-                this.name,
-                this.name,
-                link,
-                referer = "",
-                quality = getIndexQuality(quality),
-            )
         )
         
+        val jsonResponse = response.text
+        val jsonObject = JSONObject(jsonResponse)
+        val link = jsonObject.getString("download")
+        val requireRepairRequest = Request.Builder()
+            .url(link)
+            .head()
+            .build()
+
+        val requireRepairResponse: Response = client.newCall(requireRepairRequest).execute()
+        val contentType = requireRepairResponse.header("Content-Type").toString()
+        
+        if(contentType != null && contentType.contains("video")) {
+            callback.invoke (
+                ExtractorLink (
+                    this.name,
+                    this.name,
+                    link,
+                    referer = "",
+                    quality = getIndexQuality(quality),
+                )
+            )
+        }
+        else {
+            val reResponse = app.get(link).document
+            val reLink = "https://www.mediafire.com" + reResponse.selectFirst("a#continue-btn").attr("href").toString()
+            val doc = app.get(reLink).document
+            val downloadLink = doc.selectFirst("a.input.popsok").attr("href")
+            callback.invoke (
+                ExtractorLink (
+                    this.name,
+                    this.name,
+                    downloadLink,
+                    referer = "",
+                    quality = getIndexQuality(quality),
+                )
+            )
+        }
     }
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
