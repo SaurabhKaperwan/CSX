@@ -60,25 +60,14 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     }
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.186 Mobile Safari/537.36"
-        )
-
         for (i in 1..3) {
-            val document = app.get(
-                "$mainUrl/page/$i/?s=$query", 
-                interceptor = cfInterceptor,
-                headers = headers
-            ).document
-
+            val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
             val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
-
             if (results.isEmpty()) {
                 break
             }
             searchResponse.addAll(results)
         }
-
         return searchResponse
     }
 

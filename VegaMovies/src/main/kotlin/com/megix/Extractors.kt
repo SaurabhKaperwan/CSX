@@ -22,7 +22,7 @@ class VCloud : ExtractorApi() {
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
         val header = document.selectFirst("div.card-header") ?. text()
-        div.select("a").apmap {
+        div.select("a").amap {
             val link = it.attr("href")
             val text = it.text()
             if (link.contains("pixeldra")) {
@@ -72,28 +72,4 @@ class VCloud : ExtractorApi() {
             ?: Qualities.Unknown.value
     }
 
-}
-
-
-open class FastDL : ExtractorApi() {
-    override val name: String = "FastDl"
-    override val mainUrl: String = "https://fastdl.icu"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val cookiesSSID = app.get(url).cookies["PHPSESSID"]
-        val cookies = mapOf(
-            "PHPSESSID" to "$cookiesSSID"
-        )
-        val document = app.get(url, cookies = cookies).document
-        val link = document.selectFirst("a#vd") ?. attr("href")
-        if(link != null) {
-            callback.invoke(ExtractorLink("FastDL", "FastDL[Download]", link, "", Qualities.Unknown.value))
-        }
-    }
 }
