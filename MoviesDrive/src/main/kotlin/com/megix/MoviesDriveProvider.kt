@@ -4,6 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesdrive.website"
@@ -90,6 +91,8 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
         val posterUrl = document.selectFirst("img[decoding=\"async\"]") ?. attr("src") ?: ""
         val seasonRegex = """(?i)season\s*\d+""".toRegex()
+        val imdbId = document.selectFirst("a:contains(IMDb)", ignoreCase = true) ?. attr("href")
+
         val tvType = if (
             title ?. contains("Episode", ignoreCase = true) ?: false || 
             seasonRegex.containsMatchIn(title ?: "") || 
@@ -120,12 +123,12 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                     val episodeLink = button.attr("href") ?: ""
 
                     val doc = app.get(episodeLink).document
-
                     var elements = doc.select("span:matches((?i)(Ep))")
                     if(elements.isEmpty()) {
                         elements = doc.select("a:matches((?i)(HubCloud))")
                     }
                     val episodes = mutableListOf<Episode>()
+                    
                     elements.forEach { element ->
                         var episodeString = ""
                         var title = mainTitle
@@ -145,12 +148,11 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
                         if (episodeString.isNotEmpty()) {
                             episodes.add(
-                                Episode(
-                                    name = "$title",
-                                    data = episodeString,
-                                    season = seasonNum,
+                                newEpisode(episodeString,initializer = {
+                                    name = "$title"
+                                    season = seasonNum
                                     episode = elements.indexOf(element) + 1
-                                )
+                                }, fix = false)
                             )
                         }
                     }
@@ -161,6 +163,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                     this.posterUrl = posterUrl
                     this.plot = plot
                     this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
+                    addImdbUrl(imdbId)
                 }
             }
             else {
@@ -170,15 +173,15 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                     val text = pTag.text() ?: ""
                     val nextTag = pTag.nextElementSibling()
                     val nextTagString = nextTag ?. toString() ?: ""
-                    val episodes = Episode(
-                        name = text,
-                        data = nextTagString,
-                    )
+                    val episodes = newEpisode(nextTagString, initializer = {
+                        name = text
+                    }, fix = false)
                     episodesList.add(episodes)
                 }
                 return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, episodesList) {
                     this.posterUrl = posterUrl
                     this.plot = plot
+                    addImdbUrl(imdbId)
                 }
             }
 
@@ -187,6 +190,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
             return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
                 this.plot = plot
+                addImdbUrl(imdbId)
             }
         }
     }
