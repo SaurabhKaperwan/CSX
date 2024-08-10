@@ -5,17 +5,16 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.network.CloudflareKiller
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
 
-    override var mainUrl = "https://vegamovies.tw"
+    override var mainUrl = "https://vegamovies.nu"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-
     private val cfInterceptor = CloudflareKiller()
-
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries
@@ -42,22 +41,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a")?.attr("title")
-        val trimTitle = title?.let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            } else {
-                it
-            }
-        } ?: ""
-
+        val title = this.selectFirst("a").attr("title").replace("Download ", "")
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         var posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src").toString())
         if (posterUrl == null) {
             posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src").toString())
         }
 
-        return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
+        return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
@@ -77,15 +68,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]")?.attr("content")
-        val trimTitle = title?.let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            } else {
-                it
-            }
-        } ?: ""
-
+        val title = document.selectFirst("meta[property=og:title]").attr("content").replace("Download ", "")
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         val documentText = document.text()
         val div = document.select("div.entry-content")
@@ -100,6 +83,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             ?.substringBefore("/")
             ?.trim()
             ?.toRatingInt()
+
+        val imdbUrl = aTagRating?.attr("href").toString()
 
         val tvType = if (url.contains("season") ||
             (title?.contains("(Season") ?: false) ||
@@ -170,11 +155,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
             }
 
-            return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
                 this.plot = plot
                 this.rating = rating
                 this.seasonNames = seasonList.map { (name, int) -> SeasonData(int, name) }
+                addImdbUrl(imdbUrl)
             }
         } else {
             val pTags = document.select("p:has(a:has(button))")
@@ -198,11 +184,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 tvSeriesEpisodes.add(episode)
                 seasonNum++
             }
-            return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
                 this.plot = plot
                 this.rating = rating
                 this.seasonNames = seasonList.map { (name, int) -> SeasonData(int, name) }
+                addImdbUrl(imdbUrl)
             }
         }
     }
