@@ -4,13 +4,12 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
-class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.band"
-    override var name = "Moviesmod"
+class TopmoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
+    override var mainUrl = "https://topmovies.dad"
+    override var name = "TopMovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
@@ -22,8 +21,8 @@ class MoviesmodProvider : MainAPI() { // all providers must be an instance of Ma
 
     override val mainPage = mainPageOf(
         "$mainUrl/page/" to "Home",
-        "$mainUrl/web-series/on-going/page/" to "Latest Web Series",
-        "$mainUrl/movies/latest-released/page/" to "Latest Movies",
+        "$mainUrl/web-series/page/" to "Latest Web Series",
+        "$mainUrl/movies/hindi-movies/page/" to "Latest Hindi Movies",
     )
 
     override suspend fun getMainPage(
@@ -81,15 +80,11 @@ class MoviesmodProvider : MainAPI() { // all providers must be an instance of Ma
             val buttons = document.select("a.maxbutton-episode-links,.maxbutton-g-drive,.maxbutton-af-download")
 
             buttons.mapNotNull {
-                var link = it.attr("href")
+                val link = it.attr("href")
                 val titleElement = it.parent().previousElementSibling()
                 val seasonText = titleElement.text()
                 seasonList.add(Pair(seasonText, seasonNum))
 
-                if(link.contains("url=")) {
-                    val base64Value = link.substringAfter("url=")
-                    link = base64Decode(base64Value)
-                }
                 val doc = app.get(link).document
                 val hTags = doc.select("h3,h4")
                 var e = 1
@@ -136,14 +131,9 @@ class MoviesmodProvider : MainAPI() { // all providers must be an instance of Ma
         else {
             val document = app.get(data).document
             document.select("a.maxbutton-download-links").amap {
-                var link = it.attr("href")
-                if(link.contains("url=")) {
-                    val base64Value = link.substringAfter("url=")
-                    link = base64Decode(base64Value)
-                }
-
+                val link = it.attr("href")
                 val doc = app.get(link).document
-                val url = doc.selectFirst("a.maxbutton-1").attr("href")
+                val url = doc.selectFirst("a.maxbutton-fast-server-gdrive").attr("href")
                 val driveLink = bypass(url).toString()
                 loadExtractor(driveLink, subtitleCallback, callback)
             }
