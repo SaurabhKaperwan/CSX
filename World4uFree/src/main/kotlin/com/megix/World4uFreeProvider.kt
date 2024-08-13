@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 class World4uFreeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://world4ufree.durban"
+    override var mainUrl = "https://world4ufree.boston"
     override var name = "World4uFree"
     override val hasMainPage = true
     override var lang = "hi"
@@ -35,20 +35,13 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div > a") ?. attr("title")
-        val trimTitle = title ?. let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            } else {
-                it
-            }
-        } ?: ""
-
+        val title = this.selectFirst("div > a").attr("title").replace("Download ", "")
         val href = this.selectFirst("div > a") ?. attr("href").toString()
-        val posterUrl = this.selectFirst("div > a > img") ?. attr("data-src").toString()
-            ?: this.selectFirst("div > a > img") ?. attr("src").toString()
-    
-        return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
+        var posterUrl = this.selectFirst("div > a > img").attr("data-src").toString()
+        if(posterUrl.isEmpty()) {
+            posterUrl = this.selectFirst("div > a > img").attr("src").toString()
+        }
+        return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
@@ -72,20 +65,14 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]") ?. attr("content")
-        val trimTitle = title ?.let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            } else {
-                it
-            }
-        } ?: ""
-
+        val title = document.selectFirst("meta[property=og:title]").attr("content").replace("Download ", "")
         val div = document.selectFirst("div.entry-content")
         val plot = div.selectFirst("p:matches((?i)(plot|synopsis|story))").text()
 
-        val posterUrl = document.selectFirst("meta[property=og:image]").attr("content") ?: document.selectFirst("div.separator > a > img").attr("data-src")
-
+        var posterUrl = document.selectFirst("meta[property=og:image]").attr("content").toString()
+        if(posterUrl.isEmpty()) {
+            posterUrl = document.selectFirst("div.separator > a > img").attr("data-src").toString()
+        }
         val tvType = if (document.select("div.entry-content").text().contains("movie name", ignoreCase = true)) {
             TvType.Movie
         }
@@ -102,14 +89,19 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
                 val titleElement = button.parent().parent().previousElementSibling()
                 val title = titleElement.text()
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(title.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                val realSeason = realSeasonRegex.find(title.toString()) ?. groupValues ?. get(1) ?: "Unknown"
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(title.toString()) ?. groupValues ?. get(1) ?: " Unknown"
+                val quality = qualityRegex.find(title.toString()) ?. groupValues ?. get(1) ?: "Unknown"
                 val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:Mb|Gb|mb|gb)\b""")
                 val size = sizeRegex.find(title.toString())?.value ?: ""
-                seasonList.add("S$realSeason $quality $size" to seasonNum)
-                val wlinkz = button.attr("href")
+                if(realSeason != "Unknown" && quality != "Unknown") {
+                    seasonList.add("S$realSeason $quality $size" to seasonNum)
+                }
+                else {
+                    seasonList.add("$title" to seasonNum)
+                }
 
+                val wlinkz = button.attr("href")
                 val doc = app.get(wlinkz).document
                 val elements = doc.select("h3:matches((?i)(episode))")
                 val episodes = mutableListOf<Episode>()
@@ -138,14 +130,14 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
                 tvSeriesEpisodes.addAll(episodes)
                 seasonNum++
             }
-            return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
                 this.plot = plot
                 this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
             }
         }
         else {
-            return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
+            return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
                 this.plot = plot
             }
@@ -161,11 +153,11 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
         if(data.contains("world4ufree")) {
             val document = app.get(data).document
             val links = document.select("a.my-button")
-            links.mapNotNull {
+            links.amap {
                 val link = it.attr("href")
                 val doc = app.get(link).document
                 val links = doc.select("a:matches((?i)(instant|download|direct))")
-                links.mapNotNull {
+                links.amap {
                     loadExtractor(it.attr("href"), subtitleCallback, callback)
                 }
             }
