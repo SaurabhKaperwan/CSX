@@ -2,8 +2,10 @@ package com.Anitime
 import com.lagradost.cloudstream3.extractors.Chillx
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.base64Decode
-import org.json.JSONObject
+import com.google.gson.Gson
+import okhttp3.FormBody
+import okhttp3.Request
+import okhttp3.MultipartBody
 
 class Boosterx : Chillx() {
     override val name = "Boosterx"
@@ -14,6 +16,16 @@ class AbyssCdn : ExtractorApi() {
     override val name: String = "AbyssCdn"
     override val mainUrl: String = "https://abysscdn.com"
     override val requiresReferer = true
+    data class Source(
+        val label: String,
+        val type: String
+    )
+
+    data class ResponseData(
+        val sources: List<Source>,
+        val id: String,
+        val domain: String,
+    )
 
     override suspend fun getUrl(
         url: String,
@@ -21,34 +33,37 @@ class AbyssCdn : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val document = app.get(url).document
-        
-        val responseText = document.toString()
-        val base64Pattern = Regex("PLAYER\\(atob\\(\"(.*?)\"\\)")
-        val base64Value = base64Pattern.find(responseText)?.groups?.get(1)?.value ?: ""
-        val decodedJson = base64Decode(base64Value)
-        val jsonObject = JSONObject(decodedJson)
+        val data2 = app.get(url, referer = mainUrl).document.select("script").findLast { it.data().contains("━┻") }?.data() ?: ""
+        val reqBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("abyss", data2)
+            .build()
 
-        val domain = jsonObject.getString("domain")
-        val vidId = jsonObject.getString("id")
-        val videoUrls = mapOf(
-            "360p" to "https://$domain/$vidId",
-            "720p" to "https://$domain/www$vidId",
-            "1080p" to "https://$domain/whw$vidId"
-        )
-        val headers = mapOf(
-            "Referer" to "$mainUrl",
-            "Sec-Fetch-Mode" to "cors"
-        )
+        val jsonDataString = app.post("https://abyss-api-two.vercel.app/decode", requestBody = reqBody).text
+        val responseData = Gson().fromJson(jsonDataString, ResponseData::class.java)
 
-        for ((quality, link) in videoUrls) {
+        responseData.sources.forEach { source: Source ->
+            val label = source.label
+            val domain = "https://${responseData.domain}"
+            val id = responseData.id
+            var url = ""
+            when (label) {
+                "360p" -> url = "$domain/$id"
+                "720p" -> url = "$domain/www$id"
+                "1080p" -> url = "$domain/whw$id"
+            }
+
+            val headers = mapOf(
+                "Sec-Fetch-Mode" to "cors",
+            )
+
             callback.invoke (
                 ExtractorLink (
                     this.name,
                     this.name,
-                    link,
+                    url,
                     referer = mainUrl,
-                    getQualityFromName(quality),
+                    getQualityFromName(label),
                     headers = headers
                 )
             )
