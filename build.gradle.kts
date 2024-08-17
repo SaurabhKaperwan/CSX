@@ -83,6 +83,7 @@ subprojects {
         implementation("com.squareup.okhttp3:okhttp:4.12.0")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
         implementation("org.mozilla:rhino:1.7.15") //run JS
+        implementation("com.google.code.gson:gson:2.8.8")
 
     }
 }
