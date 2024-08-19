@@ -5,7 +5,7 @@ import com.lagradost.cloudstream3.utils.*
 
 class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.lol"
+    override val mainUrl: String = "https://hubcloud.art"
     override val requiresReferer = false
 
     override suspend fun getUrl(

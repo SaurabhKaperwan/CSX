@@ -7,7 +7,7 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesdrive.website"
+    override var mainUrl = "https://moviesdrive.world"
     override var name = "MoviesDrive"
     override val hasMainPage = true
     override var lang = "hi"
@@ -38,19 +38,11 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("figure > img") ?. attr("title")
-        val trimTitle = title ?. let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            } else {
-                it
-            }
-        } ?: ""
-
+        val title = this.selectFirst("figure > img").attr("title").replace("Download ", "")
         val href = fixUrl(this.selectFirst("figure > a") ?. attr("href").toString())
         val posterUrl = fixUrlNull(this.selectFirst("figure > img") ?. attr("src").toString())
     
-        return newMovieSearchResponse(trimTitle, href, TvType.Movie) {
+        return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
@@ -74,14 +66,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]") ?. attr("content")
-        val trimTitle = title ?.let {
-            if (it.contains("Download ")) {
-                it.replace("Download ", "")
-            } else {
-                it
-            }
-        } ?: ""
+        val title = document.selectFirst("meta[property=og:title]").attr("content").replace("Download ", "")
 
         val plotElement = document.select(
             "h2:contains(Storyline), h3:contains(Storyline), h5:contains(Storyline), h4:contains(Storyline), h4:contains(STORYLINE)"
@@ -159,7 +144,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                     tvSeriesEpisodes.addAll(episodes)
                     seasonNum++
                 }
-                return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, tvSeriesEpisodes) {
+                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                     this.posterUrl = posterUrl
                     this.plot = plot
                     this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
