@@ -163,7 +163,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                     }, fix = false)
                     episodesList.add(episodes)
                 }
-                return newTvSeriesLoadResponse(trimTitle, url, TvType.TvSeries, episodesList) {
+                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodesList) {
                     this.posterUrl = posterUrl
                     this.plot = plot
                     addImdbUrl(imdbId)
@@ -172,7 +172,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
         }
         else {
-            return newMovieLoadResponse(trimTitle, url, TvType.Movie, url) {
+            return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = posterUrl
                 this.plot = plot
                 addImdbUrl(imdbId)
