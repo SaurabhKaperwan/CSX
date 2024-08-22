@@ -1,10 +1,10 @@
-version = 10
+version = 11
 
 cloudstream {
     language = "hi"
     // All of these properties are optional, you can safely remove them
 
-    description = "Contains Hindi Movies and TV Series upto 1080p"
+    description = "Contains Indian Movies and TV Series upto 1080p"
      authors = listOf("megix")
 
     /**
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://www.full4movies.email/wp-content/uploads/2023/12/cropped-cropped-admin-ajax-1.png"
+    iconUrl = "https://www.full4movies.love/wp-content/uploads/2023/12/cropped-cropped-admin-ajax-1.png"
 }
