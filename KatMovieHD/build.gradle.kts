@@ -1,4 +1,4 @@
-version = 10
+version = 11
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://katmoviehd.foo/wp-content/uploads/2022/03/cropped-cropped-KatMovie-G-S1.png"
+    iconUrl = "https://katmoviehd.fyi/wp-content/uploads/2022/03/cropped-cropped-KatMovie-G-S1.png"
 }
