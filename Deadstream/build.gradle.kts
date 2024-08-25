@@ -1,10 +1,10 @@
 // use an integer for version numbers
-version = 1
+version = 2
 
 cloudstream {
     // All of these properties are optional, you can safely remove them
 
-    description = "Indian Multilingual Dubbed Anime"
+    description = "Hindi Dubbed & Subbed Anime"
     language = "hi"
     authors = listOf("megix")
 

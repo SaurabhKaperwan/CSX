@@ -20,7 +20,7 @@ class Deadstream : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val document = app.get(request.data + "?page=$page").document
+        val document = app.get(request.data + "?page=$page", timeout = 30L).document
         val home = document.select("div.flw-item").mapNotNull { it.toSearchResult() }
         return newHomePageResponse (
             list = HomePageList (
@@ -43,14 +43,14 @@ class Deadstream : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
-        val document = app.get("${mainUrl}/search?keyword=${query}").document
+        val document = app.get("${mainUrl}/search?keyword=${query}", timeout = 30L).document
         val results = document.select("div.flw-item").mapNotNull { it.toSearchResult() }
         searchResponse.addAll(results)
         return searchResponse
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        val document = app.get(url, timeout = 30L).document
         val title = document.selectFirst("h2.film-name").text()
         val div = document.selectFirst("div[style*=background-image]")
         val posterUrl = div.attr("style").substringAfter("url(").substringBefore(")")
@@ -66,7 +66,7 @@ class Deadstream : MainAPI() {
                 val seasonText = it.text()
                 seasonList.add(Pair(seasonText, seasonNum))
                 val url = fixUrl(it.attr("href"))
-                val doc = app.get(url).document
+                val doc = app.get(url, timeout = 30L).document
 
                 doc.selectFirst("div.ss-list").select("a").mapNotNull { episode ->
                     val epName = episode.attr("title")
@@ -100,15 +100,17 @@ class Deadstream : MainAPI() {
     }
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
-        val document = app.get(data).document
+        val document = app.get(data, timeout = 30L).document
         val quality = document.selectFirst("div#servers-content")
 
         quality.select("div.item").amap {
             val id = it.attr("data-embed")
             val url = "https://deaddrive.xyz/embed/$id"
-            val doc = app.get(url).document
+            val doc = app.get(url, timeout = 30L).document
             doc.selectFirst("ul.list-server-items").select("li").amap { source ->
-                loadExtractor(source.attr("data-video"), subtitleCallback, callback)
+                if(!source.attr("data-video").contains("short.ink")) {
+                    loadExtractor(source.attr("data-video"), subtitleCallback, callback)
+                }
             }
         }
         return true
