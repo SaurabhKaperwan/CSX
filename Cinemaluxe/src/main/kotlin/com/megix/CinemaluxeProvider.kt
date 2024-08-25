@@ -4,9 +4,10 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
+import com.lagradost.cloudstream3.base64Decode
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemaluxe.world"
+    override var mainUrl = "https://cinemaluxe.bond"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -34,6 +35,12 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             it.toSearchResult()
         }
         return newHomePageResponse(request.name, home)
+    }
+
+    private suspend fun bypass(url: String): String {
+        val document = app.get(url).document.toString()
+        val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
+        return base64Decode(encodeUrl)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
@@ -65,11 +72,17 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("div.sheader > div.data > h1") ?. text() ?: ""
-        val posterUrl = document.selectFirst("meta[property=og:image]") ?. attr("content") ?: document.selectFirst("div.sheader noscript img") ?. attr("src")
-        val description = document.selectFirst("div[itemprop=description]")?.text() ?: document.selectFirst("div.wp-content")?.text() ?: ""
+        val title = document.selectFirst("div.sheader > div.data > h1")?.text().toString()
+        var posterUrl = document.selectFirst("div.sheader noscript img")?.attr("src")
+        if (posterUrl == null || posterUrl.isEmpty()) {
+            posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")
+        }
+        var description = document.selectFirst("div[itemprop=description]")?.text()
+        if(description == null || description.isEmpty()) {
+            description = document.selectFirst("div.wp-content")?.text()
+        }
 
-        val tvType = if (url.contains("tvshows")) { 
+        val tvType = if (url.contains("tvshows")) {
             TvType.TvSeries
         } else {
             TvType.Movie
@@ -133,17 +146,25 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         if(data.contains("cinemaluxe") && !data.contains("sharepoint")) {
             val document = app.get(data).document
             val buttons = document.select("a.maxbutton")
-            buttons.mapNotNull { button ->
+            buttons.amap { button ->
                 val link = button.attr("href")
                 val doc = app.get(link).document
-                doc.select("a.maxbutton").mapNotNull {
-                    loadExtractor(it.attr("href"), subtitleCallback, callback)
+                doc.select("a.maxbutton").amap {
+                    var href = it.attr("href")
+                    if(href.contains("luxedailyupdates")) {
+                        href = bypass(href)
+                    }
+                    loadExtractor(href, subtitleCallback, callback)
                 }
 
             }
         }
         else {
-            loadExtractor(data, subtitleCallback, callback)
+            var href = data
+            if(href.contains("luxedailyupdates")) {
+                href = bypass(href)
+            }
+            loadExtractor(href, subtitleCallback, callback)
         }
         return true   
     }
