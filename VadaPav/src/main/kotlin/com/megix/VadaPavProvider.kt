@@ -50,10 +50,9 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
 
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.text() ?: ""
-        val link = this.attr("href") ?: ""
-        val href = "$mainUrl$link"
+        val link = fixUrl(this.attr("href"))
 
-        return newMovieSearchResponse(title, href, TvType.Movie) {
+        return newMovieSearchResponse(title, link, TvType.Movie) {
         }
     }
 
@@ -72,27 +71,28 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
 
     private suspend fun traverse(dTags: List<Element> ,tvSeriesEpisodes: MutableList<Episode>, seasonList: MutableList<Pair<String, Int>>, mutableSeasonNum: MutableInt) {
         for(dTag in dTags) {
-            val document = app.get(mainUrl + dTag.attr("href")).document
+            val document = app.get(fixUrl(dTag.attr("href"))).document
             val innerDTags = document.select("div.directory > ul > li > div > a.directory-entry").filter { element -> !element.text().contains("Parent Directory", true) }
             val innerFTags = document.select("div.directory > ul > li > div > a.file-entry")
-            if(innerDTags.isNotEmpty()) {
-                traverse(innerDTags, tvSeriesEpisodes, seasonList, mutableSeasonNum)
-            }
-            else if(innerFTags.isNotEmpty()) {
+
+            if(innerFTags.isNotEmpty()) {
                 val span = document.select("div > span")
-                val lastSpan = span.takeIf { it.isNotEmpty() }?.lastOrNull()
-                val title = lastSpan ?. text()?: ""
+                val lastSpan = span.takeIf { it.isNotEmpty() } ?. lastOrNull()
+                val title = lastSpan ?. text() ?: ""
                 seasonList.add("$title" to mutableSeasonNum.value)
-                val episodes = innerFTags.apmap { tag ->
-                    Episode(
-                        name = tag.text()?: "",
-                        data = tag.attr("href"),
-                        season = mutableSeasonNum.value,
-                        episode = innerFTags.indexOf(tag) + 1,
-                    )
+                val episodes = innerFTags.amap { tag ->
+                    newEpisode(tag.attr("href")){
+                        name = tag.text()
+                        season = mutableSeasonNum.value
+                        episode = innerFTags.indexOf(tag) + 1
+                    }
                 }
                 tvSeriesEpisodes.addAll(episodes)
                 mutableSeasonNum.value++
+            }
+
+            if(innerDTags.isNotEmpty()) {
+                traverse(innerDTags, tvSeriesEpisodes, seasonList, mutableSeasonNum)
             }
         }
     }
@@ -100,29 +100,33 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val span = document.select("div > span")
-        val lastSpan = span.takeIf { it.isNotEmpty() }?.lastOrNull()
-        val title = lastSpan ?. text()?: ""
+        val lastSpan = span.takeIf { it.isNotEmpty() } ?. lastOrNull()
+        val title = lastSpan ?. text() ?: ""
         var seasonNum = 1
         val tvSeriesEpisodes = mutableListOf<Episode>()
         val dTags = document.select("div.directory > ul > li > div > a.directory-entry").filter { element -> !element.text().contains("Parent Directory", true) }
         val fTags = document.select("div.directory > ul > li > div > a.file-entry")
         val seasonList = mutableListOf<Pair<String, Int>>()
         val mutableSeasonNum = MutableInt(seasonNum)
-        if(dTags.isNotEmpty()) {
-            traverse(dTags, tvSeriesEpisodes, seasonList, mutableSeasonNum)
-        }
-        else {
-            val episodes = fTags.apmap { tag ->
-                Episode(
-                    name = tag.text()?: "",
-                    data = tag.attr("href"),
-                    season = seasonNum,
-                    episode = fTags.indexOf(tag) + 1,
-                )
+
+        if(fTags.isNotEmpty()) {
+            val span = document.select("div > span")
+            val lastSpan = span.takeIf { it.isNotEmpty() } ?. lastOrNull()
+            val title = lastSpan ?. text() ?: ""
+            seasonList.add("$title" to mutableSeasonNum.value)
+            val episodes = fTags.amap { tag ->
+                newEpisode(tag.attr("href")){
+                    name = tag.text()
+                    season = mutableSeasonNum.value
+                    episode = fTags.indexOf(tag) + 1
+                }
             }
             tvSeriesEpisodes.addAll(episodes)
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
-            }
+            mutableSeasonNum.value++
+        }
+
+        if(dTags.isNotEmpty()) {
+            traverse(dTags, tvSeriesEpisodes, seasonList, mutableSeasonNum)
         }
        
         return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
@@ -136,12 +140,13 @@ class VadaPavProvider : MainAPI() { // all providers must be an instance of Main
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        var link = data.replace("$mainUrl", "")
         for((index, mirror) in mirrors.withIndex()) {
             callback.invoke(
                 ExtractorLink(
                     name+ " ${index+1}",
                     name+" ${index+1}",
-                    mirror + data,
+                    mirror + link,
                     referer = "",
                     quality = Qualities.Unknown.value,
                 )

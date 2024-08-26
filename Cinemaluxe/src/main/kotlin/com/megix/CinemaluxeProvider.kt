@@ -77,7 +77,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         if (posterUrl == null || posterUrl.isEmpty()) {
             posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")
         }
-        var description = document.selectFirst("div[itemprop=description]")?.text()
+        var description = document.selectFirst("div[itemprop=description]")?.ownText()
         if(description == null || description.isEmpty()) {
             description = document.selectFirst("div.wp-content")?.text()
         }
@@ -113,12 +113,11 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
                     val epText = aTag.text() ?: "Unknown"
                     val epLink = aTag.attr("href")
                     episodes.add(
-                        Episode(
-                            name = epText,
-                            data = epLink,
-                            season = seasonNum,
+                        newEpisode(epLink){
+                            name = epText
+                            season = seasonNum
                             episode = aTags.indexOf(aTag) + 1
-                        )
+                        }
                     )
                 }
                 tvSeriesEpisodes.addAll(episodes)
