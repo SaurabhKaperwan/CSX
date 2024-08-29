@@ -7,7 +7,7 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemaluxe.bond"
+    override var mainUrl = "https://cinemaluxe.link"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"

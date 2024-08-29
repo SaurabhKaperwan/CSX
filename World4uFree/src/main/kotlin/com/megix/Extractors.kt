@@ -155,7 +155,7 @@ class GDFlix : ExtractorApi() {
             url = url
         }
         app.get(url).document.select("div.text-center a").amap {
-            if (it.select("a").text().contains("FAST CLOUD DOWNLOAD"))
+            if (it.select("a").text().contains("FAST CLOUD DL"))
             {
                 val link=it.attr("href")
                 val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 40L).document.selectFirst("a.btn-success")?.attr("href") ?:""
@@ -166,7 +166,7 @@ class GDFlix : ExtractorApi() {
                     )
                 )
             }
-            else if (it.select("a").text().contains("DRIVEBOT DOWNLOAD"))
+            else if (it.select("a").text().contains("DRIVEBOT DL"))
             {
                 val driveLink = it.attr("href")
                 val id = driveLink.substringAfter("id=").substringBefore("&")
@@ -205,8 +205,8 @@ class GDFlix : ExtractorApi() {
 
                     callback.invoke(
                         ExtractorLink(
-                            "IndexBot",
-                            "IndexBot $tagquality",
+                            "GDFlix[IndexBot]",
+                            "GDFlix[IndexBot] $tagquality",
                             downloadlink,
                             "https://indexbot.lol/",
                             getQualityFromName(tags)
@@ -214,7 +214,7 @@ class GDFlix : ExtractorApi() {
                     )
                 }
             }
-            else if (it.select("a").text().contains("Instant Download"))
+            else if (it.select("a").text().contains("Instant DL"))
             {
                 val Instant_link=it.attr("href")
                 val token = Instant_link.substringAfter("url=")
@@ -248,11 +248,12 @@ class GDFlix : ExtractorApi() {
             }
             else
             {
-                val link=it.attr("href")
+
             }
         }
     }
 }
+
 
 class Sendcm : ExtractorApi() {
     override val name: String = "Sendcm"

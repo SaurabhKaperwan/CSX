@@ -69,8 +69,8 @@ class GDFlix : ExtractorApi() {
         {
             url = url
         }
-        app.get(url).document.select("div.text-center a").mapNotNull {
-            if (it.select("a").text().contains("FAST CLOUD DOWNLOAD"))
+        app.get(url).document.select("div.text-center a").amap {
+            if (it.select("a").text().contains("FAST CLOUD DL"))
             {
                 val link=it.attr("href")
                 val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 40L).document.selectFirst("a.btn-success")?.attr("href") ?:""
@@ -81,7 +81,7 @@ class GDFlix : ExtractorApi() {
                     )
                 )
             }
-            else if (it.select("a").text().contains("DRIVEBOT DOWNLOAD"))
+            else if (it.select("a").text().contains("DRIVEBOT DL"))
             {
                 val driveLink = it.attr("href")
                 val id = driveLink.substringAfter("id=").substringBefore("&")
@@ -93,19 +93,19 @@ class GDFlix : ExtractorApi() {
                     val indexbotDoc = indexbotresponse.document
                     val token = Regex("""formData\.append\('token', '([a-f0-9]+)'\)""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: "token"
                     val postId = Regex("""fetch\('\/download\?id=([a-zA-Z0-9\/+]+)'""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: "postId"
-                
+
                     val requestBody = FormBody.Builder()
                         .add("token", token)
                         .build()
-                
+
                     val headers = mapOf(
                         "Referer" to indexbotlink
                     )
-                
+
                     val cookies = mapOf(
                         "PHPSESSID" to "$cookiesSSID",
                     )
-                
+
                     val response = app.post(
                         "https://indexbot.lol/download?id=${postId}",
                         requestBody = requestBody,
@@ -113,23 +113,23 @@ class GDFlix : ExtractorApi() {
                         cookies = cookies,
                         timeout = 60L
                     ).toString()
-                
-                    var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""    
 
-                    downloadlink = downloadlink.replace("\\", "")                
-                
+                    var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""
+
+                    downloadlink = downloadlink.replace("\\", "")
+
                     callback.invoke(
                         ExtractorLink(
-                            "GDFlix[IndexBot]", 
-                            "GDFlix[IndexBot] $tagquality", 
-                            downloadlink, 
+                            "GDFlix[IndexBot]",
+                            "GDFlix[IndexBot] $tagquality",
+                            downloadlink,
                             "https://indexbot.lol/",
                             getQualityFromName(tags)
                         )
                     )
                 }
             }
-            else if (it.select("a").text().contains("Instant Download"))
+            else if (it.select("a").text().contains("Instant DL"))
             {
                 val Instant_link=it.attr("href")
                 val token = Instant_link.substringAfter("url=")
