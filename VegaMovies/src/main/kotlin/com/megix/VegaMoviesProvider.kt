@@ -9,7 +9,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
 
-    override var mainUrl = "https://vegamovies.nu"
+    override var mainUrl = "https://vegamovies.pet"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
