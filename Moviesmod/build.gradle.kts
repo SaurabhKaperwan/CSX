@@ -1,4 +1,4 @@
-version = 2
+version = 3
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://moviesmod.band/wp-content/uploads/2022/12/moviesmodnew-Custom.png"
+    iconUrl = "https://moviesmod.bet/wp-content/uploads/2022/12/moviesmodnew-Custom.png"
 }

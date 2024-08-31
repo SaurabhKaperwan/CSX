@@ -143,63 +143,73 @@ class Driveseed : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val document = app.get(url).document
-        val quality = document.selectFirst("li.list-group-item:contains(Name)").text()
+        val qualityText = document.selectFirst("li.list-group-item:contains(Name)").text()
+        val quality = getIndexQuality(qualityText)
 
-        val instantUrl = document.selectFirst("a.btn-danger").attr("href")
-        val instant = instantLink(instantUrl)
-        if (instant != null) {
-            callback.invoke(
-                ExtractorLink(
-                    "Instant(Download)",
-                    "Instant(Download)",
-                    instant,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
-        }
-
-        val resumeBotUrl = document.selectFirst("a.btn.btn-light").attr("href")
-        val resumeLink = resumeBot(resumeBotUrl)
-        if (resumeLink != null) {
-            callback.invoke(
-                ExtractorLink(
-                    "ResumeBot",
-                    "ResumeBot(VLC)",
-                    resumeLink,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
-        }
-
-        val cfType1 = CFType1(url)
-        if (cfType1 != null) {
-            cfType1.forEach {
-                callback.invoke(
-                    ExtractorLink(
-                        "CF Type1",
-                        "CF Type1",
-                        it,
-                        "",
-                        getIndexQuality(quality)
+        document.select("a.btn").mapNotNull {
+            val text = it.text()
+            val link = it.attr("href")
+            if(text.contains("Resume Cloud")) {
+                val streamUrl = resumeCloudLink(link)
+                if (streamUrl != null) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "ResumeCloud",
+                            "ResumeCloud",
+                            streamUrl.toString(),
+                            "",
+                            quality
+                        )
                     )
-                )
+                }
             }
-        }
-
-        val resumeCloudUrl = document.selectFirst("a.btn-warning").attr("href")
-        val resumeCloud = resumeCloudLink(resumeCloudUrl)
-        if (resumeCloud != null) {
-            callback.invoke(
-                ExtractorLink(
-                    "ResumeCloud",
-                    "ResumeCloud",
-                    resumeCloud,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
+            else if(text.contains("Instant Download")) {
+                val streamUrl = instantLink(link)
+                if (streamUrl != null) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "Instant(Download)",
+                            "Instant(Download)",
+                            streamUrl.toString(),
+                            "",
+                            quality
+                        )
+                    )
+                }
+            }
+            else if(text.contains("Resume Worker Bot")) {
+                val streamUrl = resumeBot(link)
+                if (streamUrl != null) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "ResumeBot",
+                            "ResumeBot(VLC)",
+                            streamUrl.toString(),
+                            "",
+                            quality
+                        )
+                    )
+                }
+            }
+            else if(text.contains("Direct Links")) {
+                val cfType1 = CFType1(url)
+                if (cfType1 != null) {
+                    cfType1.forEach {
+                        callback.invoke(
+                            ExtractorLink(
+                                "CF Type1",
+                                "CF Type1",
+                                it.toString(),
+                                "",
+                                quality
+                            )
+                        )
+                    }
+                }
+            }
+            else {
+                //Nothing
+            }
         }
 
     }

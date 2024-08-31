@@ -6,15 +6,13 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
-import com.lagradost.cloudstream3.network.CloudflareKiller
 
-class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.band"
+open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
+    override var mainUrl = "https://moviesmod.bet"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-    val cfInterceptor = CloudflareKiller()
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries
@@ -37,7 +35,7 @@ class MoviesmodProvider : MainAPI() { // all providers must be an instance of Ma
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("a").attr("title").replace("Download ", "")
         val href = this.selectFirst("a").attr("href")
         val posterUrl = this.selectFirst("a > div > img").attr("src")
@@ -51,7 +49,7 @@ class MoviesmodProvider : MainAPI() { // all providers must be an instance of Ma
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..3) {
-            val document = app.get("$mainUrl/search/$query/page/$i", interceptor = cfInterceptor).document
+            val document = app.get("$mainUrl/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 
@@ -69,10 +67,10 @@ class MoviesmodProvider : MainAPI() { // all providers must be an instance of Ma
         val document = app.get(url).document
         val title = document.selectFirst("meta[property=og:title]").attr("content").replace("Download ", "")
         val posterUrl = document.selectFirst("meta[property=og:image]").attr("content")
-        val description = document.selectFirst("div.imdbwp__teaser").text()
+        val description = document.selectFirst("div.imdbwp__teaser")?.text()
         val div = document.selectFirst("div.thecontent").text()
         val tvtype = if(div.contains("season", ignoreCase = true)) TvType.TvSeries else TvType.Movie
-        val imdbUrl = document.selectFirst("a.imdbwp__link").attr("href")
+        val imdbUrl = document.selectFirst("a.imdbwp__link")?.attr("href")
 
         if(tvtype == TvType.TvSeries) {
             val tvSeriesEpisodes = mutableListOf<Episode>()
