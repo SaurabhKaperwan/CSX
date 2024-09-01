@@ -73,7 +73,7 @@ class GDFlix : ExtractorApi() {
             if (it.select("a").text().contains("FAST CLOUD DL"))
             {
                 val link=it.attr("href")
-                val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 40L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 30L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[Fast Cloud]", "GDFLix[Fast Cloud] $tagquality", trueurl
@@ -87,7 +87,7 @@ class GDFlix : ExtractorApi() {
                 val id = driveLink.substringAfter("id=").substringBefore("&")
                 val doId = driveLink.substringAfter("do=").substringBefore("==")
                 val indexbotlink = "https://indexbot.lol/download?id=${id}&do=${doId}"
-                val indexbotresponse = app.get(indexbotlink, timeout = 60L)
+                val indexbotresponse = app.get(indexbotlink, timeout = 30L)
                 if(indexbotresponse.isSuccessful) {
                     val cookiesSSID = indexbotresponse.cookies["PHPSESSID"]
                     val indexbotDoc = indexbotresponse.document
@@ -111,7 +111,7 @@ class GDFlix : ExtractorApi() {
                         requestBody = requestBody,
                         headers = headers,
                         cookies = cookies,
-                        timeout = 60L
+                        timeout = 30L
                     ).toString()
 
                     var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""
@@ -144,7 +144,7 @@ class GDFlix : ExtractorApi() {
                         "x-token" to "direct.zencloud.lol",
                         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
                     ),
-                    timeout = 60L,
+                    timeout = 30L,
                 )
                 val finaldownloadlink =
                     downloadlink.toString().substringAfter("url\":\"")

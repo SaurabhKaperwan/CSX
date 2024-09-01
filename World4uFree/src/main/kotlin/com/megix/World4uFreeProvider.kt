@@ -87,7 +87,7 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
             val buttons = document.select("a.my-button")
             buttons.forEach { button ->
                 val titleElement = button.parent().parent().previousElementSibling()
-                val title = titleElement.text()
+                val title = titleElement ?. text() ?: ""
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(title.toString()) ?. groupValues ?. get(1) ?: "Unknown"
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)

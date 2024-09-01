@@ -146,7 +146,7 @@ class Driveseed : ExtractorApi() {
         val qualityText = document.selectFirst("li.list-group-item:contains(Name)").text()
         val quality = getIndexQuality(qualityText)
 
-        document.select("a.btn").mapNotNull {
+        document.select("a.btn").amap {
             val text = it.text()
             val link = it.attr("href")
             if(text.contains("Resume Cloud")) {
