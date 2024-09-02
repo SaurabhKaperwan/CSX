@@ -102,7 +102,7 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
                 }
 
                 val wlinkz = button.attr("href")
-                val doc = app.get(wlinkz).document
+                val doc = app.get(wlinkz).document //will fix this
                 val elements = doc.select("h3:matches((?i)(episode))")
                 val episodes = mutableListOf<Episode>()
                 elements.forEach { element ->

@@ -36,10 +36,10 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     }
 
     fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a").attr("title").replace("Download ", "")
-        val href = this.selectFirst("a").attr("href")
-        val posterUrl = this.selectFirst("a > div > img").attr("src")
-    
+        val title = this.selectFirst("a")?.attr("title")?.replace("Download ", "").toString()
+        val href = this.selectFirst("a")?.attr("href").toString()
+        val posterUrl = this.selectFirst("a > div > img")?.attr("src").toString()
+
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
@@ -65,11 +65,11 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]").attr("content").replace("Download ", "")
-        val posterUrl = document.selectFirst("meta[property=og:image]").attr("content")
+        val title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        val posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         val description = document.selectFirst("div.imdbwp__teaser")?.text()
-        val div = document.selectFirst("div.thecontent").text()
-        val tvtype = if(div.contains("season", ignoreCase = true)) TvType.TvSeries else TvType.Movie
+        val div = document.selectFirst("div.thecontent")?.text().toString()
+        val tvtype = if (div.contains("season", ignoreCase = true) == true) TvType.TvSeries else TvType.Movie
         val imdbUrl = document.selectFirst("a.imdbwp__link")?.attr("href")
 
         if(tvtype == TvType.TvSeries) {
@@ -80,8 +80,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
 
             buttons.mapNotNull {
                 var link = it.attr("href")
-                val titleElement = it.parent().previousElementSibling()
-                val seasonText = titleElement.text()
+                val seasonText = it.parent()?.previousElementSibling()?.text().toString()
                 seasonList.add(Pair(seasonText, seasonNum))
 
                 if(link.contains("url=")) {
@@ -92,11 +91,11 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                 val hTags = doc.select("h3,h4")
                 var e = 1
                 hTags.mapNotNull {
-                    val title = it.text()
-                    val epUrl = it.selectFirst("a").attr("href")
+                    val titleText = it.text()
+                    val epUrl = it.selectFirst("a")?.attr("href")
                     tvSeriesEpisodes.add(
                         newEpisode(epUrl) {
-                            name = title
+                            name = titleText
                             season = seasonNum
                             episode = e++
                         }
@@ -141,7 +140,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                 }
 
                 val doc = app.get(link).document
-                val url = doc.selectFirst("a.maxbutton-1").attr("href")
+                val url = doc.selectFirst("a.maxbutton-1")?.attr("href").toString()
                 val driveLink = bypass(url).toString()
                 loadExtractor(driveLink, subtitleCallback, callback)
             }

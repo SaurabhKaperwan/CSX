@@ -14,28 +14,26 @@ class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val doc = app.get(url).text
-        val newLink = doc.substringAfter("url=").substringBefore("\"")
+        val text = app.get(url).text
+        val newLink = text.substringAfter("url=").substringBefore("\"")
         val newDoc = app.get(newLink).document
-        var gamerLink = ""
+        var gamerLink : String
 
         if(newLink.contains("drive")) {
-            val scriptTag = newDoc.selectFirst("script:containsData(url)").toString()
+            val scriptTag = newDoc.selectFirst("script:containsData(url)")?.toString() ?: ""
             gamerLink = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         }
 
         else {
             gamerLink = newDoc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
         }
-        
-        val document = app.get(gamerLink).document
 
+        val document = app.get(gamerLink).document
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
         val header = document.selectFirst("div.card-header") ?. text()
-        div.select("a").apmap {
+        div?.select("a")?.amap {
             val link = it.attr("href")
-            val text = it.text()
             if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
@@ -47,7 +45,7 @@ class HubCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(text.contains("Download [Server : 10Gbps]")) {
+            else if(it.text().contains("Download [Server : 10Gbps]")) {
                 val response = app.get(link, allowRedirects = false)
                 val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
