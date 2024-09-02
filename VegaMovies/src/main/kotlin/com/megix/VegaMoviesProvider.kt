@@ -14,7 +14,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-    val cfInterceptor = CloudflareKiller()
+    private val cfInterceptor = CloudflareKiller()
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries
