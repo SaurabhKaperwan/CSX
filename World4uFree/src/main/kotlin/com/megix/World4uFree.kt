@@ -12,6 +12,8 @@ class VegaMovies: Plugin() {
         registerExtractorAPI(WLinkFast())
         registerExtractorAPI(FastLinks())
         registerExtractorAPI(GDFlix())
+        registerExtractorAPI(GDFlix2())
+        registerExtractorAPI(GDFlix1())
         registerExtractorAPI(Sendcm())
     }
 }

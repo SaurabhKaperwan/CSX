@@ -113,9 +113,18 @@ class WLinkFast : ExtractorApi() {
     }
 }
 
-class GDFlix : ExtractorApi() {
-    override val name: String = "GDFlix"
+class GDFlix1 : GDFlix() {
+    override val mainUrl: String = "https://new3.gdflix.cfd"
+}
+
+class GDFlix2 : GDFlix() {
     override val mainUrl: String = "https://new2.gdflix.cfd"
+}
+
+
+open class GDFlix : ExtractorApi() {
+    override val name: String = "GDFlix"
+    override val mainUrl: String = "https://new4.gdflix.cfd"
     override val requiresReferer = false
 
     private suspend fun extractbollytag(url:String): String {
