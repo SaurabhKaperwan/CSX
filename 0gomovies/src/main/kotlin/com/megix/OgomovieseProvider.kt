@@ -36,9 +36,9 @@ open class OgomoviesProvider : MainAPI() { // all providers must be an instance 
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a > img").attr("alt") ?: ""
-        val href = this.selectFirst("a").attr("href") ?: ""
-        val posterUrl = this.selectFirst("a > img").attr("src") ?: ""
+        val title = this.selectFirst("a > img")?.attr("alt").toString()
+        val href = this.selectFirst("a")?.attr("href").toString()
+        val posterUrl = this.selectFirst("a > img")?.attr("src").toString()
     
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -79,7 +79,7 @@ open class OgomoviesProvider : MainAPI() { // all providers must be an instance 
         if(tvType == TvType.TvSeries) {
             val headers = mapOf("Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
             val doc = app.get("${url}/watching/", headers = headers).document
-            val listLink = doc.selectFirst("li.episode-item").attr("data-drive").toString()
+            val listLink = doc.selectFirst("li.episode-item")?.attr("data-drive").toString()
             val listDoc = app.get(listLink).document
             val episodesList = mutableListOf<Episode>()
             listDoc.select("div.content-pt > p > a").mapNotNull {
@@ -110,7 +110,7 @@ open class OgomoviesProvider : MainAPI() { // all providers must be an instance 
         if(data.contains("0gomovies")) {
             val headers = mapOf("Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
             val document = app.get("${data}/watching/", headers = headers).document
-            val link = document.selectFirst("li.episode-item").attr("data-drive").toString()
+            val link = document.selectFirst("li.episode-item")?.attr("data-drive").toString()
             loadExtractor(link, subtitleCallback, callback)
         }
         else {

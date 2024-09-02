@@ -80,7 +80,7 @@ class WLinkFast : ExtractorApi() {
         val requireRepairResponse: Response = client.newCall(requireRepairRequest).execute()
         val contentType = requireRepairResponse.header("Content-Type").toString()
         
-        if(contentType != null && contentType.contains("video")) {
+        if(contentType.contains("video")) {
             callback.invoke (
                 ExtractorLink (
                     this.name,
@@ -93,9 +93,9 @@ class WLinkFast : ExtractorApi() {
         }
         else {
             val reResponse = app.get(link).document
-            val reLink = "https://www.mediafire.com" + reResponse.selectFirst("a#continue-btn").attr("href").toString()
+            val reLink = "https://www.mediafire.com" + reResponse.selectFirst("a#continue-btn")?.attr("href").toString()
             val doc = app.get(reLink).document
-            val downloadLink = doc.selectFirst("a.input.popsok").attr("href")
+            val downloadLink = doc.selectFirst("a.input.popsok")?.attr("href").toString()
             callback.invoke (
                 ExtractorLink (
                     this.name,
@@ -142,27 +142,26 @@ class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        var url = url
-        val tags = extractbollytag(url)
-        val tagquality = extractbollytag2(url)
-        if (url.startsWith("https://new2.gdflix.cfd/goto/token/"))
-        {
-            val partialurl = app.get(url).text.substringAfter("replace(\"").substringBefore("\")")
-            url = mainUrl + partialurl
+        var originalUrl = url
+        val tags = extractbollytag(originalUrl)
+        val tagquality = extractbollytag2(originalUrl)
+
+        if (originalUrl.startsWith("https://new2.gdflix.cfd/goto/token/")) {
+            val partialurl = app.get(originalUrl).text.substringAfter("replace(\"").substringBefore("\")")
+            originalUrl = mainUrl + partialurl
         }
-        else
-        {
-            url = url
-        }
-        app.get(url).document.select("div.text-center a").amap {
+        app.get(originalUrl).document.select("div.text-center a").amap {
             if (it.select("a").text().contains("FAST CLOUD DL"))
             {
                 val link=it.attr("href")
-                val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 40L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 30L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                 callback.invoke(
                     ExtractorLink(
-                        "GDFlix[Fast Cloud]", "GDFLix[Fast Cloud] $tagquality", trueurl
-                            ?: "", "", getQualityFromName(tags)
+                        "GDFlix[Fast Cloud]",
+                        "GDFLix[Fast Cloud] $tagquality",
+                        trueurl,
+                        "",
+                        getQualityFromName(tags)
                     )
                 )
             }
@@ -172,7 +171,7 @@ class GDFlix : ExtractorApi() {
                 val id = driveLink.substringAfter("id=").substringBefore("&")
                 val doId = driveLink.substringAfter("do=").substringBefore("==")
                 val indexbotlink = "https://indexbot.lol/download?id=${id}&do=${doId}"
-                val indexbotresponse = app.get(indexbotlink, timeout = 60L)
+                val indexbotresponse = app.get(indexbotlink, timeout = 30L)
                 if(indexbotresponse.isSuccessful) {
                     val cookiesSSID = indexbotresponse.cookies["PHPSESSID"]
                     val indexbotDoc = indexbotresponse.document
@@ -196,7 +195,7 @@ class GDFlix : ExtractorApi() {
                         requestBody = requestBody,
                         headers = headers,
                         cookies = cookies,
-                        timeout = 60L
+                        timeout = 30L
                     ).toString()
 
                     var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""
@@ -229,7 +228,7 @@ class GDFlix : ExtractorApi() {
                         "x-token" to "direct.zencloud.lol",
                         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
                     ),
-                    timeout = 60L,
+                    timeout = 30L,
                 )
                 val finaldownloadlink =
                     downloadlink.toString().substringAfter("url\":\"")
@@ -254,7 +253,6 @@ class GDFlix : ExtractorApi() {
     }
 }
 
-
 class Sendcm : ExtractorApi() {
     override val name: String = "Sendcm"
     override val mainUrl: String = "https://send.cm"
@@ -268,8 +266,8 @@ class Sendcm : ExtractorApi() {
     )
     {
         val doc = app.get(url).document
-        val op = doc.select("input[name=op]") ?. attr("value").toString()
-        val id = doc.select("input[name=id]") ?. attr("value").toString()
+        val op = doc.select("input[name=op]").attr("value").toString()
+        val id = doc.select("input[name=id]").attr("value").toString()
         val body = FormBody.Builder()
             .addEncoded("op", op)
             .addEncoded("id", id)

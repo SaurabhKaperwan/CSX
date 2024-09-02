@@ -15,14 +15,14 @@ class VCloud : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val doc = app.get(url).document
-        val scriptTag = doc.selectFirst("script:containsData(url)").toString()
+        val scriptTag = doc.selectFirst("script:containsData(url)") ?. data().toString()
         val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         val document = app.get(urlValue).document
 
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
         val header = document.selectFirst("div.card-header") ?. text()
-        div.select("a").amap {
+        div?.select("a")?.amap {
             val link = it.attr("href")
             val text = it.text()
             if (link.contains("pixeldra")) {

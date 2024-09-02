@@ -14,7 +14,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-    private val cfInterceptor = CloudflareKiller()
+    val cfInterceptor = CloudflareKiller()
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries
@@ -41,9 +41,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a").attr("title").replace("Download ", "")
+        val title = this.selectFirst("a")?.attr("title")?.replace("Download ", "").toString()
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        var posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("data-src").toString())
+        val imgTag = this.selectFirst("img.blog-picture")
+        var posterUrl = imgTag ?. attr("data-src")
         if (posterUrl == null) {
             posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src").toString())
         }
@@ -68,7 +69,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]").attr("content").replace("Download ", "")
+        val title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         val documentText = document.text()
         val div = document.select("div.entry-content")
@@ -87,7 +88,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val imdbUrl = aTagRating?.attr("href").toString()
 
         val tvType = if (url.contains("season") ||
-            (title?.contains("(Season") ?: false) ||
+            title.contains("Season") ||
             Regex("Series synopsis").containsMatchIn(documentText) || Regex("Series Name").containsMatchIn(documentText)) {
             TvType.TvSeries
         } else {
@@ -170,10 +171,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
             pTags.forEach { pTag ->
                 val link = pTag.selectFirst("a")?.attr("href") ?: ""
-                val details = pTag.previousElementSibling().text() ?: "Unknown"
+                val details = pTag.previousElementSibling()?.text() ?: "Unknown"
                 seasonList.add("$details" to seasonNum)
                 val doc = app.get(link).document
-                val source = doc.selectFirst("a:contains(V-Cloud)").attr("href") ?: ""
+                val source = doc.selectFirst("a:contains(V-Cloud)")?.attr("href").toString()
                 
                 val episode = newEpisode(source){
                     name = "Play"
@@ -203,7 +204,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         var url = data
         if (url.contains("vcloud.lol/api")) {
             val document = app.get(url).document
-            url = document.selectFirst("h4 > a").attr("href")
+            url = document.selectFirst("h4 > a")?.attr("href").toString()
         }
         loadExtractor(url, subtitleCallback, callback)
         return true

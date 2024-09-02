@@ -77,15 +77,15 @@ class Driveseed : ExtractorApi() {
     private suspend fun CFType1(url: String): List<String> {
         val cfWorkersLink = url.replace("/file", "/wfile") + "?type=1"
         val document = app.get(cfWorkersLink).document
-        val links = document.select("a.btn-success").mapNotNull { it.attr("href") } ?: emptyList()
+        val links = document.select("a.btn-success").map { it.attr("href") }
         return links
     }
 
-    private suspend fun resumeCloudLink(url: String): String {
+    private suspend fun resumeCloudLink(url: String): String? {
         val resumeCloudUrl = "https://driveseed.org" + url
         val document = app.get(resumeCloudUrl).document
         val link = document.selectFirst("a.btn-success")?.attr("href")
-        return link ?: ""
+        return link
     }
 
 
@@ -112,10 +112,10 @@ class Driveseed : ExtractorApi() {
         ).text
         val jsonObject = JSONObject(jsonResponse)
         val link = jsonObject.getString("url")
-        return link ?: null
+        return link
     }
 
-    private suspend fun instantLink(finallink: String): String {
+    private suspend fun instantLink(finallink: String): String? {
         val url = if(finallink.contains("video-leech")) "video-leech.xyz" else "video-seed.xyz"
         val token = finallink.substringAfter("https://$url/?url=")
         val downloadlink = app.post(
@@ -153,7 +153,7 @@ class Driveseed : ExtractorApi() {
             val link = it.attr("href")
             if(text.contains("Resume Cloud")) {
                 val streamUrl = resumeCloudLink(link)
-                if (streamUrl.isNotEmpty()) {
+                if (streamUrl != null) {
                     callback.invoke(
                         ExtractorLink(
                             "ResumeCloud",
@@ -167,7 +167,7 @@ class Driveseed : ExtractorApi() {
             }
             else if(text.contains("Instant Download")) {
                 val streamUrl = instantLink(link)
-                if (streamUrl.isNotEmpty()) {
+                if (streamUrl != null) {
                     callback.invoke(
                         ExtractorLink(
                             "Instant(Download)",

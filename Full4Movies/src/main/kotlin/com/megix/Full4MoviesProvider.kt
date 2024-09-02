@@ -65,13 +65,18 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         val infoDiv = document.selectFirst("div.wp-block-image")
-        val imdbRatingText = infoDiv.select("td:contains(IMDb) + td").text()
-        val imdbRating = imdbRatingText.substringBefore("/").toRatingInt()
-        val plot = infoDiv.select("td:contains(Plot) + td").text()
-        val genresText = infoDiv.select("td:contains(Genres) + td").text()
-        val genresList = genresText.split(",").map { it.trim() }
-        val castText = infoDiv.select("td:contains(Cast) + td").text()
-        val castList = castText.split(",").map { it.trim() }
+
+        val imdbRatingText = infoDiv?.select("td:contains(IMDb) + td")?.text()
+        val imdbRating = imdbRatingText?.substringBefore("/")?.toRatingInt()
+
+        val plot = infoDiv?.select("td:contains(Plot) + td")?.text()?.toString()
+
+        val genresText = infoDiv?.select("td:contains(Genres) + td")?.text()
+        val genresList = genresText?.split(",")?.map { it.trim() } ?: emptyList()
+
+        val castText = infoDiv?.select("td:contains(Cast) + td")?.text()
+        val castList = castText?.split(",")?.map { it.trim() } ?: emptyList()
+
         val actors = castList.map {
             ActorData(
                 Actor(it),
@@ -93,8 +98,8 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
 
             val urls = regex.findAll(document.html()).map { it.groupValues[1] }.toList()
 
-            val episodes = urls.mapNotNull { url ->
-                newEpisode(url){"Episode ${urls.indexOf(url) + 1}"}
+            val episodes = urls.mapNotNull { link ->
+                newEpisode(url){"Episode ${urls.indexOf(link) + 1}"}
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
@@ -123,7 +128,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val doc = app.get(data).document
-        val link = doc.selectFirst("iframe").attr("src")
+        val link = doc.selectFirst("iframe")?.attr("src").toString()
         loadExtractor(link, referer = data, subtitleCallback, callback)
         return true
     }
