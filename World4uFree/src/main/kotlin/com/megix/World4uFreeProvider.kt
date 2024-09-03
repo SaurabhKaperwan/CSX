@@ -91,9 +91,9 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(titleText.toString()) ?. groupValues ?. get(1) ?: "Unknown"
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(title.toString()) ?. groupValues ?. get(1) ?: "Unknown"
+                val quality = qualityRegex.find(titleText.toString()) ?. groupValues ?. get(1) ?: "Unknown"
                 val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:Mb|Gb|mb|gb)\b""")
-                val size = sizeRegex.find(title.toString())?.value ?: ""
+                val size = sizeRegex.find(titleText.toString())?.value ?: ""
                 if(realSeason != "Unknown" && quality != "Unknown") {
                     seasonList.add("S$realSeason $quality $size" to seasonNum)
                 }
