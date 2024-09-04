@@ -6,6 +6,9 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
+import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.google.gson.Gson
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesmod.bet"
@@ -13,6 +16,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries
@@ -65,24 +69,46 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
-        val posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
-        val description = document.selectFirst("div.imdbwp__teaser")?.text()
+        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
+        var description = document.selectFirst("div.imdbwp__teaser")?.text()
         val div = document.selectFirst("div.thecontent")?.text().toString()
-        val tvtype = if (div.contains("season", ignoreCase = true) == true) TvType.TvSeries else TvType.Movie
+        val tvtype = if (div.contains("season", ignoreCase = true) == true) "series" else "movie"
         val imdbUrl = document.selectFirst("a.imdbwp__link")?.attr("href")
 
-        if(tvtype == TvType.TvSeries) {
+        val responseData = if (!imdbUrl.isNullOrEmpty()) {
+            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+            val gson = Gson()
+            gson.fromJson(jsonResponse, ResponseData::class.java)
+        } else {
+            null
+        }
+        var cast: List<String> = emptyList()
+        var genre: List<String> = emptyList()
+        var imdbRating: String = ""
+        var year: String = ""
+
+        if(responseData != null) {
+            description = responseData.meta.description
+            cast = responseData.meta.cast
+            title = responseData.meta.name
+            genre = responseData.meta.genre
+            imdbRating = responseData.meta.imdbRating
+            year = responseData.meta.year
+            posterUrl = responseData.meta.background
+        }
+
+        if(tvtype == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            var seasonNum = 1
-            val seasonList = mutableListOf<Pair<String, Int>>()
+            val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
             val buttons = document.select("a.maxbutton-episode-links,.maxbutton-g-drive,.maxbutton-af-download")
 
             buttons.mapNotNull {
                 var link = it.attr("href")
                 val seasonText = it.parent()?.previousElementSibling()?.text().toString()
-                seasonList.add(Pair(seasonText, seasonNum))
-
+                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
                 if(link.contains("url=")) {
                     val base64Value = link.substringAfter("url=")
                     link = base64Decode(base64Value)
@@ -91,30 +117,73 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                 val hTags = doc.select("h3,h4")
                 var e = 1
                 hTags.mapNotNull {
-                    val titleText = it.text()
                     val epUrl = it.selectFirst("a")?.attr("href")
-                    tvSeriesEpisodes.add(
-                        newEpisode(epUrl) {
-                            name = titleText
-                            season = seasonNum
-                            episode = e++
+                    val key = Pair(realSeason, e)
+                    if(epUrl != null) {
+                        if (episodesMap.containsKey(key)) {
+                            // If it exists, create a new list with the existing values plus the new URL
+                            val currentList = episodesMap[key] ?: emptyList()
+                            val newList = currentList.toMutableList() // Create a mutable copy
+                            newList.add(epUrl) // Add the new URL
+                            episodesMap[key] = newList // Put the new list back into the map
+                        } else {
+                            episodesMap[key] = mutableListOf(epUrl)
                         }
-                    )
+                    }
+                    e++
                 }
                 e = 1
-                seasonNum++
             }
+
+            for ((key, value) in episodesMap) {
+                val episodeInfo = responseData?.meta?.videos?.find { it.season == key.first && it.episode == key.second }
+                val data = value.map { source->
+                    EpisodeLink(
+                        source
+                    )
+                }
+                tvSeriesEpisodes.add(
+                    newEpisode(data) {
+                        this.name = episodeInfo?.title
+                        this.season = key.first
+                        this.episode = key.second
+                        this.posterUrl = episodeInfo?.thumbnail
+                        this.description = episodeInfo?.overview
+                    }
+                )
+            }
+
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
-                this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
                 this.plot = description
+                this.tags = genre
+                this.rating = imdbRating?.toRatingInt()
+                this.year = year?.toIntOrNull()
+                addActors(cast)
                 addImdbUrl(imdbUrl)
             }
         }
         else {
-            return newMovieLoadResponse(title, url, TvType.Movie, url) {
+            val data = document.select("a.maxbutton-download-links").mapNotNull {
+                var link = it.attr("href")
+                if(link.contains("url=")) {
+                    val base64Value = link.substringAfter("url=")
+                    link = base64Decode(base64Value)
+                }
+
+                val doc = app.get(link).document
+                val source = doc.selectFirst("a.maxbutton-1, a.maxbutton-5")?.attr("href").toString()
+                EpisodeLink(
+                    source
+                )
+            }
+            return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
                 this.plot = description
+                this.tags = genre
+                this.rating = imdbRating?.toRatingInt()
+                this.year = year?.toIntOrNull()
+                addActors(cast)
                 addImdbUrl(imdbUrl)
             }
         }
@@ -126,25 +195,55 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if(data.contains("unblockedgames")) {
-            val link = bypass(data).toString()
+        val sources = parseJson<ArrayList<EpisodeLink>>(data)
+        sources.amap {
+            val source = it.source
+            val link = bypass(source).toString()
             loadExtractor(link, subtitleCallback, callback)
-        }
-        else {
-            val document = app.get(data).document
-            document.select("a.maxbutton-download-links").amap {
-                var link = it.attr("href")
-                if(link.contains("url=")) {
-                    val base64Value = link.substringAfter("url=")
-                    link = base64Decode(base64Value)
-                }
-
-                val doc = app.get(link).document
-                val url = doc.selectFirst("a.maxbutton-1")?.attr("href").toString()
-                val driveLink = bypass(url).toString()
-                loadExtractor(driveLink, subtitleCallback, callback)
-            }
         }
         return true
     }
+
+    data class Meta(
+        val id: String,
+        val imdb_id: String,
+        val type: String,
+        val poster: String,
+        val logo: String,
+        val background: String,
+        val moviedb_id: Int,
+        val name: String,
+        val description: String,
+        val genre: List<String>,
+        val releaseInfo: String,
+        val status: String,
+        val runtime: String,
+        val cast: List<String>,
+        val language: String,
+        val country: String,
+        val imdbRating: String,
+        val slug: String,
+        val year: String,
+        val videos: List<EpisodeDetails>
+    )
+
+    data class EpisodeDetails(
+        val id: String,
+        val title: String,
+        val season: Int,
+        val episode: Int,
+        val released: String,
+        val overview: String,
+        val thumbnail: String,
+        val moviedb_id: Int
+    )
+
+    data class ResponseData(
+        val meta: Meta
+    )
+
+    data class EpisodeLink(
+        val source: String
+    )
 }
+
