@@ -5,12 +5,17 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
+import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.google.gson.Gson
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://bollyflix.wales"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -18,18 +23,23 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/page/" to "Home",
-        "$mainUrl/movies/bollywood/page/" to "Bollywood Movies",
-        "$mainUrl/movies/hollywood/page/" to "Hollywood Movies",
-        "$mainUrl/web-series/ongoing-series/page/" to "Ongoing Series",
-        "$mainUrl/anime/page/" to "Anime"
+        "$mainUrl/" to "Home",
+        "$mainUrl/movies/bollywood/" to "Bollywood Movies",
+        "$mainUrl/movies/hollywood/" to "Hollywood Movies",
+        "$mainUrl/web-series/ongoing-series/" to "Ongoing Series",
+        "$mainUrl/anime/" to "Anime"
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data + page).document
+        val document = if(page == 1) {
+            app.get(request.data).document
+        }
+        else {
+            app.get(request.data + "page/" + page).document
+        }
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
         }
@@ -72,54 +82,114 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
+        var title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
-        val plot = document.selectFirst("span#summary")?.text().toString()
-        val tvType = if(title.contains("Series") || url.contains("web-series")) {
-            TvType.TvSeries
+        var description = document.selectFirst("span#summary")?.text().toString()
+        val tvtype = if(title.contains("Series") || url.contains("web-series")) {
+            "series"
         }
         else {
-            TvType.Movie
+            "movie"
         }
-        if(tvType == TvType.TvSeries) {
+        val imdbUrl = document.selectFirst("div.imdb_left > a")?.attr("href")
+        val responseData = if (!imdbUrl.isNullOrEmpty()) {
+            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+            val gson = Gson()
+            gson.fromJson(jsonResponse, ResponseData::class.java)
+        } else {
+            null
+        }
+        var cast: List<String> = emptyList()
+        var genre: List<String> = emptyList()
+        var imdbRating: String = ""
+        var year: String = ""
+
+        if(responseData != null) {
+            description = responseData.meta.description
+            cast = responseData.meta.cast
+            title = responseData.meta.name
+            genre = responseData.meta.genre
+            imdbRating = responseData.meta.imdbRating
+            year = responseData.meta.year
+            posterUrl = responseData.meta.background
+        }
+
+        if(tvtype == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            var seasonNum = 1
-            val seasonList = mutableListOf<Pair<String, Int>>()
+            val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
             val buttons = document.select("a.maxbutton-download-links, a.dl")
             buttons.mapNotNull { button ->
                 val id = button.attr("href").substringAfterLast("id=").toString()
                 val seasonText = button.parent()?.previousElementSibling()?.text().toString()
-                seasonList.add(Pair(seasonText, seasonNum))
+                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
                 val decodeUrl = bypass(id)
                 val seasonDoc = app.get(decodeUrl).document
                 val epLinks = seasonDoc.select("h3 > a")
                     .filter { element -> !element.text().contains("Zip", true) }
-                var epNum = 1
+                var e = 1
                 epLinks.mapNotNull {
-                    val epLink = app.get(it.attr("href"), allowRedirects = false).headers["location"].toString()
-                    val epText = it.text()
-                    tvSeriesEpisodes.add(
-                        newEpisode(epLink) {
-                            this.name = epText
-                            this.season = seasonNum
-                            this.episode = epNum
-                        }
-                    )
-                    epNum++
+                    val epUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"].toString()
+                    val key = Pair(realSeason, e)
+                    if (episodesMap.containsKey(key)) {
+                        val currentList = episodesMap[key] ?: emptyList()
+                        val newList = currentList.toMutableList()
+                        newList.add(epUrl)
+                        episodesMap[key] = newList
+                    } else {
+                        episodesMap[key] = mutableListOf(epUrl)
+                    }
+                    e++
                 }
-                epNum = 1
-                seasonNum++
+                e = 1
             }
+
+            for ((key, value) in episodesMap) {
+                val episodeInfo = responseData?.meta?.videos?.find { it.season == key.first && it.episode == key.second }
+                val data = value.map { source->
+                    EpisodeLink(
+                        source
+                    )
+                }
+                tvSeriesEpisodes.add(
+                    newEpisode(data) {
+                        this.name = episodeInfo?.title
+                        this.season = key.first
+                        this.episode = key.second
+                        this.posterUrl = episodeInfo?.thumbnail
+                        this.description = episodeInfo?.overview
+                    }
+                )
+            }
+
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
-                this.plot = plot
-                this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name) }
+                this.plot = description
+                this.tags = genre
+                this.rating = imdbRating?.toRatingInt()
+                this.year = year?.toIntOrNull()
+                addActors(cast)
+                addImdbUrl(imdbUrl)
             }
         }
         else {
-            return newMovieLoadResponse(title, url, TvType.Movie, url) {
+            val data = document.select("a.dl").amap {
+                val id = it.attr("href").substringAfterLast("id=").toString()
+                val decodeUrl = bypass(id)
+                val source = app.get(decodeUrl, allowRedirects = false).headers["location"].toString()
+                EpisodeLink(
+                    source
+                )
+            }
+            return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
-                this.plot = plot
+                this.plot = description
+                this.tags = genre
+                this.rating = imdbRating?.toRatingInt()
+                this.year = year?.toIntOrNull()
+                addActors(cast)
+                addImdbUrl(imdbUrl)
             }
         }
     }
@@ -130,18 +200,53 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if(data.contains("gdflix")) {
-            loadExtractor(data, subtitleCallback, callback)
-        }
-        else {
-            val document = app.get(data).document
-            document.select("a.dl").amap {
-                val id = it.attr("href").substringAfterLast("id=").toString()
-                val decodeUrl = bypass(id)
-                val gdflixUrl = app.get(decodeUrl, allowRedirects = false).headers["location"].toString()
-                loadExtractor(gdflixUrl, subtitleCallback, callback)
-            }
+        val sources = parseJson<ArrayList<EpisodeLink>>(data)
+        sources.amap {
+            val source = it.source
+            loadExtractor(source, subtitleCallback, callback)
         }
         return true
     }
+
+    data class Meta(
+        val id: String,
+        val imdb_id: String,
+        val type: String,
+        val poster: String,
+        val logo: String,
+        val background: String,
+        val moviedb_id: Int,
+        val name: String,
+        val description: String,
+        val genre: List<String>,
+        val releaseInfo: String,
+        val status: String,
+        val runtime: String,
+        val cast: List<String>,
+        val language: String,
+        val country: String,
+        val imdbRating: String,
+        val slug: String,
+        val year: String,
+        val videos: List<EpisodeDetails>
+    )
+
+    data class EpisodeDetails(
+        val id: String,
+        val title: String,
+        val season: Int,
+        val episode: Int,
+        val released: String,
+        val overview: String,
+        val thumbnail: String,
+        val moviedb_id: Int
+    )
+
+    data class ResponseData(
+        val meta: Meta
+    )
+
+    data class EpisodeLink(
+        val source: String
+    )
 }
