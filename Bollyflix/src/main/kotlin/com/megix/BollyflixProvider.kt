@@ -95,8 +95,13 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         val responseData = if (!imdbUrl.isNullOrEmpty()) {
             val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
             val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
-            val gson = Gson()
-            gson.fromJson(jsonResponse, ResponseData::class.java)
+            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
+                val gson = Gson()
+                gson.fromJson(jsonResponse, ResponseData::class.java)
+            }
+            else {
+                null
+            }
         } else {
             null
         }
@@ -104,15 +109,38 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         var genre: List<String> = emptyList()
         var imdbRating: String = ""
         var year: String = ""
+        var background: String = posterUrl
 
         if(responseData != null) {
-            description = responseData.meta.description
+            description = if (responseData.meta.description.isNullOrEmpty()) {
+                description
+            } else {
+                responseData.meta.description
+            }
+
             cast = responseData.meta.cast
-            title = responseData.meta.name
+
+            title = if (responseData.meta.name.isNullOrEmpty()) {
+                title
+            } else {
+                responseData.meta.name
+            }
+
             genre = responseData.meta.genre
             imdbRating = responseData.meta.imdbRating
             year = responseData.meta.year
-            posterUrl = responseData.meta.background
+
+            posterUrl = if (responseData.meta.poster.isNullOrEmpty()) {
+                posterUrl
+            } else {
+                responseData.meta.poster
+            }
+
+            background = if (responseData.meta.background.isNullOrEmpty()) {
+                background
+            } else {
+                responseData.meta.background
+            }
         }
 
         if(tvtype == "series") {
@@ -154,7 +182,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 }
                 tvSeriesEpisodes.add(
                     newEpisode(data) {
-                        this.name = episodeInfo?.title
+                        this.name = episodeInfo?.name
                         this.season = key.first
                         this.episode = key.second
                         this.posterUrl = episodeInfo?.thumbnail
@@ -169,6 +197,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 this.tags = genre
                 this.rating = imdbRating?.toRatingInt()
                 this.year = year?.toIntOrNull()
+                this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbUrl(imdbUrl)
             }
@@ -188,6 +217,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 this.tags = genre
                 this.rating = imdbRating?.toRatingInt()
                 this.year = year?.toIntOrNull()
+                this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbUrl(imdbUrl)
             }
@@ -233,7 +263,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
 
     data class EpisodeDetails(
         val id: String,
-        val title: String,
+        val name: String,
         val season: Int,
         val episode: Int,
         val released: String,
