@@ -1,4 +1,4 @@
-version = 3
+version = 4
 
 cloudstream {
     language = "hi"
@@ -18,6 +18,8 @@ cloudstream {
     tvTypes = listOf(
         "TvSeries",
         "Movie",
+        "AsianDrama",
+        "Anime"
     )
 
     iconUrl = "https://bollyflix-cdn.store/wp-content/uploads/2023/05/Bollyflix-movies.png"

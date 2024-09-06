@@ -1,4 +1,4 @@
-version = 5
+version = 6
 
 cloudstream {
     language = "hi"
@@ -18,6 +18,8 @@ cloudstream {
     tvTypes = listOf(
         "TvSeries",
         "Movie",
+        "AsianDrama",
+        "Anime"
     )
 
     iconUrl = "https://moviesmod.bet/wp-content/uploads/2022/12/moviesmodnew-Custom.png"

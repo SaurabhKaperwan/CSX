@@ -19,7 +19,9 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,
-        TvType.TvSeries
+        TvType.TvSeries,
+        TvType.AsianDrama,
+        TvType.Anime
     )
 
     override val mainPage = mainPageOf(
@@ -105,6 +107,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         } else {
             null
         }
+
         var cast: List<String> = emptyList()
         var genre: List<String> = emptyList()
         var imdbRating: String = ""
@@ -112,35 +115,14 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         var background: String = posterUrl
 
         if(responseData != null) {
-            description = if (responseData.meta.description.isNullOrEmpty()) {
-                description
-            } else {
-                responseData.meta.description
-            }
-
-            cast = responseData.meta.cast
-
-            title = if (responseData.meta.name.isNullOrEmpty()) {
-                title
-            } else {
-                responseData.meta.name
-            }
-
-            genre = responseData.meta.genre
-            imdbRating = responseData.meta.imdbRating
-            year = responseData.meta.year
-
-            posterUrl = if (responseData.meta.poster.isNullOrEmpty()) {
-                posterUrl
-            } else {
-                responseData.meta.poster
-            }
-
-            background = if (responseData.meta.background.isNullOrEmpty()) {
-                background
-            } else {
-                responseData.meta.background
-            }
+            description = responseData.meta?.description ?: description
+            cast = responseData.meta?.cast ?: emptyList()
+            title = responseData.meta?.name ?: title
+            genre = responseData.meta?.genre ?: emptyList()
+            imdbRating = responseData.meta?.imdbRating ?: ""
+            year = responseData.meta?.year ?: ""
+            posterUrl = responseData.meta?.poster ?: posterUrl
+            background = responseData.meta?.background ?: background
         }
 
         if(tvtype == "series") {
@@ -195,8 +177,8 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
-                this.rating = imdbRating?.toRatingInt()
-                this.year = year?.toIntOrNull()
+                this.rating = imdbRating.toRatingInt()
+                this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbUrl(imdbUrl)
@@ -215,8 +197,8 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
-                this.rating = imdbRating?.toRatingInt()
-                this.year = year?.toIntOrNull()
+                this.rating = imdbRating.toRatingInt()
+                this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbUrl(imdbUrl)
@@ -239,41 +221,41 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     data class Meta(
-        val id: String,
-        val imdb_id: String,
-        val type: String,
-        val poster: String,
-        val logo: String,
-        val background: String,
-        val moviedb_id: Int,
-        val name: String,
-        val description: String,
-        val genre: List<String>,
-        val releaseInfo: String,
-        val status: String,
-        val runtime: String,
-        val cast: List<String>,
-        val language: String,
-        val country: String,
-        val imdbRating: String,
-        val slug: String,
-        val year: String,
-        val videos: List<EpisodeDetails>
+        val id: String?,
+        val imdb_id: String?,
+        val type: String?,
+        val poster: String?,
+        val logo: String?,
+        val background: String?,
+        val moviedb_id: Int?,
+        val name: String?,
+        val description: String?,
+        val genre: List<String>?,
+        val releaseInfo: String?,
+        val status: String?,
+        val runtime: String?,
+        val cast: List<String>?,
+        val language: String?,
+        val country: String?,
+        val imdbRating: String?,
+        val slug: String?,
+        val year: String?,
+        val videos: List<EpisodeDetails>?
     )
 
     data class EpisodeDetails(
-        val id: String,
-        val name: String,
-        val season: Int,
-        val episode: Int,
-        val released: String,
-        val overview: String,
-        val thumbnail: String,
-        val moviedb_id: Int
+        val id: String?,
+        val name: String?,
+        val season: Int?,
+        val episode: Int?,
+        val released: String?,
+        val overview: String?,
+        val thumbnail: String?,
+        val moviedb_id: Int?
     )
 
     data class ResponseData(
-        val meta: Meta
+        val meta: Meta?
     )
 
     data class EpisodeLink(

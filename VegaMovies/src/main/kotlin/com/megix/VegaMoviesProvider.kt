@@ -6,18 +6,23 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
+import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.google.gson.Gson
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-
     override var mainUrl = "https://vegamovies.pet"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     private val cfInterceptor = CloudflareKiller()
     override val supportedTypes = setOf(
         TvType.Movie,
-        TvType.TvSeries
+        TvType.TvSeries,
+        TvType.AsianDrama,
+        TvType.Anime
     )
 
     override val mainPage = mainPageOf(
@@ -69,49 +74,66 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
-        val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         val documentText = document.text()
-        val div = document.select("div.entry-content")
-        val hTagsDisc = div.select("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")
-        val pTagDisc = hTagsDisc.first()?.nextElementSibling()
-        val plot = pTagDisc?.text()
+        val div = document.selectFirst("div.entry-content")
+        val hTagsDisc = div?.selectFirst("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")
+        val pTagDisc = hTagsDisc?.nextElementSibling()
+        var description = pTagDisc?.text()
 
-        val aTagRatings = div.select("a:matches((?i)(Rating))")
-        val aTagRating = aTagRatings.firstOrNull()
-        val ratingText = aTagRating?.selectFirst("span")?.text()
-        val rating = ratingText?.substringAfter("-")
-            ?.substringBefore("/")
-            ?.trim()
-            ?.toRatingInt()
-
+        val aTagRating = div?.selectFirst("a:matches((?i)(Rating))")
         val imdbUrl = aTagRating?.attr("href").toString()
 
-        val tvType = if (url.contains("season") ||
+        val tvtype = if (url.contains("season") ||
             title.contains("Season") ||
             Regex("Series synopsis").containsMatchIn(documentText) || Regex("Series Name").containsMatchIn(documentText)) {
-            TvType.TvSeries
+            "series"
         } else {
-            TvType.Movie
+            "movie"
         }
 
-        if (tvType == TvType.TvSeries) {
-            val hTags = div.select("h3:matches((?i)(4K|[0-9]*0p)),h5:matches((?i)(4K|[0-9]*0p))")
-                .filter { element -> !element.text().contains("Zip", true) }
+        val responseData = if (!imdbUrl.isNullOrEmpty()) {
+            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
+                val gson = Gson()
+                gson.fromJson(jsonResponse, ResponseData::class.java)
+            }
+            else {
+                null
+            }
+        } else {
+            null
+        }
+
+        var cast: List<String> = emptyList()
+        var genre: List<String> = emptyList()
+        var imdbRating: String = ""
+        var year: String = ""
+        var background: String = posterUrl
+
+        if(responseData != null) {
+            description = responseData.meta?.description ?: description
+            cast = responseData.meta?.cast ?: emptyList()
+            title = responseData.meta?.name ?: title
+            genre = responseData.meta?.genre ?: emptyList()
+            imdbRating = responseData.meta?.imdbRating ?: ""
+            year = responseData.meta?.year ?: ""
+            posterUrl = responseData.meta?.poster ?: posterUrl
+            background = responseData.meta?.background ?: background
+        }
+
+        if (tvtype == "series") {
+            val hTags = div?.select("h3:matches((?i)(4K|[0-9]*0p)),h5:matches((?i)(4K|[0-9]*0p))")
+                ?.filter { element -> !element.text().contains("Zip", true) } ?: emptyList()
 
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            var seasonNum = 1
-            val seasonList = mutableListOf<Pair<String, Int>>()
+            val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
 
             for (tag in hTags) {
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
-                val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(tag.toString())?.groupValues?.get(1) ?: "Unknown"
-                val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:MB|GB)\b""")
-                val size = sizeRegex.find(tag.toString())?.value ?: ""
-
-                seasonList.add("S$realSeason $quality $size" to seasonNum)
+                val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1)?.toIntOrNull() ?: 0
 
                 val pTag = tag.nextElementSibling()
                 val aTags: List<Element>? = if (pTag != null && pTag.tagName() == "p") {
@@ -143,53 +165,66 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                         vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
                     }
 
-                    val episodes = vcloudLinks.mapNotNull { vcloudlink ->
-                        newEpisode(vcloudlink) {
-                            name = "S${realSeason} E${vcloudLinks.indexOf(vcloudlink) + 1} ${quality}"
-                            season = seasonNum
-                            episode = vcloudLinks.indexOf(vcloudlink) + 1
+                    vcloudLinks.mapNotNull { vcloudlink ->
+                        val key = Pair(realSeason, vcloudLinks.indexOf(vcloudlink) + 1)
+                        if (episodesMap.containsKey(key)) {
+                            val currentList = episodesMap[key] ?: emptyList()
+                            val newList = currentList.toMutableList()
+                            newList.add(vcloudlink)
+                            episodesMap[key] = newList
+                        } else {
+                            episodesMap[key] = mutableListOf(vcloudlink)
                         }
                     }
-
-                    tvSeriesEpisodes.addAll(episodes)
-                    seasonNum++
                 }
+            }
+
+            for ((key, value) in episodesMap) {
+                val episodeInfo = responseData?.meta?.videos?.find { it.season == key.first && it.episode == key.second }
+                val data = value.map { source->
+                    EpisodeLink(
+                        source
+                    )
+                }
+                tvSeriesEpisodes.add(
+                    newEpisode(data) {
+                        this.name = episodeInfo?.name
+                        this.season = key.first
+                        this.episode = key.second
+                        this.posterUrl = episodeInfo?.thumbnail
+                        this.description = episodeInfo?.overview
+                    }
+                )
             }
 
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
-                this.plot = plot
-                this.rating = rating
-                this.seasonNames = seasonList.map { (name, int) -> SeasonData(int, name) }
+                this.plot = description
+                this.tags = genre
+                this.rating = imdbRating.toRatingInt()
+                this.year = year.toIntOrNull()
+                this.backgroundPosterUrl = background
+                addActors(cast)
                 addImdbUrl(imdbUrl)
             }
         } else {
             val pTags = document.select("p:has(a:has(button))")
-            val tvSeriesEpisodes = mutableListOf<Episode>()
-            var seasonNum = 1
-            val seasonList = mutableListOf<Pair<String, Int>>()
-
-            pTags.forEach { pTag ->
+            val data = pTags.mapNotNull { pTag ->
                 val link = pTag.selectFirst("a")?.attr("href") ?: ""
-                val details = pTag.previousElementSibling()?.text() ?: "Unknown"
-                seasonList.add("$details" to seasonNum)
                 val doc = app.get(link).document
                 val source = doc.selectFirst("a:contains(V-Cloud)")?.attr("href").toString()
-                
-                val episode = newEpisode(source){
-                    name = "Play"
-                    season = seasonNum
-                    episode = 1
-                }
-
-                tvSeriesEpisodes.add(episode)
-                seasonNum++
+                EpisodeLink(
+                    source
+                )
             }
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
+            return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
-                this.plot = plot
-                this.rating = rating
-                this.seasonNames = seasonList.map { (name, int) -> SeasonData(int, name) }
+                this.plot = description
+                this.tags = genre
+                this.rating = imdbRating.toRatingInt()
+                this.year = year.toIntOrNull()
+                this.backgroundPosterUrl = background
+                addActors(cast)
                 addImdbUrl(imdbUrl)
             }
         }
@@ -201,12 +236,57 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        var url = data
-        if (url.contains("vcloud.lol/api")) {
-            val document = app.get(url).document
-            url = document.selectFirst("h4 > a")?.attr("href").toString()
+        val sources = parseJson<ArrayList<EpisodeLink>>(data)
+        sources.amap {
+            var source = it.source
+            if(source.contains("vcloud.lol/api")) {
+                val document = app.get(source).document
+                source = document.selectFirst("h4 > a")?.attr("href").toString()
+            }
+            loadExtractor(source, subtitleCallback, callback)
         }
-        loadExtractor(url, subtitleCallback, callback)
         return true
     }
+
+    data class Meta(
+        val id: String?,
+        val imdb_id: String?,
+        val type: String?,
+        val poster: String?,
+        val logo: String?,
+        val background: String?,
+        val moviedb_id: Int?,
+        val name: String?,
+        val description: String?,
+        val genre: List<String>?,
+        val releaseInfo: String?,
+        val status: String?,
+        val runtime: String?,
+        val cast: List<String>?,
+        val language: String?,
+        val country: String?,
+        val imdbRating: String?,
+        val slug: String?,
+        val year: String?,
+        val videos: List<EpisodeDetails>?
+    )
+
+    data class EpisodeDetails(
+        val id: String?,
+        val name: String?,
+        val season: Int?,
+        val episode: Int?,
+        val released: String?,
+        val overview: String?,
+        val thumbnail: String?,
+        val moviedb_id: Int?
+    )
+
+    data class ResponseData(
+        val meta: Meta?
+    )
+
+    data class EpisodeLink(
+        val source: String
+    )
 }
