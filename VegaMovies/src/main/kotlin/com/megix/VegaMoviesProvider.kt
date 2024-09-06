@@ -210,12 +210,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         } else {
             val pTags = document.select("p:has(a:has(button))")
             val data = pTags.mapNotNull { pTag ->
-                val link = pTag.selectFirst("a")?.attr("href") ?: ""
-                val doc = app.get(link).document
-                val source = doc.selectFirst("a:contains(V-Cloud)")?.attr("href").toString()
-                EpisodeLink(
-                    source
-                )
+                val link = pTag.selectFirst("a")?.attr("href")
+                if(!link.isNullOrEmpty()) {
+                    val doc = app.get(link).document
+                    val source = doc.selectFirst("a:contains(V-Cloud)")?.attr("href").toString()
+                    EpisodeLink(source)
+                }
             }
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
