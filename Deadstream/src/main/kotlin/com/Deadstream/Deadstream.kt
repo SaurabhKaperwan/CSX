@@ -104,14 +104,46 @@ class Deadstream : MainAPI() {
 
         quality?.select("div.item")?.amap {
             val id = it.attr("data-embed")
+            val qualityText = it.text()
             val url = "https://deaddrive.xyz/embed/$id"
             val doc = app.get(url, timeout = 30L).document
             doc.selectFirst("ul.list-server-items")?.select("li")?.amap { source ->
                 if (!source.attr("data-video").contains("short.ink")) {
-                    loadExtractor(source.attr("data-video"), subtitleCallback, callback)
+                    val link = source.attr("data-video").toString()
+                    loadCustomExtractor(link, "https://deaddrive.xyz/", subtitleCallback, callback, getIndexQuality(qualityText))
                 }
             }
         }
         return true
+    }
+
+    private fun getIndexQuality(str: String?): Int {
+        return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
+            ?: Qualities.Unknown.value
+    }
+
+    private suspend fun loadCustomExtractor(
+        url: String,
+        referer: String? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+        quality: Int = Qualities.Unknown.value,
+    ){
+        loadExtractor(url, referer ,subtitleCallback) { link ->
+            if(link.quality == Qualities.Unknown.value) {
+                callback.invoke (
+                    ExtractorLink (
+                        link.source,
+                        link.name,
+                        link.url,
+                        link.referer,
+                        quality,
+                        link.type,
+                        link.headers,
+                        link.extractorData
+                    )
+                )
+            }
+        }
     }
 }
