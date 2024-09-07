@@ -46,7 +46,7 @@ open class GDFlix : ExtractorApi() {
         val tags = extractbollytag(originalUrl)
         val tagquality = extractbollytag2(originalUrl)
 
-        if (originalUrl.startsWith("https://new2.gdflix.cfd/goto/token/")) {
+        if (originalUrl.startsWith("$mainUrl/goto/token/")) {
             val partialurl = app.get(originalUrl).text.substringAfter("replace(\"").substringBefore("\")")
             originalUrl = mainUrl + partialurl
         }
@@ -54,7 +54,7 @@ open class GDFlix : ExtractorApi() {
             if (it.select("a").text().contains("FAST CLOUD DL"))
             {
                 val link=it.attr("href")
-                val trueurl=app.get("https://new2.gdflix.cfd$link", timeout = 30L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                val trueurl=app.get("$mainUrl$link", timeout = 30L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[Fast Cloud]",
@@ -104,8 +104,8 @@ open class GDFlix : ExtractorApi() {
 
                     callback.invoke(
                         ExtractorLink(
-                            "GDFlix[IndexBot]",
-                            "GDFlix[IndexBot] $tagquality",
+                            "GDFlix[IndexBot](VLC)",
+                            "GDFlix[IndexBot](VLC) $tagquality",
                             downloadlink,
                             "https://indexbot.lol/",
                             getQualityFromName(tags)
@@ -134,20 +134,15 @@ open class GDFlix : ExtractorApi() {
                     downloadlink.toString().substringAfter("url\":\"")
                         .substringBefore("\",\"name")
                         .replace("\\/", "/")
-                val link = finaldownloadlink
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[Instant Download]",
                         "GDFlix[Instant Download] $tagquality",
-                        url = link,
+                        finaldownloadlink,
                         "",
                         getQualityFromName(tags)
                     )
                 )
-            }
-            else
-            {
-
             }
         }
     }
