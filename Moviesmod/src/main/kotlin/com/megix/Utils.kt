@@ -63,7 +63,12 @@ suspend fun bypass(url: String): String? {
     return fixUrl(path, getBaseUrl(driveUrl))
 }
 
-class Driveseed : ExtractorApi() {
+class Driveleech : Driveseed() {
+    override val name: String = "Driveleech"
+    override val mainUrl: String = "https://driveleech.org"
+}
+
+open class Driveseed : ExtractorApi() {
     override val name: String = "Driveseed"
     override val mainUrl: String = "https://driveseed.org"
     override val requiresReferer = false
@@ -82,7 +87,7 @@ class Driveseed : ExtractorApi() {
     }
 
     private suspend fun resumeCloudLink(url: String): String? {
-        val resumeCloudUrl = "https://driveleech.org" + url
+        val resumeCloudUrl = mainUrl + url
         val document = app.get(resumeCloudUrl).document
         val link = document.selectFirst("a.btn-success")?.attr("href")
         return link

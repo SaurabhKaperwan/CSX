@@ -11,5 +11,6 @@ class Moviesmod: Plugin() {
         registerMainAPI(MoviesmodProvider())
         registerMainAPI(TopmoviesProvider())
         registerExtractorAPI(Driveseed())
+        registerExtractorAPI(Driveleech())
     }
 }
