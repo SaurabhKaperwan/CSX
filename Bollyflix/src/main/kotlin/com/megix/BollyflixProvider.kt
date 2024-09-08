@@ -26,10 +26,14 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
 
     override val mainPage = mainPageOf(
         "$mainUrl/" to "Home",
+        "$mainUrl/movies/hollywood/" to "Hollywood Movies",
+        "$mainUrl/movies/south-hindi-dubbed/" to "SOUTH HINDI DUBBED",
         "$mainUrl/movies/bollywood/" to "Bollywood Movies",
         "$mainUrl/movies/hollywood/" to "Hollywood Movies",
-        "$mainUrl/web-series/ongoing-series/" to "Ongoing Series",
-        "$mainUrl/anime/" to "Anime"
+        "$mainUrl/web-series/netflix/" to "NETFLIX",
+        "$mainUrl/web-series/amazon-prime-vide/" to "AMAZON PRIME VIDEO",
+        "$mainUrl/web-series/hotstar/" to "HOTSTAR",
+        "$mainUrl/web-series/mx-player-originals/" to "MX PLAYER ORIGINALS",
     )
 
     override suspend fun getMainPage(
