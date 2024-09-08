@@ -7,7 +7,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
-import java.net.URI
 
 class FastLinks : ExtractorApi() {
     override val name: String = "FastLinks"
@@ -138,12 +137,6 @@ open class GDFlix : ExtractorApi() {
         return tags
     }
 
-    private fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -158,7 +151,7 @@ open class GDFlix : ExtractorApi() {
             val partialurl = app.get(originalUrl).text.substringAfter("replace(\"").substringBefore("\")")
             originalUrl = mainUrl + partialurl
         }
-        app.get(originalUrl).document.select("div.text-center a").amap {
+        app.get(originalUrl).document.select("div.text-center a").map {
             if (it.select("a").text().contains("FAST CLOUD DL"))
             {
                 val link=it.attr("href")
@@ -223,30 +216,14 @@ open class GDFlix : ExtractorApi() {
             }
             else if (it.select("a").text().contains("Instant DL"))
             {
-                val Instant_link=it.attr("href")
-                val token = Instant_link.substringAfter("url=")
-                val domain= getBaseUrl(Instant_link)
-                val downloadlink = app.post(
-                    url = "$domain/api",
-                    data = mapOf(
-                        "keys" to token
-                    ),
-                    referer = Instant_link,
-                    headers = mapOf(
-                        "x-token" to "direct.zencloud.lol",
-                        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
-                    ),
-                    timeout = 30L,
-                )
-                val finaldownloadlink =
-                    downloadlink.toString().substringAfter("url\":\"")
-                        .substringBefore("\",\"name")
-                        .replace("\\/", "/")
+                val instantLink = it.attr("href")
+                val link = app.get(instantLink, timeout = 30L, allowRedirects = false).headers["Location"]?.split("url=") ?. getOrNull(1) ?: ""
+
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[Instant Download]",
                         "GDFlix[Instant Download] $tagquality",
-                        finaldownloadlink,
+                        link,
                         "",
                         getQualityFromName(tags)
                     )
