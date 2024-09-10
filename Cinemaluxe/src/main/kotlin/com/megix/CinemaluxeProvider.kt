@@ -143,7 +143,8 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             val buttons = document.select("a.maxbutton")
             val data = buttons.flatMap { button ->
                 val link = button.attr("href")
-                val doc = app.get(link).document
+                val trueLink = bypass(link)
+                val doc = app.get(trueLink).document
                 doc.select("a.maxbutton").mapNotNull {
                     val source = it.attr("href")
                     EpisodeLink(
