@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class Full4MoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.full4movies.love"
+    override var mainUrl = "https://www.full4movies.network"
     override var name = "Full4Movies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -99,7 +99,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
             val urls = regex.findAll(document.html()).map { it.groupValues[1] }.toList()
 
             val episodes = urls.mapNotNull { link ->
-                newEpisode(url){"Episode ${urls.indexOf(link) + 1}"}
+                newEpisode(link){"Episode ${urls.indexOf(link) + 1}"}
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
@@ -128,7 +128,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val doc = app.get(data).document
-        val link = doc.selectFirst("iframe")?.attr("src").toString()
+        val link = doc.selectFirst("iframe").attr("src")
         loadExtractor(link, referer = data, subtitleCallback, callback)
         return true
     }

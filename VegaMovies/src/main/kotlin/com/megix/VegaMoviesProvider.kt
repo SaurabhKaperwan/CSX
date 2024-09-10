@@ -188,7 +188,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
                 tvSeriesEpisodes.add(
                     newEpisode(data) {
-                        this.name = episodeInfo?.name
+                        this.name = episodeInfo?.name ?: episodeInfo?.title
                         this.season = key.first
                         this.episode = key.second
                         this.posterUrl = episodeInfo?.thumbnail
@@ -274,6 +274,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     data class EpisodeDetails(
         val id: String?,
         val name: String?,
+        val title: String?,
         val season: Int?,
         val episode: Int?,
         val released: String?,
