@@ -168,7 +168,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 }
                 tvSeriesEpisodes.add(
                     newEpisode(data) {
-                        this.name = episodeInfo?.name
+                        this.name = episodeInfo?.name ?: episodeInfo?.title
                         this.season = key.first
                         this.episode = key.second
                         this.posterUrl = episodeInfo?.thumbnail
@@ -250,6 +250,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     data class EpisodeDetails(
         val id: String?,
         val name: String?,
+        val title: String?,
         val season: Int?,
         val episode: Int?,
         val released: String?,

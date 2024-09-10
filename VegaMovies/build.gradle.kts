@@ -1,10 +1,10 @@
-version = 39
+version = 40
 
 cloudstream {
     language = "hi"
     // All of these properties are optional, you can safely remove them
 
-    description = "Includes LuxMovies"
+    description = "Includes LuxMovies, Rogmovies"
      authors = listOf("megix")
 
     /**

@@ -41,17 +41,16 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         request: MainPageRequest
     ): HomePageResponse {
         val document = app.get(request.data.format(page), interceptor = cfInterceptor).document
-        val home = document.select("article.post-item").mapNotNull { it.toSearchResult() }
+        val home = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
         return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a")?.attr("title")?.replace("Download ", "").toString()
-        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val imgTag = this.selectFirst("img.blog-picture")
-        var posterUrl = imgTag ?. attr("data-src")
-        if (posterUrl == null) {
-            posterUrl = fixUrlNull(this.selectFirst("img.blog-picture")?.attr("src").toString())
+        val title = this.attr("title").replace("Download ", "")
+        val href = this.attr("href")
+        var posterUrl = this.selectFirst("img")?.attr("data-src").toString()
+        if(posterUrl.isEmpty()) {
+            posterUrl = this.selectFirst("img")?.attr("src").toString()
         }
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
@@ -63,7 +62,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val searchResponse = mutableListOf<SearchResponse>()
         for (i in 1..3) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
-            val results = document.select("article.post-item").mapNotNull { it.toSearchResult() }
+            val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
             if (results.isEmpty()) {
                 break
             }
@@ -188,7 +187,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 }
                 tvSeriesEpisodes.add(
                     newEpisode(data) {
-                        this.name = episodeInfo?.name
+                        this.name = episodeInfo?.name ?: episodeInfo?.title
                         this.season = key.first
                         this.episode = key.second
                         this.posterUrl = episodeInfo?.thumbnail
@@ -274,6 +273,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     data class EpisodeDetails(
         val id: String?,
         val name: String?,
+        val title: String?,
         val season: Int?,
         val episode: Int?,
         val released: String?,
