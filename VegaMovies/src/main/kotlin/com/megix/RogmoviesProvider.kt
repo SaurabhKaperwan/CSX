@@ -5,9 +5,9 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
-class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://luxmovies.lol"
-    override var name = "LuxMovies"
+class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
+    override var mainUrl = "https://rogmovies.top"
+    override var name = "Rogmovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
@@ -43,10 +43,7 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.attr("title").replace("Download ", "")
         val href = this.attr("href")
-        var posterUrl = this.selectFirst("img")?.attr("data-lazy-src").toString()
-        if(posterUrl.isNullOrEmpty()) {
-            posterUrl = this.selectFirst("img")?.attr("src").toString()
-        }
+        val posterUrl = this.selectFirst("img")?.attr("data-src").toString()
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
