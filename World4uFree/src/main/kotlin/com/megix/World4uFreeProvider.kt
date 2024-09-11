@@ -250,20 +250,18 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
         quality: Int = Qualities.Unknown.value,
     ){
         loadExtractor(url,subtitleCallback) { link ->
-            if(link.quality == Qualities.Unknown.value) {
-                callback.invoke (
-                    ExtractorLink (
-                        link.source,
-                        link.name,
-                        link.url,
-                        link.referer,
-                        quality,
-                        link.type,
-                        link.headers,
-                        link.extractorData
-                    )
+            callback.invoke (
+                ExtractorLink (
+                    link.source,
+                    link.name,
+                    link.url,
+                    link.referer,
+                    if(link.quality == Qualities.Unknown.value) quality else link.quality,
+                    link.type,
+                    link.headers,
+                    link.extractorData
                 )
-            }
+            )
         }
     }
 
