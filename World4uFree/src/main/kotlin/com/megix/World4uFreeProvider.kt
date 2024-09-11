@@ -4,6 +4,10 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
+import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.google.gson.Gson
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class World4uFreeProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://world4ufree.boston"
@@ -11,6 +15,7 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries
@@ -65,49 +70,72 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
         val div = document.selectFirst("div.entry-content")
-        val plot = div ?. selectFirst("p:matches((?i)(plot|synopsis|story))") ?. text() ?: ""
+        val imdbUrl = document.selectFirst("div.imdb_left > a") ?. attr("href")
+        var description = div ?. selectFirst("p:matches((?i)(plot|synopsis|story))") ?. text() ?: ""
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
 
         if(posterUrl.isEmpty() || posterUrl.contains("$mainUrl/favicon-32x32.png")) {
             posterUrl = document.selectFirst("div.separator > a > img")?.attr("data-src").toString()
         }
-        val tvType = if (document.select("div.entry-content").text().contains("movie name", ignoreCase = true)) {
-            TvType.Movie
+        val tvtype = if (document.select("div.entry-content").text().contains("movie name", ignoreCase = true)) {
+            "movie"
         }
         else {
-            TvType.TvSeries
+            "series"
         }
 
-        if(tvType == TvType.TvSeries) {
+        val responseData = if (!imdbUrl.isNullOrEmpty()) {
+            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
+                val gson = Gson()
+                gson.fromJson(jsonResponse, ResponseData::class.java)
+            }
+            else {
+                null
+            }
+        } else {
+            null
+        }
+
+        var cast: List<String> = emptyList()
+        var genre: List<String> = emptyList()
+        var imdbRating: String = ""
+        var year: String = ""
+        var background: String = posterUrl
+
+        if(responseData != null) {
+            description = responseData.meta?.description ?: description
+            cast = responseData.meta?.cast ?: emptyList()
+            title = responseData.meta?.name ?: title
+            genre = responseData.meta?.genre ?: emptyList()
+            imdbRating = responseData.meta?.imdbRating ?: ""
+            year = responseData.meta?.year ?: ""
+            posterUrl = responseData.meta?.poster ?: posterUrl
+            background = responseData.meta?.background ?: background
+        }
+
+        if(tvtype == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            var seasonNum = 1
-            val seasonList = mutableListOf<Pair<String, Int>>()
             val buttons = document.select("a.my-button")
+            val episodesMap: MutableMap<Pair<Int, Int>, List<Pair<String, String>>> = mutableMapOf()
+
             buttons.forEach { button ->
                 val titleElement = button.parent()?.parent()?.previousElementSibling()
                 val titleText = titleElement ?. text() ?: ""
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(titleText.toString()) ?. groupValues ?. get(1) ?: "Unknown"
+                val realSeason = realSeasonRegex.find(titleText) ?. groupValues ?. get(1) ?.toIntOrNull() ?: 0
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(titleText.toString()) ?. groupValues ?. get(1) ?: "Unknown"
-                val sizeRegex = Regex("""\b\d+(?:\.\d+)?(?:Mb|Gb|mb|gb)\b""")
-                val size = sizeRegex.find(titleText.toString())?.value ?: ""
-                if(realSeason != "Unknown" && quality != "Unknown") {
-                    seasonList.add("S$realSeason $quality $size" to seasonNum)
-                }
-                else {
-                    seasonList.add("$title" to seasonNum)
-                }
-
-                val wlinkz = button.attr("href").toString()
+                val quality = qualityRegex.find(titleText) ?. groupValues ?. get(1) ?: ""
+                var ep = 1
+                val wlinkz = button.attr("href")
                 if(wlinkz.isNotEmpty()) {
                     val doc = app.get(wlinkz).document
                     val elements = doc.select("h3:matches((?i)(episode))")
-                    val episodes = mutableListOf<Episode>()
                     elements.forEach { element ->
-                        val epTitle = element.text().replace("—", "")
+                        //val epTitle = element.text()
                         var linkElement = element.nextElementSibling()
                         while (linkElement != null && linkElement.tagName() != "h4") {
                             linkElement = linkElement.nextElementSibling()
@@ -119,29 +147,78 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
                         }
 
                         if (link.isNotEmpty() && !title.contains("zip", ignoreCase = true)) {
-                            episodes.add(
-                                newEpisode(link){
-                                    name = "$epTitle"
-                                    season = seasonNum
-                                    episode = elements.indexOf(element) + 1
-                                }
-                            )
+                            val key = Pair(realSeason, ep)
+                            val episodePair = Pair(link, quality)
+                            if (episodesMap.containsKey(key)) {
+                                val currentList = episodesMap[key] ?: emptyList()
+                                val newList = currentList.toMutableList()
+                                newList.add(episodePair)
+                                episodesMap[key] = newList
+                            } else {
+                                episodesMap[key] = mutableListOf(episodePair)
+                            }
+                            ep++
                         }
                     }
-                    tvSeriesEpisodes.addAll(episodes)
-                    seasonNum++
+                    ep = 1
                 }
             }
+
+            for ((key, value) in episodesMap) {
+                val episodeInfo = responseData?.meta?.videos?.find { it.season == key.first && it.episode == key.second }
+                val data = value.map { pair ->
+                    EpisodeLink(
+                        pair.first,
+                        pair.second
+                    )
+                }
+
+                tvSeriesEpisodes.add(
+                    newEpisode(data) {
+                        this.name = episodeInfo?.name ?: episodeInfo?.title
+                        this.season = key.first
+                        this.episode = key.second
+                        this.posterUrl = episodeInfo?.thumbnail
+                        this.description = episodeInfo?.overview
+                    }
+                )
+            }
+
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
-                this.plot = plot
-                this.seasonNames = seasonList.map {(name, int) -> SeasonData(int, name)}
+                this.plot = description
+                this.tags = genre
+                this.rating = imdbRating.toRatingInt()
+                this.year = year.toIntOrNull()
+                this.backgroundPosterUrl = background
+                addActors(cast)
+                addImdbUrl(imdbUrl)
             }
         }
         else {
-            return newMovieLoadResponse(title, url, TvType.Movie, url) {
+            val links = document.select("a.my-button")
+            val data = links.flatMap {
+                val link = it.attr("href")
+                val quality = it.text()
+                val doc = app.get(link).document
+                val urls = doc.select("a:matches((?i)(instant|download|direct))")
+                urls.mapNotNull {
+                    EpisodeLink(
+                        it.attr("href"),
+                        quality
+                    )
+                }
+            }
+
+            return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
-                this.plot = plot
+                this.plot = description
+                this.tags = genre
+                this.rating = imdbRating.toRatingInt()
+                this.year = year.toIntOrNull()
+                this.backgroundPosterUrl = background
+                addActors(cast)
+                addImdbUrl(imdbUrl)
             }
         }
     }
@@ -152,21 +229,85 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if(data.contains("world4ufree")) {
-            val document = app.get(data).document
-            val links = document.select("a.my-button")
-            links.amap {
-                val link = it.attr("href")
-                val doc = app.get(link).document
-                val urls = doc.select("a:matches((?i)(instant|download|direct))")
-                urls.amap {
-                    loadExtractor(it.attr("href"), subtitleCallback, callback)
-                }
-            }
-        }
-        else {
-            loadExtractor(data, subtitleCallback, callback)
+        val sources = parseJson<ArrayList<EpisodeLink>>(data)
+        sources.amap {
+            val source = it.source
+            val quality = it.quality
+            loadCustomExtractor(source, subtitleCallback, callback, getIndexQuality(quality))
         }
         return true   
     }
+
+    private fun getIndexQuality(str: String?): Int {
+        return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
+            ?: Qualities.Unknown.value
+    }
+
+    private suspend fun loadCustomExtractor(
+        url: String,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+        quality: Int = Qualities.Unknown.value,
+    ){
+        loadExtractor(url,subtitleCallback) { link ->
+            if(link.quality == Qualities.Unknown.value) {
+                callback.invoke (
+                    ExtractorLink (
+                        link.source,
+                        link.name,
+                        link.url,
+                        link.referer,
+                        quality,
+                        link.type,
+                        link.headers,
+                        link.extractorData
+                    )
+                )
+            }
+        }
+    }
+
+    data class Meta(
+        val id: String?,
+        val imdb_id: String?,
+        val type: String?,
+        val poster: String?,
+        val logo: String?,
+        val background: String?,
+        val moviedb_id: Int?,
+        val name: String?,
+        val description: String?,
+        val genre: List<String>?,
+        val releaseInfo: String?,
+        val status: String?,
+        val runtime: String?,
+        val cast: List<String>?,
+        val language: String?,
+        val country: String?,
+        val imdbRating: String?,
+        val slug: String?,
+        val year: String?,
+        val videos: List<EpisodeDetails>?
+    )
+
+    data class EpisodeDetails(
+        val id: String?,
+        val name: String?,
+        val title: String?,
+        val season: Int?,
+        val episode: Int?,
+        val released: String?,
+        val overview: String?,
+        val thumbnail: String?,
+        val moviedb_id: Int?
+    )
+
+    data class ResponseData(
+        val meta: Meta?
+    )
+
+    data class EpisodeLink(
+        val source: String,
+        val quality: String
+    )
 }

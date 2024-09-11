@@ -55,8 +55,6 @@ class WLinkFast : ExtractorApi() {
         val cookies = mapOf("PHPSESSID" to "$ssid")
         val regex = Regex("""formData\.append\('key', '(\d+)'\);""")
         val key = regex.find(document.html()) ?. groupValues ?. get(1) ?: ""
-
-        val quality = document.selectFirst("title") ?. text()
         
         val formBody = FormBody.Builder()
             .add("key", "$key")
@@ -86,7 +84,7 @@ class WLinkFast : ExtractorApi() {
                     this.name,
                     link,
                     referer = "",
-                    quality = getIndexQuality(quality),
+                    Qualities.Unknown.value,
                 )
             )
         }
@@ -101,14 +99,10 @@ class WLinkFast : ExtractorApi() {
                     this.name,
                     downloadLink,
                     referer = "",
-                    quality = getIndexQuality(quality),
+                    Qualities.Unknown.value,
                 )
             )
         }
-    }
-    private fun getIndexQuality(str: String?): Int {
-        return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
-            ?: Qualities.Unknown.value
     }
 }
 
