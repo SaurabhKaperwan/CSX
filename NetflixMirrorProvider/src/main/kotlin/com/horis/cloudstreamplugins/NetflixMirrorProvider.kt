@@ -27,7 +27,10 @@ class NetflixMirrorProvider : MainAPI() {
 
     override val hasMainPage = true
     private var time = ""
-    private val cookies = mapOf("hd" to "on")
+    private val cookies = mapOf(
+        "t_hash_t" to "d2c93be9fe0338da4ef21427f2508d4d%3A%3A7645af59f92380ddbd88434685f7c3a7%3A%3A1726125484%3A%3Ani",
+        "hd" to "on"
+    )
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
