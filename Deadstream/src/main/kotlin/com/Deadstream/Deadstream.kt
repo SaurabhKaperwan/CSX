@@ -129,8 +129,12 @@ class Deadstream : MainAPI() {
         callback: (ExtractorLink) -> Unit,
         quality: Int = Qualities.Unknown.value,
     ){
+        val wantedNames = listOf("Chillx", "Bestx", "Boosterx", "Vectorx", "Boltx", "Beastx", "Watchx")
         loadExtractor(url, referer ,subtitleCallback) { link ->
-            if(link.quality == Qualities.Unknown.value) {
+            if(
+                link.quality == Qualities.Unknown.value ||
+                wantedNames.any { link.name.contains(it) }
+            ) {
                 callback.invoke (
                     ExtractorLink (
                         link.source,
