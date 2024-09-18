@@ -8,10 +8,6 @@ import android.content.Context
 class Cinemaluxe: Plugin() {
     override fun load(context: Context) {
         registerMainAPI(CinemaluxeProvider())
-        registerExtractorAPI(GDFlix())
-        registerExtractorAPI(GDFlix1())
-        registerExtractorAPI(GDFlix2())
         registerExtractorAPI(Sharepoint())
-        registerExtractorAPI(HubCloud())
     }
 }

@@ -1,10 +1,10 @@
-version = 9
+version = 1
 
 cloudstream {
-    language = "hi"
+    //language = "hi"
     // All of these properties are optional, you can safely remove them
 
-    description = "High Quality Movies and TV Shows"
+    description = "Must Install(For other extensions to work properly)"
      authors = listOf("megix")
 
     /**
@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://i.imgur.com/9bGkGMi.png"
+    iconUrl = ""
 }
