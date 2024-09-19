@@ -93,7 +93,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         val imdbUrl = nextElement?.selectFirst("a")?.attr("href")
         var description = nextElement?.nextElementSibling()?.nextElementSibling() ?.text()
 
-        val tvtype = if (nextElement?.text().toString().contains("Movie Name")) {
+        var tvtype = if (nextElement?.text().toString().contains("Movie Name")) {
             "movie"
         } else {
             "series"
@@ -128,6 +128,11 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
             year = responseData.meta?.year ?: ""
             posterUrl = responseData.meta?.poster ?: posterUrl
             background = responseData.meta?.background ?: background
+        }
+
+        val checkSeriesComplete = document.selectFirst("div.downloads-btns-div")?.previousElementSibling()?.text().toString()
+        if(checkSeriesComplete.contains("Complete")) {
+            tvtype = "complete-series"
         }
 
         if(tvtype == "series") {
