@@ -14,5 +14,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(GDFlix2())
         registerExtractorAPI(HubCloud())
         registerExtractorAPI(HubCloudClub())
+        registerExtractorAPI(fastdlserver())
+        registerExtractorAPI(HubCloudlol())
     }
 }

@@ -15,17 +15,21 @@ open class VCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        var url=url
+        if (url.contains("api/index.php"))
+        {
+            url=app.get(url).document.selectFirst("div.main h4 a")?.attr("href") ?:""
+        }
         val doc = app.get(url).document
-        val scriptTag = doc.selectFirst("script:containsData(url)") ?. data().toString()
+        val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?:""
         val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         val document = app.get(urlValue).document
 
         val size = document.selectFirst("i#size") ?. text()
         val div = document.selectFirst("div.card-body")
         val header = document.selectFirst("div.card-header") ?. text()
-        div?.select("a")?.amap {
+        div?.select("a")?.apmap {
             val link = it.attr("href")
-            val text = it.text()
             if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
@@ -36,8 +40,7 @@ open class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            }
-            else if(text.contains("Download [Server : 10Gbps]")) {
+            } else if(link.contains("dl.php")) {
                 val response = app.get(link, allowRedirects = false)
                 val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
@@ -49,11 +52,10 @@ open class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            }
-            else if(link.contains(".dev")) {
+            } else if(link.contains(".dev")) {
                 callback.invoke(
                     ExtractorLink(
-                        "$name",
+                        name,
                         "$name $size",
                         link,
                         "",
@@ -61,23 +63,36 @@ open class VCloud : ExtractorApi() {
                     )
                 )
             }
-            else {
+            else if (link.contains(".hubcdn.xyz")) {
+                callback.invoke(
+                    ExtractorLink(
+                        name,
+                        "$name $size",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
+            else{
                 loadExtractor(link, subtitleCallback, callback)
             }
         }
     }
 
-
     private fun getIndexQuality(str: String?): Int {
-        return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
+        return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
             ?: Qualities.Unknown.value
     }
 
 }
 
 class HubCloudClub : HubCloud() {
-    override val name: String = "Hub-Cloud"
     override val mainUrl: String = "https://hubcloud.club"
+}
+
+class HubCloudlol : HubCloud() {
+    override var mainUrl = "https://hubcloud.lol"
 }
 
 open class HubCloud : ExtractorApi() {
@@ -146,6 +161,17 @@ open class HubCloud : ExtractorApi() {
                     )
                 )
             }
+            else if (link.contains(".hubcdn.xyz")) {
+                callback.invoke(
+                    ExtractorLink(
+                        name,
+                        "$name $size",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
             else {
                 loadExtractor(link, subtitleCallback, callback)
             }
@@ -158,6 +184,10 @@ open class HubCloud : ExtractorApi() {
             ?: Qualities.Unknown.value
     }
 
+}
+
+class fastdlserver : GDFlix() {
+    override var mainUrl = "https://fastdlserver.online"
 }
 
 class GDFlix1 : GDFlix() {
@@ -224,8 +254,8 @@ open class GDFlix : ExtractorApi() {
                 if(indexbotresponse.isSuccessful) {
                     val cookiesSSID = indexbotresponse.cookies["PHPSESSID"]
                     val indexbotDoc = indexbotresponse.document
-                    val token = Regex("""formData\.append\('token', '([a-f0-9]+)'\)""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: "token"
-                    val postId = Regex("""fetch\('\/download\?id=([a-zA-Z0-9\/+]+)'""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: "postId"
+                    val token = Regex("""formData\.append\('token', '([a-f0-9]+)'\)""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: ""
+                    val postId = Regex("""fetch\('/download\?id=([a-zA-Z0-9/+]+)'""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: ""
 
                     val requestBody = FormBody.Builder()
                         .add("token", token)
@@ -279,3 +309,5 @@ open class GDFlix : ExtractorApi() {
         }
     }
 }
+
+
