@@ -110,13 +110,17 @@ open class OgomoviesProvider : MainAPI() { // all providers must be an instance 
         if(data.contains("0gomovies")) {
              val headers = mapOf("Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
             val document = app.get(data, headers = headers).document
-            document.select("div.chbox > button").mapNotNull {
-                val onclick = it.attr("onclick")
+            document.select("div.chbox > button").forEach { button ->
+                val onclick = button.attr("onclick") ?: return@forEach
+
                 val regex = Regex("""goto\('(.*)'\)""")
                 val matchResult = regex.find(onclick)
-                val urlGroup = matchResult.groups[1]
-                val url = urlGroup.value
-                loadExtractor(url, subtitleCallback, callback)
+
+                if (matchResult != null) {
+                    val urlGroup = matchResult.groups[1]
+                    val url = urlGroup?.value.toString()
+                    loadExtractor(url, subtitleCallback, callback)
+                }
             }
         }
         else {
