@@ -150,17 +150,19 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
                 var e = 1
 
                 episodeDiv.forEach { element ->
-                    val epUrl = element.selectFirst("a[href~=(?i)hubcloud|vcloud]")?.attr("href").toString()
-                    val key = Pair(realSeason, e)
-                    if (episodesMap.containsKey(key)) {
-                        val currentList = episodesMap[key] ?: emptyList()
-                        val newList = currentList.toMutableList()
-                        newList.add(epUrl)
-                        episodesMap[key] = newList
-                    } else {
-                        episodesMap[key] = mutableListOf(epUrl)
+                    val epUrl = element.selectFirst("a[href~=(?i)hubcloud|vcloud]")?.attr("href")
+                    if(epUrl != null) {
+                        val key = Pair(realSeason, e)
+                        if (episodesMap.containsKey(key)) {
+                            val currentList = episodesMap[key] ?: emptyList()
+                            val newList = currentList.toMutableList()
+                            newList.add(epUrl)
+                            episodesMap[key] = newList
+                        } else {
+                            episodesMap[key] = mutableListOf(epUrl)
+                        }
+                        e++
                     }
-                    e++
                 }
                 e = 1
             }
