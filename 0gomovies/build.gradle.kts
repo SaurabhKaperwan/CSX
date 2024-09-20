@@ -1,4 +1,4 @@
-version = 1
+version = 2
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://0gomovies.movie/wp-content/themes/assets/images/logo-dark.png"
+    iconUrl = "https://0gomovies.cam/wp-content/themes/assets/images/logo-dark.png"
 }
