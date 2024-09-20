@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 open class OgomoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://0gomovies.movie"
+    override var mainUrl = "https://0gomovies.cam"
     override var name = "0gomovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -108,10 +108,20 @@ open class OgomoviesProvider : MainAPI() { // all providers must be an instance 
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         if(data.contains("0gomovies")) {
-            val headers = mapOf("Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
-            val document = app.get("${data}/watching/", headers = headers).document
-            val link = document.selectFirst("li.episode-item")?.attr("data-drive").toString()
-            loadExtractor(link, subtitleCallback, callback)
+             val headers = mapOf("Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+            val document = app.get(data, headers = headers).document
+            document.select("div.chbox > button").forEach { button ->
+                val onclick = button.attr("onclick") ?: return@forEach
+
+                val regex = Regex("""goto\('(.*)'\)""")
+                val matchResult = regex.find(onclick)
+
+                if (matchResult != null) {
+                    val urlGroup = matchResult.groups[1]
+                    val url = urlGroup?.value.toString()
+                    loadExtractor(url, subtitleCallback, callback)
+                }
+            }
         }
         else {
             loadExtractor(data, subtitleCallback, callback)

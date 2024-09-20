@@ -4,19 +4,18 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
-class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://bollyflix.beer"
-    override var name = "BollyFlix"
+class Movies4uProvider : MainAPI() { // all providers must be an instance of MainAPI
+    override var mainUrl = "https://movies4u.taxi"
+    override var name = "Movies4u"
     override val hasMainPage = true
     override var lang = "hi"
-    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val hasDownloadSupport = true
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -25,47 +24,45 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/" to "Home",
-        "$mainUrl/movies/hollywood/" to "Hollywood Movies",
-        "$mainUrl/movies/south-hindi-dubbed/" to "SOUTH HINDI DUBBED",
-        "$mainUrl/movies/bollywood/" to "Bollywood Movies",
-        "$mainUrl/movies/hollywood/" to "Hollywood Movies",
-        "$mainUrl/web-series/netflix/" to "NETFLIX",
-        "$mainUrl/web-series/amazon-prime-vide/" to "AMAZON PRIME VIDEO",
-        "$mainUrl/web-series/hotstar/" to "HOTSTAR",
-        "$mainUrl/web-series/mx-player-originals/" to "MX PLAYER ORIGINALS",
+        "$mainUrl/page/" to "Home",
+        "$mainUrl/category/bollywood/page/" to "Bollywood",
+        "$mainUrl/category/hollywood/page/" to "Hollywood",
+        "$mainUrl/category/web-series/page/" to "Web Series",
+        "$mainUrl/category/anime/page/" to "Anime"
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = if(page == 1) {
-            app.get(request.data).document
-        }
-        else {
-            app.get(request.data + "page/" + page).document
-        }
-        val home = document.select("div.post-cards > article").mapNotNull {
+        val document = app.get(request.data + page).document
+        val home = document.select("article.post").mapNotNull {
             it.toSearchResult()
         }
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun bypass(id: String): String {
-        val url = "https://web.sidexfee.com/?id=$id"
-        val document = app.get(url).text
-        val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-        return base64Decode(encodeUrl)
-    }
-
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a") ?. attr("title") ?. replace("Download ", "").toString()
-        val href = this.selectFirst("a") ?. attr("href").toString()
-        val posterUrl = this.selectFirst("img") ?. attr("src").toString()
+        val title = this.selectFirst("figure > a > img")?.attr("alt").toString()
+        val href = this.selectFirst("figure > a")?.attr("href").toString()
+        val posterUrl = this.selectFirst("figure > a > img")?.attr("src").toString()
+        val quality = getQualityFromString(this.selectFirst("article.post > figure > a > span")?.text().toString())
     
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
+            this.quality = quality
+        }
+    }
+
+    private fun Element.toSearchResult2(): SearchResponse? {
+        val title = this.selectFirst("figure > div > a > img")?.attr("alt").toString()
+        val href = this.selectFirst("figure > div > a")?.attr("href").toString()
+        val posterUrl = this.selectFirst("figure > div > a > img")?.attr("src").toString()
+        val quality = getQualityFromString(this.selectFirst("article.post > figure > div > a > span")?.text().toString())
+
+        return newMovieSearchResponse(title, href, TvType.Movie) {
+            this.posterUrl = posterUrl
+            this.quality = quality
         }
     }
 
@@ -73,9 +70,9 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..3) {
-            val document = app.get("$mainUrl/search/$query/page/$i/").document
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
 
-            val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
+            val results = document.select("article.post").mapNotNull { it.toSearchResult2() }
 
             if (results.isEmpty()) {
                 break
@@ -88,16 +85,20 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        var title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
+        var title = document.selectFirst("title")?.text().toString()
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
-        var description = document.selectFirst("span#summary")?.text().toString()
-        val tvtype = if(title.contains("Series") || url.contains("web-series")) {
+
+        val movieTitle = document.selectFirst("h3.movie-title")
+        val nextElement = movieTitle?.nextElementSibling()
+        val imdbUrl = nextElement?.selectFirst("a")?.attr("href")
+        var description = nextElement?.nextElementSibling()?.nextElementSibling() ?.text()
+
+        var tvtype = if (nextElement?.text().toString().contains("Movie Name")) {
+            "movie"
+        } else {
             "series"
         }
-        else {
-            "movie"
-        }
-        val imdbUrl = document.selectFirst("div.imdb_left > a")?.attr("href")
+
         val responseData = if (!imdbUrl.isNullOrEmpty()) {
             val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
             val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
@@ -129,32 +130,39 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             background = responseData.meta?.background ?: background
         }
 
+        val checkSeriesComplete = document.selectFirst("div.downloads-btns-div")?.previousElementSibling()?.text().toString()
+        if(checkSeriesComplete.contains("Complete")) {
+            tvtype = "complete-series"
+        }
+
         if(tvtype == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
-            val buttons = document.select("a.maxbutton-download-links, a.dl")
-            buttons.mapNotNull { button ->
-                val id = button.attr("href").substringAfterLast("id=").toString()
-                val seasonText = button.parent()?.previousElementSibling()?.text().toString()
+            var buttons = document.select("div.downloads-btns-div")
+
+            buttons.forEach { button ->
+                val titleElement = button.previousElementSibling()?.text()
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                val decodeUrl = bypass(id)
-                val seasonDoc = app.get(decodeUrl).document
-                val epLinks = seasonDoc.select("h3 > a")
-                    .filter { element -> !element.text().contains("Zip", true) }
+                val realSeason = realSeasonRegex.find(titleElement.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
+                val seasonLink = button.selectFirst("a")?.attr("href").toString()
+                val doc = app.get(seasonLink).document
+                val episodeDiv = doc.select("div.downloads-btns-div")
                 var e = 1
-                epLinks.mapNotNull {
-                    val epUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"].toString()
-                    val key = Pair(realSeason, e)
-                    if (episodesMap.containsKey(key)) {
-                        val currentList = episodesMap[key] ?: emptyList()
-                        val newList = currentList.toMutableList()
-                        newList.add(epUrl)
-                        episodesMap[key] = newList
-                    } else {
-                        episodesMap[key] = mutableListOf(epUrl)
+
+                episodeDiv.forEach { element ->
+                    val epUrl = element.selectFirst("a[href~=(?i)hubcloud|vcloud]")?.attr("href")
+                    if(epUrl != null) {
+                        val key = Pair(realSeason, e)
+                        if (episodesMap.containsKey(key)) {
+                            val currentList = episodesMap[key] ?: emptyList()
+                            val newList = currentList.toMutableList()
+                            newList.add(epUrl)
+                            episodesMap[key] = newList
+                        } else {
+                            episodesMap[key] = mutableListOf(epUrl)
+                        }
+                        e++
                     }
-                    e++
                 }
                 e = 1
             }
@@ -176,7 +184,6 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                     }
                 )
             }
-
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, tvSeriesEpisodes) {
                 this.posterUrl = posterUrl
                 this.plot = description
@@ -189,14 +196,14 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             }
         }
         else {
-            val data = document.select("a.dl").amap {
-                val id = it.attr("href").substringAfterLast("id=").toString()
-                val decodeUrl = bypass(id)
-                val source = app.get(decodeUrl, allowRedirects = false).headers["location"].toString()
+            val movieLink = document.selectFirst("div.downloads-btns-div > a")?.attr("href").toString()
+            val doc = app.get(movieLink).document
+            val data = doc.select("div.downloads-btns-div > a").mapNotNull {
                 EpisodeLink(
-                    source
+                    it.attr("href")
                 )
             }
+
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
                 this.plot = description
@@ -221,7 +228,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             val source = it.source
             loadExtractor(source, subtitleCallback, callback)
         }
-        return true
+        return true   
     }
 
     data class Meta(
@@ -267,3 +274,4 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         val source: String
     )
 }
+

@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.pet"
+    override var mainUrl = "https://vegamovies.fans"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -235,11 +235,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     ): Boolean {
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
         sources.amap {
-            var source = it.source
-            if(source.contains("vcloud.lol/api")) {
-                val document = app.get(source).document
-                source = document.selectFirst("h4 > a")?.attr("href").toString()
-            }
+            val source = it.source
             loadExtractor(source, subtitleCallback, callback)
         }
         return true

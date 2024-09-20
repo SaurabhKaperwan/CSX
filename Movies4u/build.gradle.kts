@@ -1,4 +1,4 @@
-version = 9
+version = 3
 
 cloudstream {
     language = "hi"
@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://i.imgur.com/9bGkGMi.png"
+    iconUrl = "https://movies4u.taxi/wp-content/uploads/2022/08/favicon.jpg"
 }
