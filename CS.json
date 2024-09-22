@@ -3,6 +3,6 @@
   "description": "MultipleLanguages",
   "manifestVersion": 1,
   "pluginLists": [
-    "https://raw.githubusercontent.com/SuperNova-Repo/CSX/refs/heads/builds/CS.json"
+    "https://raw.githubusercontent.com/SuperNova-Repo/CSX/refs/heads/builds/plugins.json"
   ]
 }
