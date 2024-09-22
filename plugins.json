@@ -5,6 +5,7 @@
         "repositoryUrl": "https://github.com/SuperNova-Repo/CSX",
         "fileSize": 14966,
         "status": 1,
+        "language": "de",
         "authors": [
             "megix"
         ],
@@ -23,12 +24,11 @@
     {
         "iconUrl": "https://iosmirror.cc/img/nf2/icon_x192.png",
         "apiVersion": 1,
-        "repositoryUrl": "https://github.com/SuperNova-Repo/CSX",
+        "repositoryUrl": "https://github.com/SauperNova-Repo/CSX",
         "fileSize": 24017,
         "status": 1,
-        "language": "de, en, hi",
         "authors": [
-            "Horis, megix, Kostya"
+            "Horis, megix"
         ],
         "tvTypes": [
             "Movie",
@@ -37,7 +37,7 @@
         "version": 3,
         "internalName": "NetflixMirrorProvider",
         "description": "Netflix Content in Multiple Languages",
-        "url": "https://github.com/SuperNova-Repo/CSX/builds/NetflixMirrorPrivider.cs3",
+        "url": "https://raw.githubusercontent.com/SuperNova-Repo/CSX/builds/NetflixMirrorProvider.cs3",
         "name": "NetflixMirrorProvider"
     }
 ]
