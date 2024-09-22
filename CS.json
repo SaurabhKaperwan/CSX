@@ -1,6 +1,6 @@
 {
-  "name": "CSX(Hindi & English)",
-  "description": "Hindi and English",
+  "name": "NetMirror(MultipleLanguages)",
+  "description": "MultipleLanguages",
   "manifestVersion": 1,
   "pluginLists": [
     "https://raw.githubusercontent.com/SuperNova-Repo/CSX/refs/heads/builds/CS.json"
