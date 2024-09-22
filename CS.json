@@ -3,6 +3,6 @@
   "description": "Hindi and English",
   "manifestVersion": 1,
   "pluginLists": [
-    "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/plugins.json"
+    "https://raw.githubusercontent.com/SuperNova-Repo/CSX/refs/heads/builds/CS.json"
   ]
 }
