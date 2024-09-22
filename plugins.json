@@ -26,9 +26,9 @@
         "repositoryUrl": "https://github.com/SuperNova-Repo/CSX",
         "fileSize": 24017,
         "status": 1,
-        "language": "de",
+        "language": "de, en, hi",
         "authors": [
-            "Horis, megix"
+            "Horis, megix, Kostya"
         ],
         "tvTypes": [
             "Movie",
