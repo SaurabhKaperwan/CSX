@@ -59,7 +59,11 @@ class PrimeVideoMirrorProvider : MainAPI() {
         val items = select("article, .top10-post").mapNotNull {
             it.toSearchResult()
         }
-        return HomePageList(name, items)
+        return HomePageList(
+            name,
+            items,
+            isHorizontalImages = true
+        )
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
@@ -84,7 +88,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://img.nfmirrorcdn.top/pv/341/${it.id}.jpg"
+                posterUrl = "https://img.nfmirrorcdn.top/pv/700/${it.id}.jpg"
                 posterHeaders = mapOf("Referer" to "$mainUrl/")
             }
         }
