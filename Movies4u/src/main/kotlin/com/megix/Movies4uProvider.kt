@@ -130,7 +130,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
             background = responseData.meta?.background ?: background
         }
 
-        val checkSeriesComplete = document.selectFirst("div.download-links-div > div.downloads-btns-div > a")?.previousElementSibling()?.text().toString()
+        val checkSeriesComplete = document.selectFirst("div.download-links-div > div.downloads-btns-div")?.previousElementSibling()?.text().toString()
         if(checkSeriesComplete.contains("Complete")) {
             tvtype = "complete-series"
         }
