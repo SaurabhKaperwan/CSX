@@ -10,7 +10,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class Movies4uProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://movies4u.taxi"
+    override var mainUrl = "https://movies4u.eu.com"
     override var name = "Movies4u"
     override val hasMainPage = true
     override var lang = "hi"
@@ -130,7 +130,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
             background = responseData.meta?.background ?: background
         }
 
-        val checkSeriesComplete = document.selectFirst("div.downloads-btns-div")?.previousElementSibling()?.text().toString()
+        val checkSeriesComplete = document.selectFirst("div.download-links-div > div.downloads-btns-div > a")?.previousElementSibling()?.text().toString()
         if(checkSeriesComplete.contains("Complete")) {
             tvtype = "complete-series"
         }
@@ -196,7 +196,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
             }
         }
         else {
-            val movieLink = document.selectFirst("div.downloads-btns-div > a")?.attr("href").toString()
+            val movieLink = document.selectFirst("div.download-links-div > div.downloads-btns-div > a")?.attr("href").toString()
             val doc = app.get(movieLink).document
             val data = doc.select("div.downloads-btns-div > a").mapNotNull {
                 EpisodeLink(
