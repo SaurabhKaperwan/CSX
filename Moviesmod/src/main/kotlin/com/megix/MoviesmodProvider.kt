@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.fit"
+    override var mainUrl = "https://moviesmod.day"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "hi"
@@ -123,7 +123,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                     val base64Value = link.substringAfter("url=")
                     link = base64Decode(base64Value)
                 }
-                val doc = app.get(link).document
+                val doc = app.get(fixUrl(link)).document
                 val hTags = doc.select("h3,h4")
                 var e = 1
                 hTags.mapNotNull {
@@ -182,7 +182,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                     link = base64Decode(base64Value)
                 }
 
-                val doc = app.get(link).document
+                val doc = app.get(fixUrl(link)).document
                 val source = doc.selectFirst("a.maxbutton-1, a.maxbutton-5")?.attr("href").toString()
                 EpisodeLink(
                     source
