@@ -44,9 +44,16 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         val title = this.attr("title").replace("Download ", "")
         val href = this.attr("href")
         val posterUrl = this.selectFirst("img")?.attr("data-src").toString()
+        val quality = if(title.contains("HDCAMRip", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
+            SearchQuality.CamRip
+        }
+        else {
+            null
+        }
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
+            this.quality = quality
         }
     }
     override suspend fun search(query: String): List<SearchResponse> {

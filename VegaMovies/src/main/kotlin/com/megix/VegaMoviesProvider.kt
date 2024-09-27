@@ -53,8 +53,16 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             posterUrl = this.selectFirst("img")?.attr("src").toString()
         }
 
+        val quality = if(title.contains("HDCAMRip", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
+            SearchQuality.CamRip
+        }
+        else {
+            null
+        }
+
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
+            this.quality = quality
         }
     }
 
@@ -74,6 +82,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        val ogTitle = title
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         val documentText = document.text()
         val div = document.selectFirst("div.entry-content")
@@ -82,11 +91,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         var description = pTagDisc?.text()
 
         val aTagRating = div?.selectFirst("a:matches((?i)(Rating))")
-        val imdbUrl = aTagRating?.attr("href").toString()
+        val imdbUrl = aTagRating?.attr("href")
 
-        val tvtype = if (url.contains("season") ||
-            title.contains("Season") ||
-            Regex("Series synopsis").containsMatchIn(documentText) || Regex("Series Name").containsMatchIn(documentText)) {
+        val tvtype = if (
+            url.contains("web-series") ||
+            Regex("Series synopsis").containsMatchIn(documentText) ||
+            Regex("Series Name").containsMatchIn(documentText)
+        ) {
             "series"
         } else {
             "movie"
@@ -124,6 +135,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvtype == "series") {
+            val checkSeason = Regex("""Season 1""").find(ogTitle)
+            if (checkSeason == null) {
+                val seasonText = Regex("""Season\s\d+""").find(ogTitle)?.value.toString()
+                if(title != ogTitle) {
+                    title = title + " " + seasonText
+                }
+            }
             val hTags = div?.select("h3:matches((?i)(4K|[0-9]*0p)),h5:matches((?i)(4K|[0-9]*0p))")
                 ?.filter { element -> !element.text().contains("Zip", true) } ?: emptyList()
 
