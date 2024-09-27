@@ -189,7 +189,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         name,
-                        name+size,
+                        "$name $size",
                         link,
                         "",
                         getIndexQuality(header),
@@ -200,7 +200,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         name,
-                        name+size,
+                        "$name $size",
                         link,
                         "",
                         getIndexQuality(header),
@@ -211,7 +211,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         name,
-                        name+size,
+                        "$name $size",
                         link,
                         "",
                         getIndexQuality(header),

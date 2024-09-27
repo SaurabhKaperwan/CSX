@@ -154,7 +154,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
                 val titleElement = button.previousElementSibling()?.text()
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(titleElement.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
-                val seasonLink = button.selectFirst("a")?.attr("href").toString()
+                val seasonLink = fixUrl(button.selectFirst("a")?.attr("href").toString())
                 val doc = app.get(seasonLink).document
                 val episodeDiv = doc.select("div.downloads-btns-div")
                 var e = 1
