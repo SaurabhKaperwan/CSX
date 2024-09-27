@@ -135,11 +135,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvtype == "series") {
-            val checkSeason = Regex("""Season\s*1|S\s*01""").find(ogTitle)
-            if (checkSeason == null) {
-                val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value.toString()
-                if(title != ogTitle) {
-                    title = title + " " + seasonText
+            if(title != ogTitle) {
+                val checkSeason = Regex("""Season\s*1|S\s*01""").find(ogTitle)
+                if (checkSeason == null) {
+                    val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
+                    if(seasonText != null) {
+                        title = title + " " + seasonText.toString()
+                    }
                 }
             }
             val hTags = div?.select("h3:matches((?i)(4K|[0-9]*0p)),h5:matches((?i)(4K|[0-9]*0p))")
