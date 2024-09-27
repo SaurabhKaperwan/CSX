@@ -43,10 +43,10 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("figure > a > img")?.attr("alt").toString()
+        val title = this.selectFirst("h3 > a")?.text().toString()
         val href = this.selectFirst("figure > a")?.attr("href").toString()
         val posterUrl = this.selectFirst("figure > a > img")?.attr("src").toString()
-        val quality = getQualityFromString(this.selectFirst("article.post > figure > a > span")?.text().toString())
+        val quality = getQualityFromString(this.selectFirst("figure > div > a > span.video-label")?.text().toString())
     
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -55,10 +55,10 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
     }
 
     private fun Element.toSearchResult2(): SearchResponse? {
-        val title = this.selectFirst("figure > div > a > img")?.attr("alt").toString()
+        val title = this.selectFirst("h3 > a")?.attr("alt").toString()
         val href = this.selectFirst("figure > div > a")?.attr("href").toString()
         val posterUrl = this.selectFirst("figure > div > a > img")?.attr("src").toString()
-        val quality = getQualityFromString(this.selectFirst("article.post > figure > div > a > span")?.text().toString())
+        val quality = getQualityFromString(this.selectFirst("figure > div > a > span.video-label")?.text().toString())
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -86,6 +86,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         var title = document.selectFirst("title")?.text().toString()
+        val ogTitle = title
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
 
         val movieTitle = document.selectFirst("h3.movie-title")
@@ -133,6 +134,15 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         val checkSeriesComplete = document.selectFirst("div.download-links-div > div.downloads-btns-div")?.previousElementSibling()?.text().toString()
         if(checkSeriesComplete.contains("Complete")) {
             tvtype = "complete-series"
+        }
+        if(title != ogTitle) {
+            val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
+            if (checkSeason == null) {
+                val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
+                if(seasonText != null) {
+                    title = title + " " + seasonText.toString()
+                }
+            }
         }
 
         if(tvtype == "series") {
