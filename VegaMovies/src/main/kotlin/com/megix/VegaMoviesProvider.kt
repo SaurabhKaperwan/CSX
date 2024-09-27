@@ -53,7 +53,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             posterUrl = this.selectFirst("img")?.attr("src").toString()
         }
 
-        val quality = if(title.contains("HDCAMRip", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
+        val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
             SearchQuality.CamRip
         }
         else {
@@ -135,9 +135,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvtype == "series") {
-            val checkSeason = Regex("""Season 1""").find(ogTitle)
+            val checkSeason = Regex("""Season\s*1|S\s*01""").find(ogTitle)
             if (checkSeason == null) {
-                val seasonText = Regex("""Season\s\d+""").find(ogTitle)?.value.toString()
+                val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value.toString()
                 if(title != ogTitle) {
                     title = title + " " + seasonText
                 }

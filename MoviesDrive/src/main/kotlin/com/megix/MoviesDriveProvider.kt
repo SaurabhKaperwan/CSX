@@ -44,12 +44,18 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("figure > img")?.attr("title")?.replace("Download ", "")?.toString() ?: ""
-        val href = fixUrl(this.selectFirst("figure > a")?.attr("href")?.toString() ?: "")
-        val posterUrl = fixUrlNull(this.selectFirst("figure > img")?.attr("src")?.toString() ?: "")
-    
+        val title = this.selectFirst("figure > img")?.attr("title")?.replace("Download ", "").toString()
+        val href = this.selectFirst("figure > a")?.attr("href").toString()
+        val posterUrl = this.selectFirst("figure > img")?.attr("src").toString()
+        val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
+            SearchQuality.CamRip
+        }
+        else {
+            null
+        }
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
+            this.quality = quality
         }
     }
 
@@ -73,7 +79,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
-
+        val ogTitle = title
         val plotElement = document.select(
             "h2:contains(Storyline), h3:contains(Storyline), h5:contains(Storyline), h4:contains(Storyline), h4:contains(STORYLINE)"
         ).firstOrNull() ?. nextElementSibling()
@@ -126,6 +132,13 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         }
 
         if(tvtype == "series") {
+            val checkSeason = Regex("""Season\s*1|S\s*01""").find(ogTitle)
+            if (checkSeason == null) {
+                val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value.toString()
+                if(title != ogTitle) {
+                    title = title + " " + seasonText
+                }
+            }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
             var buttons = document.select("h5 > a")
