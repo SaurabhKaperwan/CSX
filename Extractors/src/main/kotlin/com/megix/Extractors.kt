@@ -109,7 +109,6 @@ class VCloud : ExtractorApi() {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
             ?: Qualities.Unknown.value
     }
-
 }
 
 class HubCloudClub : HubCloud() {
@@ -154,15 +153,15 @@ open class HubCloud : ExtractorApi() {
             if (link.contains("gpdl3."))
             {
                 val href=app.get(link).document.selectFirst("#vd")?.attr("href") ?:""
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name 10 Gbps[Download]",
-                            "$name 10 Gbps[Download] $size",
-                            href,
-                            "",
-                            getIndexQuality(header),
-                        )
+                callback.invoke(
+                    ExtractorLink(
+                        "$name 10 Gbps[Download]",
+                        "$name 10 Gbps[Download] $size",
+                        href,
+                        "",
+                        getIndexQuality(header),
                     )
+                )
             }
             else if (link.contains("pixeldra")) {
                 callback.invoke(
@@ -222,8 +221,8 @@ open class HubCloud : ExtractorApi() {
             else{
                 loadExtractor(link, subtitleCallback, callback)
             }
+        }
     }
-
 
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
