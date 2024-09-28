@@ -55,7 +55,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
     }
 
     private fun Element.toSearchResult2(): SearchResponse? {
-        val title = this.selectFirst("h3 > a")?.attr("alt").toString()
+        val title = this.selectFirst("h3 > a")?.text().toString()
         val href = this.selectFirst("figure > div > a")?.attr("href").toString()
         val posterUrl = this.selectFirst("figure > div > a > img")?.attr("src").toString()
         val quality = getQualityFromString(this.selectFirst("figure > div > a > span.video-label")?.text().toString())
@@ -69,7 +69,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
+        for (i in 1..25) {
             val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("article.post").mapNotNull { it.toSearchResult2() }

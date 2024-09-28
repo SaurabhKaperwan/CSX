@@ -25,25 +25,26 @@ class VCloud : ExtractorApi() {
         val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         val document = app.get(urlValue).document
 
-        val size = document.selectFirst("i#size") ?. text()
+        val size = document.selectFirst("i#size") ?. text() ?: ""
         val div = document.selectFirst("div.card-body")
-        val header = document.selectFirst("div.card-header") ?. text()
+        val header = document.selectFirst("div.card-header") ?. text() ?: ""
         div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
-            if (link.contains("gpdl3."))
+            val text = it.text()
+            if (text.contains("Download File"))
             {
                 val href=app.get(link).document.selectFirst("#vd")?.attr("href") ?:""
-                    callback.invoke(
-                        ExtractorLink(
-                            "V-Cloud 10 Gbps[Download]",
-                            "V-Cloud 10 Gbps[Download] $size",
-                            href,
-                            "",
-                            getIndexQuality(header),
-                        )
+                callback.invoke(
+                    ExtractorLink(
+                        name,
+                        "$name $size",
+                        href,
+                        "",
+                        getIndexQuality(header),
                     )
+                )
             }
-            else if (link.contains("pixeldra")) {
+            else if (text.contains("PixelServer")) {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",
@@ -53,45 +54,12 @@ class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            } else if(link.contains("dl.php")) {
-                val response = app.get(link, allowRedirects = false)
-                val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
+            }
+            else if(text.contains("Download [Server : 10Gbps]")) {
                 callback.invoke(
                     ExtractorLink(
-                        "V-Cloud[Download]",
-                        "V-Cloud[Download] $size",
-                        downloadLink,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            } else if(link.contains(".dev")) {
-                callback.invoke(
-                    ExtractorLink(
-                        "V-Cloud",
-                        "V-Cloud $size",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            } else if (link.contains(".hubcdn.xyz"))
-            {
-                callback.invoke(
-                    ExtractorLink(
-                        "V-Cloud",
-                        "V-Cloud $size",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }else if (link.contains(".lol"))
-            {
-                callback.invoke(
-                    ExtractorLink(
-                        "V-Cloud",
-                        "V-Cloud $size",
+                        "$name[Download]",
+                        "$name[Download] $size",
                         link,
                         "",
                         getIndexQuality(header),
@@ -126,6 +94,20 @@ open class HubCloud : ExtractorApi() {
 
     override suspend fun getUrl(
         url: String,
+class HubCloudlol : HubCloud() {
+    override var mainUrl = "https://hubcloud.lol"
+}
+
+open class HubCloud : ExtractorApi() {
+    override val name: String = "Hub-Cloud"
+    override val mainUrl: String = "https://hubcloud.art"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback:
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
@@ -145,25 +127,26 @@ open class HubCloud : ExtractorApi() {
         }
 
         val document = app.get(gamerLink).document
-        val size = document.selectFirst("i#size") ?. text()
+        val size = document.selectFirst("i#size") ?. text() ?: ""
         val div = document.selectFirst("div.card-body")
-        val header = document.selectFirst("div.card-header") ?. text()
+        val header = document.selectFirst("div.card-header") ?. text() ?: ""
         div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
-            if (link.contains("gpdl3."))
+            val text = it.text()
+            if (text.contains("Download File"))
             {
                 val href=app.get(link).document.selectFirst("#vd")?.attr("href") ?:""
                 callback.invoke(
                     ExtractorLink(
-                        "$name 10 Gbps[Download]",
-                        "$name 10 Gbps[Download] $size",
+                        name,
+                        "$name $size",
                         href,
                         "",
                         getIndexQuality(header),
                     )
                 )
             }
-            else if (link.contains("pixeldra")) {
+            else if (text.contains("PixelServer")) {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",
@@ -173,45 +156,12 @@ open class HubCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            } else if(link.contains("dl.php")) {
-                val response = app.get(link, allowRedirects = false)
-                val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
+            }
+            else if(text.contains("Download [Server : 10Gbps]")) {
                 callback.invoke(
                     ExtractorLink(
                         "$name[Download]",
                         "$name[Download] $size",
-                        downloadLink,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            } else if(link.contains(".dev")) {
-                callback.invoke(
-                    ExtractorLink(
-                        name,
-                        "$name $size",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            } else if (link.contains(".hubcdn.xyz"))
-            {
-                callback.invoke(
-                    ExtractorLink(
-                        name,
-                        "$name $size",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }else if (link.contains(".lol"))
-            {
-                callback.invoke(
-                    ExtractorLink(
-                        name,
-                        "$name $size",
                         link,
                         "",
                         getIndexQuality(header),

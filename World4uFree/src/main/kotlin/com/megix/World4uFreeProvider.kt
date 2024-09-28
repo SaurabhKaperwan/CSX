@@ -61,7 +61,7 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
+        for (i in 1..25) {
             val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
