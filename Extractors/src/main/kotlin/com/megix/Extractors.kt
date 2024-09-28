@@ -72,7 +72,6 @@ class VCloud : ExtractorApi() {
         }
     }
 
-
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
             ?: Qualities.Unknown.value
@@ -94,20 +93,6 @@ open class HubCloud : ExtractorApi() {
 
     override suspend fun getUrl(
         url: String,
-class HubCloudlol : HubCloud() {
-    override var mainUrl = "https://hubcloud.lol"
-}
-
-open class HubCloud : ExtractorApi() {
-    override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.art"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback:
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
