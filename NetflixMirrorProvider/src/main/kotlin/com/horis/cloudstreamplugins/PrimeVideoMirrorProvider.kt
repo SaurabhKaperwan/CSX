@@ -14,7 +14,6 @@ import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.nodes.Element
-import org.json.JSONObject
 
 class PrimeVideoMirrorProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -33,10 +32,8 @@ class PrimeVideoMirrorProvider : MainAPI() {
     )
 
     private suspend fun getCookieFromGithub(): String {
-        val document = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/main/NF_Cookie.json").document
-        val json = document.body().text()
-        val jsonObject = JSONObject(json)
-        return jsonObject.getString("cookie")
+        val data = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/main/NF_Cookie.json").parsed<Cookie>()
+        return data.cookie
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
@@ -76,6 +73,27 @@ class PrimeVideoMirrorProvider : MainAPI() {
         }
     }
 
+    private fun convertRuntimeToMinutes(runtime: String): Int {
+        var totalMinutes = 0
+
+        val parts = runtime.split(" ")
+
+        for (part in parts) {
+            when {
+                part.endsWith("h") -> {
+                    val hours = part.removeSuffix("h").trim().toIntOrNull() ?: 0
+                    totalMinutes += hours * 60
+                }
+                part.endsWith("m") -> {
+                    val minutes = part.removeSuffix("m").trim().toIntOrNull() ?: 0
+                    totalMinutes += minutes
+                }
+            }
+        }
+
+        return totalMinutes
+    }
+
     override suspend fun search(query: String): List<SearchResponse> {
         val cookie_value = getCookieFromGithub()
         val cookies = mapOf(
@@ -88,7 +106,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://img.nfmirrorcdn.top/pv/700/${it.id}.jpg"
+                posterUrl = "https://img.nfmirrorcdn.top/pv/900/${it.id}.jpg"
                 posterHeaders = mapOf("Referer" to "$mainUrl/")
             }
         }
@@ -109,6 +127,15 @@ class PrimeVideoMirrorProvider : MainAPI() {
         val episodes = arrayListOf<Episode>()
 
         val title = data.title
+        val castList = data.cast?.split(",")?.map { it.trim() } ?: emptyList()
+        val cast = castList.map {
+            ActorData(
+                Actor(it),
+            )
+        }
+        val genre = data.genre?.split(",")?.map { it.trim() } ?: emptyList()
+        val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
+        val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
         if (data.episodes.first() == null) {
             episodes.add(newEpisode(LoadData(title, id)) {
@@ -120,6 +147,8 @@ class PrimeVideoMirrorProvider : MainAPI() {
                     name = it.t
                     episode = it.ep.replace("E", "").toIntOrNull()
                     season = it.s.replace("S", "").toIntOrNull()
+                    //this.posterUrl = "https://img.nfmirrorcdn.top/epimg/150/${it.id}.jpg"
+                    this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
 
@@ -135,10 +164,14 @@ class PrimeVideoMirrorProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://img.nfmirrorcdn.top/pv/700/$id.jpg"
+            posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/")
             plot = data.desc
             year = data.year.toIntOrNull()
+            tags = genre
+            actors = cast
+            this.rating = rating
+            this.duration = runTime
         }
     }
 
@@ -165,6 +198,8 @@ class PrimeVideoMirrorProvider : MainAPI() {
                     name = it.t
                     episode = it.ep.replace("E", "").toIntOrNull()
                     season = it.s.replace("S", "").toIntOrNull()
+                    //this.posterUrl = "https://img.nfmirrorcdn.top/epimg/150/${it.id}.jpg"
+                    this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
             if (data.nextPageShow == 0) break
@@ -234,4 +269,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
         val title: String, val id: String
     )
 
+    data class Cookie(
+        val cookie: String
+    )
 }

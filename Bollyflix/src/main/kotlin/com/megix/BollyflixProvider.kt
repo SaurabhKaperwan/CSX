@@ -72,7 +72,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
+        for (i in 1..25) {
             val document = app.get("$mainUrl/search/$query/page/$i/").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }

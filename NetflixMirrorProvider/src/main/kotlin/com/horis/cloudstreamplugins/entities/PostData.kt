@@ -10,5 +10,8 @@ data class PostData(
     val nextPageShow: Int?,
     val season: List<Season>?,
     val title: String,
-    val year: String
+    val year: String,
+    val cast: String?,
+    val match: String?,
+    val runtime: String?,
 )

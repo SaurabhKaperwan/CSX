@@ -4,7 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import okhttp3.FormBody
 
-open class VCloud : ExtractorApi() {
+class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
     override val mainUrl: String = "https://vcloud.lol"
     override val requiresReferer = false
@@ -15,7 +15,7 @@ open class VCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        var url=url
+        var url = url
         if (url.contains("api/index.php"))
         {
             url=app.get(url).document.selectFirst("div.main h4 a")?.attr("href") ?:""
@@ -25,12 +25,26 @@ open class VCloud : ExtractorApi() {
         val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         val document = app.get(urlValue).document
 
-        val size = document.selectFirst("i#size") ?. text()
+        val size = document.selectFirst("i#size") ?. text() ?:""
         val div = document.selectFirst("div.card-body")
-        val header = document.selectFirst("div.card-header") ?. text()
-        div?.select("a")?.apmap {
+        val header = document.selectFirst("div.card-header") ?. text() ?:""
+        div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
-            if (link.contains("pixeldra")) {
+            val text = it.text()
+            if (link.contains("gpdl3."))
+            {
+                val href=app.get(link, timeout = 30L).document.selectFirst("#vd")?.attr("href") ?:""
+                callback.invoke(
+                    ExtractorLink(
+                        "V-Cloud[Download]",
+                        "V-Cloud[Download] $size",
+                        href,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
+            else if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",
@@ -40,45 +54,48 @@ open class VCloud : ExtractorApi() {
                         getIndexQuality(header),
                     )
                 )
-            } else if(link.contains("dl.php")) {
+            }
+            else if(link.contains("dl.php")) {
                 val response = app.get(link, allowRedirects = false)
                 val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
                     ExtractorLink(
-                        "$name[Download]",
-                        "$name[Download] $size",
+                        "V-Cloud[Download]",
+                        "V-Cloud[Download] $size",
                         downloadLink,
                         "",
                         getIndexQuality(header),
                     )
                 )
-            } else if(link.contains(".dev")) {
+            }
+            else if(link.contains(".dev") || link.contains(".hubcdn.xyz")) {
                 callback.invoke(
                     ExtractorLink(
-                        name,
-                        "$name $size",
+                        "V-Cloud",
+                        "V-Cloud $size",
                         link,
                         "",
                         getIndexQuality(header),
                     )
                 )
             }
-            else if (link.contains(".hubcdn.xyz")) {
+            else if (text.contains("Download [FSL Server]")) {
                 callback.invoke(
                     ExtractorLink(
-                        name,
-                        "$name $size",
+                        "V-Cloud[Download]",
+                        "V-Cloud[Download] $size",
                         link,
                         "",
                         getIndexQuality(header),
                     )
                 )
             }
-            else{
+            else {
                 loadExtractor(link, subtitleCallback, callback)
             }
         }
     }
+
 
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
@@ -121,12 +138,26 @@ open class HubCloud : ExtractorApi() {
         }
 
         val document = app.get(gamerLink).document
-        val size = document.selectFirst("i#size") ?. text()
+        val size = document.selectFirst("i#size") ?. text() ?: ""
         val div = document.selectFirst("div.card-body")
-        val header = document.selectFirst("div.card-header") ?. text()
-        div?.select("a")?.amap {
+        val header = document.selectFirst("div.card-header") ?. text() ?: ""
+        div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
-            if (link.contains("pixeldra")) {
+            val text = it.text()
+            if (link.contains("gpdl3."))
+            {
+                val href=app.get(link, timeout = 30L).document.selectFirst("#vd")?.attr("href") ?:""
+                callback.invoke(
+                    ExtractorLink(
+                        "Hub-Cloud[Download]",
+                        "Hub-Cloud[Download] $size",
+                        href,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
+            else if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",
@@ -137,35 +168,35 @@ open class HubCloud : ExtractorApi() {
                     )
                 )
             }
-            else if(it.text().contains("Download [Server : 10Gbps]")) {
+            else if(link.contains("dl.php")) {
                 val response = app.get(link, allowRedirects = false)
                 val downloadLink = response.headers["location"].toString().split("link=").getOrNull(1) ?: link
                 callback.invoke(
                     ExtractorLink(
-                        "$name[Download]",
-                        "$name[Download] $size",
+                        "Hub-Cloud[Download]",
+                        "Hub-Cloud[Download] $size",
                         downloadLink,
                         "",
                         getIndexQuality(header),
                     )
                 )
             }
-            else if(link.contains(".dev")) {
+            else if(link.contains(".dev") || link.contains(".hubcdn.xyz")) {
                 callback.invoke(
                     ExtractorLink(
-                        "$name",
-                        "$name $size",
+                        "Hub-Cloud",
+                        "Hub-Cloud $size",
                         link,
                         "",
                         getIndexQuality(header),
                     )
                 )
             }
-            else if (link.contains(".hubcdn.xyz")) {
+            else if (text.contains("Download [FSL Server]")) {
                 callback.invoke(
                     ExtractorLink(
-                        name,
-                        "$name $size",
+                        "Hub-Cloud[Download]",
+                        "Hub-Cloud[Download] $size",
                         link,
                         "",
                         getIndexQuality(header),
@@ -177,7 +208,6 @@ open class HubCloud : ExtractorApi() {
             }
         }
     }
-
 
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()

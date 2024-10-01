@@ -46,15 +46,22 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
         if(posterUrl.isEmpty()) {
             posterUrl = this.selectFirst("div > a > img")?.attr("src").toString()
         }
+        val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
+            SearchQuality.CamRip
+        }
+        else {
+            null
+        }
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
+            this.quality = quality
         }
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..3) {
+        for (i in 1..25) {
             val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
@@ -71,9 +78,11 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        val ogTitle = title
+
         val div = document.selectFirst("div.entry-content")
-        val imdbUrl = document.selectFirst("div.imdb_left > a") ?. attr("href")
-        var description = div ?. selectFirst("p:matches((?i)(plot|synopsis|story))") ?. text() ?: ""
+        val imdbUrl = document.selectFirst("div.imdb_left > a")?.attr("href")
+        var description = div?.selectFirst("p:matches((?i)(plot|synopsis|story))")?.text() ?: ""
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
 
         if(posterUrl.isEmpty() || posterUrl.contains("$mainUrl/favicon-32x32.png")) {
@@ -118,6 +127,15 @@ class World4uFreeProvider : MainAPI() { // all providers must be an instance of 
         }
 
         if(tvtype == "series") {
+            if(title != ogTitle) {
+                val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
+                if (checkSeason == null) {
+                    val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
+                    if(seasonText != null) {
+                        title = title + " " + seasonText.toString()
+                    }
+                }
+            }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val buttons = document.select("a.my-button")
             val episodesMap: MutableMap<Pair<Int, Int>, List<Pair<String, String>>> = mutableMapOf()
