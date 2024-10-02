@@ -38,11 +38,11 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         return newHomePageResponse(request.name, home)
     }
 
-    private suspend fun bypass(url: String): String {
-        val document = app.get(url).document.toString()
-        val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-        return base64Decode(encodeUrl)
-    }
+    // private suspend fun bypass(url: String): String {
+    //     val document = app.get(url).document.toString()
+    //     val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
+    //     return base64Decode(encodeUrl)
+    // }
 
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("img") ?. attr("alt") ?: ""
@@ -101,8 +101,8 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
                 val realSeason = matchResult?.groupValues?.get(1)?.toIntOrNull() ?: 0
                 val spanTag = hTag.nextElementSibling()
                 val seasonLink = spanTag ?.selectFirst("a")?.attr("href").toString()
-                val trueSeasonLink = bypass(seasonLink)
-                val doc = app.get(trueSeasonLink).document
+                //val trueSeasonLink = bypass(seasonLink)
+                val doc = app.get(seasonLink).document
                 var aTags = doc.select("a:matches((?i)(Episode))")
                 
                 aTags.mapNotNull { aTag ->
@@ -143,8 +143,8 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             val buttons = document.select("a.maxbutton")
             val data = buttons.flatMap { button ->
                 val link = button.attr("href")
-                val trueLink = bypass(link)
-                val doc = app.get(trueLink).document
+                //val trueLink = bypass(link)
+                val doc = app.get(link).document
                 doc.select("a.maxbutton").mapNotNull {
                     val source = it.attr("href")
                     EpisodeLink(
