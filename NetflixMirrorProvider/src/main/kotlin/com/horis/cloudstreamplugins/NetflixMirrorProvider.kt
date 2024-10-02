@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
+import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.getQualityFromName
 import okhttp3.Headers
 import okhttp3.Interceptor
@@ -127,7 +128,10 @@ class NetflixMirrorProvider : MainAPI() {
                 Actor(it),
             )
         }
-        val genre = data.genre?.split(",")?.map { it.trim() } ?: emptyList()
+        val genre = listOf(data.ua.toString()) + (data.genre?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList())
         val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
@@ -222,7 +226,7 @@ class NetflixMirrorProvider : MainAPI() {
 
         playlist.forEach { item ->
             item.sources.forEach {
-                callback(
+                callback.invoke(
                     ExtractorLink(
                         name,
                         it.label,
@@ -233,7 +237,17 @@ class NetflixMirrorProvider : MainAPI() {
                     )
                 )
             }
+
+            item.tracks?.filter { it.kind == "captions" }?.map { track ->
+                subtitleCallback.invoke(
+                    SubtitleFile(
+                        track.label.toString(),
+                        httpsify(track.file.toString())
+                    )
+                )
+            }
         }
+
         return true
     }
 
