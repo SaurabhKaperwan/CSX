@@ -157,7 +157,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 val doc = app.get(episodeLink).document
                 var elements = doc.select("span:matches((?i)(Ep))")
                 if(elements.isEmpty()) {
-                    elements = doc.select("a:matches((?i)(HubCloud))")
+                    elements = doc.select("a:matches((?i)(HubCloud|GDFlix))")
                 }
                 var e = 1
 
@@ -166,7 +166,13 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                         val titleTag = element.parent()
                         var hTag = titleTag?.nextElementSibling()
                         e = Regex("""Ep(\d{2})""").find(element.toString())?.groups?.get(1)?.value ?.toIntOrNull() ?: e
-                        while (hTag != null && hTag.text().contains("HubCloud", ignoreCase = true)) {
+                        while (
+                            hTag != null &&
+                            (
+                                hTag.text().contains("HubCloud", ignoreCase = true) ||
+                                hTag.text().contains("gdflix", ignoreCase = true)
+                            )
+                        ) {
                             val aTag = hTag.selectFirst("a")
                             val epUrl = aTag?.attr("href").toString()
                             val key = Pair(realSeason, e)
