@@ -3,6 +3,7 @@ package com.horis.cloudstreamplugins.entities
 data class PostData(
     val desc: String?,
     val director: String?,
+    val ua: String?,
     val episodes: List<Episode?>,
     val genre: String?,
     val nextPage: Int?,
