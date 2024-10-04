@@ -9,7 +9,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
-class World4uFreeProvider : MainAPI() { // all providers must be an instance of MainAPI
+class World4uFreeProvider : MainAPI() {
     override var mainUrl = "https://world4ufree.boston"
     override var name = "World4uFree"
     override val hasMainPage = true

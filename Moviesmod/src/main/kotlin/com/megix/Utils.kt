@@ -79,27 +79,19 @@ open class Driveseed : ExtractorApi() {
     }
 
     private suspend fun CFType1(url: String): List<String> {
-        val cfWorkersLink = url.replace("/file", "/wfile") + "?type=1"
-        val document = app.get(cfWorkersLink).document
+        val document = app.get(url+"?type=1").document
         val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
         return links
     }
 
-    private suspend fun CFType2(url: String): List<String> {
-        val cfWorkersLink = url.replace("/file", "/wfile") + "?type=2"
-        val document = app.get(cfWorkersLink).document
-        val links = document.select("a.btn-success").map { it.attr("href") }
-        return links
-    }
-
-    private suspend fun resumeCloudLink(url: String): String? {
+    private suspend fun resumeCloudLink(url: String): String {
         val resumeCloudUrl = mainUrl + url
         val document = app.get(resumeCloudUrl).document
-        val link = document.selectFirst("a.btn-success")?.attr("href")
+        val link = document.selectFirst("a.btn-success")?.attr("href").toString()
         return link
     }
 
-    private suspend fun resumeBot(url : String): String? {
+    private suspend fun resumeBot(url : String): String {
         val resumeBotResponse = app.get(url)
         val resumeBotDoc = resumeBotResponse.document.toString()
         val ssid = resumeBotResponse.cookies["PHPSESSID"]
@@ -122,7 +114,7 @@ open class Driveseed : ExtractorApi() {
         ).text
         val jsonObject = JSONObject(jsonResponse)
         val link = jsonObject.getString("url")
-        return link ?: null
+        return link
     }
 
     private suspend fun instantLink(finallink: String): String {
@@ -156,71 +148,64 @@ open class Driveseed : ExtractorApi() {
     ) {
         val document = app.get(url).document
         val quality = document.selectFirst("li.list-group-item:contains(Name)")?.text() ?: ""
-
-        val instantUrl = document.selectFirst("a.btn-danger")?.attr("href") ?: ""
-        val instant = instantLink(instantUrl)
-        if (instant.isNotEmpty()) {
-            callback.invoke(
-                ExtractorLink(
-                    "$name Instant(Download)",
-                    "$name Instant(Download)",
-                    instant,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
+        val size = document.selectFirst("li.list-group-item:contains(Size)")?.text()?.replace("Size : ", "") ?: ""
+        document.select("div.text-center > a").amap { element ->
+            val text = element.text()
+            val href = element.attr("href")
+            when {
+                text.contains("Instant Download") -> {
+                    val instant = instantLink(href)
+                    callback.invoke(
+                        ExtractorLink(
+                            "$name Instant(Download)",
+                            "$name Instant(Download) $size",
+                            instant,
+                            "",
+                            getIndexQuality(quality)
+                        )
+                    )
+                }
+                text.contains("Resume Worker Bot") -> {
+                    val resumeLink = resumeBot(href)
+                    callback.invoke(
+                        ExtractorLink(
+                            "$name ResumeBot(VLC)",
+                            "$name ResumeBot(VLC) $size",
+                            resumeLink,
+                            "",
+                            getIndexQuality(quality)
+                        )
+                    )
+                }
+                text.contains("Direct Links") -> {
+                    val link = mainUrl + href
+                    CFType1(link).forEach {
+                        callback.invoke(
+                            ExtractorLink(
+                                "$name CF Type1",
+                                "$name CF Type1 $size",
+                                it,
+                                "",
+                                getIndexQuality(quality)
+                            )
+                        )
+                    }
+                }
+                text.contains("Resume Cloud") -> {
+                    val resumeCloud = resumeCloudLink(href)
+                    callback.invoke(
+                        ExtractorLink(
+                            "$name ResumeCloud",
+                            "$name ResumeCloud $size",
+                            resumeCloud,
+                            "",
+                            getIndexQuality(quality)
+                        )
+                    )
+                }
+                else -> {
+                }
+            }
         }
-
-        val resumeBotUrl = document.selectFirst("a.btn.btn-light")?.attr("href")
-        val resumeLink = resumeBot(resumeBotUrl ?: "")
-        if (resumeLink != null) {
-            callback.invoke(
-                ExtractorLink(
-                    "$name ResumeBot(VLC)",
-                    "$name ResumeBot(VLC)",
-                    resumeLink,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
-        }
-
-        CFType1(url)?.forEach {
-            callback.invoke(
-                ExtractorLink(
-                    "$name CF Type1",
-                    "$name CF Type1",
-                    it,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
-        }
-        CFType2(url).forEach {
-            callback.invoke(
-                ExtractorLink(
-                    "$name CF Type2",
-                    "$name CF Type2",
-                    it,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
-        }
-
-        val resumeCloudUrl = document.selectFirst("a.btn-warning")?.attr("href")
-        val resumeCloud = resumeCloudLink(resumeCloudUrl ?: "")
-        if (resumeCloud != null) {
-            callback.invoke(
-                ExtractorLink(
-                    "$name ResumeCloud",
-                    "$name ResumeCloud",
-                    resumeCloud,
-                    "",
-                    getIndexQuality(quality)
-                )
-            )
-        }
-
     }
 }
