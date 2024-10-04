@@ -3,10 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONObject
 
 class FastLinks : ExtractorApi() {
     override val name: String = "FastLinks"
@@ -41,7 +37,6 @@ class WLinkFast : ExtractorApi() {
     override val name: String = "WLinkFast"
     override val mainUrl: String = "https://wlinkfast.store"
     override val requiresReferer = false
-    private val client = OkHttpClient()
 
     override suspend fun getUrl(
         url: String,
@@ -49,60 +44,24 @@ class WLinkFast : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val res = app.get(url)
-        val document = res.document
-        val ssid = res.cookies["PHPSESSID"].toString()
-        val cookies = mapOf("PHPSESSID" to "$ssid")
-        val regex = Regex("""formData\.append\('key', '(\d+)'\);""")
-        val key = regex.find(document.html()) ?. groupValues ?. get(1) ?: ""
-        
-        val formBody = FormBody.Builder()
-            .add("key", "$key")
-            .build()
+        val document = app.get(url).document
+        val link = document.selectFirst("h1 > a")?.attr("href").toString()
+        val doc = app.get(link).document
+        var downloadLink = doc.selectFirst("a#downloadButton")?.attr("href").toString()
 
-        val response = app.post(
-            url,
-            requestBody = formBody,
-            cookies = cookies
+        if(downloadLink.isEmpty()) {
+           downloadLink = Regex("""window\.location\.href\s*=\s*['"]([^'"]+)['"];""").find(doc.html())?.groupValues?.get(1).toString()
+        }
+
+        callback.invoke (
+            ExtractorLink (
+                this.name,
+                this.name,
+                downloadLink,
+                referer = "",
+                Qualities.Unknown.value,
+            )
         )
-        
-        val jsonResponse = response.text
-        val jsonObject = JSONObject(jsonResponse)
-        val link = jsonObject.getString("download")
-        val requireRepairRequest = Request.Builder()
-            .url(link)
-            .head()
-            .build()
-
-        val requireRepairResponse: Response = client.newCall(requireRepairRequest).execute()
-        val contentType = requireRepairResponse.header("Content-Type").toString()
-        
-        if(contentType.contains("video")) {
-            callback.invoke (
-                ExtractorLink (
-                    this.name,
-                    this.name,
-                    link,
-                    referer = "",
-                    Qualities.Unknown.value,
-                )
-            )
-        }
-        else {
-            val reResponse = app.get(link).document
-            val reLink = "https://www.mediafire.com" + reResponse.selectFirst("a#continue-btn")?.attr("href").toString()
-            val doc = app.get(reLink).document
-            val downloadLink = doc.selectFirst("a.input.popsok")?.attr("href").toString()
-            callback.invoke (
-                ExtractorLink (
-                    this.name,
-                    this.name,
-                    downloadLink,
-                    referer = "",
-                    Qualities.Unknown.value,
-                )
-            )
-        }
     }
 }
 
