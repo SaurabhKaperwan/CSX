@@ -1,7 +1,7 @@
-version = 10
+version = 11
 
 cloudstream {
-    language = "hi"
+    //language = "hi"
     // All of these properties are optional, you can safely remove them
 
     description = "Includes Topmovies"

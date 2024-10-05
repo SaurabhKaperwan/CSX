@@ -14,7 +14,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     override var mainUrl = "https://moviesmod.day"
     override var name = "Moviesmod"
     override val hasMainPage = true
-    override var lang = "hi"
+    override var lang = "en"
     override val hasDownloadSupport = true
     val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val supportedTypes = setOf(
@@ -27,7 +27,8 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     override val mainPage = mainPageOf(
         "$mainUrl/page/" to "Home",
         "$mainUrl/web-series/on-going/page/" to "Latest Web Series",
-        "$mainUrl/movies/latest-released/page/" to "Latest Movies",
+        "$mainUrl/movies/page/" to "Latest Movies",
+        "$mainUrl/animated-web-series/page/" to "Anime",
     )
 
     override suspend fun getMainPage(
@@ -72,6 +73,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        val ogTitle = title
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         var description = document.selectFirst("div.imdbwp__teaser")?.text()
         val div = document.selectFirst("div.thecontent")?.text().toString()
@@ -110,6 +112,17 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         }
 
         if(tvtype == "series") {
+
+            if(title != ogTitle) {
+                val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
+                if (checkSeason == null) {
+                    val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
+                    if(seasonText != null) {
+                        title = title + " " + seasonText.toString()
+                    }
+                }
+            }
+
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
             val buttons = document.select("a.maxbutton-episode-links,.maxbutton-g-drive,.maxbutton-af-download")
