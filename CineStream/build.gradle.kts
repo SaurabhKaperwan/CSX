@@ -12,5 +12,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://m.media-amazon.com/images/I/61tddl3FIoL.jpg"
+    iconUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/Cm%20Logo%20PNG%20Vectors%20Free%20Download.jpg"
 }
