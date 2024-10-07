@@ -70,6 +70,30 @@ suspend fun loadCustomTagExtractor(
     }
 }
 
+suspend fun loadAddSourceExtractor(
+        source: String,
+        url: String,
+        referer: String? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+        quality: Int? = null,
+) {
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        callback.invoke(
+            ExtractorLink(
+                "$source[${link.source}]",
+                "$source[${link.source}]",
+                link.url,
+                link.referer,
+                link.quality,
+                link.type,
+                link.headers,
+                link.extractorData
+            )
+        )
+    }
+}
+
 suspend fun bypassHrefli(url: String): String? {
     fun Document.getFormUrl(): String {
         return this.select("form#landing").attr("action")

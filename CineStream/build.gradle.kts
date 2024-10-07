@@ -1,4 +1,4 @@
-version = 2
+version = 3
 
 cloudstream {
     //language = "en"
@@ -12,5 +12,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = ""
+    iconUrl = "https://www.shareicon.net/download/2015/10/04/111953_as.svg"
 }

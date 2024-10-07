@@ -8,6 +8,38 @@ import android.util.Base64
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeFull4Movies(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) "$Full4MoviesAPI/?s=$title $year" else "$Full4MoviesAPI/?s=$title season $season $year"
+        val document = app.get(url).document
+        val text = document.selectFirst("div.content > h2 > a")?.text().toString()
+        val href = document.selectFirst("div.content > h2 > a")?.attr("href").toString()
+        if (
+            text.contains(title.toString()) == true &&
+            year.let { text.contains("$it") } == true &&
+            (season == null || season.let { text.contains("Season $it") } == true)
+        ) {
+            val doc2 = app.get(href).document
+            val link = if(season == null) {
+                Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(doc2.html())?.groupValues?.get(1) ?: ""
+
+            } else {
+                val urls = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""").findAll(doc2.html())
+                urls.elementAtOrNull(episode?.minus(1) ?: 0)?.groupValues?.get(1) ?: ""
+            }
+            val doc = app.get(fixUrl(link)).document
+            val source = doc.selectFirst("iframe").attr("src") ?: ""
+            loadAddSourceExtractor("Full4Movies",source, referer = link, subtitleCallback, callback)
+        }
+
+    }
+
     suspend fun invokeRogmovies(
         title: String? = null,
         year: Int? = null,
@@ -81,7 +113,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if (season == null) "Download Now" else "V-Cloud,Download Now,G-Direct"
                 val sTag = if (season == null) "" else "(Season $season|S$seasonSlug)"
                 val entries =
-                    res.select("div.entry-content > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
+                    res.select("div.entry-content > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
                         .filter { element ->
                             !element.text().contains("Series", true) &&
                             !element.text().contains("Zip", true) &&
@@ -174,7 +206,8 @@ object CineStreamExtractors : CineStreamProvider() {
                             if (firstLink != null) linklist.add(firstLink)
                             if (secondLink != null) linklist.add(secondLink)
                             linklist.forEach { url ->
-                                loadExtractor(
+                                loadAddSourceExtractor(
+                                    "MoviesDrive",
                                     url,
                                     referer = "",
                                     subtitleCallback,
@@ -220,10 +253,10 @@ object CineStreamExtractors : CineStreamProvider() {
             interceptor = wpRedisInterceptor
         ).document
         val entries = if (season == null) {
-            res.select("$hTag:matches((?i)$sTag.*(720p|1080p|2160p|4K))")
+            res.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
                 .filter { element -> !element.text().contains("Batch/Zip", true) && !element.text().contains("Info:", true) }.reversed()
         } else {
-            res.select("$hTag:matches((?i)$sTag.*(720p|1080p|2160p|4K))")
+            res.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
                 .filter { element -> !element.text().contains("Batch/Zip", true) || !element.text().contains("720p & 480p", true) || !element.text().contains("Series Info", true)}
         }
         entries.amap {
@@ -239,7 +272,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ).document.selectFirst(selector)
                     ?.attr("href")?.let {
                         val link = bypassHrefli(it).toString()
-                        loadExtractor(link, referer = "", subtitleCallback, callback)
+                        loadAddSourceExtractor("Topmovies", link, referer = "", subtitleCallback, callback)
                     }
             }
         }
@@ -305,10 +338,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
         entries.amap { it ->
             val tags =
-                """(?:720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
+                """(?:480p|720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
                     ?.trim()
             val quality =
-                """720p|1080p|2160p""".toRegex().find(it.text())?.groupValues?.get(0)
+                """480p|720p|1080p|2160p""".toRegex().find(it.text())?.groupValues?.get(0)
                     ?.trim()
             var href =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
@@ -327,11 +360,11 @@ object CineStreamExtractors : CineStreamProvider() {
                     val file=app.get(link).toString().substringAfter("replace(\"").substringBefore("\")")
                     val domain= getBaseUrl(link)
                     val server="$domain$file"
-                    loadExtractor(server, "", subtitleCallback, callback)
+                    loadAddSourceExtractor("Moviesmod", server, "", subtitleCallback, callback)
                 }
                 val server = bypassHrefli(link) ?: ""
                 if (server.isNotEmpty()) {
-                    loadExtractor(server, "", subtitleCallback, callback)
+                    loadAddSourceExtractor("Moviesmod", server, "", subtitleCallback, callback)
                 }
             }
         }
