@@ -10,6 +10,9 @@ import com.lagradost.cloudstream3.argamap
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeRogmovies
+import com.megix.CineStreamExtractors.invokeMoviesmod
+import com.megix.CineStreamExtractors.invokeTopMovies
+import com.megix.CineStreamExtractors.invokeMoviesdrive
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -19,8 +22,11 @@ open class CineStreamProvider : MainAPI() {
     override val hasDownloadSupport = true
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     companion object {
-        val vegaMoviesAPI = "https://vegamovies.fans"
-        val rogMoviesAPI = "https://rogmovies.top"
+        const val vegaMoviesAPI = "https://vegamovies.fans"
+        const val rogMoviesAPI = "https://rogmovies.top"
+        const val MovieDrive_API="https://moviesdrive.world"
+        const val topmoviesAPI = "https://topmovies.mov"
+        const val MoviesmodAPI= "https://moviesmod.day"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -49,7 +55,13 @@ open class CineStreamProvider : MainAPI() {
                 this.posterUrl = movie.poster.toString()
             }
         }
-        return newHomePageResponse(request.name, home)
+        return newHomePageResponse(
+            list = HomePageList(
+                name = request.name,
+                list = home
+            ),
+            hasNext = false
+        )
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
@@ -168,6 +180,36 @@ open class CineStreamProvider : MainAPI() {
                     year,
                     res.season,
                     res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeTopMovies(
+                    res.title,
+                    year,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeMoviesmod(
+                    res.title,
+                    year,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeMoviesdrive(
+                    res.title,
+                    res.season,
+                    res.episode,
+                    year,
                     subtitleCallback,
                     callback
                 )

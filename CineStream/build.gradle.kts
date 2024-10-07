@@ -1,7 +1,7 @@
-version = 1
+version = 2
 
 cloudstream {
-    language = "en"
+    //language = "en"
     description = "Multi API Extension"
     authors = listOf("megix")
     status = 1
