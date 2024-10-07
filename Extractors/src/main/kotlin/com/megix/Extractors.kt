@@ -2,7 +2,6 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import okhttp3.FormBody
 import org.json.JSONObject
 import okhttp3.FormBody
 
