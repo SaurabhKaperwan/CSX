@@ -12,5 +12,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://www.shareicon.net/download/2015/10/04/111953_as.svg"
+    iconUrl = "https://m.media-amazon.com/images/I/61tddl3FIoL.jpg"
 }
