@@ -32,12 +32,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val doc = app.get(href).document
             val seasonLink = VadapavAPI + doc.selectFirst("div.directory > ul > li > div > a.directory-entry:matches((?i)(Season 0${season}|Season ${season}))").attr("href")
             val seasonDoc = app.get(seasonLink).document
-            seasonDoc.select("div.directory > ul > li > div > a.file-entry")
-                .filter { element ->
-                    val text = element.text()
-                    val episodeRegex = Regex("""(?i)(Episode|Ep|E) ?0?(${episode})""")
-                    episodeRegex.matches(text)
-                }
+            seasonDoc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(Episode 0${episode}|Episode ${episode}|EP0${episode}|EP${episode}|EP 0${episode}|EP ${episode}|E0${episode}|E${episode}|E 0${episode}|E ${episode}))")
             .forEach {
                 if(it.text().contains(".mkv", true) || it.text().contains(".mp4", true)) {
                     for((index, mirror) in mirrors.withIndex()) {
