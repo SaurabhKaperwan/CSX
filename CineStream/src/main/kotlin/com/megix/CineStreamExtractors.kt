@@ -5,11 +5,70 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import android.util.Log
 import android.util.Base64
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeVadaPav(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val mirrors = listOf(
+            "https://vadapav.mov",
+            "https://dl1.vadapav.mov",
+            "https://dl2.vadapav.mov",
+            "https://dl3.vadapav.mov",
+        )
+
+        val url = if(season != null && episode != null) "$VadapavAPI/s/$title" else "$VadapavAPI/s/$title ($year)"
+        val document = app.get(url).document
+        val result = document.selectFirst("div.directory > ul > li > div > a")
+        val href = VadapavAPI + result.attr("href")
+        if(season != null && episode != null) {
+            val doc = app.get(href).document
+            val seasonLink = VadapavAPI + doc.selectFirst("div.directory > ul > li > div > a.directory-entry:matches((?i)(Season 0${season}|Season ${season}))").attr("href")
+            val seasonDoc = app.get(seasonLink).document
+            seasonDoc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(Episode 0${episode}|Episode ${episode}|EP0${episode}|EP${episode}|EP 0${episode}|EP ${episode}))").forEach {
+                if(it.text().contains(".mkv", true) || it.text().contains(".mp4", true)) {
+                    for((index, mirror) in mirrors.withIndex()) {
+                        callback.invoke(
+                            ExtractorLink(
+                                "VadaPav" + " ${index+1}",
+                                "VadaPav" + " ${index+1}",
+                                mirror + it.attr("href"),
+                                referer = "",
+                                quality = Qualities.P1080.value,
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        else {
+            val doc = app.get(href).document
+            doc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(.mkv|.mp4))").forEach {
+                for((index, mirror) in mirrors.withIndex()) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "VadaPav" + " ${index+1}",
+                            "VadaPav" + " ${index+1}",
+                            mirror + it.attr("href"),
+                            referer = "",
+                            quality = Qualities.P1080.value,
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+
     suspend fun invokeFull4Movies(
-        title: String? = null,
+        title: String,
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -21,9 +80,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val text = document.selectFirst("div.content > h2 > a")?.text().toString()
         val href = document.selectFirst("div.content > h2 > a")?.attr("href").toString()
         if (
-            text.contains(title.toString()) == true &&
+            text.contains(title, true) &&
             year.let { text.contains("$it") } == true &&
-            (season == null || season.let { text.contains("Season $it") } == true)
+            (season == null || season.let { text.contains("Season $it", true) } == true)
         ) {
             val doc2 = app.get(href).document
             val link = if(season == null) {

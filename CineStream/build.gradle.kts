@@ -1,4 +1,4 @@
-version = 3
+version = 4
 
 cloudstream {
     //language = "en"
@@ -12,5 +12,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/Cm%20Logo%20PNG%20Vectors%20Free%20Download.jpg"
+    iconUrl = "https://us.123rf.com/450wm/mrshamsjaman/mrshamsjaman2008/mrshamsjaman200800943/154338064-initial-letter-cs-logo-or-sc-logo-vector-design-template.jpg"
 }

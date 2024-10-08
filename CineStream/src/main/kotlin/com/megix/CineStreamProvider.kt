@@ -14,6 +14,7 @@ import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeFull4Movies
+import com.megix.CineStreamExtractors.invokeVadaPav
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -30,6 +31,7 @@ open class CineStreamProvider : MainAPI() {
         const val topmoviesAPI = "https://topmovies.mov"
         const val MoviesmodAPI = "https://moviesmod.day"
         const val Full4MoviesAPI = "https://www.full4movies.forum"
+        const val VadapavAPI = "https://vadapav.mov"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -233,6 +235,16 @@ open class CineStreamProvider : MainAPI() {
             },
             {
                 invokeFull4Movies(
+                    res.title,
+                    year,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeVadaPav(
                     res.title,
                     year,
                     res.season,
