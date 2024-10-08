@@ -34,8 +34,8 @@ object CineStreamExtractors : CineStreamProvider() {
             val seasonDoc = app.get(seasonLink).document
             seasonDoc.select("div.directory > ul > li > div > a.file-entry")
                 .filter { element ->
-                    val text = element.text().trim()
-                    val episodeRegex = Regex("""(?i)(Episode|Ep|E) ?0?($episode)""")
+                    val text = element.text()
+                    val episodeRegex = Regex("""(?i)(Episode|Ep|E) ?0?(${episode})""")
                     episodeRegex.matches(text)
                 }
             .forEach {
