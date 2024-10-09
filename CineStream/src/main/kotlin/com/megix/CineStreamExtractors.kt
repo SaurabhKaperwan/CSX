@@ -6,8 +6,182 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 import android.util.Log
 import android.util.Base64
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.lagradost.cloudstream3.APIHolder.unixTime
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.fasterxml.jackson.annotation.JsonProperty
 
 object CineStreamExtractors : CineStreamProvider() {
+
+    suspend fun invokePrimeVideo(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val cookie = getNFCookies() ?: return
+        val cookies = mapOf(
+            "t_hash_t" to cookie,
+            "ott" to "pv",
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                val episodeId =
+                    app.get(
+                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/"
+                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                ExtractorLink(
+                    "PrimeVideo",
+                    "PrimeVideo",
+                    "$netflixAPI/${it.file}",
+                    "$netflixAPI/",
+                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
+                    INFER_TYPE,
+                    headers = mapOf("Cookie" to "hd=on")
+                )
+            )
+        }
+    }
+    
+    suspend fun invokeNetflix(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val cookie = getNFCookies() ?: return
+        val cookies = mapOf(
+            "t_hash_t" to cookie,
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                val episodeId =
+                    app.get(
+                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/"
+                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                ExtractorLink(
+                    "Netflix",
+                    "Netflix",
+                    "$netflixAPI/${it.file}",
+                    "$netflixAPI/",
+                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
+                    INFER_TYPE,
+                    headers = mapOf("Cookie" to "hd=on")
+                )
+            )
+        }
+    }
+
+    suspend fun getNFCookies(): String? {
+        val json = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/main/NF_Cookie.json").text
+        val data = parseJson<NfCookie>(json)
+        return data.cookie
+    }
+
+    data class NfSearchData(
+        val head: String,
+        val searchResult: List<NfSearchResult>,
+        val type: Int
+    )
+    data class NfSearchResult(
+        val id: String,
+        val t: String
+    )
+
+    data class NfCookie(
+        @JsonProperty("cookie") val cookie: String
+    )
+
+    data class NetflixSources(
+        @JsonProperty("file") val file: String? = null,
+        @JsonProperty("label") val label: String? = null,
+    )
+    data class NetflixEpisodes(
+        @JsonProperty("id") val id: String? = null,
+        @JsonProperty("t") val t: String? = null,
+        @JsonProperty("s") val s: String? = null,
+        @JsonProperty("ep") val ep: String? = null,
+    )
+    data class NetflixSeason(
+        @JsonProperty("s") val s: String? = null,
+        @JsonProperty("id") val id: String? = null,
+    )
+    data class NetflixResponse(
+        @JsonProperty("title") val title: String? = null,
+        @JsonProperty("year") val year : String? = null,
+        @JsonProperty("season") val season: ArrayList<NetflixSeason>? = arrayListOf(),
+        @JsonProperty("episodes") val episodes: ArrayList<NetflixEpisodes>? = arrayListOf(),
+        @JsonProperty("sources") val sources: ArrayList<NetflixSources>? = arrayListOf(),
+    )
 
     suspend fun invokeVadaPav(
         title: String,
@@ -27,8 +201,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season != null && episode != null) "$VadapavAPI/s/$title" else "$VadapavAPI/s/$title ($year)"
         val document = app.get(url).document
         val result = document.selectFirst("div.directory > ul > li > div > a")
+        val text = result.text().trim()
         val href = VadapavAPI + result.attr("href")
-        if(season != null && episode != null) {
+        if(season != null && episode != null && title.equals(text, true)) {
             val doc = app.get(href).document
             val seasonLink = VadapavAPI + doc.selectFirst("div.directory > ul > li > div > a.directory-entry:matches((?i)(Season 0${season}|Season ${season}))").attr("href")
             val seasonDoc = app.get(seasonLink).document
@@ -154,64 +329,87 @@ object CineStreamExtractors : CineStreamProvider() {
         } else {
             "$api/search/$fixtitle season $season $year"
         }
-        val domain = api.substringAfter("//").substringBefore(".")
+        val domain= api.substringAfter("//").substringBefore(".")
         app.get(url, interceptor = cfInterceptor).document.select("#main-content article")
-        .filter { element ->
-            element.text().contains(
-                fixtitle.toString(), true
-            )
-        }
-        .amap {
-            val hrefpattern =
-                Regex("""(?i)<a\s+href="([^"]+)"[^>]*?>[^<]*?\b($fixtitle)\b[^<]*?""").find(
-                    it.toString()
-                )?.groupValues?.get(1)
-            if (hrefpattern!=null) {
-                val res = hrefpattern.let { app.get(it).document }
-                val hTag = if (season == null) "h5" else "h3,h5"
-                val aTag =
-                    if (season == null) "Download Now" else "V-Cloud,Download Now,G-Direct"
-                val sTag = if (season == null) "" else "(Season $season|S$seasonSlug)"
-                val entries =
-                    res.select("div.entry-content > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
-                        .filter { element ->
-                            !element.text().contains("Series", true) &&
-                            !element.text().contains("Zip", true) &&
-                            !element.text().contains("[Complete]", true) &&
-                            !element.text().contains("480p, 720p, 1080p", true) &&
-                            !element.text().contains(domain, true) &&
-                            element.text().matches("(?i).*($sTag).*".toRegex())
-                        }
-                entries.amap { it ->
-                    val tags =
-                        """(?:480p|720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
-                            ?.trim()
-                    val tagList = aTag.split(",")
-                    val href = it.nextElementSibling()?.select("a")?.find { anchor ->
-                        tagList.any { tag ->
-                            anchor.text().contains(tag.trim(), true)
-                        }
-                    }?.attr("href") ?: ""
-                    val selector =
-                        if (season == null) "p a:matches(V-Cloud|G-Direct)" else "h4:matches(0?$episode) ~ p a:matches(V-Cloud|G-Direct)"
-                    if (href.isNotEmpty()) {
-                        app.get(
-                            href, interceptor = wpRedisInterceptor
-                        ).document.select("div.entry-content > $selector").first()?.let { sources ->
-                            val server = sources.attr("href")
-                            loadCustomTagExtractor(
-                                tags,
-                                server,
-                                "$api/",
-                                subtitleCallback,
-                                callback,
-                                getIndexQuality(it.text())
-                            )
+            .filter { element ->
+                element.text().contains(
+                    fixtitle.toString(), true
+                )
+            }
+            .amap {
+                val hrefpattern =
+                    Regex("""(?i)<a\s+href="([^"]+)"[^>]*?>[^<]*?\b($fixtitle)\b[^<]*?""").find(
+                        it.toString()
+                    )?.groupValues?.get(1)
+                if (hrefpattern!=null) {
+                    val res = hrefpattern.let { app.get(it).document }
+                    val hTag = if (season == null) "h5" else "h3,h5"
+                    val aTag =
+                        if (season == null) "Download Now" else "V-Cloud,Download Now,G-Direct"
+                    val sTag = if (season == null) "" else "(Season $season|S$seasonSlug)"
+                    val entries =
+                        res.select("div.entry-content > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
+                            .filter { element ->
+                                !element.text().contains("Series", true) &&
+                                        !element.text().contains("Zip", true) &&
+                                        !element.text().contains("[Complete]", true) &&
+                                        !element.text().contains("480p, 720p, 1080p", true) &&
+                                        !element.text().contains(domain, true) &&
+                                        element.text().matches("(?i).*($sTag).*".toRegex())
+                            }
+                    entries.amap { it ->
+                        val tags =
+                            """(?:480p|720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
+                                ?.trim()
+                        val tagList = aTag.split(",")
+                        val href = it.nextElementSibling()?.select("a")?.filter { anchor ->
+                            tagList.any { tag ->
+                                anchor.text().contains(tag.trim(), true)
+                            }
+                        }?.map { anchor ->
+                            anchor.attr("href")
+                        } ?: emptyList()
+                        val selector =
+                            if (season == null) "p a:matches(V-Cloud|G-Direct)" else "h4:matches(0?$episode) ~ p a:matches(V-Cloud|G-Direct)"
+                        if (href.isNotEmpty()) {
+                            href.amap { url ->
+                            if (season==null)
+                            {
+                                app.get(
+                                    url, interceptor = wpRedisInterceptor
+                                ).document.select("div.entry-content > $selector").map { sources ->
+                                    val server = sources.attr("href")
+                                    loadCustomTagExtractor(
+                                        tags,
+                                        server,
+                                        "$api/",
+                                        subtitleCallback,
+                                        callback,
+                                        getIndexQuality(it.text())
+                                    )
+                                }
+                            }
+                            else
+                            {
+                                app.get(
+                                    url, interceptor = wpRedisInterceptor
+                                ).document.select("div.entry-content > $selector").first()?.let { sources ->
+                                    val server = sources.attr("href")
+                                    loadCustomTagExtractor(
+                                        tags,
+                                        server,
+                                        "$api/",
+                                        subtitleCallback,
+                                        callback,
+                                        getIndexQuality(it.text())
+                                    )
+                                }
+                             }
+                            }
                         }
                     }
                 }
             }
-        }
     }
 
     suspend fun invokeMoviesdrive(
@@ -379,9 +577,7 @@ object CineStreamExtractors : CineStreamProvider() {
             app.get(url, interceptor = wpRedisInterceptor).document.select("#content_box article")
                 .toString()
         val hrefpattern =
-            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)"""").find(res1)?.groupValues?.get(
-                1
-            )
+            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)"""").find(res1)?.groupValues?.get(1)
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"

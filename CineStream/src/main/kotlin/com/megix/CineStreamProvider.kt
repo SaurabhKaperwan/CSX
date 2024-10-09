@@ -15,6 +15,8 @@ import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeFull4Movies
 import com.megix.CineStreamExtractors.invokeVadaPav
+import com.megix.CineStreamExtractors.invokeNetflix
+import com.megix.CineStreamExtractors.invokePrimeVideo
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -32,6 +34,7 @@ open class CineStreamProvider : MainAPI() {
         const val MoviesmodAPI = "https://moviesmod.day"
         const val Full4MoviesAPI = "https://www.full4movies.forum"
         const val VadapavAPI = "https://vadapav.mov"
+        const val netflixAPI = "https://iosmirror.cc"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -182,6 +185,7 @@ open class CineStreamProvider : MainAPI() {
     ): Boolean {
         val res = parseJson<LoadLinksData>(data)
         val year = if(res.tvtype == "movie") res.year.toIntOrNull() else res.firstAired?.substringBefore("-")?.toIntOrNull()
+        val firstYear = if(res.tvtype == "movie") res.year.toIntOrNull() else res.year.substringBefore("–").toIntOrNull()
         argamap(
             {
                 invokeVegamovies(
@@ -247,6 +251,26 @@ open class CineStreamProvider : MainAPI() {
                 invokeVadaPav(
                     res.title,
                     year,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeNetflix(
+                    res.title,
+                    firstYear,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokePrimeVideo(
+                    res.title,
+                    firstYear,
                     res.season,
                     res.episode,
                     subtitleCallback,
