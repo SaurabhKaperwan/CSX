@@ -344,9 +344,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 val urls = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""").findAll(doc2.html())
                 urls.elementAtOrNull(episode?.minus(1) ?: 0)?.groupValues?.get(1) ?: ""
             }
-            val doc = app.get(fixUrl(link)).document
-            val source = doc.selectFirst("iframe").attr("src") ?: ""
-            loadAddSourceExtractor("Full4Movies",source, referer = link, subtitleCallback, callback)
+            if(link.contains("4links.")) {
+                val doc = app.get(fixUrl(link)).document
+                val source = doc.selectFirst("iframe").attr("src") ?: ""
+                loadAddSourceExtractor("Full4Movies",source, referer = link, subtitleCallback, callback)
+            }
+            else {
+                loadAddSourceExtractor("Full4Movies",link, referer = href, subtitleCallback, callback)
+            }
         }
 
     }

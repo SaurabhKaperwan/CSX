@@ -125,13 +125,22 @@ open class CineStreamProvider : MainAPI() {
         val cast : List<String> = movieData.meta.cast ?: emptyList()
         val genre : List<String> = movieData.meta.genre ?: emptyList()
         val background = movieData.meta.background.toString()
+        val isAnime = if(movieData.meta.country.toString().contains("Japan", true) && genre.any { it.contains("Animation", true) }) true else false
+        val isBollywood = if(movieData.meta.country.toString().contains("India", true)) true else false
+        val isKorean = if(movieData.meta.country.toString().contains("Korea", true)) true else false
 
         if(tvtype == "movie") {
             val data = LoadLinksData(
                 title,
                 id,
                 tvtype,
-                year
+                year,
+                null,
+                null,
+                null,
+                isAnime,
+                isBollywood,
+                isKorean    
             ).toJson()
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
@@ -154,7 +163,10 @@ open class CineStreamProvider : MainAPI() {
                         year,
                         ep.season,
                         ep.episode,
-                        ep.firstAired
+                        ep.firstAired,
+                        isAnime,
+                        isBollywood,
+                        isKorean
                     ).toJson()
                 ) {
                     this.name = ep.name ?: ep.title
@@ -200,7 +212,7 @@ open class CineStreamProvider : MainAPI() {
                 )
             },
             {
-                invokeRogmovies(
+                if(res.isBollywood) invokeRogmovies(
                     res.title,
                     year,
                     res.season,
@@ -210,7 +222,7 @@ open class CineStreamProvider : MainAPI() {
                 )
             },
             {
-                invokeTopMovies(
+                if(res.isBollywood) invokeTopMovies(
                     res.title,
                     year,
                     res.season,
@@ -280,7 +292,7 @@ open class CineStreamProvider : MainAPI() {
                 )
             },
             {
-                invokeDramaCool(
+                if(res.isKorean) invokeDramaCool(
                     res.title,
                     year,
                     res.season,
@@ -301,6 +313,9 @@ open class CineStreamProvider : MainAPI() {
         val season: Int? = null,
         val episode: Int? = null,
         val firstAired: String? = null,
+        val isAnime: Boolean = false,
+        val isBollywood: Boolean = false,
+        val isKorean: Boolean = false,
     )
 
     data class PassData(
