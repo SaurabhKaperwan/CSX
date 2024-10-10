@@ -17,6 +17,7 @@ import com.megix.CineStreamExtractors.invokeFull4Movies
 import com.megix.CineStreamExtractors.invokeVadaPav
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
+import com.megix.CineStreamExtractors.invokeDramaCool
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -25,7 +26,7 @@ open class CineStreamProvider : MainAPI() {
     override var lang = "en"
     override val hasDownloadSupport = true
     val cinemeta_url = "https://v3-cinemeta.strem.io"
-    val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs=20794,5128d,7d1ea,671a9,86893,cd492,15846,cf003,eba63,c4e72,071c0,47f38,71418,5653e,223ce,2699b,44ed2,88ef9,f3440,6ff87,4cc98,e91bb,14b3a,04d2d,d749e,c47ac,113e4,9b407,e86b7,35afa,b51b5,5b796,02475,f7c8f,8c976,d3697,d1b92,9e627,7cd16%7Clang=en"
+    val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     companion object {
         const val vegaMoviesAPI = "https://vegamovies.fans"
         const val rogMoviesAPI = "https://rogmovies.top"
@@ -35,6 +36,7 @@ open class CineStreamProvider : MainAPI() {
         const val Full4MoviesAPI = "https://www.full4movies.forum"
         const val VadapavAPI = "https://vadapav.mov"
         const val netflixAPI = "https://iosmirror.cc"
+        const val myConsumetAPI = "https://consumet-seven-ashy.vercel.app"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -271,6 +273,16 @@ open class CineStreamProvider : MainAPI() {
                 invokePrimeVideo(
                     res.title,
                     firstYear,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeDramaCool(
+                    res.title,
+                    year,
                     res.season,
                     res.episode,
                     subtitleCallback,

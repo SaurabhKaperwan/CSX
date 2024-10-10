@@ -12,6 +12,82 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeDramaCool(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val json = if(season == null && episode == null) { 
+            var episodeSlug = "$title episode 1".createSlug()
+            val url = "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}" 
+            val res = app.get(url).text
+            if(res.contains("Media Not found")) {
+                val newEpisodeSlug = "$title $year episode 1".createSlug()
+                val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
+                app.get(newUrl).text
+            }
+            else {
+                res
+            }
+        }
+        else {
+            val seasonText = if(season == 1) "" else "season $season"
+            val episodeSlug = "$title $seasonText episode $episode".createSlug()
+            val url =  "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}"
+            val res = app.get(url).text
+            if(res.contains("Media Not found")) {
+                val newEpisodeSlug = "$title $seasonText $year episode $episode".createSlug()
+                val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
+                app.get(newUrl).text
+            }
+            else {
+                res
+            }
+        }
+
+        val data = parseJson<ConsumetSources>(json) ?: return
+        data.sources?.forEach {
+            callback.invoke(
+                ExtractorLink(
+                    "DramaCool",
+                    "DramaCool",
+                    it.url,
+                    referer = "",
+                    quality = Qualities.P1080.value,
+                    isM3u8 = true
+                )
+            )
+        }
+        
+        data.subtitles?.forEach {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.lang,
+                    it.url
+                )
+            )
+        }
+    }
+
+    data class ConsumetSources(
+        val sources: List<ConsumetSource>?,
+        val subtitles: List<ConsumetSubtitle>?,
+        val download: String?
+    )
+    
+    data class ConsumetSource(
+        val url: String,
+        val isM3u8: Boolean
+    )
+
+    data class ConsumetSubtitle(
+        val url: String,
+        val lang: String
+    )
+
     suspend fun invokePrimeVideo(
         title: String,
         year: Int? = null,
