@@ -17,5 +17,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(HubCloudClub())
         registerExtractorAPI(fastdlserver())
         registerExtractorAPI(HubCloudlol())
+        registerExtractorAPI(Driveleech())
+        registerExtractorAPI(Driveseed())
     }
 }
