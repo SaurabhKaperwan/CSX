@@ -189,7 +189,7 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year?.substringBefore("–").toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull()
+                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbId(id)
