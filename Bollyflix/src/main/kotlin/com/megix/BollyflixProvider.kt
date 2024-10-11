@@ -85,7 +85,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url, , interceptor = cfInterceptor).document
+        val document = app.get(url, interceptor = cfInterceptor).document
         var title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         var description = document.selectFirst("span#summary")?.text().toString()
