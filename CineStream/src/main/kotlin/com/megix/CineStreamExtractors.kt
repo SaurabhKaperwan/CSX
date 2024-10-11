@@ -426,7 +426,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val res = hrefpattern.let { app.get(it).document }
                     val hTag = if (season == null) "h5" else "h3,h5"
                     val aTag =
-                        if (season == null) "Download Now" else "V-Cloud,Download Now,G-Direct"
+                        if (season == null) "Download Now" else "V-Cloud,Download Now,G-Direct,Episode Links"
                     val sTag = if (season == null) "" else "(Season $season|S$seasonSlug)"
                     val entries =
                         res.select("div.entry-content > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
@@ -440,9 +440,9 @@ object CineStreamExtractors : CineStreamProvider() {
                             }
                     entries.amap { it ->
                         val tags =
-                            """(?:480p|720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
+                            """(?:720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
                                 ?.trim()
-                        val tagList = aTag.split(",")
+                        val tagList = aTag.split(",") 
                         val href = it.nextElementSibling()?.select("a")?.filter { anchor ->
                             tagList.any { tag ->
                                 anchor.text().contains(tag.trim(), true)
@@ -451,7 +451,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             anchor.attr("href")
                         } ?: emptyList()
                         val selector =
-                            if (season == null) "p a:matches(V-Cloud|G-Direct)" else "h4:matches(0?$episode) ~ p a:matches(V-Cloud|G-Direct)"
+                            if (season == null) "p a:matches(V-Cloud|G-Direct)" else "h4:matches(0?$episode)"
                         if (href.isNotEmpty()) {
                             href.amap { url ->
                             if (season==null)
@@ -460,31 +460,36 @@ object CineStreamExtractors : CineStreamProvider() {
                                     url, interceptor = wpRedisInterceptor
                                 ).document.select("div.entry-content > $selector").map { sources ->
                                     val server = sources.attr("href")
-                                    loadCustomTagExtractor(
-                                        tags,
+                                    loadAddSourceExtractor(
+                                        "V-Cloud",
                                         server,
                                         "$api/",
                                         subtitleCallback,
                                         callback,
-                                        getIndexQuality(it.text())
+                                        getIndexQuality(sources.text())
                                     )
                                 }
                             }
                             else
                             {
-                                app.get(
-                                    url, interceptor = wpRedisInterceptor
-                                ).document.select("div.entry-content > $selector").first()?.let { sources ->
-                                    val server = sources.attr("href")
-                                    loadCustomTagExtractor(
-                                        tags,
-                                        server,
-                                        "$api/",
-                                        subtitleCallback,
-                                        callback,
-                                        getIndexQuality(it.text())
-                                    )
-                                }
+                                app.get(url, interceptor = wpRedisInterceptor).document.select("div.entry-content > $selector")
+                                    .forEach { h4Element ->
+                                        var sibling = h4Element.nextElementSibling()
+                                        while (sibling != null && sibling.tagName() == "p") {
+                                            sibling.select("a:matches(V-Cloud|G-Direct)").forEach { sources ->
+                                                val server = sources.attr("href")
+                                                loadAddSourceExtractor(
+                                                    "V-Cloud",
+                                                    server,
+                                                    "$api/",
+                                                    subtitleCallback,
+                                                    callback,
+                                                    getIndexQuality(sources.text())
+                                                )
+                                            }
+                                            sibling = sibling.nextElementSibling()
+                                        }
+                                    }
                              }
                             }
                         }
