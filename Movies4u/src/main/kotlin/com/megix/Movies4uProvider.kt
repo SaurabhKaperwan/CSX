@@ -10,7 +10,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class Movies4uProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://movies4u.eu.com"
+    override var mainUrl = "https://movies4u.com"
     override var name = "Movies4u"
     override val hasMainPage = true
     override var lang = "hi"
@@ -69,7 +69,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..25) {
+        for (i in 1..10) {
             val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("article.post").mapNotNull { it.toSearchResult2() }
