@@ -48,7 +48,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
 
-        val data = parseJson<ConsumetSources>(json) ?: return
+        val data = parseJson<ConsumetSources>(json)
         data.sources?.forEach {
             callback.invoke(
                 ExtractorLink(
@@ -277,14 +277,24 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season != null && episode != null) "$VadapavAPI/s/$title" else "$VadapavAPI/s/$title ($year)"
         val document = app.get(url).document
         val result = document.selectFirst("div.directory > ul > li > div > a")
-        val text = result.text().trim()
-        val href = VadapavAPI + result.attr("href")
+        val text = result?.text()?.trim().toString()
+        val href = VadapavAPI + (result?.attr("href") ?: return)
         if(season != null && episode != null && title.equals(text, true)) {
             val doc = app.get(href).document
-            val seasonLink = VadapavAPI + doc.selectFirst("div.directory > ul > li > div > a.directory-entry:matches((?i)(Season 0${season}|Season ${season}))").attr("href")
+            val filteredLink = doc.select("div.directory > ul > li > div > a.directory-entry").firstOrNull { aTag ->
+                val seasonFromText = Regex("""Season\s(\d{1,2})""").find(aTag.text())?.groupValues ?. get(1)
+                seasonFromText ?.toInt() == season
+            }
+            val seasonLink = VadapavAPI + (filteredLink ?. attr("href") ?: return)
             val seasonDoc = app.get(seasonLink).document
-            seasonDoc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(Episode 0${episode}|Episode ${episode}|EP0${episode}|EP${episode}|EP 0${episode}|EP ${episode}|E0${episode}|E${episode}|E 0${episode}|E ${episode}))")
-            .forEach {
+            val filteredLinks = seasonDoc.select("div.directory > ul > li > div > a.file-entry")
+                .filter { element ->
+                    val episodeFromText = Regex("""E(\d{1,3})""").find(element.text())?.groupValues?.get(1)
+                    episodeFromText?.toIntOrNull() ?: return@filter false
+                    episodeFromText.toInt() == episode
+                }
+            
+            filteredLinks.forEach {
                 if(it.text().contains(".mkv", true) || it.text().contains(".mp4", true)) {
                     for((index, mirror) in mirrors.withIndex()) {
                         callback.invoke(
@@ -342,7 +352,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             } else {
                 val urls = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""").findAll(doc2.html())
-                urls.elementAtOrNull(episode?.minus(1) ?: 0)?.groupValues?.get(1) ?: ""
+                urls.elementAtOrNull(episode?.minus(1) ?: return)?.groupValues?.get(1) ?: ""
             }
             if(link.contains("4links.")) {
                 val doc = app.get(fixUrl(link)).document
@@ -460,7 +470,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                     url, interceptor = wpRedisInterceptor
                                 ).document.select("div.entry-content > $selector").map { sources ->
                                     val server = sources.attr("href")
-                                    loadAddSourceExtractor(
+                                    loadSourceNameExtractor(
                                         "V-Cloud",
                                         server,
                                         "$api/",
@@ -475,10 +485,13 @@ object CineStreamExtractors : CineStreamProvider() {
                                 app.get(url, interceptor = wpRedisInterceptor).document.select("div.entry-content > $selector")
                                     .forEach { h4Element ->
                                         var sibling = h4Element.nextElementSibling()
+                                        while (sibling != null && sibling.tagName() != "p") {
+                                            sibling = sibling.nextElementSibling()
+                                        }
                                         while (sibling != null && sibling.tagName() == "p") {
                                             sibling.select("a:matches(V-Cloud|G-Direct)").forEach { sources ->
                                                 val server = sources.attr("href")
-                                                loadAddSourceExtractor(
+                                                loadSourceNameExtractor(
                                                     "V-Cloud",
                                                     server,
                                                     "$api/",
