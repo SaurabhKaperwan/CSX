@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://bollyflix.beer"
@@ -23,6 +24,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         TvType.AsianDrama,
         TvType.Anime
     )
+    private val cfInterceptor = CloudflareKiller()
 
     override val mainPage = mainPageOf(
         "$mainUrl/" to "Home",
@@ -41,10 +43,10 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         request: MainPageRequest
     ): HomePageResponse {
         val document = if(page == 1) {
-            app.get(request.data).document
+            app.get(request.data, interceptor = cfInterceptor).document
         }
         else {
-            app.get(request.data + "page/" + page).document
+            app.get(request.data + "page/" + page, interceptor = cfInterceptor).document
         }
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
@@ -72,8 +74,8 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..25) {
-            val document = app.get("$mainUrl/search/$query/page/$i/").document
+        for (i in 1..10) {
+            val document = app.get("$mainUrl/search/$query/page/$i/", interceptor = cfInterceptor).document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 
@@ -87,7 +89,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        val document = app.get(url, interceptor = cfInterceptor).document
         var title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         var description = document.selectFirst("span#summary")?.text().toString()

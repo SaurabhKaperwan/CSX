@@ -121,7 +121,7 @@ open class CineStreamProvider : MainAPI() {
         val title = movieData.meta.name.toString()
         val posterUrl = movieData.meta.poster.toString()
         val imdbRating = movieData.meta.imdbRating
-        val year = movieData.meta.year.toString()
+        val year = movieData.meta.year
         val releaseInfo = movieData.meta.releaseInfo.toString()
         var description = movieData.meta.description.toString()
         val cast : List<String> = movieData.meta.cast ?: emptyList()
@@ -153,7 +153,7 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year.toIntOrNull() ?: releaseInfo.toIntOrNull()
+                this.year = year?.toIntOrNull() ?: releaseInfo.toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbId(id)
@@ -189,7 +189,7 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year.substringBefore("–").toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull()
+                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbId(id)
