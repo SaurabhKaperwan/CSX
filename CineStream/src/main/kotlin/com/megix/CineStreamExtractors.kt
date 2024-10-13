@@ -12,6 +12,34 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeAutoembed(
+        id: Int,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val url = if(season != null && episode != null) "${AutoembedAPI}/embed/player.php?id=${id}&s=${season}&e=${episode}" else "${AutoembedAPI}/embed/player.php?id=${id}"
+        val document = app.get(url).document
+        val regex = Regex("""(?:"title":\s*"([^"]*)",\s*"file":\s*"([^"]*)")""")
+        val matches = regex.findAll(document.toString())
+
+        matches.forEach { match ->
+            val title = match.groups?.get(1)?.value ?: ""
+            val file = match.groups?.get(2)?.value ?: ""
+            callback.invoke(
+                ExtractorLink(
+                    "Autoembed[${title}]",
+                    "Autoembed[${title}]",
+                    file,
+                    referer = "",
+                    quality = Qualities.Unknown.value,
+                    INFER_TYPE,
+                )
+            )
+        }
+    }
+
     suspend fun invokeWHVXSubs(
         id: String,
         season: Int? = null,

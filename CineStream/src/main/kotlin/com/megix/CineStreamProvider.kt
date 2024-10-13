@@ -20,6 +20,7 @@ import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeDramaCool
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
+import com.megix.CineStreamExtractors.invokeAutoembed
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -41,6 +42,7 @@ open class CineStreamProvider : MainAPI() {
         const val myConsumetAPI = "https://conaumet.vercel.app"
         const val W4UAPI = "https://world4ufree.contact"
         const val WHVXSubsAPI = "https://subs.whvx.net"
+        const val AutoembedAPI = "https://autoembed.cc"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -126,6 +128,7 @@ open class CineStreamProvider : MainAPI() {
         val posterUrl = movieData.meta.poster.toString()
         val imdbRating = movieData.meta.imdbRating
         val year = movieData.meta.year
+        val tmdbId = movieData.meta.moviedb_id
         val releaseInfo = movieData.meta.releaseInfo.toString()
         var description = movieData.meta.description.toString()
         val cast : List<String> = movieData.meta.cast ?: emptyList()
@@ -142,6 +145,7 @@ open class CineStreamProvider : MainAPI() {
             val data = LoadLinksData(
                 title,
                 id,
+                tmdbId,
                 tvtype,
                 year ?: releaseInfo,
                 null,
@@ -169,6 +173,7 @@ open class CineStreamProvider : MainAPI() {
                     LoadLinksData(
                         title,
                         id,
+                        tmdbId,
                         tvtype,
                         year ?: releaseInfo,
                         ep.season,
@@ -331,6 +336,15 @@ open class CineStreamProvider : MainAPI() {
                     subtitleCallback
                 )
             },
+            {
+                invokeAutoembed(
+                    res.tmdbId,
+                    res.season,
+                    res.episode,
+                    callback,
+                    subtitleCallback
+                )
+            },
         )
         return true
     }
@@ -338,6 +352,7 @@ open class CineStreamProvider : MainAPI() {
     data class LoadLinksData(
         val title: String,
         val id: String,
+        val tmdbId: Int,
         val tvtype: String,
         val year: String,
         val season: Int? = null,
@@ -361,7 +376,7 @@ open class CineStreamProvider : MainAPI() {
         val poster: String?,
         val logo: String?,
         val background: String?,
-        val moviedb_id: Int?,
+        val moviedb_id: Int,
         val name: String?,
         val description: String?,
         val genre: List<String>?,
