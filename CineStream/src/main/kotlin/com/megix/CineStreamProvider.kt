@@ -18,6 +18,8 @@ import com.megix.CineStreamExtractors.invokeVadaPav
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeDramaCool
+import com.megix.CineStreamExtractors.invokeW4U
+import com.megix.CineStreamExtractors.invokeWHVXSubs
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -37,6 +39,8 @@ open class CineStreamProvider : MainAPI() {
         const val VadapavAPI = "https://vadapav.mov"
         const val netflixAPI = "https://iosmirror.cc"
         const val myConsumetAPI = "https://conaumet.vercel.app"
+        const val W4UAPI = "https://world4ufree.contact"
+        const val WHVXSubsAPI = "https://subs.whvx.net"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -306,6 +310,25 @@ open class CineStreamProvider : MainAPI() {
                     res.episode,
                     subtitleCallback,
                     callback
+                )
+            },
+            {
+                if(!res.isAnime) invokeW4U(
+                    res.title,
+                    year,
+                    res.id,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeWHVXSubs(
+                    res.id,
+                    res.season,
+                    res.episode,
+                    subtitleCallback
                 )
             },
         )
