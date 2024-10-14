@@ -162,7 +162,8 @@ class NetflixMirrorProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://img.nfmirrorcdn.top/poster/h/$id.jpg"
+            posterUrl = "https://img.nfmirrorcdn.top/poster/v/$id.jpg"
+            backgroundPosterUrl ="https://img.nfmirrorcdn.top/poster/h/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/")
             plot = data.desc
             year = data.year.toIntOrNull()
