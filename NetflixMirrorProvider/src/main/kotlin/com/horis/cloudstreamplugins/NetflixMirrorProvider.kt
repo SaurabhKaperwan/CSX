@@ -15,6 +15,7 @@ import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.nodes.Element
+import com.lagradost.cloudstream3.APIHolder.unixTime
 
 class NetflixMirrorProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -27,24 +28,18 @@ class NetflixMirrorProvider : MainAPI() {
     override var name = "NetflixMirror"
 
     override val hasMainPage = true
-    private var time = ""
+    private var cookie_value = ""
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
 
-    private suspend fun getCookieFromGithub(): String {
-        val data = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/main/NF_Cookie.json").parsed<Cookie>()
-        return data.cookie
-    }
-
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        val cookie_value = getCookieFromGithub()
+        cookie_value = bypass(mainUrl)
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on"
         )
         val document = app.get("$mainUrl/home", cookies = cookies).document
-        time = document.select("body").attr("data-time")
         val items = document.select(".tray-container, #top10").map {
             it.toHomePageList()
         }
@@ -70,34 +65,13 @@ class NetflixMirrorProvider : MainAPI() {
         }
     }
 
-    private fun convertRuntimeToMinutes(runtime: String): Int {
-        var totalMinutes = 0
-
-        val parts = runtime.split(" ")
-
-        for (part in parts) {
-            when {
-                part.endsWith("h") -> {
-                    val hours = part.removeSuffix("h").trim().toIntOrNull() ?: 0
-                    totalMinutes += hours * 60
-                }
-                part.endsWith("m") -> {
-                    val minutes = part.removeSuffix("m").trim().toIntOrNull() ?: 0
-                    totalMinutes += minutes
-                }
-            }
-        }
-
-        return totalMinutes
-    }
-
     override suspend fun search(query: String): List<SearchResponse> {
-        val cookie_value = getCookieFromGithub()
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on"
         )
-        val url = "$mainUrl/search.php?s=$query&t=$time"
+        val url = "$mainUrl/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(url, referer = "$mainUrl/", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
@@ -109,14 +83,14 @@ class NetflixMirrorProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val id = parseJson<Id>(url).id
-        val cookie_value = getCookieFromGithub()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on"
         )
         val data = app.get(
-            "$mainUrl/post.php?id=$id&t=$time", headers, referer = "$mainUrl/", cookies = cookies
+            "$mainUrl/post.php?id=$id&t=${APIHolder.unixTime}", headers, referer = "$mainUrl/", cookies = cookies
         ).parsed<PostData>()
 
         val episodes = arrayListOf<Episode>()
@@ -177,7 +151,6 @@ class NetflixMirrorProvider : MainAPI() {
         title: String, eid: String, sid: String, page: Int
     ): List<Episode> {
         val episodes = arrayListOf<Episode>()
-        val cookie_value = getCookieFromGithub()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on"
@@ -185,7 +158,7 @@ class NetflixMirrorProvider : MainAPI() {
         var pg = page
         while (true) {
             val data = app.get(
-                "$mainUrl/episodes.php?s=$sid&series=$eid&t=$time&page=$pg",
+                "$mainUrl/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
                 headers,
                 referer = "$mainUrl/",
                 cookies = cookies
@@ -212,13 +185,12 @@ class NetflixMirrorProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
-        val cookie_value = getCookieFromGithub()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on"
         )
         val playlist = app.get(
-            "$mainUrl/playlist.php?id=$id&t=$title&tm=$time",
+            "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/",
             cookies = cookies
@@ -273,9 +245,5 @@ class NetflixMirrorProvider : MainAPI() {
 
     data class LoadData(
         val title: String, val id: String
-    )
-
-    data class Cookie(
-        val cookie: String
     )
 }
