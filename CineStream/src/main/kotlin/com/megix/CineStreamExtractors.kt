@@ -712,7 +712,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if (season == null) {
             "$api/search/$fixtitle $year"
         } else {
-            "$api/search/$fixtitle season $season $year"
+            "$api/search/$fixtitle season $season"
         }
         val domain= api.substringAfter("//").substringBefore(".")
         app.get(url, interceptor = cfInterceptor).document.select("#main-content article")
@@ -735,18 +735,18 @@ object CineStreamExtractors : CineStreamProvider() {
                     val entries =
                         res.select("div.entry-content > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
                             .filter { element ->
-                                !element.text().contains("Series", true) &&
+                                !element.text().contains("Series Info", true) &&
                                         !element.text().contains("Zip", true) &&
                                         !element.text().contains("[Complete]", true) &&
                                         !element.text().contains("480p, 720p, 1080p", true) &&
                                         !element.text().contains(domain, true) &&
-                                        element.text().matches("(?i).*($sTag).*".toRegex())
+                                element.text().matches("(?i).*($sTag).*".toRegex())
                             }
                     entries.amap { it ->
                         val tags =
-                            """(?:720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
+                            """(?:480p|720p|1080p|2160p)(.*)""".toRegex().find(it.text())?.groupValues?.get(1)
                                 ?.trim()
-                        val tagList = aTag.split(",") 
+                        val tagList = aTag.split(",")
                         val href = it.nextElementSibling()?.select("a")?.filter { anchor ->
                             tagList.any { tag ->
                                 anchor.text().contains(tag.trim(), true)
@@ -789,7 +789,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                                     server,
                                                     "$api/",
                                                     subtitleCallback,
-                                                    callback
+                                                    callback,
                                                 )
                                             }
                                             sibling = sibling.nextElementSibling()
