@@ -25,6 +25,7 @@ import com.megix.CineStreamExtractors.invokeNova
 import com.megix.CineStreamExtractors.invokeAstra
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokeFilmyxy
+import com.megix.CineStreamExtractors.invokeUhdmovies
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -50,6 +51,7 @@ open class CineStreamProvider : MainAPI() {
         const val WHVXAPI = "https://api.whvx.net"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
+        const val uhdmoviesAPI = "https://uhdmovies.mov"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -393,7 +395,17 @@ open class CineStreamProvider : MainAPI() {
                     callback,
                     subtitleCallback
                 )   
-            }
+            },
+            {
+                invokeUhdmovies(
+                    res.title,
+                    year,
+                    res.season,
+                    res.episode,
+                    callback,
+                    subtitleCallback
+                )
+            },
         )
         return true
     }

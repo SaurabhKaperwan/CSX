@@ -10,6 +10,7 @@ import com.lagradost.cloudstream3.APIHolder.unixTime
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.net.URLEncoder
+import okhttp3.FormBody
 import java.nio.charset.StandardCharsets
 
 object CineStreamExtractors : CineStreamProvider() {
@@ -387,7 +388,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val cookie = getNFCookies() ?: return
+        val cookie = NFBypass(netflixAPI)
         val cookies = mapOf(
             "t_hash_t" to cookie,
             "ott" to "pv",
@@ -452,7 +453,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val cookie = getNFCookies() ?: return
+        val cookie = NFBypass(netflixAPI)
         val cookies = mapOf(
             "t_hash_t" to cookie,
             "hd" to "on"
@@ -508,10 +509,12 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun getNFCookies(): String? {
-        val json = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/main/NF_Cookie.json").text
-        val data = parseJson<NfCookie>(json)
-        return data.cookie
+    suspend fun NFBypass(mainUrl : String): String {
+        val document = app.get("$mainUrl/home").document
+        val addhash = document.selectFirst("body").attr("data-addhash").toString()
+        val verify = app.get("https://userverify.netmirror.app/verify?hash=${addhash}&t=${APIHolder.unixTime}") //just make request to verify
+        val requestBody = FormBody.Builder().add("verify", addhash).build()
+        return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
     }
 
     data class NfSearchData(
@@ -522,10 +525,6 @@ object CineStreamExtractors : CineStreamProvider() {
     data class NfSearchResult(
         val id: String,
         val t: String
-    )
-
-    data class NfCookie(
-        @JsonProperty("cookie") val cookie: String
     )
 
     data class NetflixSources(
@@ -866,6 +865,51 @@ object CineStreamExtractors : CineStreamProvider() {
                             }
                         }
                 }
+            }
+        }
+    }
+
+    suspend fun invokeUhdmovies(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit
+    ) {
+        val fixTitle = title?.replace("-", " ")?.replace(":", " ")
+        val searchtitle = fixTitle.createSlug()
+        val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+        app.get("$uhdmoviesAPI/search/$fixTitle $year").document.select("#content article").map {
+            val hrefpattern =
+                Regex("""(?i)<a\s+href="([^"]*?\b$searchtitle\b[^"]*?\b$year\b[^"]*?)"[^>]*>""").find(
+                    it.toString()
+                )?.groupValues?.get(1)
+            val detailDoc = hrefpattern?.let { app.get(it).document }
+            val iSelector = if (season == null) {
+                "div.entry-content p:has(:matches($year))"
+            } else {
+                "div.entry-content p:has(:matches((?i)(?:S\\s*$seasonSlug|Season\\s*$seasonSlug)))"
+            }
+            val iframeList = detailDoc!!.select(iSelector).mapNotNull {
+                if (season == null) {
+                    it.text() to it.nextElementSibling()?.select("a")?.attr("href")
+                } else {
+                    it.text() to it.nextElementSibling()?.select("a")?.find { child ->
+                        child.select("span").text().equals("Episode $episode", true)
+                    }?.attr("href")
+                }
+            }.filter { it.first.contains(Regex("(2160p)|(1080p)")) }
+                .filter { element -> !element.toString().contains("Download", true) }
+            iframeList.amap { (quality, link) ->
+                val driveLink = bypassHrefli(link ?: "") ?: ""
+                loadSourceNameExtractor(
+                    "UHDMovies",
+                    driveLink,
+                    "",
+                    subtitleCallback,
+                    callback,
+                )
             }
         }
     }
