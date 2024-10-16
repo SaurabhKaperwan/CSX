@@ -208,6 +208,27 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeCatflix(
+        id: String,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season != null && episode != null) "${AutoembedCatflixAPI}/player.php?id=${id}&s=${season}&e=${episode}" else "${AutoembedCatflixAPI}/player.php?id=${id}"
+        val document = app.get(url).document
+        val link = Regex("""file:\s*'([^']+)'""").find(document.toString())?.groupValues?.get(1) ?: return
+        callback.invoke(
+            ExtractorLink(
+                "Catflix",
+                "Catflix",
+                link,
+                "",
+                Qualities.Unknown.value,
+                isM3u8 = true,
+            )
+        )
+    }
+
     suspend fun invokeAutoembed(
         id: Int,
         season: Int? = null,

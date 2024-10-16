@@ -25,6 +25,7 @@ import com.megix.CineStreamExtractors.invokeNova
 import com.megix.CineStreamExtractors.invokeAstra
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokeFilmyxy
+import com.megix.CineStreamExtractors.invokeCatflix
 import com.megix.CineStreamExtractors.invokeUhdmovies
 
 open class CineStreamProvider : MainAPI() {
@@ -48,6 +49,7 @@ open class CineStreamProvider : MainAPI() {
         const val W4UAPI = "https://world4ufree.contact"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val AutoembedAPI = "https://autoembed.cc"
+        const val AutoembedCatflixAPI = "https://abc.autoembed.cc/catflix"
         const val WHVXAPI = "https://api.whvx.net"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
@@ -404,6 +406,14 @@ open class CineStreamProvider : MainAPI() {
                     res.episode,
                     callback,
                     subtitleCallback
+                )
+            },
+            {
+                invokeCatflix(
+                    res.id,
+                    res.season,
+                    res.episode,
+                    callback
                 )
             },
         )
