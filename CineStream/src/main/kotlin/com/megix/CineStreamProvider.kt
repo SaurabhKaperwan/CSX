@@ -3,6 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
@@ -45,7 +46,6 @@ open class CineStreamProvider : MainAPI() {
         const val Full4MoviesAPI = "https://www.full4movies.forum"
         const val VadapavAPI = "https://vadapav.mov"
         const val netflixAPI = "https://iosmirror.cc"
-        const val myConsumetAPI = "https://conaumet.vercel.app"
         const val W4UAPI = "https://world4ufree.contact"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val AutoembedAPI = "https://autoembed.cc"
@@ -54,6 +54,7 @@ open class CineStreamProvider : MainAPI() {
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
         const val uhdmoviesAPI = "https://uhdmovies.mov"
+        const val myConsumetAPI = BuildConfig.CONSUMET_API
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -165,7 +166,7 @@ open class CineStreamProvider : MainAPI() {
                 isAnime,
                 isBollywood,
                 isAsian,
-                isCartoon   
+                isCartoon 
             ).toJson()
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
@@ -174,8 +175,10 @@ open class CineStreamProvider : MainAPI() {
                 this.rating = imdbRating.toRatingInt()
                 this.year = year?.toIntOrNull() ?: releaseInfo.toIntOrNull()
                 this.backgroundPosterUrl = background
+                this.duration = movieData.meta.runtime?.replace(" min", "")?.toIntOrNull()
                 addActors(cast)
                 addImdbId(id)
+                addTMDbId(tmdbId.toString())
             }
         }
         else {
@@ -201,6 +204,7 @@ open class CineStreamProvider : MainAPI() {
                     this.episode = ep.episode
                     this.posterUrl = ep.thumbnail
                     this.description = ep.overview
+                    addDate(ep.firstAired?.substringBefore("T"))
                 }
             } ?: emptyList()
 
@@ -211,8 +215,10 @@ open class CineStreamProvider : MainAPI() {
                 this.rating = imdbRating.toRatingInt()
                 this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull()
                 this.backgroundPosterUrl = background
+                this.duration = movieData.meta.runtime?.replace(" min", "")?.toIntOrNull()
                 addActors(cast)
                 addImdbId(id)
+                addTMDbId(tmdbId.toString())
             }
 
         }
@@ -443,6 +449,7 @@ open class CineStreamProvider : MainAPI() {
     data class Meta(
         val id: String?,
         val imdb_id: String?,
+        val tvdb_id: Int,
         val type: String?,
         val poster: String?,
         val logo: String?,

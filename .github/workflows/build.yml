@@ -28,7 +28,7 @@ jobs:
         with:
           ref: "builds"
           path: "builds"
-      
+
       - name: Clean old builds
         run: rm $GITHUB_WORKSPACE/builds/*.cs3 || true
 
@@ -40,6 +40,13 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
+
+      - name: Access Secrets
+        env:
+          CONSUMET_API: ${{ secrets.CONSUMET_API }}
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          echo CONSUMET_API=$CONSUMET_API >> local.properties
 
       - name: Build Plugins
         run: |
