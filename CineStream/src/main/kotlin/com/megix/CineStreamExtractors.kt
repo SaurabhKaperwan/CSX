@@ -15,38 +15,29 @@ import java.nio.charset.StandardCharsets
 
 object CineStreamExtractors : CineStreamProvider() {
 
-    suspend fun invoke2embed(
-        id:  String,
+    suspend fun invokeVidSrcNL(
+        id: Int,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null && episode != null) "${TwoEmbedAPI}/scrape?id=${id}&s=${season}&e=${episode}" else "${TwoEmbedAPI}/scrape?id=${id}"
-        val json = app.get(url).text
-        val data = parseJson<TwoEmbedQuery>(json)
-        data.stream.forEach {
+        val sources = listOf("vidcloud", "upstream", "hindi", "english")
+        sources.forEach { source ->
+            val url = if(season != null) "https://${source}.vidsrc.nl/stream/tv/${id}/${season}/{episode}" else "https://${source}.vidsrc.nl/stream/movie/${id}"
+            val doc = app.get(url).document
+            val link = doc.selectFirst("div#player-container > media-player")?.attr("src").toString()
             callback.invoke(
                 ExtractorLink(
-                    "2embed[${it.type}]",
-                    "2embed[${it.type}]",
-                    it.playlist,
+                    "VidSrcNL[${source}]",
+                    "VidSrcNL[${source}]",
+                    link,
                     referer = "",
                     quality = Qualities.Unknown.value,
-                    INFER_TYPE,
+                    isM3u8 = true,
                 )
             )
         }
     }
-    data class TwoEmbedQuery(
-        val stream: List<TwoEmbedStream>
-    )
-
-    data class TwoEmbedStream(
-        val id: String,
-        val type: String,
-        val playlist: String,
-    )
 
     suspend fun invokeAstra(
         title: String,
@@ -110,7 +101,10 @@ object CineStreamExtractors : CineStreamProvider() {
         } else {
             """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
         }
-        val headers = mapOf("Origin" to "https://www.vidbinge.com")
+        val headers = mapOf(
+            "Origin" to "https://www.vidbinge.com",
+        )
+
         val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
         val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=nova", headers = headers).text
         val data = parseJson<WHVX>(json) ?: return
@@ -171,43 +165,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val url: String,
     )
 
-    suspend fun invokeFilmyxy(
-        id: String,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val url = if(season != null && episode != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
-        val json = app.get(url, timeout = 20L).text
-        val data = parseJson<NovaVideoData>(json) ?: return
-        for (stream in data.stream) {
-            for ((quality, details) in stream.qualities) {
-                callback.invoke(
-                    ExtractorLink(
-                        "Filmyxy",
-                        "Filmyxy",
-                        details.url,
-                        "",
-                        getQualityFromName(quality),
-                        INFER_TYPE,
-                    )
-                )
-            }
-        }
-
-        for (stream in data.stream) {
-            for (caption in stream.captions) {
-                subtitleCallback.invoke(
-                    SubtitleFile(
-                        caption.language,
-                        caption.url
-                    )
-                )
-            }
-        }
-    }
-
     suspend fun invokeAutoembed(
         id: Int,
         season: Int? = null,
@@ -236,6 +193,30 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeWYZIESubs(
+        id: String,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val url = if(season != null && episode != null) "${WYZIESubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WYZIESubsAPI}/search?id=${id}" 
+        val json = app.get(url).text
+        val data = parseJson<ArrayList<WYZIESubtitle>>(json)
+        data.forEach {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.display,
+                    it.url
+                )
+            )
+        }
+    }
+
+    data class WYZIESubtitle(
+        val url: String,
+        val display: String,
+    )
+
     suspend fun invokeWHVXSubs(
         id: String,
         season: Int? = null,
@@ -248,7 +229,7 @@ object CineStreamExtractors : CineStreamProvider() {
         data.forEach {
             subtitleCallback.invoke(
                 SubtitleFile(
-                    it.display,
+                    it.languageName,
                     it.url
                 )
             )
@@ -257,7 +238,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
     data class WHVXSubtitle(
         val url: String,
-        val display: String,
+        val languageName: String,
     )
 
     suspend fun invokeW4U(

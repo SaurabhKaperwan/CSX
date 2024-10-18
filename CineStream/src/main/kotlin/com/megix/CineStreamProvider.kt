@@ -21,12 +21,12 @@ import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeDramaCool
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
+import com.megix.CineStreamExtractors.invokeWYZIESubs
 import com.megix.CineStreamExtractors.invokeAutoembed
 import com.megix.CineStreamExtractors.invokeNova
 import com.megix.CineStreamExtractors.invokeAstra
-import com.megix.CineStreamExtractors.invoke2embed
-import com.megix.CineStreamExtractors.invokeFilmyxy
 import com.megix.CineStreamExtractors.invokeUhdmovies
+import com.megix.CineStreamExtractors.invokeVidSrcNL
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -37,20 +37,19 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     companion object {
-        const val vegaMoviesAPI = "https://vegamovies.fans"
+        const val vegaMoviesAPI = "https://vegamovies.foo"
         const val rogMoviesAPI = "https://rogmovies.top"
         const val MovieDrive_API="https://moviesdrive.world"
         const val topmoviesAPI = "https://topmovies.mov"
         const val MoviesmodAPI = "https://moviesmod.day"
-        const val Full4MoviesAPI = "https://www.full4movies.forum"
+        const val Full4MoviesAPI = "https://www.full4movies.my"
         const val VadapavAPI = "https://vadapav.mov"
         const val netflixAPI = "https://iosmirror.cc"
         const val W4UAPI = "https://world4ufree.contact"
-        const val WHVXSubsAPI = "https://subs.wyzie.ru"
+        const val WHVXSubsAPI = "https://subs.whvx.net"
+        const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
-        const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
         const val uhdmoviesAPI = "https://uhdmovies.mov"
         const val myConsumetAPI = BuildConfig.CONSUMET_API
     }
@@ -352,6 +351,14 @@ open class CineStreamProvider : MainAPI() {
                 )
             },
             {
+                invokeWYZIESubs(
+                    res.id,
+                    res.season,
+                    res.episode,
+                    subtitleCallback
+                )
+            },
+            {
                 invokeAutoembed(
                     res.tmdbId,
                     res.season,
@@ -385,24 +392,6 @@ open class CineStreamProvider : MainAPI() {
                 )
             },
             {
-                invoke2embed(
-                    res.id,
-                    res.season,
-                    res.episode,
-                    callback,
-                    subtitleCallback
-                )
-            },
-            {
-                invokeFilmyxy(
-                    res.id,
-                    res.season,
-                    res.episode,
-                    callback,
-                    subtitleCallback
-                )   
-            },
-            {
                 invokeUhdmovies(
                     res.title,
                     year,
@@ -410,6 +399,14 @@ open class CineStreamProvider : MainAPI() {
                     res.episode,
                     callback,
                     subtitleCallback
+                )
+            },
+            {
+                invokeVidSrcNL(
+                    res.tmdbId,
+                    res.season,
+                    res.episode,
+                    callback,
                 )
             },
         )
