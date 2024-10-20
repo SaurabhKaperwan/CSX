@@ -108,7 +108,7 @@ object CineStreamExtractors : CineStreamProvider() {
         sources.forEach { source ->
             val url = if(season != null) "https://${source}.vidsrc.nl/stream/tv/${id}/${season}/{episode}" else "https://${source}.vidsrc.nl/stream/movie/${id}"
             val doc = app.get(url).document
-            val link = doc.selectFirst("div#player-container > media-player")?.attr("src").toString()
+            val link = doc.selectFirst("div#player-container > media-player")?.attr("src")
             if (!link.isNullOrEmpty()) {
                 callback.invoke(
                     ExtractorLink(
