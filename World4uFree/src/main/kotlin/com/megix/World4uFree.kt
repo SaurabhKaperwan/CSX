@@ -9,8 +9,5 @@ class World4uFree: Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(World4uFreeProvider())
-        registerExtractorAPI(WLinkFast())
-        registerExtractorAPI(FastLinks())
-        registerExtractorAPI(Sendcm())
     }
 }

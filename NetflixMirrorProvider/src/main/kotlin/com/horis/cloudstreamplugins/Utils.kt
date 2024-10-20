@@ -1,5 +1,7 @@
 package com.horis.cloudstreamplugins
 
+import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.utils.*
 import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -8,6 +10,8 @@ import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.Requests
 import com.lagradost.nicehttp.ResponseParser
 import kotlin.reflect.KClass
+import com.lagradost.cloudstream3.APIHolder.unixTime
+import okhttp3.FormBody
 
 val JSONParser = object : ResponseParser {
     val mapper: ObjectMapper = jacksonObjectMapper().configure(
@@ -48,4 +52,33 @@ inline fun <reified T : Any> tryParseJson(text: String): T? {
         e.printStackTrace()
         null
     }
+}
+
+fun convertRuntimeToMinutes(runtime: String): Int {
+    var totalMinutes = 0
+
+    val parts = runtime.split(" ")
+
+    for (part in parts) {
+        when {
+            part.endsWith("h") -> {
+                val hours = part.removeSuffix("h").trim().toIntOrNull() ?: 0
+                totalMinutes += hours * 60
+            }
+            part.endsWith("m") -> {
+                val minutes = part.removeSuffix("m").trim().toIntOrNull() ?: 0
+                totalMinutes += minutes
+            }
+        }
+    }
+
+    return totalMinutes
+}
+
+suspend fun bypass(mainUrl : String): String {
+    val document = app.get("$mainUrl/home").document
+    val addhash = document.selectFirst("body").attr("data-addhash").toString()
+    val verify = app.get("https://userverify.netmirror.app/verify?hash=${addhash}&t=${APIHolder.unixTime}") //just make request to verify
+    val requestBody = FormBody.Builder().add("verify", addhash).build()
+    return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
 }

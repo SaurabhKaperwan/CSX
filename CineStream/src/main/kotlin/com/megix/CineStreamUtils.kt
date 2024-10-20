@@ -43,6 +43,30 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+suspend fun loadSourceNameExtractor(
+    source: String,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int? = null,
+) {
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        callback.invoke(
+            ExtractorLink(
+                "$source[${link.source}]",
+                "$source[${link.source}]",
+                link.url,
+                link.referer,
+                quality ?: link.quality ,
+                link.type,
+                link.headers,
+                link.extractorData
+            )
+        )
+    }
+}
+
 suspend fun loadCustomTagExtractor(
         tag: String? = null,
         url: String,
@@ -62,30 +86,6 @@ suspend fun loadCustomTagExtractor(
                     ExtractorLinkType.M3U8 -> link.quality
                     else -> quality ?: link.quality
                 },
-                link.type,
-                link.headers,
-                link.extractorData
-            )
-        )
-    }
-}
-
-suspend fun loadAddSourceExtractor(
-        source: String,
-        url: String,
-        referer: String? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-        quality: Int? = null,
-) {
-    loadExtractor(url, referer, subtitleCallback) { link ->
-        callback.invoke(
-            ExtractorLink(
-                "$source[${link.source}]",
-                "$source[${link.source}]",
-                link.url,
-                link.referer,
-                link.quality,
                 link.type,
                 link.headers,
                 link.extractorData
@@ -144,4 +144,3 @@ suspend fun bypassHrefli(url: String): String? {
     if (path == "/404") return null
     return fixUrl(path, getBaseUrl(driveUrl))
 }
-

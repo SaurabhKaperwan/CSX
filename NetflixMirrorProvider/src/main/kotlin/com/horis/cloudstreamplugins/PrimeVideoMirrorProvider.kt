@@ -15,6 +15,7 @@ import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.nodes.Element
+import com.lagradost.cloudstream3.APIHolder.unixTime
 
 class PrimeVideoMirrorProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -27,25 +28,21 @@ class PrimeVideoMirrorProvider : MainAPI() {
     override var name = "PrimeVideoMirror"
 
     override val hasMainPage = true
-    private var time = ""
+    private var cookie_value = ""
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
 
-    private suspend fun getCookieFromGithub(): String {
-        val data = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/main/NF_Cookie.json").parsed<Cookie>()
-        return data.cookie
-    }
+    
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        val cookie_value = getCookieFromGithub()
+        cookie_value = bypass(mainUrl)
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
             "hd" to "on"
         )
         val document = app.get("$mainUrl/home", cookies = cookies).document
-        time = document.select("body").attr("data-time")
         val items = document.select(".tray-container, #top10").map {
             it.toHomePageList()
         }
@@ -74,35 +71,14 @@ class PrimeVideoMirrorProvider : MainAPI() {
         }
     }
 
-    private fun convertRuntimeToMinutes(runtime: String): Int {
-        var totalMinutes = 0
-
-        val parts = runtime.split(" ")
-
-        for (part in parts) {
-            when {
-                part.endsWith("h") -> {
-                    val hours = part.removeSuffix("h").trim().toIntOrNull() ?: 0
-                    totalMinutes += hours * 60
-                }
-                part.endsWith("m") -> {
-                    val minutes = part.removeSuffix("m").trim().toIntOrNull() ?: 0
-                    totalMinutes += minutes
-                }
-            }
-        }
-
-        return totalMinutes
-    }
-
     override suspend fun search(query: String): List<SearchResponse> {
-        val cookie_value = getCookieFromGithub()
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
             "hd" to "on"
         )
-        val url = "$mainUrl/pv/search.php?s=$query&t=$time"
+        val url = "$mainUrl/pv/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(url, referer = "$mainUrl/", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
@@ -115,14 +91,14 @@ class PrimeVideoMirrorProvider : MainAPI() {
 
     override suspend fun load(url: String): LoadResponse? {
         val id = parseJson<Id>(url).id
-        val cookie_value = getCookieFromGithub()
+        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
             "hd" to "on"
         )
         val data = app.get(
-            "$mainUrl/pv/post.php?id=$id&t=$time", headers, referer = "$mainUrl/", cookies = cookies
+            "$mainUrl/pv/post.php?id=$id&t=${APIHolder.unixTime}", headers, referer = "$mainUrl/", cookies = cookies
         ).parsed<PostData>()
 
         val episodes = arrayListOf<Episode>()
@@ -183,7 +159,6 @@ class PrimeVideoMirrorProvider : MainAPI() {
         title: String, eid: String, sid: String, page: Int
     ): List<Episode> {
         val episodes = arrayListOf<Episode>()
-        val cookie_value = getCookieFromGithub()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
@@ -192,7 +167,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
         var pg = page
         while (true) {
             val data = app.get(
-                "$mainUrl/pv/episodes.php?s=$sid&series=$eid&t=$time&page=$pg",
+                "$mainUrl/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
                 headers,
                 referer = "$mainUrl/",
                 cookies = cookies
@@ -219,14 +194,13 @@ class PrimeVideoMirrorProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
-        val cookie_value = getCookieFromGithub()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
             "hd" to "on"
         )
         val playlist = app.get(
-            "$mainUrl/pv/playlist.php?id=$id&t=$title&tm=$time",
+            "$mainUrl/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/",
             cookies = cookies
