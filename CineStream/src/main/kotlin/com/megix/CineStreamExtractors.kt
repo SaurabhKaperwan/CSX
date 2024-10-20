@@ -8,12 +8,95 @@ import android.util.Base64
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.APIHolder.unixTime
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.fasterxml.jackson.annotation.JsonProperty
 import java.net.URLEncoder
 import okhttp3.FormBody
 import java.nio.charset.StandardCharsets
+import org.jsoup.Jsoup
 
 object CineStreamExtractors : CineStreamProvider() {
+
+    suspend fun invoke2embed(
+        id:  String,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val url = if(season != null && episode != null) "${TwoEmbedAPI}/scrape?id=${id}&s=${season}&e=${episode}" else "${TwoEmbedAPI}/scrape?id=${id}"
+        val json = app.get(url).text
+        val data = parseJson<TwoEmbedQuery>(json)
+        data.stream.forEach {
+            callback.invoke(
+                ExtractorLink(
+                    "2embed[${it.type}]",
+                    "2embed[${it.type}]",
+                    it.playlist,
+                    referer = "",
+                    quality = Qualities.Unknown.value,
+                    INFER_TYPE,
+                )
+            )
+        }
+    }
+
+    suspend fun invokeFilmyxy(
+        id: String,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val url = if(season != null && episode != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
+        val json = app.get(url, timeout = 20L).text
+        val data = parseJson<NovaVideoData>(json) ?: return
+        for (stream in data.stream) {
+            for ((quality, details) in stream.qualities) {
+                callback.invoke(
+                    ExtractorLink(
+                        "Filmyxy",
+                        "Filmyxy",
+                        details.url,
+                        "",
+                        getQualityFromName(quality),
+                        INFER_TYPE,
+                    )
+                )
+            }
+        }
+        for (stream in data.stream) {
+            for (caption in stream.captions) {
+                subtitleCallback.invoke(
+                    SubtitleFile(
+                        caption.language,
+                        caption.url
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun invokeMovies(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if (season == null) {
+            "$moviesAPI/movie/$tmdbId"
+        } else {
+            "$moviesAPI/tv/$tmdbId-$season-$episode"
+        }
+
+        val iframe =
+            app.get(
+                url,
+                referer = "https://pressplay.top/"
+            ).document.selectFirst("iframe")
+                ?.attr("src")
+
+        loadExtractor(iframe ?: return, "$moviesAPI/", subtitleCallback, callback)
+    }
 
     suspend fun invokeVidSrcNL(
         id: Int,
@@ -26,16 +109,18 @@ object CineStreamExtractors : CineStreamProvider() {
             val url = if(season != null) "https://${source}.vidsrc.nl/stream/tv/${id}/${season}/{episode}" else "https://${source}.vidsrc.nl/stream/movie/${id}"
             val doc = app.get(url).document
             val link = doc.selectFirst("div#player-container > media-player")?.attr("src").toString()
-            callback.invoke(
-                ExtractorLink(
-                    "VidSrcNL[${source}]",
-                    "VidSrcNL[${source}]",
-                    link,
-                    referer = "",
-                    quality = Qualities.Unknown.value,
-                    isM3u8 = true,
+            if (!link.isNullOrEmpty()) {
+                callback.invoke(
+                    ExtractorLink(
+                        "VidSrcNL[${source}]",
+                        "VidSrcNL[${source}]",
+                        link,
+                        referer = "",
+                        quality = Qualities.Unknown.value,
+                        isM3u8 = true,
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -74,17 +159,6 @@ object CineStreamExtractors : CineStreamProvider() {
             )    
         }
     }
-
-    data class AstraQuery(
-        val stream: List<AstraStream>
-    )
-
-    data class AstraStream(
-        val id: String,
-        val type: String,
-        val playlist: String,
-    )
-
 
     suspend fun invokeNova(
         title: String,
@@ -137,33 +211,6 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
     }
-    data class NovaStream(
-        val id: String,
-        val qualities: Map<String, NovaQuality>,
-        val captions: List<NovaCaption>
-    )
-
-    data class NovaQuality(
-        val type: String,
-        val url: String
-    )   
-
-    data class NovaCaption(
-        val id: String,
-        val url: String,
-        val type: String,
-        val hasCorsRestrictions: Boolean,
-        val language: String
-    )
-
-    data class NovaVideoData(
-        val stream: List<NovaStream>
-    )    
-
-    data class WHVX(
-        val embedId: String,
-        val url: String,
-    )
 
     suspend fun invokeAutoembed(
         id: Int,
@@ -212,11 +259,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    data class WYZIESubtitle(
-        val url: String,
-        val display: String,
-    )
-
     suspend fun invokeWHVXSubs(
         id: String,
         season: Int? = null,
@@ -235,11 +277,6 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         }
     }
-
-    data class WHVXSubtitle(
-        val url: String,
-        val languageName: String,
-    )
 
     suspend fun invokeW4U(
         title: String,
@@ -344,22 +381,6 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         }
     }
-
-    data class ConsumetSources(
-        val sources: List<ConsumetSource>?,
-        val subtitles: List<ConsumetSubtitle>?,
-        val download: String?
-    )
-    
-    data class ConsumetSource(
-        val url: String,
-        val isM3u8: Boolean
-    )
-
-    data class ConsumetSubtitle(
-        val url: String,
-        val lang: String
-    )
 
     suspend fun invokePrimeVideo(
         title: String,
@@ -497,38 +518,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val requestBody = FormBody.Builder().add("verify", addhash).build()
         return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
     }
-
-    data class NfSearchData(
-        val head: String,
-        val searchResult: List<NfSearchResult>,
-        val type: Int
-    )
-    data class NfSearchResult(
-        val id: String,
-        val t: String
-    )
-
-    data class NetflixSources(
-        @JsonProperty("file") val file: String? = null,
-        @JsonProperty("label") val label: String? = null,
-    )
-    data class NetflixEpisodes(
-        @JsonProperty("id") val id: String? = null,
-        @JsonProperty("t") val t: String? = null,
-        @JsonProperty("s") val s: String? = null,
-        @JsonProperty("ep") val ep: String? = null,
-    )
-    data class NetflixSeason(
-        @JsonProperty("s") val s: String? = null,
-        @JsonProperty("id") val id: String? = null,
-    )
-    data class NetflixResponse(
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("year") val year : String? = null,
-        @JsonProperty("season") val season: ArrayList<NetflixSeason>? = arrayListOf(),
-        @JsonProperty("episodes") val episodes: ArrayList<NetflixEpisodes>? = arrayListOf(),
-        @JsonProperty("sources") val sources: ArrayList<NetflixSources>? = arrayListOf(),
-    )
 
     suspend fun invokeVadaPav(
         title: String,
