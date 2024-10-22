@@ -6,8 +6,8 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
 open class OgomoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://0gomovies.cam"
-    override var name = "0gomovies"
+    override var mainUrl = "https://ogomovies.xyz"
+    override var name = "Ogomovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
