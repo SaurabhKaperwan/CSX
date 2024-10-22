@@ -40,7 +40,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             app.get(request.data).document
         }
         else {
-            app.get(request.data + "page/" + page, interceptor = cfInterceptor).document
+            app.get(request.data + "page/" + page).document
         }
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
