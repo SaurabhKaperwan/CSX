@@ -30,6 +30,7 @@ import com.megix.CineStreamExtractors.invokeVidSrcNL
 import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokeFilmyxy
+import com.megix.CineStreamExtractors.invokeAutoembedDrama
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -58,6 +59,7 @@ open class CineStreamProvider : MainAPI() {
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
+        const val AutoembedDramaAPI = "https://asian-drama.autoembed.cc"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -441,6 +443,16 @@ open class CineStreamProvider : MainAPI() {
                     callback,
                     subtitleCallback
                 )   
+            },
+            {
+                if(res.isAsian) invokeAutoembedDrama(
+                    res.title,
+                    year,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
             },
         )
         return true
