@@ -11,7 +11,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class Cinevood : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://1cinevood.skin"
-    override var name = "1Cinevood"
+    override var name = "Cinevood"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
@@ -73,7 +73,7 @@ class Cinevood : MainAPI() { // all providers must be an instance of MainAPI
         	val seasonRegex = """(?i)season\s*\d+""".toRegex()
       val imdbUrl = document.selectFirst("a:contains(IMDb)") ?. attr("href")
       
-        val tvtype = if (document.selectFirst("div.thecategory")?.toString().contains("web-series") &&  document.select("a[href^=https://hubcloud]").isNullOrEmpty()")) {
+        val tvtype = if (document.selectFirst("div.thecategory").toString().contains("web-series") &&  document.select("a[href^=https://hubcloud]").isNullOrEmpty()) {
             "series"
         } else {
             "movie"
