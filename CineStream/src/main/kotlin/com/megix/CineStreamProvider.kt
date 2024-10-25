@@ -31,6 +31,7 @@ import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokeFilmyxy
 import com.megix.CineStreamExtractors.invokeAutoembedDrama
+import com.megix.CineStreamExtractors.invokeRar
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -60,6 +61,7 @@ open class CineStreamProvider : MainAPI() {
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
         const val AutoembedDramaAPI = "https://asian-drama.autoembed.cc"
+        const val RarAPI = "https://rar.to"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -286,6 +288,15 @@ open class CineStreamProvider : MainAPI() {
                     res.episode,
                     year,
                     subtitleCallback,
+                    callback
+                )
+            },
+            {
+                invokeRar(
+                    res.title,
+                    firstYear,
+                    res.season,
+                    res.episode,
                     callback
                 )
             },

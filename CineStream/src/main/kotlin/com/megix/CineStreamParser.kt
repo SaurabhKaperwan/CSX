@@ -2,6 +2,19 @@ package com.megix
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
+data class RarResponseData(
+    val data: List<RarItem>?
+)
+
+data class RarItem(
+    val id: Int,
+    val name: String,
+    val second_name: String,
+    val image: String,
+    val url: String,
+    val type: String
+)
+
 data class TwoEmbedQuery(
     val stream: List<TwoEmbedStream>
 )
