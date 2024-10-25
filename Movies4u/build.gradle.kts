@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://movies4u.com/wp-content/uploads/2022/08/favicon.jpg"
+    iconUrl = "https://www.movies4u.com.vc/templates/favicon.jpg"
 }
