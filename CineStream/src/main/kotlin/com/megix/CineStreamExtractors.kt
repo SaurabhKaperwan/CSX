@@ -15,6 +15,37 @@ import org.jsoup.Jsoup
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeRar(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val json = app.get("$RarAPI/ajax/posts?q=$title ($year)").text
+        val responseData = parseJson<RarResponseData>(json)
+        val id = responseData.data?.firstOrNull { 
+            it.second_name == title 
+        }?.id ?: return
+        val slug = "$title $year $id".createSlug()
+        val url = if(season != null) "$RarAPI/show/$slug/season/$season/episode/$episode" else "$RarAPI/movie/$slug"
+        val embedId = app.get(url).document.selectFirst("a.btn-service")?.attr("data-embed") ?: return
+        val body = FormBody.Builder().add("id", embedId).build()
+        val document = app.post("$RarAPI/ajax/embed", requestBody = body).document
+        val regex = Regex("""(https?:\/\/[^\"']+\.m3u8)""")
+        val link = regex.find(document.toString())?.groupValues?.get(1) ?: return
+        callback.invoke(
+            ExtractorLink(
+                "Rar",
+                "Rar",
+                link,
+                referer = "",
+                Qualities.P1080.value,
+                true
+            )
+        )
+    }
+
     suspend fun invoke2embed(
         id:  String,
         season: Int? = null,
@@ -561,8 +592,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     for((index, mirror) in mirrors.withIndex()) {
                         callback.invoke(
                             ExtractorLink(
-                                "VadaPav" + " ${index+1}",
-                                "VadaPav" + " ${index+1}",
+                                "[VadaPav" + " ${index+1}]",
+                                "[VadaPav" + " ${index+1}] ${it.text()}",
                                 mirror + it.attr("href"),
                                 referer = "",
                                 quality = getIndexQuality(quality),
@@ -572,7 +603,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
         }
-        else {
+        else if(season == null) {
             val doc = app.get(href).document
             doc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(.mkv|.mp4))").forEach {
                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
@@ -581,7 +612,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         ExtractorLink(
                             "[VadaPav" + " ${index+1}]",
-                            "[VadaPav" + " ${index+1}]",
+                            "[VadaPav" + " ${index+1}] ${it.text()}",
                             mirror + it.attr("href"),
                             referer = "",
                             quality = getIndexQuality(quality),
@@ -589,6 +620,9 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
             }
+        }
+        else {
+            //Nothing
         }
     }
 
@@ -1030,5 +1064,37 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
         }
+    }
+    suspend fun invokeAutoembedDrama(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season == null) {
+            val episodeSlug = "$title $year episode 1".createSlug()
+            "$AutoembedDramaAPI/embed/${episodeSlug}"
+        }
+        else {
+            val seasonText = if(season == 1) "" else "season $season"
+            val episodeSlug = "$title $seasonText $year episode $episode".createSlug()
+            "$AutoembedDramaAPI/embed/${episodeSlug}"
+        }
+
+        val document = app.get(url).document
+        val regex = Regex("""file:\s*"(https?:\/\/[^"]+)"""")
+        val link = regex.find(document.toString())?.groupValues?.get(1) ?: ""
+        callback.invoke(
+            ExtractorLink(
+                "AutoembedDrama",
+                "AutoembedDrama",
+                link,
+                "",
+                Qualities.P1080.value,
+                isM3u8 = true,
+            )
+        )
     }
 }

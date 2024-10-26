@@ -1,5 +1,4 @@
 package com.megix
-
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
@@ -8,11 +7,11 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import okhttp3.FormBody
 
-class Movies4uProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.movies4u.com.vc"
-    override var name = "Movies4u"
+
+class Cinevood : MainAPI() { // all providers must be an instance of MainAPI
+    override var mainUrl = "https://1cinevood.skin"
+    override var name = "Cinevood"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
@@ -23,68 +22,64 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         TvType.AsianDrama,
         TvType.Anime
     )
-
+    
+ private fun toResult(post: Element): SearchResponse {
+    val url = post.select("a").attr("href")
+    val title = post.select("a").attr("title").toString()
+    val imageUrl= post.select("img").attr("src")
+    // Log.d("post", post.toString())
+    // val quality = post.select(".video-label").text()
+    return newMovieSearchResponse(title, url, TvType.Movie) {
+        this.posterUrl = imageUrl
+    }
+ }
     override val mainPage = mainPageOf(
-        "$mainUrl/page/" to "Home",
-        "$mainUrl/category/bollywood/page/" to "Bollywood",
-        "$mainUrl/category/web-series/page/" to "Web Series",
-        "$mainUrl/category/anime/page/" to "Anime"
-    )
-
+        "" to "Latest",
+        "web-series" to "Series",
+        "bollywood" to "Bollywood",
+        "hollywood" to "Hollywood"
+        )
+        
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data + page).document
-        val home = document.select("article.post").mapNotNull {
-            it.toSearchResult()
+        val url =if(page==1) "$mainUrl/${request.data}/" else  "$mainUrl/${request.data}/page/$page/" 
+        val document = app.get(url).document
+        val home = document.select("article.latestpost").mapNotNull {
+            toResult(it)
         }
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("h3 > a")?.text().toString()
-        val href = fixUrl(this.selectFirst("figure > a")?.attr("href").toString())
-        val posterUrl = this.selectFirst("figure > a > img")?.attr("src").toString()
-        val quality = getQualityFromString(this.selectFirst("figure > a > span.video-label")?.text().toString())
-    
-        return newMovieSearchResponse(title, href, TvType.Movie) {
-            this.posterUrl = posterUrl
-            this.quality = quality
-        }
-    }
-
     override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
+        val document = app.get("$mainUrl/?s=$query").document
 
-        for (i in 1..5) {
-            val document = app.get("$mainUrl/search.php?q=$query&page=$i/").document
-
-            val results = document.select("article.post").mapNotNull { it.toSearchResult() }
-
-            if (results.isEmpty()) {
-                break
-            }
-            searchResponse.addAll(results)
+        return document.select("article.latestpost").mapNotNull {
+            toResult(it)
         }
-
-        return searchResponse
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
-        var title = document.selectFirst("title")?.text().toString()
-        var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
-
-        val checkType = document.selectFirst("h3 > strong")?.text().toString()
-        val imdbUrl = document.selectFirst("strong > a:matches((?i)(IMDb))")?.attr("href")
-        var description = ""
-
-        var tvtype = if (checkType.contains("Movie")) {
-            "movie"
-        } else {
+        
+      val document = app.get(url).document
+        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        val ogTitle = title
+        var description = document.select("span#summary")?.text().toString().removePrefix("Summary:")
+        var posterUrl = document.select("meta[property^=og:image]")?.attr("content")
+        
+        	
+        	
+        	val seasonRegex = """(?i)season\s*\d+""".toRegex()
+      val imdbUrl = document.selectFirst("a:contains(IMDb)") ?. attr("href")
+      
+        val tvtype = if (document.selectFirst("div.thecategory").toString().contains("web-series") &&  document.select("a[href^=https://hubcloud]").isNullOrEmpty()) {
             "series"
+        } else {
+            "movie"
         }
+        
+        
 
         val responseData = if (!imdbUrl.isNullOrEmpty()) {
             val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
@@ -104,7 +99,7 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         var genre: List<String> = emptyList()
         var imdbRating: String = ""
         var year: String = ""
-        var background: String = posterUrl
+        var background: String? = posterUrl
 
         if(responseData != null) {
             description = responseData.meta?.description ?: description
@@ -118,23 +113,63 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         }
 
         if(tvtype == "series") {
+            if(title != ogTitle) {
+                val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
+                if (checkSeason == null) {
+                    val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
+                    if(seasonText != null) {
+                        title = title + " " + seasonText.toString()
+                    }
+                }
+            }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
-            var buttons = document.select("a:has(button.btn.btn-sm.btn-outline:matches((?i)(V-Cloud)))")
-            if(buttons.isEmpty()) {
-                buttons = document.select("a:has(button.dwd-button)")
-            }
+            var buttons = document.select("a[href^=https://linkbuzz]")
+
+
             buttons.forEach { button ->
-                val titleElement = button.parent()?.previousElementSibling()?.text()
+                val titleElement = button.parent() ?. previousElementSibling()
+                val mainTitle = titleElement ?. text() ?: ""
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(titleElement.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
-                val doc = app.get(button.attr("href")).document
-                val episodes = doc.select("button.btn.btn-sm.btn-outline:matches((?i)(VCloud))")
+                val realSeason = realSeasonRegex.find(mainTitle.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
+                val episodeLink = button.attr("href") ?: ""
+
+                val doc = app.get(episodeLink).document
+                var elements = doc.select("a[href^=https://hubcloud]")
+                if(elements.isEmpty()) {
+                    elements = doc.select("a:matches((?i)(HubCloud|GDFlix))")
+                }
                 var e = 1
 
-                episodes.forEach { element ->
-                    val epUrl = element.parent()?.attr("href")
-                    if(epUrl != null) {
+                elements.forEach { element ->
+                    if(element.tagName() == "span") {
+                        val titleTag = element.parent()
+                        var hTag = titleTag?.nextElementSibling()
+                        e = Regex("""Ep(\d{2})""").find(element.toString())?.groups?.get(1)?.value ?.toIntOrNull() ?: e
+                        while (
+                            hTag != null &&
+                            (
+                                hTag.text().contains("HubCloud", ignoreCase = true) ||
+                                hTag.text().contains("gdflix", ignoreCase = true)
+                            )
+                        ) {
+                            val aTag = hTag.selectFirst("a")
+                            val epUrl = aTag?.attr("href").toString()
+                            val key = Pair(realSeason, e)
+                            if (episodesMap.containsKey(key)) {
+                                val currentList = episodesMap[key] ?: emptyList()
+                                val newList = currentList.toMutableList()
+                                newList.add(epUrl)
+                                episodesMap[key] = newList
+                            } else {
+                                episodesMap[key] = mutableListOf(epUrl)
+                            }
+                            hTag = hTag.nextElementSibling()
+                        }
+                        e++
+                    }
+                    else {
+                        val epUrl = element.attr("href")
                         val key = Pair(realSeason, e)
                         if (episodesMap.containsKey(key)) {
                             val currentList = episodesMap[key] ?: emptyList()
@@ -179,14 +214,15 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
             }
         }
         else {
-            val data = document.select("a:has(button.dwd-button)").mapNotNull {
-                val doc = app.get(it.attr("href")).document  
-                val link = doc.selectFirst("p > a:matches((?i)(VCloud))")?.attr("href") ?: ""
-                EpisodeLink(
-                    link
-                )
+            val buttons = document.select("a[href^=https://hubcloud]")
+            val data = buttons.mapNotNull{ button ->
+             
+                    val source = button.attr("href")
+                    EpisodeLink(
+                        source
+                    )
+                
             }
-
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
                 this.plot = description
@@ -200,11 +236,6 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         }
     }
 
-    private fun getIndexQuality(str: String?): Int {
-        return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
-            ?: Qualities.Unknown.value
-    }
-
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
@@ -212,35 +243,9 @@ class Movies4uProvider : MainAPI() { // all providers must be an instance of Mai
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
-        sources.mapNotNull {
+        sources.amap {
             val source = it.source
-            val doc = app.get(source).document
-            val quality = doc.selectFirst("tbody > tr > td:matches((?i)(Name:))")?.nextElementSibling()?.text() ?: ""
-            val size = doc.selectFirst("tbody > tr > td:matches((?i)(Size))")?.nextElementSibling()?.text() ?: ""
-            val value = doc.selectFirst("form > input")?.attr("value") ?: ""
-            callback.invoke(
-                ExtractorLink(
-                    "Movies4u",
-                    "Movies4u $size",
-                    value,
-                    "",
-                    getIndexQuality(quality),
-                )
-            )
-            val body = FormBody.Builder().add("hash", value).build()
-            val doc2 = app.post(source, requestBody = body).document
-            doc2.select("a:matches((?i)(Download Server))").mapNotNull { aTag->
-                val link = aTag.attr("href")
-                callback.invoke(
-                    ExtractorLink(
-                        "Movies4u",
-                        "Movies4u $size",
-                        link,
-                        "",
-                        getIndexQuality(quality),
-                    )
-                )
-            }
+            loadExtractor(source, subtitleCallback, callback)
         }
         return true   
     }

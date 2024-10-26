@@ -1,4 +1,4 @@
-version = 10
+version = 11
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://world4ufree.boston/wp-content/uploads/2021/01/world4ufree-Logo-1.png"
+    iconUrl = "https://world4ufree.joburg/wp-content/uploads/2021/01/world4ufree-Logo-1.png"
 }

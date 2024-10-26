@@ -30,6 +30,8 @@ import com.megix.CineStreamExtractors.invokeVidSrcNL
 import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokeFilmyxy
+import com.megix.CineStreamExtractors.invokeAutoembedDrama
+import com.megix.CineStreamExtractors.invokeRar
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -40,24 +42,26 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     companion object {
-        const val vegaMoviesAPI = "https://vegamovies.foo"
-        const val rogMoviesAPI = "https://rogmovies.top"
+        const val vegaMoviesAPI = "https://vegamovies.si"
+        const val rogMoviesAPI = "https://rogmovies.fun"
         const val MovieDrive_API="https://moviesdrive.world"
-        const val topmoviesAPI = "https://topmovies.mov"
-        const val MoviesmodAPI = "https://moviesmod.day"
+        const val topmoviesAPI = "https://topmovies.icu"
+        const val MoviesmodAPI = "https://moviesmod.bid"
         const val Full4MoviesAPI = "https://www.full4movies.my"
         const val VadapavAPI = "https://vadapav.mov"
         const val netflixAPI = "https://iosmirror.cc"
-        const val W4UAPI = "https://world4ufree.contact"
+        const val W4UAPI = "https://world4ufree.joburg"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.mov"
+        const val uhdmoviesAPI = "https://uhdmovies.icu"
         const val myConsumetAPI = BuildConfig.CONSUMET_API
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
+        const val AutoembedDramaAPI = "https://asian-drama.autoembed.cc"
+        const val RarAPI = "https://rar.to"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -288,6 +292,15 @@ open class CineStreamProvider : MainAPI() {
                 )
             },
             {
+                invokeRar(
+                    res.title,
+                    firstYear,
+                    res.season,
+                    res.episode,
+                    callback
+                )
+            },
+            {
                 if(!res.isAnime) invokeFull4Movies(
                     res.title,
                     year,
@@ -441,6 +454,16 @@ open class CineStreamProvider : MainAPI() {
                     callback,
                     subtitleCallback
                 )   
+            },
+            {
+                if(res.isAsian) invokeAutoembedDrama(
+                    res.title,
+                    year,
+                    res.season,
+                    res.episode,
+                    subtitleCallback,
+                    callback
+                )
             },
         )
         return true
