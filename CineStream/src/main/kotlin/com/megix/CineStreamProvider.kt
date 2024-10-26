@@ -43,7 +43,7 @@ open class CineStreamProvider : MainAPI() {
     val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     companion object {
         const val vegaMoviesAPI = "https://vegamovies.si"
-        const val rogMoviesAPI = "https://rogmovies.top"
+        const val rogMoviesAPI = "https://rogmovies.fun"
         const val MovieDrive_API="https://moviesdrive.world"
         const val topmoviesAPI = "https://topmovies.icu"
         const val MoviesmodAPI = "https://moviesmod.bid"
