@@ -28,7 +28,7 @@ class Cinedoze : MainAPI() {
     override val mainPage = mainPageOf(
         "movies" to "latest",
         "genre/tv-series-shows" to "Series",
-        "Sports" to "Sports",
+        "genre/sports" to "Sports",
         "genre/hindi-dubbed" to "Hindi Dubbed"
     )
 
