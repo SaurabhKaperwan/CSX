@@ -101,16 +101,15 @@ class Cinedoze : MainAPI() {
         //val directUrl = getBaseUrl(request.url)
         val title =
             document.selectFirst("div.data > h1")?.text()?.trim().toString()
-        var posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        if (posterUrl.isNullOrEmpty()) {
-                posterUrl = fixUrlNull(document.select("div.poster img").attr("src"))
-        }
+        var background= fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        var posterUrl = fixUrlNull(document.select("div.poster img").attr("src"))
+        
         val description = document.select("div.wp-content > p").text().trim()
          
          return newMovieLoadResponse(title, url, TvType.Movie, url) {
             this.posterUrl = posterUrl
             this.plot=description 
-            //this.plot=plot
+            this.backgroundPosterUrl=background
             
         }
         }
