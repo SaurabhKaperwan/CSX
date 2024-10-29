@@ -144,15 +144,16 @@ class Cinedoze : MainAPI() {
 				    ).document
 		   // Log.d("doc:",doc1.toString())
 		    //Log.d("test:1",doc1.select("a").toString())
-		   val source = doc1.select("a[href^=https://hubcloud]").attr("href")
+		   val source = doc1.select("a.break-words")
+		       source.map{
                   // Log.d("source:",source)
 			    loadExtractor(
-			        source,
+			        it.attr("href"),
 			        "$directUrl/",
 			        subtitleCallback,
 			        callback
 			    )
-       
+               }
             }
         return true
         }
