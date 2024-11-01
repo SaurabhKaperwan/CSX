@@ -12,8 +12,65 @@ import java.net.URLEncoder
 import okhttp3.FormBody
 import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
+import com.lagradost.cloudstream3.argamap
 
 object CineStreamExtractors : CineStreamProvider() {
+
+    suspend fun invokeAnimes(
+        malId: Int? = null,
+        aniId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        //val Season = app.get("$jikanAPI/anime/${malId ?: return}").parsedSafe<JikanResponse>()?.data?.season ?:""
+        val malsync = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
+            .parsedSafe<MALSyncResponses>()?.sites
+        val zoroIds = malsync?.zoro?.keys?.map { it }
+        val animepahe = malsync?.animepahe?.firstNotNullOf { it.value["url"] }
+        val animepahetitle = malsync?.animepahe?.firstNotNullOf { it.value["title"] }
+
+        argamap(
+            {
+                invokeHianime(zoroIds, episode, subtitleCallback, callback)
+            },
+            {
+                invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
+            }
+        )
+
+    }
+
+    private suspend fun invokeAnimepahe(
+        url: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf("Cookie" to "__ddg2_=1234567890")
+        val id = app.get(url ?: "", headers).document.selectFirst("meta[property=og:url]")
+            ?.attr("content").toString().substringAfterLast("/")
+        val animeData =
+            app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
+                .parsedSafe<animepahe>()?.data
+        val session = animeData?.find { it.episode == episode }?.session ?: ""
+        app.get("$animepaheAPI/play/$id/$session", headers).document.select("div.dropup button")
+            .map {
+                val quality = it.attr("data-resolution").toString()
+                val href = it.attr("data-src")
+                if (href.contains("kwik.si")) {
+                    loadCustomTagExtractor(
+                        "Animepahe [SUB] $quality",
+                        href,
+                        "",
+                        subtitleCallback,
+                        callback,
+                        getIndexQuality(quality)
+                    )
+                }
+            }
+    }
 
     suspend fun invokeRar(
         title: String,
@@ -70,41 +127,41 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeFilmyxy(
-        id: String,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val url = if(season != null && episode != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
-        val json = app.get(url, timeout = 20L).text
-        val data = parseJson<NovaVideoData>(json) ?: return
-        for (stream in data.stream) {
-            for ((quality, details) in stream.qualities) {
-                callback.invoke(
-                    ExtractorLink(
-                        "Filmyxy",
-                        "Filmyxy",
-                        details.url,
-                        "",
-                        getQualityFromName(quality),
-                        INFER_TYPE,
-                    )
-                )
-            }
-        }
-        for (stream in data.stream) {
-            for (caption in stream.captions) {
-                subtitleCallback.invoke(
-                    SubtitleFile(
-                        caption.language,
-                        caption.url
-                    )
-                )
-            }
-        }
-    }
+    // suspend fun invokeFilmyxy(
+    //     id: String,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     val url = if(season != null && episode != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
+    //     val json = app.get(url, timeout = 20L).text
+    //     val data = parseJson<NovaVideoData>(json) ?: return
+    //     for (stream in data.stream) {
+    //         for ((quality, details) in stream.qualities) {
+    //             callback.invoke(
+    //                 ExtractorLink(
+    //                     "Filmyxy",
+    //                     "Filmyxy",
+    //                     details.url,
+    //                     "",
+    //                     getQualityFromName(quality),
+    //                     INFER_TYPE,
+    //                 )
+    //             )
+    //         }
+    //     }
+    //     for (stream in data.stream) {
+    //         for (caption in stream.captions) {
+    //             subtitleCallback.invoke(
+    //                 SubtitleFile(
+    //                     caption.language,
+    //                     caption.url
+    //                 )
+    //             )
+    //         }
+    //     }
+    // }
 
     suspend fun invokeMovies(
         tmdbId: Int? = null,
@@ -130,7 +187,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeVidSrcNL(
-        id: Int,
+        id: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
@@ -155,96 +212,96 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeAstra(
-        title: String,
-        imdb_id: String,
-        tmdb_id: Int,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val query = if (season != null && episode != null) {
-            """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"show","season":"$season","episode":"$episode"}"""
-        } else {
-            """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
-        }
-        val headers = mapOf("Origin" to "https://www.vidbinge.com")
-        val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
-        val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=astra", headers = headers).text
-        val data = parseJson<WHVX>(json) ?: return
-        val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
-        val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=astra", headers = headers).text
-        val data2 = parseJson<AstraQuery>(json2) ?: return
-        data2.stream.forEach {
-            callback.invoke(
-                ExtractorLink(
-                    "Astra",
-                    "Astra",
-                    it.playlist,
-                    "",
-                    Qualities.Unknown.value,
-                    INFER_TYPE
-                )
-            )    
-        }
-    }
+    // suspend fun invokeAstra(
+    //     title: String,
+    //     imdb_id: String,
+    //     tmdb_id: Int? = null,
+    //     year: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     val query = if (season != null && episode != null) {
+    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"show","season":"$season","episode":"$episode"}"""
+    //     } else {
+    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
+    //     }
+    //     val headers = mapOf("Origin" to "https://www.vidbinge.com")
+    //     val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
+    //     val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=astra", headers = headers).text
+    //     val data = parseJson<WHVX>(json) ?: return
+    //     val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
+    //     val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=astra", headers = headers).text
+    //     val data2 = parseJson<AstraQuery>(json2) ?: return
+    //     data2.stream.forEach {
+    //         callback.invoke(
+    //             ExtractorLink(
+    //                 "Astra",
+    //                 "Astra",
+    //                 it.playlist,
+    //                 "",
+    //                 Qualities.Unknown.value,
+    //                 INFER_TYPE
+    //             )
+    //         )    
+    //     }
+    // }
 
-    suspend fun invokeNova(
-        title: String,
-        imdb_id: String,
-        tmdb_id: Int,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val query = if (season != null && episode != null) {
-            """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"show","season":"$season","episode":"$episode"}"""
-        } else {
-            """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
-        }
-        val headers = mapOf(
-            "Origin" to "https://www.vidbinge.com",
-        )
+    // suspend fun invokeNova(
+    //     title: String,
+    //     imdb_id: String,
+    //     tmdb_id: Int? = null,
+    //     year: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     val query = if (season != null && episode != null) {
+    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"show","season":"$season","episode":"$episode"}"""
+    //     } else {
+    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
+    //     }
+    //     val headers = mapOf(
+    //         "Origin" to "https://www.vidbinge.com",
+    //     )
 
-        val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
-        val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=nova", headers = headers).text
-        val data = parseJson<WHVX>(json) ?: return
-        val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
-        val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=nova", headers = headers).text
-        val data2 = parseJson<NovaVideoData>(json2) ?: return
-        for (stream in data2.stream) {
-            for ((quality, details) in stream.qualities) {
-                callback.invoke(
-                    ExtractorLink(
-                        "Nova",
-                        "Nova",
-                        details.url,
-                        "",
-                        getQualityFromName(quality),
-                        INFER_TYPE,
-                    )
-                )
-            }
-        }
+    //     val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
+    //     val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=nova", headers = headers).text
+    //     val data = parseJson<WHVX>(json) ?: return
+    //     val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
+    //     val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=nova", headers = headers).text
+    //     val data2 = parseJson<NovaVideoData>(json2) ?: return
+    //     for (stream in data2.stream) {
+    //         for ((quality, details) in stream.qualities) {
+    //             callback.invoke(
+    //                 ExtractorLink(
+    //                     "Nova",
+    //                     "Nova",
+    //                     details.url,
+    //                     "",
+    //                     getQualityFromName(quality),
+    //                     INFER_TYPE,
+    //                 )
+    //             )
+    //         }
+    //     }
 
-        for (stream in data2.stream) {
-            for (caption in stream.captions) {
-                subtitleCallback.invoke(
-                    SubtitleFile(
-                        caption.language,
-                        caption.url
-                    )
-                )
-            }
-        }
-    }
+    //     for (stream in data2.stream) {
+    //         for (caption in stream.captions) {
+    //             subtitleCallback.invoke(
+    //                 SubtitleFile(
+    //                     caption.language,
+    //                     caption.url
+    //                 )
+    //             )
+    //         }
+    //     }
+    // }
 
     suspend fun invokeAutoembed(
-        id: Int,
+        id: Int?,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
@@ -1096,5 +1153,54 @@ object CineStreamExtractors : CineStreamProvider() {
                 isM3u8 = true,
             )
         )
+    }
+
+    private suspend fun invokeHianime(
+        animeIds: List<String?>? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "X-Requested-With" to "XMLHttpRequest",
+        )
+        animeIds?.apmap { id ->
+            val episodeId = app.get(
+                "$hianimeAPI/ajax/v2/episode/list/${id ?: return@apmap}",
+                headers = headers
+            ).parsedSafe<HianimeResponses>()?.html?.let {
+                Jsoup.parse(it)
+            }?.select("div.ss-list a")
+                ?.find { it.attr("data-number") == "${episode ?: 1}" }
+                ?.attr("data-id")
+
+            val servers = app.get(
+                "$hianimeAPI/ajax/v2/episode/servers?episodeId=${episodeId ?: return@apmap}",
+                headers = headers
+            ).parsedSafe<HianimeResponses>()?.html?.let { Jsoup.parse(it) }
+                ?.select("div.item.server-item")?.map {
+                    Triple(
+                        it.text(),
+                        it.attr("data-id"),
+                        it.attr("data-type"),
+                    )
+                }
+
+            servers?.map servers@{ server ->
+                val iframe = app.get(
+                    "$hianimeAPI/ajax/v2/episode/sources?id=${server.second ?: return@servers}",
+                    headers = headers
+                ).parsedSafe<HianimeResponses>()?.link
+                    ?: return@servers
+                val audio = if (server.third == "sub") "Raw" else "English Dub"
+                loadCustomTagExtractor(
+                    "HiAnime ${server.first} [$audio]",
+                    iframe,
+                    "$hianimeAPI/",
+                    subtitleCallback,
+                    callback,
+                )
+            }
+        }
     }
 }

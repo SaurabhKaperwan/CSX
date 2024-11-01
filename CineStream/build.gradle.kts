@@ -1,12 +1,14 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 22
+version = 23
 
 android {
     defaultConfig {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
+        buildConfigField("String", "ANILIST_TRENDING", "\"${properties.getProperty("ANILIST_TRENDING")}\"")
+        buildConfigField("String", "ANILIST_POPULAR", "\"${properties.getProperty("ANILIST_POPULAR")}\"")
     }
 }
 
