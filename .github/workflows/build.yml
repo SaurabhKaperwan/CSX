@@ -44,9 +44,13 @@ jobs:
       - name: Access Secrets
         env:
           CONSUMET_API: ${{ secrets.CONSUMET_API }}
+          ANILIST_TRENDING: ${{ secrets.ANILIST_TRENDING }}
+          ANILIST_POPULAR: ${{ secrets.ANILIST_POPULAR }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
+          echo ANILIST_TRENDING=$ANILIST_TRENDING >> local.properties
+          echo ANILIST_POPULAR=$ANILIST_POPULAR >> local.properties
 
       - name: Build Plugins
         run: |
