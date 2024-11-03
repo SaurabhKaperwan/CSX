@@ -35,6 +35,9 @@ import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokeAutoembedDrama
 import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
+import com.megix.CineStreamExtractors.invokeVite
+import com.megix.CineStreamExtractors.invokeMultiAutoembed
+import com.megix.CineStreamExtractors.invokeMultimovies
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -45,8 +48,9 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     val kitsu_url = "https://anime-kitsu.strem.fun"
+    val kitsu_stremio_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     val haglund_url = "https://arm.haglund.dev/api/v2"
-    //val jikan_url = "https://api.jikan.moe/v4"
+    val jikanAPI = "https://api.jikan.moe/v4"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
 
@@ -72,6 +76,9 @@ open class CineStreamProvider : MainAPI() {
         const val RarAPI = "https://rar.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
+        const val viteAPI = "https://viet.autoembed.cc"
+        const val multimoviesAPI = "https://multimovies.bond"
+        const val anitaku = "https://anitaku.pe"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -96,15 +103,15 @@ open class CineStreamProvider : MainAPI() {
         "$cyberflix_url/catalog/Disney%20Plus/disney_plus.new.series.json" to "Disney Plus Series",
         "$cyberflix_url/catalog/Asian/asian.new.movie.json" to "New Asian Movie",
         "$cyberflix_url/catalog/Asian/asian.new.series.json" to "New Asian Series",
-        BuildConfig.ANILIST_POPULAR to "AniList Popular",
-        BuildConfig.ANILIST_TRENDING to "AniList Trending",
+        """$kitsu_stremio_url/{ "kitsu_top-airing": "on" }/catalog/anime/kitsu_top-airing.json""" to "Kitsu Top Airing",
+        """$kitsu_stremio_url/{ "anilist_trending-now": "on" }/catalog/anime/anilist_trending-now.json""" to "Anilist Trending Now"
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val metaType = if(request.name.contains("AniList")) "kitsu" else "cinemeta"
+        val metaType = if(request.name.contains("Kitsu") || request.name.contains("Anilist")) "kitsu" else "cinemeta"
         val json = app.get(request.data).text
 
         val movies = parseJson<Home>(json)
@@ -207,7 +214,7 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year?.toIntOrNull() ?: releaseInfo.toIntOrNull()
+                this.year = year ?.toIntOrNull() ?: releaseInfo.toIntOrNull() ?: year.substringBefore("-").toIntOrNull()
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                 addActors(cast)
@@ -254,7 +261,7 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull()
+                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull() ?: year.substringBefore("-").toIntOrNull()
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                 addActors(cast)
@@ -273,244 +280,277 @@ open class CineStreamProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val res = parseJson<LoadLinksData>(data)
-        val year = if(res.tvtype == "movie") res.year.toIntOrNull() else res.firstAired?.substringBefore("-")?.toIntOrNull()
+        var year = if(res.tvtype == "movie") res.year.toIntOrNull() else res.firstAired?.substringBefore("-")?.toIntOrNull()
         val firstYear = if(res.tvtype == "movie") res.year.toIntOrNull() else res.year.substringBefore("–").toIntOrNull()
-        argamap(
-            {
-                if(!res.isBollywood && !res.isKitsu) invokeVegamovies(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(res.isBollywood && !res.isKitsu) invokeRogmovies(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(res.isBollywood && !res.isKitsu) invokeTopMovies(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isBollywood && !res.isKitsu) invokeMoviesmod(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeMoviesdrive(
-                    res.title,
-                    res.season,
-                    res.episode,
-                    year,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeRar(
-                    res.title,
-                    firstYear,
-                    res.season,
-                    res.episode,
-                    callback
-                )
-            },
-            {
-                if(!res.isAnime && !res.isKitsu) invokeFull4Movies(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeVadaPav(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeNetflix(
-                    res.title,
-                    firstYear,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invokePrimeVideo(
-                    res.title,
-                    firstYear,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(res.isAsian && !res.isKitsu) invokeDramaCool(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isAnime && !res.isKitsu) invokeW4U(
-                    res.title,
-                    year,
-                    res.id,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeWHVXSubs(
-                    res.id,
-                    res.season,
-                    res.episode,
-                    subtitleCallback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeWYZIESubs(
-                    res.id,
-                    res.season,
-                    res.episode,
-                    subtitleCallback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeAutoembed(
-                    res.tmdbId,
-                    res.season,
-                    res.episode,
-                    callback,
-                    subtitleCallback
-                )
-            },
-            // {
-            //     if(!res.isKitsu) invokeNova(
-            //         res.title,
-            //         res.id,
-            //         res.tmdbId,
-            //         firstYear,
-            //         res.season,
-            //         res.episode,
-            //         callback,
-            //         subtitleCallback
-            //     )
-            // },
-            // {
-            //     if(!res.isKitsu) invokeAstra(
-            //         res.title,
-            //         res.id,
-            //         res.tmdbId,
-            //         firstYear,
-            //         res.season,
-            //         res.episode,
-            //         callback,
-            //         subtitleCallback
-            //     )
-            // },
-            {
-                if(!res.isKitsu) invokeUhdmovies(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    callback,
-                    subtitleCallback
-                )
-            },
-            {
-                if(!res.isKitsu) invokeVidSrcNL(
-                    res.tmdbId,
-                    res.season,
-                    res.episode,
-                    callback,
-                )
-            },
-            {
-                if (!res.isAnime && !res.isKitsu) invokeMovies(
-                    res.tmdbId,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(!res.isKitsu) invoke2embed(
-                    res.id,
-                    res.season,
-                    res.episode,
-                    callback,
-                    subtitleCallback
-                )
-            },
-            // {
-            //     if(!res.isKitsu) invokeFilmyxy(
-            //         res.id,
-            //         res.season,
-            //         res.episode,
-            //         callback,
-            //         subtitleCallback
-            //     )   
-            // },
-            {
-                if(res.isAsian && !res.isKitsu) invokeAutoembedDrama(
-                    res.title,
-                    year,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(res.isKitsu) invokeAnimes(
-                    res.malId,
-                    res.anilistId,
-                    res.season,
-                    res.episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-        )
+        if(res.isKitsu) {
+            year = res.year.toIntOrNull() ?: res.year.substringBefore("-").toIntOrNull()
+            argamap(
+                {
+                    invokeAnimes(
+                        res.malId,
+                        res.anilistId,
+                        res.season,
+                        res.episode,
+                        year,
+                        subtitleCallback,
+                        callback
+                    )
+                }
+            )
+        }
+        else {
+            argamap(
+                {
+                    if(!res.isBollywood) invokeVegamovies(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeMultiAutoembed(
+                        res.tmdbId,
+                        res.season,
+                        res.episode,
+                        callback
+                    )   
+                },
+                {
+                    invokeVite(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback
+                    )
+                },
+                {
+                    if(res.isBollywood) invokeRogmovies(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    if(res.isBollywood) invokeTopMovies(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    if(!res.isBollywood) invokeMoviesmod(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeMoviesdrive(
+                        res.title,
+                        res.season,
+                        res.episode,
+                        year,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeRar(
+                        res.title,
+                        firstYear,
+                        res.season,
+                        res.episode,
+                        callback
+                    )
+                },
+                {
+                    if(!res.isAnime) invokeFull4Movies(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeVadaPav(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeMultimovies(
+                        multimoviesAPI,
+                        res.title,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeNetflix(
+                        res.title,
+                        firstYear,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokePrimeVideo(
+                        res.title,
+                        firstYear,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    if(res.isAsian) invokeDramaCool(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    if(!res.isAnime) invokeW4U(
+                        res.title,
+                        year,
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeWHVXSubs(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback
+                    )
+                },
+                {
+                    invokeWYZIESubs(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback
+                    )
+                },
+                {
+                    invokeAutoembed(
+                        res.tmdbId,
+                        res.season,
+                        res.episode,
+                        callback,
+                    )
+                },
+                // {
+                //     invokeNova(
+                //         res.title,
+                //         res.id,
+                //         res.tmdbId,
+                //         firstYear,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )
+                // },
+                // {
+                //     invokeAstra(
+                //         res.title,
+                //         res.id,
+                //         res.tmdbId,
+                //         firstYear,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )
+                // },
+                {
+                    invokeUhdmovies(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        callback,
+                        subtitleCallback
+                    )
+                },
+                {
+                    if(!res.isAnime) invokeVidSrcNL(
+                        res.tmdbId,
+                        res.season,
+                        res.episode,
+                        callback,
+                    )
+                },
+                {
+                    if (!res.isAnime) invokeMovies(
+                        res.tmdbId,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invoke2embed(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback,
+                        subtitleCallback
+                    )
+                },
+                // {
+                //     invokeFilmyxy(
+                //         res.id,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )   
+                // },
+                {
+                    if(res.isAsian) invokeAutoembedDrama(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+            )
+        }
         return true
     }
 

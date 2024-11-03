@@ -94,6 +94,34 @@ suspend fun loadCustomTagExtractor(
     }
 }
 
+suspend fun loadCustomExtractor(
+    name: String? = null,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int? = null,
+) {
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        callback.invoke(
+            ExtractorLink(
+                name ?: link.source,
+                name ?: link.name,
+                link.url,
+                link.referer,
+                when {
+                    link.name == "VidSrc" -> Qualities.P1080.value
+                    link.type == ExtractorLinkType.M3U8 -> link.quality
+                    else -> quality ?: link.quality
+                },
+                link.type,
+                link.headers,
+                link.extractorData
+            )
+        )
+    }
+}
+
 suspend fun bypassHrefli(url: String): String? {
     fun Document.getFormUrl(): String {
         return this.select("form#landing").attr("action")

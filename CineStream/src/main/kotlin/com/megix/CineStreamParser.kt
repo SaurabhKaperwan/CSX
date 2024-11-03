@@ -2,6 +2,28 @@ package com.megix
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
+data class JikanExternal(
+    @JsonProperty("name") val name: String? = null,
+    @JsonProperty("url") val url: String? = null,
+)
+
+data class JikanData(
+    @JsonProperty("title") val title: String? = null,
+    @JsonProperty("external") val external: ArrayList<JikanExternal>? = arrayListOf(),
+    val season: String,
+)
+
+data class JikanResponse(
+    @JsonProperty("data") val data: JikanData? = null,
+)
+
+
+data class ResponseHash(
+    @JsonProperty("embed_url") val embed_url: String,
+    @JsonProperty("key") val key: String? = null,
+    @JsonProperty("type") val type: String? = null,
+)
+
 data class animepahe(
     val total: Long,
     @JsonProperty("per_page")

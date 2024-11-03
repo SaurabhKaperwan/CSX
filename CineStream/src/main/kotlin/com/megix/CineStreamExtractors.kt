@@ -13,21 +13,165 @@ import okhttp3.FormBody
 import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
 import com.lagradost.cloudstream3.argamap
+import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
+
+    suspend fun invokeAnitaku(
+        title: String? = null,
+        Season: String? = null,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = anitaku
+        val filterUrl = "$url/filter.html?keyword=${title}&year[]=${year}&season[]=$Season"
+        val filterRes = app.get(filterUrl).document
+        val results = filterRes.select("ul.items > li > p.name > a").map { it.attr("href") }
+        results.amap {
+            val subDub = if (it.contains("-dub")) "Dub" else "Sub"
+            val epUrl = url.plus(it.replace("category/", "")).plus("-episode-${episode}")
+            val epRes = app.get(epUrl).document
+            epRes.select("div.anime_muti_link > ul > li").forEach {
+
+                val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
+                val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
+                if(iframe.contains("s3taku"))
+                {
+                    val iv = "3134003223491201"
+                    val secretKey = "37911490979715163134003223491201"
+                    val secretDecryptKey = "54674138327930866480207815084989"
+                    GogoHelper.extractVidstream(
+                        iframe,
+                        "Anitaku Vidstreaming [$subDub]",
+                        callback,
+                        iv,
+                        secretKey,
+                        secretDecryptKey,
+                        isUsingAdaptiveKeys = false,
+                        isUsingAdaptiveData = true
+                    )
+                }
+                else
+                loadCustomExtractor(
+                    "Anitaku $sourcename [$subDub]",
+                    iframe,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
+        }
+    }
+
+    suspend fun invokeMultimovies(
+        apiUrl: String,
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val fixTitle = title.createSlug()
+        val url = if (season == null) {
+            "$apiUrl/movies/$fixTitle"
+        } else {
+            "$apiUrl/episodes/$fixTitle-${season}x${episode}"
+        }
+        val req = app.get(url).document
+        req.select("ul#playeroptionsul li").map {
+            Triple(
+                it.attr("data-post"),
+                it.attr("data-nume"),
+                it.attr("data-type")
+            )
+        }.amap { (id, nume, type) ->
+            if (!nume.contains("trailer")) {
+                val source = app.post(
+                    url = "$apiUrl/wp-admin/admin-ajax.php",
+                    data = mapOf(
+                        "action" to "doo_player_ajax",
+                        "post" to id,
+                        "nume" to nume,
+                        "type" to type
+                    ),
+                    referer = url,
+                    headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+                ).parsed<ResponseHash>().embed_url
+                val link = source.substringAfter("\"").substringBefore("\"")
+                when {
+                    !link.contains("youtube") -> {
+                        loadExtractor(link, referer = apiUrl, subtitleCallback, callback)
+                    }
+                    else -> ""
+                }
+            }
+        }
+    }
+
+    suspend fun invokeMultiAutoembed(
+        id: Int?,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season != null && episode != null) "${AutoembedAPI}/embed/oplayer.php?id=${id}&s=${season}&e=${episode}" else "${AutoembedAPI}/embed/oplayer.php?id=${id}"
+        val document = app.get(url).document
+        val regex = Regex("""(?:"title":\s*"([^"]*)",\s*"file":\s*"([^"]*)")""")
+        val matches = regex.findAll(document.toString())
+
+        matches.forEach { match ->
+            val title = match.groups?.get(1)?.value ?: ""
+            val file = match.groups?.get(2)?.value ?: ""
+            callback.invoke(
+                ExtractorLink(
+                    "MultiAutoembed[${title}]",
+                    "MultiAutoembed[${title}]",
+                    file,
+                    referer = "",
+                    quality = Qualities.Unknown.value,
+                    true,
+                )
+            )
+        }
+    }
+
+    suspend fun invokeVite(
+        id: String,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season != null) "$viteAPI/tv/$id/$season/$episode" else "$viteAPI/movie/$id"
+        val str = app.get(url).text
+        val link = Regex("""file:\s*"([^"]+)\"""").find(str)?.groupValues?.get(1) ?: return
+        callback.invoke(
+            ExtractorLink(
+                "Vite",
+                "Vite",
+                link,
+                "",
+                Qualities.P1080.value,
+                true
+            )
+        )
+    }
 
     suspend fun invokeAnimes(
         malId: Int? = null,
         aniId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
+        year: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        //val Season = app.get("$jikanAPI/anime/${malId ?: return}").parsedSafe<JikanResponse>()?.data?.season ?:""
+        val Season = app.get("$jikanAPI/anime/${malId ?: return}").parsedSafe<JikanResponse>()?.data?.season ?:""
         val malsync = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
             .parsedSafe<MALSyncResponses>()?.sites
         val zoroIds = malsync?.zoro?.keys?.map { it }
+        val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":"," ")
         val animepahe = malsync?.animepahe?.firstNotNullOf { it.value["url"] }
         val animepahetitle = malsync?.animepahe?.firstNotNullOf { it.value["title"] }
 
@@ -37,6 +181,9 @@ object CineStreamExtractors : CineStreamProvider() {
             },
             {
                 invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
+            },
+            {
+                invokeAnitaku(zorotitle,Season,year, episode, subtitleCallback, callback)
             }
         )
 
@@ -305,7 +452,6 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val url = if(season != null && episode != null) "${AutoembedAPI}/embed/player.php?id=${id}&s=${season}&e=${episode}" else "${AutoembedAPI}/embed/player.php?id=${id}"
         val document = app.get(url).document
@@ -322,7 +468,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     file,
                     referer = "",
                     quality = Qualities.Unknown.value,
-                    INFER_TYPE,
+                    true,
                 )
             )
         }
