@@ -38,6 +38,7 @@ import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeVite
 import com.megix.CineStreamExtractors.invokeMultiAutoembed
 import com.megix.CineStreamExtractors.invokeMultimovies
+import com.megix.CineStreamExtractors.invokeStreamify
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -50,6 +51,7 @@ open class CineStreamProvider : MainAPI() {
     val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
+    val rotten_url = "https://7a82163c306e-rottentomatoes.baby-beamup.club/catalog"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val jikanAPI = "https://api.jikan.moe/v4"
     companion object {
@@ -61,6 +63,7 @@ open class CineStreamProvider : MainAPI() {
         const val MoviesmodAPI = "https://moviesmod.bid"
         const val Full4MoviesAPI = "https://www.full4movies.my"
         const val VadapavAPI = "https://vadapav.mov"
+        const val stremifyAPI = "https://stremify.hayd.uk/stream"
         const val netflixAPI = "https://iosmirror.cc"
         const val W4UAPI = "https://world4ufree.joburg"
         const val WHVXSubsAPI = "https://subs.whvx.net"
@@ -93,6 +96,8 @@ open class CineStreamProvider : MainAPI() {
         "$mainUrl/top/catalog/series/top" to "Top Series",
         "$mainUrl/imdbRating/catalog/movie/imdbRating" to "Top IMDb Movies",
         "$mainUrl/imdbRating/catalog/series/imdbRating" to "Top IMDb Series",
+        "$rotten_url/series/rtfresh_series" to "Rotten Tomatoes Best Series",
+        "$rotten_url/movie/rtfresh_movie" to "Rotten Tomatoes Best Movies",
         "$cyberflix_url/catalog/Indian/indian.new.movie" to "New Indian Movie",
         "$cyberflix_url/catalog/Indian/indian.new.series" to "New Indian Series",
         "$cyberflix_url/catalog/Netflix/netflix.new.series" to "Netflix Series",
@@ -321,6 +326,14 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeVite(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback
+                    )
+                },
+                {
+                    invokeStreamify(
                         res.id,
                         res.season,
                         res.episode,

@@ -2,6 +2,17 @@ package com.megix
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
+data class StreamifyResponse(
+    val streams: List<Streamify>
+)
+
+data class Streamify(
+    val name: String,
+    val type: String,
+    val url: String,
+    val title: String
+)
+
 data class JikanExternal(
     @JsonProperty("name") val name: String? = null,
     @JsonProperty("url") val url: String? = null,

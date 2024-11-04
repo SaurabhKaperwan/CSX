@@ -17,6 +17,30 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeStreamify(
+        id: String,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season != null) "$stremifyAPI/series/$id:$season:$episode.json" else "$stremifyAPI/movie/$id.json"
+        val json = app.get(url).text
+        val data = tryParseJson<StreamifyResponse>(json) ?: return
+        data.streams.amap {
+            callback.invoke(
+                ExtractorLink(
+                    it.name,
+                    "[${it.name}] ${it.title}",
+                    it.url,
+                    "",
+                    Qualities.Unknown.value,
+                    INFER_TYPE,
+                )
+            )
+        }
+    }
+
+
     suspend fun invokeAnitaku(
         title: String? = null,
         Season: String? = null,
