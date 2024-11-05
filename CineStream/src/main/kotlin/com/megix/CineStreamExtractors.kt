@@ -126,7 +126,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val link = source.substringAfter("\"").substringBefore("\"")
                 when {
                     !link.contains("youtube") -> {
-                        loadSourceNameExtractor(link, referer = apiUrl, subtitleCallback, callback)
+                        loadSourceNameExtractor("Multimovies",link, referer = apiUrl, subtitleCallback, callback)
                     }
                     else -> ""
                 }
@@ -232,7 +232,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val href = it.attr("data-src")
                 if (href.contains("kwik.si")) {
                     loadCustomTagExtractor(
-                        "Animepahe [SUB] $quality",
+                        "Animepahe [SUB]",
                         href,
                         "",
                         subtitleCallback,
