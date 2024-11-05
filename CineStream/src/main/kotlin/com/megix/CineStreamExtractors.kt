@@ -126,7 +126,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val link = source.substringAfter("\"").substringBefore("\"")
                 when {
                     !link.contains("youtube") -> {
-                        loadExtractor(link, referer = apiUrl, subtitleCallback, callback)
+                        loadSourceNameExtractor(link, referer = apiUrl, subtitleCallback, callback)
                     }
                     else -> ""
                 }
@@ -237,7 +237,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         "",
                         subtitleCallback,
                         callback,
-                        getIndexQuality(quality)
+                        quality.toIntOrNull()
                     )
                 }
             }
