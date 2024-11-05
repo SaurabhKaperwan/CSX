@@ -15,7 +15,6 @@ class GDIndexProvider : MainAPI() {
         TvType.TvSeries,
     )
     override var lang = "en"
-
     override var mainUrl = "https://a.datadiff.us.kg"
     override var name = "GDIndex"
 

@@ -50,7 +50,7 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     val kitsu_url = "https://anime-kitsu.strem.fun"
-    val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
+    //val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     val rotten_url = "https://7a82163c306e-rottentomatoes.baby-beamup.club/catalog"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val jikanAPI = "https://api.jikan.moe/v4"
@@ -108,8 +108,8 @@ open class CineStreamProvider : MainAPI() {
         "$cyberflix_url/catalog/Disney%20Plus/disney_plus.new.series" to "Disney Plus Series",
         "$cyberflix_url/catalog/Asian/asian.new.movie" to "New Asian Movie",
         "$cyberflix_url/catalog/Asian/asian.new.series" to "New Asian Series",
-        "$kitsu_url/catalog/anime/kitsu-anime-airing" to "Kitsu Top Airing",
-        """$anime_catalogs_url/{ "anidb_latest-started": "on" }/catalog/anime/anidb_latest-started""" to "AniDB Latest Started",
+        "$kitsu_url/catalog/anime/kitsu-anime-airing" to "Top Airing Anime",
+        "$kitsu_url/catalog/anime/kitsu-anime-trending" to "Trending Anime",
     )
 
     override suspend fun getMainPage(
