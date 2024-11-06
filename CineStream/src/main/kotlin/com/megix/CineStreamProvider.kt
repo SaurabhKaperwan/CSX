@@ -53,7 +53,6 @@ open class CineStreamProvider : MainAPI() {
     //val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val jikanAPI = "https://api.jikan.moe/v4"
-    val stremio_tmdb = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.si"
@@ -96,8 +95,6 @@ open class CineStreamProvider : MainAPI() {
         "$mainUrl/top/catalog/series/top" to "Top Series",
         "$mainUrl/imdbRating/catalog/movie/imdbRating" to "Top IMDb Movies",
         "$mainUrl/imdbRating/catalog/series/imdbRating" to "Top IMDb Series",
-        """$stremio_tmdb/{ "provide_imdbId": "true", "use_tmdb_prefix": "true", "include_adult": "true", "language": "en-US" }/catalog/movie/tmdb.trending/genre=Day""" to "TMDB Trending Movies",
-        """$stremio_tmdb/{ "provide_imdbId": "true", "use_tmdb_prefix": "true", "include_adult": "true", "language": "en-US" }/catalog/series/tmdb.trending/genre=Day""" to "TMDB Trending Series",
         "$cyberflix_url/catalog/Indian/indian.new.movie" to "New Indian Movie",
         "$cyberflix_url/catalog/Indian/indian.new.series" to "New Indian Series",
         "$cyberflix_url/catalog/Netflix/netflix.new.series" to "Netflix Series",
