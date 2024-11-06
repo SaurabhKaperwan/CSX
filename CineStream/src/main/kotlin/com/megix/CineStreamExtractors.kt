@@ -769,14 +769,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun NFBypass(mainUrl : String): String {
-        val document = app.get("$mainUrl/home").document
-        val addhash = document.selectFirst("body").attr("data-addhash").toString()
-        val verify = app.get("https://userverify.netmirror.app/verify?hash=${addhash}&t=${APIHolder.unixTime}") //just make request to verify
-        val requestBody = FormBody.Builder().add("verify", addhash).build()
-        return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
-    }
-
     suspend fun invokeVadaPav(
         title: String,
         year: Int? = null,

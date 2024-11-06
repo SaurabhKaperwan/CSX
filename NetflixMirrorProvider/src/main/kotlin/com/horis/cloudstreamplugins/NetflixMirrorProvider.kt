@@ -37,6 +37,7 @@ class NetflixMirrorProvider : MainAPI() {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "ott" to "nf",
             "hd" to "on"
         )
         val document = app.get("$mainUrl/home", cookies = cookies).document
