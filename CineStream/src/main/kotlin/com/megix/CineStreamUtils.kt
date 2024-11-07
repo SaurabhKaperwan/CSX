@@ -7,6 +7,14 @@ import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
 
+suspend fun NFBypass(mainUrl : String): String {
+    val document = app.get("$mainUrl/home").document
+    val addhash = document.selectFirst("body").attr("data-addhash").toString()
+    val res = app.get("${mainUrl}/v.php?hash=${addhash}&t=${APIHolder.unixTime}") //make request for validation
+    val requestBody = FormBody.Builder().add("verify", addhash).build()
+    return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
+}
+
 fun getBaseUrl(url: String): String {
     return URI(url).let {
         "${it.scheme}://${it.host}"
@@ -84,6 +92,34 @@ suspend fun loadCustomTagExtractor(
                 link.referer,
                 when (link.type) {
                     ExtractorLinkType.M3U8 -> link.quality
+                    else -> quality ?: link.quality
+                },
+                link.type,
+                link.headers,
+                link.extractorData
+            )
+        )
+    }
+}
+
+suspend fun loadCustomExtractor(
+    name: String? = null,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int? = null,
+) {
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        callback.invoke(
+            ExtractorLink(
+                name ?: link.source,
+                name ?: link.name,
+                link.url,
+                link.referer,
+                when {
+                    link.name == "VidSrc" -> Qualities.P1080.value
+                    link.type == ExtractorLinkType.M3U8 -> link.quality
                     else -> quality ?: link.quality
                 },
                 link.type,

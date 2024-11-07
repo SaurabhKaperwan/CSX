@@ -2,6 +2,89 @@ package com.megix
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
+data class StreamifyResponse(
+    val streams: List<Streamify>
+)
+
+data class Streamify(
+    val name: String,
+    val type: String,
+    val url: String,
+    val title: String
+)
+
+data class JikanExternal(
+    @JsonProperty("name") val name: String? = null,
+    @JsonProperty("url") val url: String? = null,
+)
+
+data class JikanData(
+    @JsonProperty("title") val title: String? = null,
+    @JsonProperty("external") val external: ArrayList<JikanExternal>? = arrayListOf(),
+    val season: String,
+)
+
+data class JikanResponse(
+    @JsonProperty("data") val data: JikanData? = null,
+)
+
+
+data class ResponseHash(
+    @JsonProperty("embed_url") val embed_url: String,
+    @JsonProperty("key") val key: String? = null,
+    @JsonProperty("type") val type: String? = null,
+)
+
+data class animepahe(
+    val total: Long,
+    @JsonProperty("per_page")
+    val perPage: Long,
+    @JsonProperty("current_page")
+    val currentPage: Long,
+    @JsonProperty("last_page")
+    val lastPage: Long,
+    @JsonProperty("next_page_url")
+    val nextPageUrl: Any?,
+    @JsonProperty("prev_page_url")
+    val prevPageUrl: Any?,
+    val from: Long,
+    val to: Long,
+    val data: List<Daum>,
+)
+
+data class Daum(
+    val id: Long,
+    @JsonProperty("anime_id")
+    val animeId: Long,
+    val episode: Int,
+    val episode2: Long,
+    val edition: String,
+    val title: String,
+    val snapshot: String,
+    val disc: String,
+    val audio: String,
+    val duration: String,
+    val session: String,
+    val filler: Long,
+    @JsonProperty("created_at")
+    val createdAt: String,
+)
+
+data class MALSyncSites(
+    @JsonProperty("Zoro") val zoro: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
+    @JsonProperty("9anime") val nineAnime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
+    @JsonProperty("animepahe") val animepahe: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
+)
+data class HianimeResponses(
+    @JsonProperty("html") val html: String? = null,
+    @JsonProperty("link") val link: String? = null,
+)
+
+
+data class MALSyncResponses(
+    @JsonProperty("Sites") val sites: MALSyncSites? = null,
+)
+
 data class RarResponseData(
     val data: List<RarItem>?
 )
