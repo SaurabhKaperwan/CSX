@@ -53,6 +53,7 @@ open class CineStreamProvider : MainAPI() {
     //val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val jikanAPI = "https://api.jikan.moe/v4"
+    val streamio_TMDB = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.si"
@@ -75,7 +76,7 @@ open class CineStreamProvider : MainAPI() {
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         //const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
         const val AutoembedDramaAPI = "https://asian-drama.autoembed.cc"
-        const val RarAPI = "https://rar.to"
+        const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val viteAPI = "https://viet.autoembed.cc"
@@ -91,22 +92,22 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/top/catalog/movie/top" to "Top Movies",
-        "$mainUrl/top/catalog/series/top" to "Top Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating" to "Top IMDb Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating" to "Top IMDb Series",
-        "$cyberflix_url/catalog/Indian/indian.new.movie" to "New Indian Movie",
-        "$cyberflix_url/catalog/Indian/indian.new.series" to "New Indian Series",
+        "$streamio_TMDB/catalog/movie/tmdb.trending/skip=###&genre=Day" to "Trending Movies Today",
+        "$streamio_TMDB/catalog/series/tmdb.trending/skip=###&genre=Day" to "Trending Series Today",
+        "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
+        "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
+        "$streamio_TMDB/catalog/movie/tmdb.language/skip=###&genre=Hindi" to "Trending Indian Movie",
+        "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Hindi" to "Trending Indian Series",
+        "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
+        "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
+        "$cyberflix_url/catalog/Asian/asian.new.movie" to "New Asian Movie",
+        "$cyberflix_url/catalog/Asian/asian.new.series" to "New Asian Series",
         "$cyberflix_url/catalog/Netflix/netflix.new.series" to "Netflix Series",
         "$cyberflix_url/catalog/Netflix/netflix.new.movie" to "Netflix Movie",
         "$cyberflix_url/catalog/Amazon%20Prime/amazon_prime.new.movie" to "Amazon Prime Movie",
         "$cyberflix_url/catalog/Amazon%20Prime/amazon_prime.new.series" to "Amazon Prime Series",
         "$cyberflix_url/catalog/Disney%20Plus/disney_plus.new.movie" to "Disney Plus Movie",
         "$cyberflix_url/catalog/Disney%20Plus/disney_plus.new.series" to "Disney Plus Series",
-        "$cyberflix_url/catalog/Asian/asian.new.movie" to "New Asian Movie",
-        "$cyberflix_url/catalog/Asian/asian.new.series" to "New Asian Series",
-        "$kitsu_url/catalog/anime/kitsu-anime-airing" to "Top Airing Anime",
-        "$kitsu_url/catalog/anime/kitsu-anime-trending" to "Trending Anime",
     )
 
     override suspend fun getMainPage(
@@ -114,7 +115,8 @@ open class CineStreamProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
         val skip = skipMap[request.name] ?: 0
-        val json = app.get("${request.data}/skip=$skip.json").text
+        val newRequestData = request.data.replace("###", skip.toString())
+        val json = app.get("$newRequestData.json").text
         val movies = parseJson<Home>(json)
         val movieCount = movies.metas.size
         skipMap[request.name] = skip + movieCount
@@ -128,7 +130,7 @@ open class CineStreamProvider : MainAPI() {
                 name = request.name,
                 list = home
             ),
-            hasNext = true
+            hasNext = if(request.data.contains("skip=###")) true else false
         )
     }
 
@@ -165,7 +167,7 @@ open class CineStreamProvider : MainAPI() {
         val movie = parseJson<PassData>(url)
         val tvtype = movie.type
         var id = movie.id
-        val meta_url = if(movie.id.contains("kitsu")) kitsu_url else cinemeta_url
+        val meta_url = if(id.contains("kitsu")) kitsu_url else if(id.contains("tmdb")) streamio_TMDB else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
         val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else null
         val malId = if(externalIds != null) externalIds?.myanimelist else null
@@ -177,7 +179,8 @@ open class CineStreamProvider : MainAPI() {
         val posterUrl = movieData ?.meta?.poster.toString()
         val imdbRating = movieData?.meta?.imdbRating
         val year = movieData?.meta?.year.toString()
-        val tmdbId = movieData?.meta?.moviedb_id
+        val tmdbId = if(!isKitsu && id.contains("tmdb")) id.replace("tmdb:", "").toIntOrNull() else movieData?.meta?.moviedb_id
+        id = if(!isKitsu && id.contains("tmdb")) movieData?.meta?.imdb_id.toString() else id
         val releaseInfo = movieData?.meta?.releaseInfo.toString()
         var description = movieData?.meta?.description.toString()
         val cast : List<String> = movieData?.meta?.cast ?: emptyList()
@@ -284,7 +287,7 @@ open class CineStreamProvider : MainAPI() {
     ): Boolean {
         val res = parseJson<LoadLinksData>(data)
         var year = if(res.tvtype == "movie") res.year.toIntOrNull() else res.firstAired?.substringBefore("-")?.toIntOrNull()
-        val firstYear = if(res.tvtype == "movie") res.year.toIntOrNull() else res.year.substringBefore("–").toIntOrNull()
+        val firstYear = if(res.tvtype == "movie") res.year.toIntOrNull() else res.year.substringBefore("–").toIntOrNull() ?: res.year.substringBefore("-").toIntOrNull()
         if(res.isKitsu) {
             year = res.year.toIntOrNull() ?: res.year.substringBefore("-").toIntOrNull()
             argamap(
