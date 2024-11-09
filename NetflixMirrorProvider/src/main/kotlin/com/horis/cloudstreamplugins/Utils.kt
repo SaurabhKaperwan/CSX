@@ -78,7 +78,7 @@ fun convertRuntimeToMinutes(runtime: String): Int {
 suspend fun bypass(mainUrl : String): String {
     val document = app.get("$mainUrl/home").document
     val addhash = document.selectFirst("body").attr("data-addhash").toString()
-    val res = app.get("${mainUrl}/v.php?hash=${addhash}&t=${APIHolder.unixTime}") //make request for validation
+    val res = app.get("https://userverify.netmirror.app/verify?vhf=${addhash}&a=yy&t=${APIHolder.unixTime}") //make request for validation
     val requestBody = FormBody.Builder().add("verify", addhash).build()
     return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
 }

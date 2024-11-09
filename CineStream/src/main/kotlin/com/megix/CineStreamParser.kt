@@ -107,43 +107,43 @@ data class TwoEmbedStream(
     val playlist: String,
 )
 
-data class AstraQuery(
-    val stream: List<AstraStream>
-)
+// data class AstraQuery(
+//     val stream: List<AstraStream>
+// )
 
-data class AstraStream(
-    val id: String,
-    val type: String,
-    val playlist: String,
-)
+// data class AstraStream(
+//     val id: String,
+//     val type: String,
+//     val playlist: String,
+// )
 
-data class NovaStream(
-    val id: String,
-    val qualities: Map<String, NovaQuality>,
-    val captions: List<NovaCaption>
-)
+// data class NovaStream(
+//     val id: String,
+//     val qualities: Map<String, NovaQuality>,
+//     val captions: List<NovaCaption>
+// )
 
-data class NovaQuality(
-    val type: String,
-    val url: String
-)   
+// data class NovaQuality(
+//     val type: String,
+//     val url: String
+// )
 
-data class NovaCaption(
-    val id: String,
-    val url: String,
-    val type: String,
-    val hasCorsRestrictions: Boolean,
-    val language: String
-)
+// data class NovaCaption(
+//     val id: String,
+//     val url: String,
+//     val type: String,
+//     val hasCorsRestrictions: Boolean,
+//     val language: String
+// )
 
-data class NovaVideoData(
-    val stream: List<NovaStream>
-)    
+// data class NovaVideoData(
+//     val stream: List<NovaStream>
+// )
 
-data class WHVX(
-    val embedId: String,
-    val url: String,
-)
+// data class WHVX(
+//     val embedId: String,
+//     val url: String,
+// )
 
 data class WYZIESubtitle(
     val url: String,

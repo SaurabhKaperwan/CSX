@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://bollyflix.date"
+    override var mainUrl = "https://bollyflix.ninja"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
@@ -72,7 +72,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..10) {
+        for (i in 1..6) {
             val document = app.get("$mainUrl/search/$query/page/$i/").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
