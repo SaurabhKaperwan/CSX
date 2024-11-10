@@ -15,6 +15,12 @@ suspend fun NFBypass(mainUrl : String): String {
     return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
 }
 
+suspend fun cinemaluxeBypass(url: String): String {
+    val document = app.get(url).document.toString()
+    val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
+    return base64Decode(encodeUrl)
+}
+
 fun getBaseUrl(url: String): String {
     return URI(url).let {
         "${it.scheme}://${it.host}"

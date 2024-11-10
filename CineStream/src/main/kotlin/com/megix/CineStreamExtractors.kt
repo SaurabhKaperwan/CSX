@@ -17,6 +17,91 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeCinemaluxe(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit
+    ) {
+        val searchDocument = app.get("$cinemaluxeAPI/?s=$title $year").document
+        val url = searchDocument.select("div.title > a:matches((?i)($title $year))").attr("href")
+        val document = app.get(url).document
+        if(season == null) {
+            document.select("a.maxbutton").map {
+                val link = cinemaluxeBypass(it.attr("href"))
+                app.get(link).document.select("a.maxbutton").map {
+                    loadSourceNameExtractor(
+                        "Cinemaluxe",
+                        it.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback,
+                    )
+                }
+            }
+        }
+        else {
+            document.select("div.wp-content > div:matches((?i)(Season ${season}))").map { div ->
+                val link = cinemaluxeBypass(div.select("a").attr("href"))
+                 app.get(link).document.select("a:matches((?i)(Episode ${episode}))").map {
+                    loadSourceNameExtractor(
+                        "Cinemaluxe",
+                        it.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback,
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun invokeBollyflix(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val fixtitle = title?.substringBefore("-")?.substringBefore(":")?.replace("&", " ")
+        val searchtitle = title?.substringBefore("-").createSlug()
+        var res1 =
+            app.get("$bollyflixAPI/search/$fixtitle $year", interceptor = wpRedisInterceptor).document.select("#content_box article")
+                .toString()
+        val hrefpattern =
+            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*\b$searchtitle\b[^"]*)""").find(res1)?.groupValues?.get(
+                1
+            )
+        val res = hrefpattern?.let { app.get(it).document }
+        val hTag = if (season == null) "h5" else "h4"
+        val sTag = if (season == null) "" else "Season $season"
+        val entries =
+            res?.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(1080p|2160p))")
+                ?.filter { element -> !element.text().contains("Download", true) }?.takeLast(3)
+        entries?.map {
+            val href = it.nextElementSibling()?.select("a")?.attr("href")
+            val token = href?.substringAfter("id=")
+            val encodedurl =
+                app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
+                    .substringBefore("\"};")
+            val decodedurl = base64Decode(encodedurl)
+            if (season == null) {
+                val source =
+                    app.get(decodedurl, allowRedirects = false).headers["location"].toString()
+                loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
+            } else {
+                val link =
+                    app.get(decodedurl).document.selectFirst("article h3 a:contains(Episode 0$episode)")!!
+                        .attr("href")
+                val source = app.get(link, allowRedirects = false).headers["location"].toString()
+                loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
+            }
+        }
+    }
+
     suspend fun invokeStreamify(
         id: String,
         season: Int? = null,
