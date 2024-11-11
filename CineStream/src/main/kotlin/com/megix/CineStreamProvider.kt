@@ -50,7 +50,7 @@ open class CineStreamProvider : MainAPI() {
     override val hasDownloadSupport = true
     val skipMap: MutableMap<String, Int> = mutableMapOf()
     val cinemeta_url = "https://v3-cinemeta.strem.io"
-    val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
+    //val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     //val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     val haglund_url = "https://arm.haglund.dev/api/v2"
@@ -104,14 +104,25 @@ open class CineStreamProvider : MainAPI() {
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Hindi" to "Trending Indian Series",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
-        "$cyberflix_url/catalog/Asian/asian.new.movie" to "New Asian Movie",
-        "$cyberflix_url/catalog/Asian/asian.new.series" to "New Asian Series",
-        "$cyberflix_url/catalog/Netflix/netflix.new.series" to "Netflix Series",
-        "$cyberflix_url/catalog/Netflix/netflix.new.movie" to "Netflix Movie",
-        "$cyberflix_url/catalog/Amazon%20Prime/amazon_prime.new.movie" to "Amazon Prime Movie",
-        "$cyberflix_url/catalog/Amazon%20Prime/amazon_prime.new.series" to "Amazon Prime Series",
-        "$cyberflix_url/catalog/Disney%20Plus/disney_plus.new.movie" to "Disney Plus Movie",
-        "$cyberflix_url/catalog/Disney%20Plus/disney_plus.new.series" to "Disney Plus Series",
+        "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Action" to "Top Action Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Action" to "Top Action Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Comedy" to "Top Comedy Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Comedy" to "Top Comedy Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Romance" to "Top Romance Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Romance" to "Top Romance Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Horror" to "Top Horror Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Horror" to "Top Horror Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Thriller" to "Top Thriller Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Thriller" to "Top Thriller Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Sci-Fi" to "Top Sci-Fi Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Sci-Fi" to "Top Sci-Fi Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Fantasy" to "Top Fantasy Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Fantasy" to "Top Fantasy Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Mystery" to "Top Mystery Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Mystery" to "Top Mystery Series",
+        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Crime" to "Top Crime Movies",
+        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Crime" to "Top Crime Series",
     )
 
     override suspend fun getMainPage(
@@ -134,7 +145,7 @@ open class CineStreamProvider : MainAPI() {
                 name = request.name,
                 list = home
             ),
-            hasNext = if(request.data.contains("skip=###")) true else false
+            hasNext = true
         )
     }
 
@@ -163,7 +174,9 @@ open class CineStreamProvider : MainAPI() {
             })
         }
 
-        return searchResponse
+        return searchResponse.sortedByDescending { response ->
+            calculateRelevanceScore(response.name, query)
+        }
     }
 
 
@@ -173,6 +186,7 @@ open class CineStreamProvider : MainAPI() {
         var id = movie.id
         val meta_url = if(id.contains("kitsu")) kitsu_url else if(id.contains("tmdb")) streamio_TMDB else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
+        val isTMDB = if(meta_url == streamio_TMDB) true else false
         val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else null
         val malId = if(externalIds != null) externalIds?.myanimelist else null
         val anilistId = if(externalIds != null) externalIds?.anilist else null
@@ -182,10 +196,10 @@ open class CineStreamProvider : MainAPI() {
         val title = movieData ?.meta ?.name.toString()
         val posterUrl = movieData ?.meta?.poster.toString()
         val imdbRating = movieData?.meta?.imdbRating
-        val year = movieData?.meta?.year.toString()
-        val tmdbId = if(!isKitsu && id.contains("tmdb")) id.replace("tmdb:", "").toIntOrNull() else movieData?.meta?.moviedb_id
-        id = if(!isKitsu && id.contains("tmdb")) movieData?.meta?.imdb_id.toString() else id
-        val releaseInfo = movieData?.meta?.releaseInfo.toString()
+        val year = movieData?.meta?.year
+        val releaseInfo = movieData?.meta?.releaseInfo
+        val tmdbId = if(!isKitsu && isTMDB) id.replace("tmdb:", "").toIntOrNull() else movieData?.meta?.moviedb_id
+        id = if(!isKitsu && isTMDB) movieData?.meta?.imdb_id.toString() else id
         var description = movieData?.meta?.description.toString()
         val cast : List<String> = movieData?.meta?.cast ?: emptyList()
         val genre : List<String> = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
@@ -224,9 +238,10 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year ?.toIntOrNull() ?: releaseInfo.toIntOrNull() ?: year.substringBefore("-").toIntOrNull()
+                this.year = year ?.toIntOrNull() ?: releaseInfo?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
+                this.contentRating = if(isKitsu) "Kitsu(Anime)" else if(isTMDB) "TMDB" else "IMDB"
                 addActors(cast)
                 addAniListId(anilistId)
                 addMalId(malId)
@@ -271,9 +286,10 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo.substringBefore("–").toIntOrNull() ?: year.substringBefore("-").toIntOrNull()
+                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
+                this.contentRating = if(isKitsu) "Kitsu(Anime)" else if(isTMDB) "TMDB" else "IMDB"
                 addActors(cast)
                 addAniListId(anilistId)
                 addImdbId(id)
@@ -290,10 +306,11 @@ open class CineStreamProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val res = parseJson<LoadLinksData>(data)
-        var year = if(res.tvtype == "movie") res.year.toIntOrNull() else res.firstAired?.substringBefore("-")?.toIntOrNull()
-        val firstYear = if(res.tvtype == "movie") res.year.toIntOrNull() else res.year.substringBefore("–").toIntOrNull() ?: res.year.substringBefore("-").toIntOrNull()
+        val year = if(res.tvtype == "movie") res.year?.toIntOrNull() else res.year?.substringBefore("-")?.toIntOrNull() ?: res.year?.substringBefore("–")?.toIntOrNull()
+        //to get season year
+        val seasonYear = if(res.tvtype == "movie") year else res.firstAired?.substringBefore("-")?.toIntOrNull() ?: res.firstAired?.substringBefore("–")?.toIntOrNull()
+
         if(res.isKitsu) {
-            year = res.year.toIntOrNull() ?: res.year.substringBefore("-").toIntOrNull()
             argamap(
                 {
                     invokeAnimes(
@@ -387,7 +404,7 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeRar(
                         res.title,
-                        firstYear,
+                        year,
                         res.season,
                         res.episode,
                         callback
@@ -406,7 +423,7 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeCinemaluxe(
                         res.title,
-                        firstYear,
+                        year,
                         res.season,
                         res.episode,
                         callback,
@@ -416,7 +433,7 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeBollyflix(
                         res.title,
-                        firstYear,
+                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -446,7 +463,7 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeNetflix(
                         res.title,
-                        firstYear,
+                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -456,7 +473,7 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokePrimeVideo(
                         res.title,
-                        firstYear,
+                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -513,7 +530,7 @@ open class CineStreamProvider : MainAPI() {
                 //         res.title,
                 //         res.id,
                 //         res.tmdbId,
-                //         firstYear,
+                //         year,
                 //         res.season,
                 //         res.episode,
                 //         callback,
@@ -525,7 +542,7 @@ open class CineStreamProvider : MainAPI() {
                 //         res.title,
                 //         res.id,
                 //         res.tmdbId,
-                //         firstYear,
+                //         year,
                 //         res.season,
                 //         res.episode,
                 //         callback,
@@ -597,7 +614,7 @@ open class CineStreamProvider : MainAPI() {
         val id: String,
         val tmdbId: Int?,
         val tvtype: String,
-        val year: String,
+        val year: String? = null,
         val season: Int? = null,
         val episode: Int? = null,
         val firstAired: String? = null,
@@ -689,6 +706,40 @@ open class CineStreamProvider : MainAPI() {
         val url = "$haglund_url/ids?source=$type&id=$id"
         val json = app.get(url).text
         return tryParseJson<ExtenalIds>(json) ?: return null
+    }
+
+    private fun calculateRelevanceScore(name: String, query: String): Int {
+        val lowerCaseName = name.lowercase()
+        val lowerCaseQuery = query.lowercase()
+
+        var score = 0
+
+        // Exact match gives the highest score
+        if (lowerCaseName == lowerCaseQuery) {
+            score += 100
+        }
+
+        // Check for partial matches and their positions
+        if (lowerCaseName.contains(lowerCaseQuery)) {
+            score += 50 // Base score for containing the query
+
+            // Increase score based on position of the match
+            val index = lowerCaseName.indexOf(lowerCaseQuery)
+            if (index == 0) {
+                score += 20 // Higher score if match is at the start
+            } else if (index > 0 && index < 5) {
+                score += 10 // Slightly higher score if match is near the start
+            }
+
+            // Count how many words match (for multi-word queries)
+            lowerCaseQuery.split(" ").forEach { word ->
+                if (lowerCaseName.contains(word)) {
+                    score += 5 // Incremental score for each matched word
+                }
+            }
+        }
+
+        return score
     }
 }
 

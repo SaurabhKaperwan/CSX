@@ -4,6 +4,10 @@ import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 import android.content.Context
 import com.lagradost.cloudstream3.extractors.Chillx
+import com.lagradost.cloudstream3.extractors.Vectorx
+import com.lagradost.cloudstream3.extractors.Bestx
+import com.lagradost.cloudstream3.extractors.Boltx
+import com.lagradost.cloudstream3.extractors.Boosterx
 import com.lagradost.cloudstream3.extractors.Moviesapi
 import com.lagradost.cloudstream3.extractors.Rabbitstream
 import com.lagradost.cloudstream3.extractors.DoodLaExtractor
@@ -37,5 +41,9 @@ open class CineStream: Plugin() {
         registerExtractorAPI(CdnwishCom())
         registerExtractorAPI(Asnwish())
         registerExtractorAPI(Multimovies())
+        registerExtractorAPI(Vectorx())
+        registerExtractorAPI(Bestx())
+        registerExtractorAPI(Boltx())
+        registerExtractorAPI(Boosterx())
     }
 }
