@@ -75,10 +75,16 @@ fun convertRuntimeToMinutes(runtime: String): Int {
     return totalMinutes
 }
 
+data class VerifyUrl(
+    val url: String
+)
+
 suspend fun bypass(mainUrl : String): String {
     val document = app.get("$mainUrl/home").document
-    val addhash = document.selectFirst("body").attr("data-addhash").toString()
-    val res = app.get("https://userverify.netmirror.app/verify?vhf=${addhash}&a=yy&t=${APIHolder.unixTime}") //make request for validation
+    val addhash = document.select("body").attr("data-addhash")
+    var verifyUrl = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json").parsed<VerifyUrl>().url
+    verifyUrl = verifyUrl.replace("###", addhash)
+    val res = app.get("$verifyUrl&t=${APIHolder.unixTime}")
     val requestBody = FormBody.Builder().add("verify", addhash).build()
     return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
 }

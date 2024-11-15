@@ -6,11 +6,14 @@ import android.util.Base64
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 suspend fun NFBypass(mainUrl : String): String {
     val document = app.get("$mainUrl/home").document
-    val addhash = document.selectFirst("body").attr("data-addhash").toString()
-    val res = app.get("https://userverify.netmirror.app/verify?vhf=${addhash}&a=yy&t=${APIHolder.unixTime}") //make request for validation
+    val addhash = document.select("body").attr("data-addhash")
+    val json = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json").text
+    val verifyUrl = parseJson<NFVerifyUrl>(json).url.replace("###", addhash)
+    val res = app.get("$verifyUrl&t=${APIHolder.unixTime}") //make request for validation
     val requestBody = FormBody.Builder().add("verify", addhash).build()
     return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
 }
