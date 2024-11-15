@@ -10,7 +10,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 
 class Cinevood : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://1cinevood.hair/"
+    override var mainUrl ="https://1cinevood.cyou"
     override var name = "Cinevood"
     override val hasMainPage = true
     override var lang = "hi"
