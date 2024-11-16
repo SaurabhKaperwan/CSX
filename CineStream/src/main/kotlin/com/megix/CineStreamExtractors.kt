@@ -159,23 +159,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
 
     suspend fun invokeAnitaku(
-        title: String? = null,
-        Season: String? = null,
-        year: Int? = null,
+        url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = anitaku
-        val filterUrl = "$url/filter.html?keyword=${title}&year[]=${year}&season[]=$Season"
-        val filterRes = app.get(filterUrl).document
-        val results = filterRes.select("ul.items > li > p.name > a").map { it.attr("href") }
-        results.amap {
-            val subDub = if (it.contains("-dub")) "Dub" else "Sub"
-            val epUrl = url.plus(it.replace("category/", "")).plus("-episode-${episode}")
+            val subDub = if (url!!.contains("-dub")) "Dub" else "Sub"
+            val epUrl = url.replace("category/", "").plus("-episode-${episode}")
             val epRes = app.get(epUrl).document
-            epRes.select("div.anime_muti_link > ul > li").forEach {
-
+        epRes.select("div.anime_muti_link > ul > li").forEach {
                 val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
                 val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
                 if(iframe.contains("s3taku"))
@@ -203,7 +195,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback
                 )
             }
-        }
     }
 
     suspend fun invokeMultimovies(
@@ -321,10 +312,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 invokeHianime(zoroIds, episode, subtitleCallback, callback)
             },
             {
-                invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
+                val animepahe = malsync?.animepahe?.firstNotNullOfOrNull { it.value["url"] }
+                if (animepahe!=null)
+                    invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
             {
-                invokeAnitaku(zorotitle,Season,year, episode, subtitleCallback, callback)
+                val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
+                if (Gogourl != null)
+                    invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
             }
         )
 
@@ -345,16 +340,19 @@ object CineStreamExtractors : CineStreamProvider() {
         val session = animeData?.find { it.episode == episode }?.session ?: ""
         app.get("$animepaheAPI/play/$id/$session", headers).document.select("div.dropup button")
             .map {
+                var lang=""
+                val dub=it.select("span").text()
+                if (dub.contains("eng")) lang="DUB" else lang="SUB"
                 val quality = it.attr("data-resolution").toString()
                 val href = it.attr("data-src")
                 if (href.contains("kwik.si")) {
-                    loadCustomTagExtractor(
-                        "Animepahe [SUB]",
+                    loadCustomExtractor(
+                        "Animepahe [$lang] $quality",
                         href,
-                        "",
+                        mainUrl,
                         subtitleCallback,
                         callback,
-                        quality.toIntOrNull()
+                        getIndexQuality(quality)
                     )
                 }
             }
@@ -1162,7 +1160,7 @@ object CineStreamExtractors : CineStreamProvider() {
             app.get(url, interceptor = wpRedisInterceptor).document.select("figure")
                 .toString()
         val hrefpattern =
-            Regex("""(?i)<a\s+href="([^"]*\b$searchtitle\b[^"]*)"""").find(res1)?.groupValues?.get(1)
+            Regex("""(?i)<a\s+href="([^"]*\b$searchtitle\b[^"]*)\"""").find(res1)?.groupValues?.get(1)
                 ?: ""
         val document = app.get(hrefpattern).document
         if (season == null) {
@@ -1274,7 +1272,7 @@ object CineStreamExtractors : CineStreamProvider() {
             app.get(url).document.select("#content_box article")
                 .toString()
         val hrefpattern =
-            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)"""").find(res1)?.groupValues?.get(
+            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)\"""").find(res1)?.groupValues?.get(
                 1
             )
         val hTag = if (season == null) "h3" else "div.single_post h3"
@@ -1353,7 +1351,7 @@ object CineStreamExtractors : CineStreamProvider() {
             app.get(url, interceptor = wpRedisInterceptor).document.select("#content_box article")
                 .toString()
         val hrefpattern =
-            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)"""").find(res1)?.groupValues?.get(1)
+            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)\"""").find(res1)?.groupValues?.get(1)
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"
@@ -1420,7 +1418,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val document = app.get(url).document
-        val regex = Regex("""file:\s*"(https?:\/\/[^"]+)"""")
+        val regex = Regex("""file:\s*"(https?:\/\/[^"]+)\"""")
         val link = regex.find(document.toString())?.groupValues?.get(1) ?: ""
         callback.invoke(
             ExtractorLink(

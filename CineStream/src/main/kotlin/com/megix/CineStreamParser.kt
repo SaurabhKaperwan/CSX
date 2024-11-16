@@ -86,10 +86,12 @@ data class Daum(
 )
 
 data class MALSyncSites(
+    @JsonProperty("Gogoanime") val Gogoanime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("Zoro") val zoro: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("9anime") val nineAnime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("animepahe") val animepahe: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
 )
+
 data class HianimeResponses(
     @JsonProperty("html") val html: String? = null,
     @JsonProperty("link") val link: String? = null,
