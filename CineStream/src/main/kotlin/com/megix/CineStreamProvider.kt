@@ -42,6 +42,7 @@ import com.megix.CineStreamExtractors.invokeStreamify
 import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTom
+import com.megix.CineStreamExtractors.invokeTorrentio
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -88,6 +89,8 @@ open class CineStreamProvider : MainAPI() {
         const val cinemaluxeAPI = "https://cinemaluxe.click"
         const val bollyflixAPI = "https://bollyflix.fi"
         const val TomAPI = "https://tom.autoembed.cc"
+        const val torrentioAPI = "https://torrentio.strem.fun"
+        const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -324,6 +327,15 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback,
                         callback
                     )
+                },
+                {
+                    invokeTorrentio(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        callback,
+                        subtitleCallback,
+                    )
                 }
             )
         }
@@ -448,6 +460,15 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         subtitleCallback,
                         callback,
+                    )
+                },
+                {
+                    invokeTorrentio(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback,
+                        subtitleCallback,
                     )
                 },
                 {
