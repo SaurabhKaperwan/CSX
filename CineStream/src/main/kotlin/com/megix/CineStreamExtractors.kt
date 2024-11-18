@@ -17,31 +17,31 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
-    val TorrentTrackers = """http://nyaa.tracker.wf:7777/announce,
-            http://anidex.moe:6969/announce,http://tracker.anirena.com:80/announce,
-            udp://tracker.uw0.xyz:6969/announce,
-            http://share.camoe.cn:8080/announce,
-            http://t.nyaatracker.com:80/announce,
-            udp://47.ip-51-68-199.eu:6969/announce,
-            udp://9.rarbg.me:2940,
-            udp://9.rarbg.to:2820,
-            udp://exodus.desync.com:6969/announce,
-            udp://explodie.org:6969/announce,
-            udp://ipv4.tracker.harry.lu:80/announce,
-            udp://open.stealth.si:80/announce,
-            udp://opentor.org:2710/announce,
-            udp://opentracker.i2p.rocks:6969/announce,
-            udp://retracker.lanta-net.ru:2710/announce,
-            udp://tracker.cyberia.is:6969/announce,
-            udp://tracker.dler.org:6969/announce,
-            udp://tracker.ds.is:6969/announce,
-            udp://tracker.internetwarriors.net:1337,
-            udp://tracker.openbittorrent.com:6969/announce,
-            udp://tracker.opentrackr.org:1337/announce,
-            udp://tracker.tiny-vps.com:6969/announce,
-            udp://tracker.torrent.eu.org:451/announce,
-            udp://valakas.rollo.dnsabr.com:2710/announce,
-            udp://www.torrent.eu.org:451/announce
+    val TorrentTrackers = """http://bt2.t-ru.org/ann?magnet",
+        "udp://tracker.opentrackr.org:1337/announce",
+        "udp://open.tracker.cl:1337/announce",
+        "udp://open.stealth.si:80/announce",
+        "udp://tracker.torrent.eu.org:451/announce",
+        "udp://tracker.dump.cl:6969/announce",
+        "udp://tracker-udp.gbitt.info:80/announce",
+        "udp://opentracker.io:6969/announce",
+        "udp://open.free-tracker.ga:6969/announce",
+        "udp://ns-1.x-fins.com:6969/announce",
+        "udp://explodie.org:6969/announce",
+        "http://tracker810.xyz:11450/announce",
+        "http://tracker.xiaoduola.xyz:6969/announce",
+        "http://tracker.moxing.party:6969/announce",
+        "http://tracker.lintk.me:2710/announce",
+        "http://tracker.ipv6tracker.org:80/announce",
+        "http://tracker.corpscorp.online:80/announce",
+        "http://tracker.bz:80/announce",
+        "http://tr.kxmp.cf:80/announce",
+        "http://t.jaekr.sh:6969/announce",
+        "http://shubt.net:2710/announce",
+        "udp://opentor.net:6969",
+        "http://bt.t-ru.org/ann?magnet",
+        "http://bt3.t-ru.org/ann?magnet",
+        "http://bt4.t-ru.org/ann?magnet"
         """.trimIndent()
 
     suspend fun invokeTorrentio(
@@ -57,7 +57,11 @@ object CineStreamExtractors : CineStreamProvider() {
         else {
             "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$season:$episode.json"
         }
-        val res = app.get(url, timeout = 100L).parsedSafe<TorrentioResponse>()
+        val headers = mapOf(
+            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        )
+        val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
         res?.streams?.forEach { stream ->
             val sourceTrackers = TorrentTrackers.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString("&tr=")
             val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}&tr=$sourceTrackers&index=${stream.fileIdx}"
@@ -933,81 +937,81 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeVadaPav(
-        title: String,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val mirrors = listOf(
-            "https://vadapav.mov",
-            "https://dl1.vadapav.mov",
-            "https://dl2.vadapav.mov",
-            "https://dl3.vadapav.mov",
-        )
+    // suspend fun invokeVadaPav(
+    //     title: String,
+    //     year: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     val mirrors = listOf(
+    //         "https://vadapav.mov",
+    //         "https://dl1.vadapav.mov",
+    //         "https://dl2.vadapav.mov",
+    //         "https://dl3.vadapav.mov",
+    //     )
 
-        val url = if(season != null && episode != null) "$VadapavAPI/s/$title" else "$VadapavAPI/s/$title ($year)"
-        val document = app.get(url).document
-        val result = document.selectFirst("div.directory > ul > li > div > a")
-        val text = result?.text()?.trim().toString()
-        val href = VadapavAPI + (result?.attr("href") ?: return)
-        if(season != null && episode != null && title.equals(text, true)) {
-            val doc = app.get(href).document
-            val filteredLink = doc.select("div.directory > ul > li > div > a.directory-entry").firstOrNull { aTag ->
-                val seasonFromText = Regex("""Season\s(\d{1,2})""").find(aTag.text())?.groupValues ?. get(1)
-                seasonFromText ?.toInt() == season
-            }
-            val seasonLink = VadapavAPI + (filteredLink ?. attr("href") ?: return)
-            val seasonDoc = app.get(seasonLink).document
-            val filteredLinks = seasonDoc.select("div.directory > ul > li > div > a.file-entry")
-                .filter { element ->
-                    val episodeFromText = Regex("""E(\d{1,3})""").find(element.text())?.groupValues?.get(1)
-                    episodeFromText?.toIntOrNull() ?: return@filter false
-                    episodeFromText.toInt() == episode
-                }
+    //     val url = if(season != null && episode != null) "$VadapavAPI/s/$title" else "$VadapavAPI/s/$title ($year)"
+    //     val document = app.get(url).document
+    //     val result = document.selectFirst("div.directory > ul > li > div > a")
+    //     val text = result?.text()?.trim().toString()
+    //     val href = VadapavAPI + (result?.attr("href") ?: return)
+    //     if(season != null && episode != null && title.equals(text, true)) {
+    //         val doc = app.get(href).document
+    //         val filteredLink = doc.select("div.directory > ul > li > div > a.directory-entry").firstOrNull { aTag ->
+    //             val seasonFromText = Regex("""Season\s(\d{1,2})""").find(aTag.text())?.groupValues ?. get(1)
+    //             seasonFromText ?.toInt() == season
+    //         }
+    //         val seasonLink = VadapavAPI + (filteredLink ?. attr("href") ?: return)
+    //         val seasonDoc = app.get(seasonLink).document
+    //         val filteredLinks = seasonDoc.select("div.directory > ul > li > div > a.file-entry")
+    //             .filter { element ->
+    //                 val episodeFromText = Regex("""E(\d{1,3})""").find(element.text())?.groupValues?.get(1)
+    //                 episodeFromText?.toIntOrNull() ?: return@filter false
+    //                 episodeFromText.toInt() == episode
+    //             }
             
-            filteredLinks.forEach {
-                if(it.text().contains(".mkv", true) || it.text().contains(".mp4", true)) {
-                    val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                    val quality = qualityRegex.find(it.text()) ?. groupValues ?. get(1) ?: ""
-                    for((index, mirror) in mirrors.withIndex()) {
-                        callback.invoke(
-                            ExtractorLink(
-                                "[VadaPav" + " ${index+1}]",
-                                "[VadaPav" + " ${index+1}] ${it.text()}",
-                                mirror + it.attr("href"),
-                                referer = "",
-                                quality = getIndexQuality(quality),
-                            )
-                        )
-                    }
-                }
-            }
-        }
-        else if(season == null) {
-            val doc = app.get(href).document
-            doc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(.mkv|.mp4))").forEach {
-                val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                val quality = qualityRegex.find(it.text()) ?. groupValues ?. get(1) ?: ""
-                for((index, mirror) in mirrors.withIndex()) {
-                    callback.invoke(
-                        ExtractorLink(
-                            "[VadaPav" + " ${index+1}]",
-                            "[VadaPav" + " ${index+1}] ${it.text()}",
-                            mirror + it.attr("href"),
-                            referer = "",
-                            quality = getIndexQuality(quality),
-                        )
-                    )
-                }
-            }
-        }
-        else {
-            //Nothing
-        }
-    }
+    //         filteredLinks.forEach {
+    //             if(it.text().contains(".mkv", true) || it.text().contains(".mp4", true)) {
+    //                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
+    //                 val quality = qualityRegex.find(it.text()) ?. groupValues ?. get(1) ?: ""
+    //                 for((index, mirror) in mirrors.withIndex()) {
+    //                     callback.invoke(
+    //                         ExtractorLink(
+    //                             "[VadaPav" + " ${index+1}]",
+    //                             "[VadaPav" + " ${index+1}] ${it.text()}",
+    //                             mirror + it.attr("href"),
+    //                             referer = "",
+    //                             quality = getIndexQuality(quality),
+    //                         )
+    //                     )
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     else if(season == null) {
+    //         val doc = app.get(href).document
+    //         doc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(.mkv|.mp4))").forEach {
+    //             val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
+    //             val quality = qualityRegex.find(it.text()) ?. groupValues ?. get(1) ?: ""
+    //             for((index, mirror) in mirrors.withIndex()) {
+    //                 callback.invoke(
+    //                     ExtractorLink(
+    //                         "[VadaPav" + " ${index+1}]",
+    //                         "[VadaPav" + " ${index+1}] ${it.text()}",
+    //                         mirror + it.attr("href"),
+    //                         referer = "",
+    //                         quality = getIndexQuality(quality),
+    //                     )
+    //                 )
+    //             }
+    //         }
+    //     }
+    //     else {
+    //         //Nothing
+    //     }
+    // }
 
 
     suspend fun invokeFull4Movies(

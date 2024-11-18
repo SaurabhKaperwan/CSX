@@ -17,7 +17,7 @@ import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeFull4Movies
-import com.megix.CineStreamExtractors.invokeVadaPav
+//import com.megix.CineStreamExtractors.invokeVadaPav
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeDramaCool
@@ -66,7 +66,7 @@ open class CineStreamProvider : MainAPI() {
         const val topmoviesAPI = "https://topmovies.icu"
         const val MoviesmodAPI = "https://moviesmod.bid"
         const val Full4MoviesAPI = "https://www.full4movies.my"
-        const val VadapavAPI = "https://vadapav.mov"
+        //const val VadapavAPI = "https://vadapav.mov"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
         const val netflixAPI = "https://iosmirror.cc"
         const val W4UAPI = "https://world4ufree.joburg"
@@ -471,16 +471,16 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback,
                     )
                 },
-                {
-                    invokeVadaPav(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeVadaPav(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeMultimovies(
                         multimoviesAPI,
