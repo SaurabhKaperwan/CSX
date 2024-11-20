@@ -59,11 +59,11 @@ open class CineStreamProvider : MainAPI() {
     val streamio_TMDB = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.si"
+        const val vegaMoviesAPI = "https://vegamovies.ps"
         const val rogMoviesAPI = "https://rogmovies.fun"
         const val MovieDrive_API="https://moviesdrive.world"
         const val topmoviesAPI = "https://topmovies.icu"
-        const val MoviesmodAPI = "https://moviesmod.bid"
+        const val MoviesmodAPI = "https://moviesmod.rip"
         const val Full4MoviesAPI = "https://www.full4movies.my"
         //const val VadapavAPI = "https://vadapav.mov"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
@@ -87,7 +87,7 @@ open class CineStreamProvider : MainAPI() {
         const val multimoviesAPI = "https://multimovies.bond"
         const val anitaku = "https://anitaku.pe"
         const val cinemaluxeAPI = "https://cinemaluxe.click"
-        const val bollyflixAPI = "https://bollyflix.fi"
+        const val bollyflixAPI = "https://bollyflix.meme"
         const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -97,7 +97,8 @@ open class CineStreamProvider : MainAPI() {
         TvType.Movie,
         TvType.TvSeries,
         TvType.AsianDrama,
-        TvType.Anime
+        TvType.Anime,
+        TvType.Torrent
     )
 
     override val mainPage = mainPageOf(
@@ -491,26 +492,26 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     invokeNetflix(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
-                // {
-                //     invokePrimeVideo(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
+                {
+                    invokeNetflix(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokePrimeVideo(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
                 {
                     if(res.isAsian) invokeDramaCool(
                         res.title,

@@ -20,7 +20,8 @@ cloudstream {
         "TvSeries",
         "Movie",
         "AsianDrama",
-        "Anime"
+        "Anime",
+        "Torrent",
     )
 
     iconUrl = "https://us.123rf.com/450wm/mrshamsjaman/mrshamsjaman2008/mrshamsjaman200800943/154338064-initial-letter-cs-logo-or-sc-logo-vector-design-template.jpg"
