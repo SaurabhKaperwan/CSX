@@ -491,26 +491,26 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeNetflix(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
-                {
-                    invokePrimeVideo(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeNetflix(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
+                // {
+                //     invokePrimeVideo(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     if(res.isAsian) invokeDramaCool(
                         res.title,
