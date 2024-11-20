@@ -10,8 +10,9 @@ import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.Requests
 import com.lagradost.nicehttp.ResponseParser
 import kotlin.reflect.KClass
-import com.lagradost.cloudstream3.APIHolder.unixTime
 import okhttp3.FormBody
+import com.lagradost.nicehttp.NiceResponse
+import kotlinx.coroutines.delay
 
 val JSONParser = object : ResponseParser {
     val mapper: ObjectMapper = jacksonObjectMapper().configure(
@@ -80,11 +81,24 @@ data class VerifyUrl(
 )
 
 suspend fun bypass(mainUrl : String): String {
-    val document = app.get("$mainUrl/home").document
-    val addhash = document.select("body").attr("data-addhash")
-    var verifyUrl = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json").parsed<VerifyUrl>().url
-    verifyUrl = verifyUrl.replace("###", addhash)
-    val res = app.get("$verifyUrl&t=${APIHolder.unixTime}")
-    val requestBody = FormBody.Builder().add("verify", addhash).build()
-    return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
+    val homePageDocument = app.get("${mainUrl}/home").document
+    val addHash          = homePageDocument.select("body").attr("data-addhash")
+
+    var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
+    verificationUrl      = app.get(verificationUrl).parsed<VerifyUrl>().url.replace("###", addHash)
+    val hashDigits       = addHash.filter { it.isDigit() }
+    val first16Digits    = hashDigits.take(16)
+    app.get("${verificationUrl}&t=0.${first16Digits}")
+
+    var verifyCheck: String
+    var verifyResponse: NiceResponse
+
+    do {
+        delay(1000)
+        val requestBody = FormBody.Builder().add("verify", addHash).build()
+        verifyResponse  = app.post("${mainUrl}/verify2.php", requestBody = requestBody)
+        verifyCheck     = verifyResponse.text
+    } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
+
+    return verifyResponse.cookies["t_hash_t"].orEmpty()
 }

@@ -1,12 +1,12 @@
 // use an integer for version numbers
-version = 12
+version = 13
 
 cloudstream {
     //language = "en"
     // All of these properties are optional, you can safely remove them
 
     description = "Netflix, PrimeVideo Content in Multiple Languages"
-    authors = listOf("Horis, megix")
+    authors = listOf("Horis, megix", "keyiflerolsun")
 
     /**
      * Status int as the following:
