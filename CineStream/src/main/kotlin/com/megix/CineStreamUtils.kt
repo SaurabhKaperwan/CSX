@@ -7,12 +7,14 @@ import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.nicehttp.NiceResponse
+import kotlinx.coroutines.delay
 
 suspend fun NFBypass(mainUrl : String): String {
     val homePageDocument = app.get("${mainUrl}/home").document
     val addHash          = homePageDocument.select("body").attr("data-addhash")
     var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
-    verificationUrl      = app.get(verificationUrl).parsed<VerifyUrl>().url.replace("###", addHash)
+    verificationUrl      = app.get(verificationUrl).parsed<NFVerifyUrl>().url.replace("###", addHash)
     val hashDigits       = addHash.filter { it.isDigit() }
     val first16Digits    = hashDigits.take(16)
     app.get("${verificationUrl}&t=0.${first16Digits}")
