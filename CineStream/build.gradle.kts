@@ -1,12 +1,13 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 37
+version = 38
 
 android {
     defaultConfig {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
+        buildConfigField("String", "WHVX_TOKEN", "\"${properties.getProperty("WHVX_TOKEN")}\"")
     }
 }
 

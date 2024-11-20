@@ -72,7 +72,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     magnet,
                     "",
                     getIndexQuality(stream.name),
-                    INFER_TYPE,
+                    ExtractorLinkType.MAGNET,
                 )
             )
         }
@@ -551,93 +551,104 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // suspend fun invokeAstra(
-    //     title: String,
-    //     imdb_id: String,
-    //     tmdb_id: Int? = null,
-    //     year: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val query = if (season != null && episode != null) {
-    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"show","season":"$season","episode":"$episode"}"""
-    //     } else {
-    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
-    //     }
-    //     val headers = mapOf("Origin" to "https://www.vidbinge.com")
-    //     val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
-    //     val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=astra", headers = headers).text
-    //     val data = parseJson<WHVX>(json) ?: return
-    //     val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
-    //     val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=astra", headers = headers).text
-    //     val data2 = parseJson<AstraQuery>(json2) ?: return
-    //     data2.stream.forEach {
-    //         callback.invoke(
-    //             ExtractorLink(
-    //                 "Astra",
-    //                 "Astra",
-    //                 it.playlist,
-    //                 "",
-    //                 Qualities.Unknown.value,
-    //                 INFER_TYPE
-    //             )
-    //         )    
-    //     }
-    // }
+    suspend fun invokeVidbinge(
+        provider : String,
+        title: String,
+        imdb_id: String,
+        tmdb_id: Int? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val type=if (season==null) "movie" else "tv"
+        val s= season ?: ""
+        val e= episode ?: ""
+        val query="""{"title":"$title","imdbId":"$imdb_id","tmdbId":"$tmdb_id","type":"$type","season":"$s","episode":"$e","releaseYear":"$year"}"""
+        val headers = mapOf(
+            "accept" to "*/*",
+            "origin" to "https://www.vidbinge.app",
+            "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        )
 
-    // suspend fun invokeNova(
-    //     title: String,
-    //     imdb_id: String,
-    //     tmdb_id: Int? = null,
-    //     year: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val query = if (season != null && episode != null) {
-    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"show","season":"$season","episode":"$episode"}"""
-    //     } else {
-    //         """{"title":"$title","releaseYear":$year,"tmdbId":"$tmdb_id","imdbId":"$imdb_id","type":"movie","season":"","episode":""}"""
-    //     }
-    //     val headers = mapOf(
-    //         "Origin" to "https://www.vidbinge.com",
-    //     )
+        val tokenJson = app.get(WHVX_TOKEN).text
+        val token = parseJson<WHVXToken>(tokenJson).token
+        val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString())
+        val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
+        val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=${provider}&token=${encodedToken}", headers = headers).text
+        val data = tryParseJson<WHVX>(json) ?: return
+        val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
+        val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=${provider}", headers = headers).text
 
-    //     val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
-    //     val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=nova", headers = headers).text
-    //     val data = parseJson<WHVX>(json) ?: return
-    //     val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
-    //     val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=nova", headers = headers).text
-    //     val data2 = parseJson<NovaVideoData>(json2) ?: return
-    //     for (stream in data2.stream) {
-    //         for ((quality, details) in stream.qualities) {
-    //             callback.invoke(
-    //                 ExtractorLink(
-    //                     "Nova",
-    //                     "Nova",
-    //                     details.url,
-    //                     "",
-    //                     getQualityFromName(quality),
-    //                     INFER_TYPE,
-    //                 )
-    //             )
-    //         }
-    //     }
+        if(provider == "astra") {
+            val data2 = tryParseJson<AstraQuery>(json2) ?: return
+            data2.stream.forEach {
+                callback.invoke(
+                    ExtractorLink(
+                        "Astra",
+                        "Astra",
+                        it.playlist,
+                        "",
+                        Qualities.Unknown.value,
+                        INFER_TYPE
+                    )
+                )
+            }
+        }
+        else if(provider == "nova") {
+            val data2 = tryParseJson<NovaVideoData>(json2) ?: return
+            for (stream in data2.stream) {
+                for ((quality, details) in stream.qualities) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "Nova",
+                            "Nova",
+                            details.url,
+                            "",
+                            getQualityFromName(quality),
+                            INFER_TYPE,
+                        )
+                    )
+                }
+            }
 
-    //     for (stream in data2.stream) {
-    //         for (caption in stream.captions) {
-    //             subtitleCallback.invoke(
-    //                 SubtitleFile(
-    //                     caption.language,
-    //                     caption.url
-    //                 )
-    //             )
-    //         }
-    //     }
-    // }
+            for (stream in data2.stream) {
+                for (caption in stream.captions) {
+                    subtitleCallback.invoke(
+                        SubtitleFile(
+                            caption.language,
+                            caption.url
+                        )
+                    )
+                }
+            }
+        }
+        else {
+            val data2 = tryParseJson<OrionStreamData>(json2) ?: return
+            for(stream in data2.stream) {
+                callback.invoke(
+                    ExtractorLink(
+                        "Orion",
+                        "Orion",
+                        stream.playlist,
+                        "",
+                        Qualities.Unknown.value,
+                        INFER_TYPE
+                    )
+                )
+
+                for (caption in stream.captions) {
+                    subtitleCallback.invoke(
+                        SubtitleFile(
+                            caption.language,
+                            caption.url
+                        )
+                    )
+                }
+            }
+        }
+    }
 
     suspend fun invokeAutoembed(
         id: Int?,
