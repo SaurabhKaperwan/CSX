@@ -57,6 +57,7 @@ open class CineStreamProvider : MainAPI() {
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val jikanAPI = "https://api.jikan.moe/v4"
     val streamio_TMDB = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
+    val mediaFusion = "https://mediafusion.elfhosted.com"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.ps"
@@ -90,6 +91,7 @@ open class CineStreamProvider : MainAPI() {
         const val bollyflixAPI = "https://bollyflix.meme"
         const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
+        const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
@@ -106,8 +108,8 @@ open class CineStreamProvider : MainAPI() {
         "$streamio_TMDB/catalog/series/tmdb.trending/skip=###&genre=Day" to "Trending Series Today",
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
-        "$streamio_TMDB/catalog/movie/tmdb.language/skip=###&genre=Hindi" to "Trending Indian Movie",
-        "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Hindi" to "Trending Indian Series",
+        "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
+        "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
@@ -135,15 +137,26 @@ open class CineStreamProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val skip = skipMap[request.name] ?: 0
+        val skip = if(page == 1) 0 else skipMap[request.name] ?: 0
         val newRequestData = request.data.replace("###", skip.toString())
         val json = app.get("$newRequestData.json").text
         val movies = parseJson<Home>(json)
         val movieCount = movies.metas.size
         skipMap[request.name] = skip + movieCount
         val home = movies.metas.mapNotNull { movie ->
-            newMovieSearchResponse(movie.name, PassData(movie.id, movie.type).toJson(), TvType.Movie) {
-                this.posterUrl = movie.poster.toString()
+            if (movie.id.startsWith("mf")) {
+                null
+            }
+            else {
+                val posterUrl = if(movie.poster.toString().contains("mediafusion")) {
+                    "https://images.metahub.space/poster/small/${movie.id}/img"
+                }
+                else {
+                    movie.poster.toString()
+                }
+                newMovieSearchResponse(movie.name, PassData(movie.id, movie.type).toJson(), TvType.Movie) {
+                    this.posterUrl = posterUrl
+                }
             }
         }
         return newHomePageResponse(

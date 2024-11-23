@@ -17,33 +17,6 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
-    val TorrentTrackers = """http://bt2.t-ru.org/ann?magnet,
-        udp://tracker.opentrackr.org:1337/announce,
-        udp://open.tracker.cl:1337/announce,
-        udp://open.stealth.si:80/announce,
-        udp://tracker.torrent.eu.org:451/announce,
-        udp://tracker.dump.cl:6969/announce,
-        udp://tracker-udp.gbitt.info:80/announce,
-        udp://opentracker.io:6969/announce,
-        udp://open.free-tracker.ga:6969/announce,
-        udp://ns-1.x-fins.com:6969/announce,
-        udp://explodie.org:6969/announce,
-        http://tracker810.xyz:11450/announce,
-        http://tracker.xiaoduola.xyz:6969/announce,
-        http://tracker.moxing.party:6969/announce,
-        http://tracker.lintk.me:2710/announce,
-        http://tracker.ipv6tracker.org:80/announce,
-        http://tracker.corpscorp.online:80/announce,
-        http://tracker.bz:80/announce,
-        http://tr.kxmp.cf:80/announce,
-        http://t.jaekr.sh:6969/announce,
-        http://shubt.net:2710/announce,
-        udp://opentor.net:6969,
-        http://bt.t-ru.org/ann?magnet,
-        http://bt3.t-ru.org/ann?magnet,
-        http://bt4.t-ru.org/ann?magnet
-        """.trimIndent()
-
     suspend fun invokeTorrentio(
         id: String? = null,
         season: Int? = null,
@@ -63,8 +36,12 @@ object CineStreamExtractors : CineStreamProvider() {
         )
         val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
         res?.streams?.forEach { stream ->
-            val sourceTrackers = TorrentTrackers.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString("&tr=")
-            val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}&tr=$sourceTrackers&index=${stream.fileIdx}"
+            val resp = app.get(TRACKER_LIST_URL).text
+            val sourceTrackers = resp
+                    .split("\n")
+                    .filterIndexed { i, _ -> i % 2 == 0 }
+                    .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
+            val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
             callback.invoke(
                 ExtractorLink(
                     "Torrentio",
