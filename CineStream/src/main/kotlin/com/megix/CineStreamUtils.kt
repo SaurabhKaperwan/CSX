@@ -7,27 +7,6 @@ import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.lagradost.nicehttp.NiceResponse
-import kotlinx.coroutines.delay
-
-suspend fun NFBypass(mainUrl : String): String {
-    val homePageDocument = app.get("${mainUrl}/home").document
-    val addHash          = homePageDocument.select("body").attr("data-addhash")
-    var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
-    verificationUrl      = app.get(verificationUrl).parsed<NFVerifyUrl>().url.replace("###", addHash)
-    val hashDigits       = addHash.filter { it.isDigit() }
-    val first16Digits    = hashDigits.take(16)
-    app.get("${verificationUrl}&t=0.${first16Digits}")
-    var verifyCheck: String
-    var verifyResponse: NiceResponse
-    do {
-        delay(1000)
-        val requestBody = FormBody.Builder().add("verify", addHash).build()
-        verifyResponse  = app.post("${mainUrl}/verify2.php", requestBody = requestBody)
-        verifyCheck     = verifyResponse.text
-    } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
-    return verifyResponse.cookies["t_hash_t"].orEmpty()
-}
 
 suspend fun cinemaluxeBypass(url: String): String {
     val document = app.get(url).document.toString()
@@ -83,7 +62,7 @@ suspend fun loadSourceNameExtractor(
         callback.invoke(
             ExtractorLink(
                 "$source[${link.source}]",
-                "$source[${link.source}]",
+                "$source - ${link.name}",
                 link.url,
                 link.referer,
                 quality ?: link.quality ,

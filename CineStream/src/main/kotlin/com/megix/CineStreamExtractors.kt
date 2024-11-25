@@ -22,7 +22,6 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit
     ) {
         val url = if(season == null) {
             "$torrentioAPI/$torrentioCONFIG/stream/movie/$id.json"
@@ -141,7 +140,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
         val entries =
-            res?.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
+            res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
                 ?.filter { element -> !element.text().contains("Download", true) }?.takeLast(4)
         entries?.map {
             val href = it.nextElementSibling()?.select("a")?.attr("href")
@@ -736,271 +735,65 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeDramaCool(
-        title: String,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val json = if(season == null && episode == null) { 
-            var episodeSlug = "$title episode 1".createSlug()
-            val url = "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}" 
-            val res = app.get(url).text
-            if(res.contains("Media Not found")) {
-                val newEpisodeSlug = "$title $year episode 1".createSlug()
-                val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
-                app.get(newUrl).text
-            }
-            else {
-                res
-            }
-        }
-        else {
-            val seasonText = if(season == 1) "" else "season $season"
-            val episodeSlug = "$title $seasonText episode $episode".createSlug()
-            val url =  "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}"
-            val res = app.get(url).text
-            if(res.contains("Media Not found")) {
-                val newEpisodeSlug = "$title $seasonText $year episode $episode".createSlug()
-                val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
-                app.get(newUrl).text
-            }
-            else {
-                res
-            }
-        }
-
-        val data = parseJson<ConsumetSources>(json)
-        data.sources?.forEach {
-            callback.invoke(
-                ExtractorLink(
-                    "DramaCool",
-                    "DramaCool",
-                    it.url,
-                    referer = "",
-                    quality = Qualities.P1080.value,
-                    isM3u8 = true
-                )
-            )
-        }
-        
-        data.subtitles?.forEach {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.lang,
-                    it.url
-                )
-            )
-        }
-    }
-
-    suspend fun invokePrimeVideo(
-        title: String,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val cookie = NFBypass(netflixAPI)
-        val cookies = mapOf(
-            "t_hash_t" to cookie,
-            "ott" to "pv",
-            "hd" to "on"
-        )
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
-        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
-        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
-
-        val (nfTitle, id) = app.get(
-            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/"
-        ).parsedSafe<NetflixResponse>().let { media ->
-            if (season == null && year.toString() == media?.year.toString()) {
-                media?.title to netflixId
-            } else if(year.toString() == media?.year.toString()) {
-                val seasonId = media?.season?.find { it.s == "$season" }?.id
-                val episodeId =
-                    app.get(
-                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
-                        headers = headers,
-                        cookies = cookies,
-                        referer = "$netflixAPI/"
-                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
-                media?.title to episodeId
-            }
-            else {
-                null to null
-            }
-        }
-
-        app.get(
-            "$netflixAPI/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/"
-        ).text.let {
-            tryParseJson<ArrayList<NetflixResponse>>(it)
-        }?.firstOrNull()?.sources?.map {
-            callback.invoke(
-                ExtractorLink(
-                    "PrimeVideo",
-                    "PrimeVideo",
-                    "$netflixAPI/${it.file}",
-                    "$netflixAPI/",
-                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
-                    INFER_TYPE,
-                    headers = mapOf("Cookie" to "hd=on")
-                )
-            )
-        }
-    }
-    
-    suspend fun invokeNetflix(
-        title: String,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val cookie = NFBypass(netflixAPI)
-        val cookies = mapOf(
-            "t_hash_t" to cookie,
-            "hd" to "on"
-        )
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
-        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
-        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
-
-        val (nfTitle, id) = app.get(
-            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/"
-        ).parsedSafe<NetflixResponse>().let { media ->
-            if (season == null && year.toString() == media?.year.toString()) {
-                media?.title to netflixId
-            } else if(year.toString() == media?.year.toString()) {
-                val seasonId = media?.season?.find { it.s == "$season" }?.id
-                val episodeId =
-                    app.get(
-                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
-                        headers = headers,
-                        cookies = cookies,
-                        referer = "$netflixAPI/"
-                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
-                media?.title to episodeId
-            }
-            else {
-                null to null
-            }
-        }
-
-        app.get(
-            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/"
-        ).text.let {
-            tryParseJson<ArrayList<NetflixResponse>>(it)
-        }?.firstOrNull()?.sources?.map {
-            callback.invoke(
-                ExtractorLink(
-                    "Netflix",
-                    "Netflix",
-                    "$netflixAPI/${it.file}",
-                    "$netflixAPI/",
-                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
-                    INFER_TYPE,
-                    headers = mapOf("Cookie" to "hd=on")
-                )
-            )
-        }
-    }
-
-    // suspend fun invokeVadaPav(
+    // suspend fun invokeDramaCool(
     //     title: String,
     //     year: Int? = null,
     //     season: Int? = null,
     //     episode: Int? = null,
     //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit
+    //     callback: (ExtractorLink) -> Unit,
     // ) {
-    //     val mirrors = listOf(
-    //         "https://vadapav.mov",
-    //         "https://dl1.vadapav.mov",
-    //         "https://dl2.vadapav.mov",
-    //         "https://dl3.vadapav.mov",
-    //     )
-
-    //     val url = if(season != null && episode != null) "$VadapavAPI/s/$title" else "$VadapavAPI/s/$title ($year)"
-    //     val document = app.get(url).document
-    //     val result = document.selectFirst("div.directory > ul > li > div > a")
-    //     val text = result?.text()?.trim().toString()
-    //     val href = VadapavAPI + (result?.attr("href") ?: return)
-    //     if(season != null && episode != null && title.equals(text, true)) {
-    //         val doc = app.get(href).document
-    //         val filteredLink = doc.select("div.directory > ul > li > div > a.directory-entry").firstOrNull { aTag ->
-    //             val seasonFromText = Regex("""Season\s(\d{1,2})""").find(aTag.text())?.groupValues ?. get(1)
-    //             seasonFromText ?.toInt() == season
+    //     val json = if(season == null && episode == null) {
+    //         var episodeSlug = "$title episode 1".createSlug()
+    //         val url = "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}"
+    //         val res = app.get(url).text
+    //         if(res.contains("Media Not found")) {
+    //             val newEpisodeSlug = "$title $year episode 1".createSlug()
+    //             val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
+    //             app.get(newUrl).text
     //         }
-    //         val seasonLink = VadapavAPI + (filteredLink ?. attr("href") ?: return)
-    //         val seasonDoc = app.get(seasonLink).document
-    //         val filteredLinks = seasonDoc.select("div.directory > ul > li > div > a.file-entry")
-    //             .filter { element ->
-    //                 val episodeFromText = Regex("""E(\d{1,3})""").find(element.text())?.groupValues?.get(1)
-    //                 episodeFromText?.toIntOrNull() ?: return@filter false
-    //                 episodeFromText.toInt() == episode
-    //             }
-            
-    //         filteredLinks.forEach {
-    //             if(it.text().contains(".mkv", true) || it.text().contains(".mp4", true)) {
-    //                 val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-    //                 val quality = qualityRegex.find(it.text()) ?. groupValues ?. get(1) ?: ""
-    //                 for((index, mirror) in mirrors.withIndex()) {
-    //                     callback.invoke(
-    //                         ExtractorLink(
-    //                             "[VadaPav" + " ${index+1}]",
-    //                             "[VadaPav" + " ${index+1}] ${it.text()}",
-    //                             mirror + it.attr("href"),
-    //                             referer = "",
-    //                             quality = getIndexQuality(quality),
-    //                         )
-    //                     )
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     else if(season == null) {
-    //         val doc = app.get(href).document
-    //         doc.select("div.directory > ul > li > div > a.file-entry:matches((?i)(.mkv|.mp4))").forEach {
-    //             val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-    //             val quality = qualityRegex.find(it.text()) ?. groupValues ?. get(1) ?: ""
-    //             for((index, mirror) in mirrors.withIndex()) {
-    //                 callback.invoke(
-    //                     ExtractorLink(
-    //                         "[VadaPav" + " ${index+1}]",
-    //                         "[VadaPav" + " ${index+1}] ${it.text()}",
-    //                         mirror + it.attr("href"),
-    //                         referer = "",
-    //                         quality = getIndexQuality(quality),
-    //                     )
-    //                 )
-    //             }
+    //         else {
+    //             res
     //         }
     //     }
     //     else {
-    //         //Nothing
+    //         val seasonText = if(season == 1) "" else "season $season"
+    //         val episodeSlug = "$title $seasonText episode $episode".createSlug()
+    //         val url =  "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}"
+    //         val res = app.get(url).text
+    //         if(res.contains("Media Not found")) {
+    //             val newEpisodeSlug = "$title $seasonText $year episode $episode".createSlug()
+    //             val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
+    //             app.get(newUrl).text
+    //         }
+    //         else {
+    //             res
+    //         }
+    //     }
+
+    //     val data = parseJson<ConsumetSources>(json)
+    //     data.sources?.forEach {
+    //         callback.invoke(
+    //             ExtractorLink(
+    //                 "DramaCool",
+    //                 "DramaCool",
+    //                 it.url,
+    //                 referer = "",
+    //                 quality = Qualities.P1080.value,
+    //                 isM3u8 = true
+    //             )
+    //         )
+    //     }
+        
+    //     data.subtitles?.forEach {
+    //         subtitleCallback.invoke(
+    //             SubtitleFile(
+    //                 it.lang,
+    //                 it.url
+    //             )
+    //         )
     //     }
     // }
-
 
     suspend fun invokeFull4Movies(
         title: String,
