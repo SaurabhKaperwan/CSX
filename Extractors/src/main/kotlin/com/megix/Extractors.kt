@@ -586,7 +586,7 @@ class Photolinx : ExtractorApi() {
         val client = OkHttpClient()
         val res = app.get(url)
         val document = res.document
-        val fileName == document.selectFirst("h1")?.text() ?: ""
+        val fileName = document.selectFirst("h1")?.text() ?: ""
         val cookies = res.cookies["PHPSESSID"].toString()
         val accessToken = document.select("#generate_url").attr("data-token")
         val uid = document.select("#generate_url").attr("data-uid")
