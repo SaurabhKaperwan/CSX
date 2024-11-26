@@ -372,16 +372,16 @@ object CineStreamExtractors : CineStreamProvider() {
                 var lang=""
                 val dub=it.select("span").text()
                 if (dub.contains("eng")) lang="DUB" else lang="SUB"
-                val quality = it.attr("data-resolution").toString()
+                val quality = it.attr("data-resolution")
                 val href = it.attr("data-src")
                 if (href.contains("kwik.si")) {
                     loadCustomExtractor(
-                        "Animepahe [$lang] $quality",
+                        "Animepahe [$lang]",
                         href,
                         mainUrl,
                         subtitleCallback,
                         callback,
-                        getIndexQuality(quality)
+                        getQualityFromName(quality)
                     )
                 }
             }
