@@ -48,11 +48,8 @@ open class CineStreamProvider : MainAPI() {
     override val hasDownloadSupport = true
     val skipMap: MutableMap<String, Int> = mutableMapOf()
     val cinemeta_url = "https://v3-cinemeta.strem.io"
-    //val cyberflix_url = "https://cyberflix.elfhosted.com/c/catalogs"
     val kitsu_url = "https://anime-kitsu.strem.fun"
-    //val anime_catalogs_url = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     val haglund_url = "https://arm.haglund.dev/api/v2"
-    val jikanAPI = "https://api.jikan.moe/v4"
     val streamio_TMDB = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
     val mediaFusion = "https://mediafusion.elfhosted.com"
     companion object {
@@ -75,7 +72,7 @@ open class CineStreamProvider : MainAPI() {
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         //const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
-        const val AutoembedDramaAPI = "https://asian-drama.autoembed.cc"
+        const val AutoembedDramaAPI = "https://drama.autoembed.cc"
         const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
@@ -351,8 +348,8 @@ open class CineStreamProvider : MainAPI() {
             argamap(
                 {
                     if(!res.isBollywood) invokeVegamovies(
+                        res.id,
                         res.title,
-                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -394,8 +391,8 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     if(res.isBollywood) invokeRogmovies(
+                        res.id,
                         res.title,
-                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,

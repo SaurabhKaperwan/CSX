@@ -62,6 +62,10 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
         val url = if(season == null) "$TomAPI/api/getVideoSource?type=movie&id=$id" else "$TomAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
+            "Referer" to "$AutoembedAPI/"
+        )
         val json = app.get(url).text
         val data = tryParseJson<TomResponse>(json) ?: return
 
@@ -328,7 +332,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val Season = app.get("$jikanAPI/anime/${malId ?: return}").parsedSafe<JikanResponse>()?.data?.season ?:""
         val malsync = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
             .parsedSafe<MALSyncResponses>()?.sites
         val zoroIds = malsync?.zoro?.keys?.map { it }
@@ -833,16 +836,16 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeRogmovies(
+        id: String? = null,
         title: String? = null,
-        year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
         invokeWpredis(
+            id,
             title,
-            year,
             season,
             episode,
             subtitleCallback,
@@ -851,16 +854,16 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
     suspend fun invokeVegamovies(
+        id: String? = null,
         title: String? = null,
-        year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
         invokeWpredis(
+            id,
             title,
-            year,
             season,
             episode,
             subtitleCallback,
@@ -870,8 +873,8 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     private suspend fun invokeWpredis(
+        id: String? = null,
         title: String? = null,
-        year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -881,11 +884,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val cfInterceptor = CloudflareKiller()
         val fixtitle = title?.substringBefore("-")?.substringBefore(":")?.replace("&", " ")
-        val url = if (season == null) {
-            "$api/search/$fixtitle $year"
-        } else {
-            "$api/search/$fixtitle season $season"
-        }
+        val url = "$api/search/$id"
         val domain= api.substringAfter("//").substringBefore(".")
         app.get(url, interceptor = cfInterceptor).document.select("#main-content article")
             .filter { element ->

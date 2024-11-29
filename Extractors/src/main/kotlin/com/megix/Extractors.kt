@@ -7,6 +7,7 @@ import okhttp3.FormBody
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import android.util.Log
 
 class Driveleech : Driveseed() {
     override val name: String = "Driveleech"
@@ -92,9 +93,8 @@ open class Driveseed : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val document = app.get(url).document
-        val quality = document.selectFirst("li.list-group-item:contains(Name)")?.text() ?: ""
-        val fileName = quality.substringAfter("Name : ") ?: ""
-
+        val quality = document.selectFirst("li.list-group-item")?.text() ?: ""
+        val fileName = quality.replace("Name : ", "")
         document.select("div.text-center > a").amap { element ->
             val text = element.text()
             val href = element.attr("href")
