@@ -10,7 +10,5 @@ class Moviesmod: Plugin() {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(MoviesmodProvider())
         registerMainAPI(TopmoviesProvider())
-        registerExtractorAPI(Driveseed())
-        registerExtractorAPI(Driveleech())
     }
 }

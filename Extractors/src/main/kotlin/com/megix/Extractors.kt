@@ -431,7 +431,7 @@ class fastdlserver : GDFlix() {
     override var mainUrl = "https://fastdlserver.online"
 }
 
-class GDFlix1 : GDFlix() {
+class GDFlix3 : GDFlix() {
     override val mainUrl: String = "https://new3.gdflix.cfd"
 }
 
@@ -439,9 +439,13 @@ class GDFlix2 : GDFlix() {
     override val mainUrl: String = "https://new2.gdflix.cfd"
 }
 
+class GDFlix4 : GDFlix() {
+    override val mainUrl: String = "https://new4.gdflix.cfd"
+}
+
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new4.gdflix.cfd"
+    override val mainUrl: String = "https://new5.gdflix.cfd"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -462,70 +466,102 @@ open class GDFlix : ExtractorApi() {
         }
         val document = app.get(originalUrl).document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
-        document.select("div.text-center a").map {
-            if (it.select("a").text().contains("FAST CLOUD DL"))
+        document.select("div.text-center a").amap {
+            val text = it.select("a").text()
+            if (
+                text.contains("FAST CLOUD") &&
+                !text.contains("ZIP")
+            )
             {
                 val link=it.attr("href")
-                val trueurl=app.get("$mainUrl$link", timeout = 30L).document.selectFirst("a.btn-success")?.attr("href") ?:""
-                callback.invoke(
-                    ExtractorLink(
-                        "GDFlix[Fast Cloud]",
-                        "GDFLix[Fast Cloud] - $fileName",
-                        trueurl,
-                        "",
-                        getIndexQuality(fileName)
-                    )
-                )
-            }
-            else if (it.select("a").text().contains("DRIVEBOT LINK"))
-            {
-                val driveLink = it.attr("href")
-                val id = driveLink.substringAfter("id=").substringBefore("&")
-                val doId = driveLink.substringAfter("do=").substringBefore("==")
-                val indexbotlink = "https://indexbot.lol/download?id=${id}&do=${doId}"
-                val indexbotresponse = app.get(indexbotlink, timeout = 30L)
-                if(indexbotresponse.isSuccessful) {
-                    val cookiesSSID = indexbotresponse.cookies["PHPSESSID"]
-                    val indexbotDoc = indexbotresponse.document
-                    val token = Regex("""formData\.append\('token', '([a-f0-9]+)'\)""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: ""
-                    val postId = Regex("""fetch\('/download\?id=([a-zA-Z0-9/+]+)'""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: ""
-
-                    val requestBody = FormBody.Builder()
-                        .add("token", token)
-                        .build()
-
-                    val headers = mapOf(
-                        "Referer" to indexbotlink
-                    )
-
-                    val cookies = mapOf(
-                        "PHPSESSID" to "$cookiesSSID",
-                    )
-
-                    val response = app.post(
-                        "https://indexbot.lol/download?id=${postId}",
-                        requestBody = requestBody,
-                        headers = headers,
-                        cookies = cookies,
-                        timeout = 30L
-                    ).toString()
-
-                    var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""
-
-                    downloadlink = downloadlink.replace("\\", "")
-
+                if(link.contains("mkv") || link.contains("mp4")) {
                     callback.invoke(
                         ExtractorLink(
-                            "GDFlix[IndexBot](VLC)",
-                            "GDFlix[IndexBot](VLC)  - $fileName",
-                            downloadlink,
-                            "https://indexbot.lol/",
+                            "GDFlix[Fast Cloud]",
+                            "GDFLix[Fast Cloud] - $fileName",
+                            link,
+                            "",
+                            getIndexQuality(fileName),
+                        )
+                    )
+                }
+                else {
+                    val trueurl=app.get("$mainUrl$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    callback.invoke(
+                        ExtractorLink(
+                            "GDFlix[Fast Cloud]",
+                            "GDFLix[Fast Cloud] - $fileName",
+                            trueurl,
+                            "",
                             getIndexQuality(fileName)
                         )
                     )
                 }
             }
-            else if (it.select("a").text().contains("Instant DL"))
+            else if(text.contains("DIRECT DL")) {
+                val link = it.attr("href")
+                callback.invoke(
+                    ExtractorLink(
+                        "GDFlix[Direct]",
+                        "GDFLix[Direct] - $fileName",
+                        link,
+                        "",
+                        getIndexQuality(fileName),
+                    )
+                )
+            }
+            else if (text.contains("DRIVEBOT LINK"))
+            {
+                val driveLink = it.attr("href")
+                val id = driveLink.substringAfter("id=").substringBefore("&")
+                val doId = driveLink.substringAfter("do=").substringBefore("==")
+                val baseUrls = listOf("https://drivebot.sbs", "https://drivebot.cfd")
+                baseUrls.amap { baseUrl ->
+                    val indexbotlink = "$baseUrl/download?id=$id&do=$doId"
+                    val indexbotresponse = app.get(indexbotlink, timeout = 100L)
+                    if(indexbotresponse.isSuccessful) {
+                        val cookiesSSID = indexbotresponse.cookies["PHPSESSID"]
+                        val indexbotDoc = indexbotresponse.document
+                        val token = Regex("""formData\.append\('token', '([a-f0-9]+)'\)""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: ""
+                        val postId = Regex("""fetch\('/download\?id=([a-zA-Z0-9/+]+)'""").find(indexbotDoc.toString()) ?. groupValues ?. get(1) ?: ""
+
+                        val requestBody = FormBody.Builder()
+                            .add("token", token)
+                            .build()
+
+                        val headers = mapOf(
+                            "Referer" to indexbotlink
+                        )
+
+                        val cookies = mapOf(
+                            "PHPSESSID" to "$cookiesSSID",
+                        )
+
+                        val response = app.post(
+                            "$baseUrl/download?id=${postId}",
+                            requestBody = requestBody,
+                            headers = headers,
+                            cookies = cookies,
+                            timeout = 100L
+                        ).toString()
+
+                        var downloadlink = Regex("url\":\"(.*?)\"").find(response) ?. groupValues ?. get(1) ?: ""
+
+                        downloadlink = downloadlink.replace("\\", "")
+
+                        callback.invoke(
+                            ExtractorLink(
+                                "GDFlix[DriveBot]",
+                                "GDFlix[DriveBot] - $fileName",
+                                downloadlink,
+                                baseUrl,
+                                getIndexQuality(fileName)
+                            )
+                        )
+                    }
+                }
+            }
+            else if (text.contains("Instant DL"))
             {
                 val instantLink = it.attr("href")
                 val link = app.get(instantLink, timeout = 30L, allowRedirects = false).headers["Location"]?.split("url=") ?. getOrNull(1) ?: ""
@@ -538,6 +574,9 @@ open class GDFlix : ExtractorApi() {
                         getIndexQuality(fileName)
                     )
                 )
+            }
+            else {
+                Log.d("Error", "No Server matched")
             }
         }
     }
