@@ -37,7 +37,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("img")?.attr("title") ?: return null
+        val title = this.select("a").attr("title")
         val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
 
@@ -49,7 +49,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..25) {
+        for (i in 1..7) {
             val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("div.article-content-col").mapNotNull { it.toSearchResult() }

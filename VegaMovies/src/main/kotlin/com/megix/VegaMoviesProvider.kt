@@ -7,11 +7,11 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
-import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.si"
+    override var mainUrl = "https://vegamovies.ps"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -53,22 +53,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             posterUrl = this.selectFirst("img")?.attr("src").toString()
         }
 
-        val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
-            SearchQuality.CamRip
-        }
-        else {
-            null
-        }
-
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
-            this.quality = quality
         }
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
-        for (i in 1..25) {
+        for (i in 1..7) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
             val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
             if (results.isEmpty()) {
@@ -81,41 +73,24 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         val ogTitle = title
-        var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
-        val documentText = document.text()
+        var posterUrl = document.select("meta[property=og:image]").attr("content")
         val div = document.selectFirst("div.entry-content")
-        val hTagsDisc = div?.selectFirst("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")
-        val pTagDisc = hTagsDisc?.nextElementSibling()
-        var description = pTagDisc?.text()
+        var description = div?.selectFirst("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")?.nextElementSibling()?.text()
+        val imdbUrl = div?.selectFirst("a:matches((?i)(Rating))")?.attr("href")
+        val heading = div?.selectFirst("h3")
 
-        val aTagRating = div?.selectFirst("a:matches((?i)(Rating))")
-        val imdbUrl = aTagRating?.attr("href")
-
-        val tvtype = if (
-            url.contains("web-series") ||
-            Regex("Series synopsis").containsMatchIn(documentText) ||
-            Regex("Series Name").containsMatchIn(documentText)
-        ) {
-            "series"
-        } else {
+        val tvtype = if (heading?.nextElementSibling()?.nextElementSibling()?.text()
+            ?.let { it.contains("Series Name") || it.contains("SHOW Name") } == true) {
+                "series"
+        }   else {
             "movie"
         }
 
-        val responseData = if (!imdbUrl.isNullOrEmpty()) {
-            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
-            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
-            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
-                val gson = Gson()
-                gson.fromJson(jsonResponse, ResponseData::class.java)
-            }
-            else {
-                null
-            }
-        } else {
-            null
-        }
+        val imdbId = imdbUrl?.substringAfter("title/")?.substringBefore("/")
+        val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+        val responseData = tryParseJson<ResponseData>(jsonResponse)
 
         var cast: List<String> = emptyList()
         var genre: List<String> = emptyList()
@@ -124,14 +99,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         var background: String = posterUrl
 
         if(responseData != null) {
-            description = responseData.meta?.description ?: description
-            cast = responseData.meta?.cast ?: emptyList()
-            title = responseData.meta?.name ?: title
-            genre = responseData.meta?.genre ?: emptyList()
-            imdbRating = responseData.meta?.imdbRating ?: ""
-            year = responseData.meta?.year ?: ""
-            posterUrl = responseData.meta?.poster ?: posterUrl
-            background = responseData.meta?.background ?: background
+            description = responseData.meta.description ?: description
+            cast = responseData.meta.cast ?: emptyList()
+            title = responseData.meta.name ?: title
+            genre = responseData.meta.genre ?: emptyList()
+            imdbRating = responseData.meta.imdbRating ?: ""
+            year = responseData.meta.year ?: ""
+            posterUrl = responseData.meta.poster ?: posterUrl
+            background = responseData.meta.background ?: background
         }
 
         if (tvtype == "series") {
@@ -221,7 +196,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 this.plot = description
                 this.tags = genre
                 this.rating = imdbRating.toRatingInt()
-                this.year = year.toIntOrNull()
+                this.year = year.toIntOrNull() ?: year.substringBefore("–").toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
                 addImdbUrl(imdbUrl)
@@ -266,12 +241,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val imdb_id: String?,
         val type: String?,
         val poster: String?,
-        val logo: String?,
         val background: String?,
         val moviedb_id: Int?,
         val name: String?,
         val description: String?,
         val genre: List<String>?,
+        val genres: List<String>?,
         val releaseInfo: String?,
         val status: String?,
         val runtime: String?,
@@ -279,25 +254,28 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val language: String?,
         val country: String?,
         val imdbRating: String?,
-        val slug: String?,
         val year: String?,
-        val videos: List<EpisodeDetails>?
+        val videos: List<EpisodeDetails>?,
     )
 
     data class EpisodeDetails(
         val id: String?,
         val name: String?,
         val title: String?,
-        val season: Int?,
-        val episode: Int?,
+        val season: Int,
+        val episode: Int,
         val released: String?,
+        val firstAired: String?,
         val overview: String?,
         val thumbnail: String?,
-        val moviedb_id: Int?
+        val moviedb_id: Int?,
+        val imdb_id: String?,
+        val imdbSeason: Int?,
+        val imdbEpisode: Int?,
     )
 
     data class ResponseData(
-        val meta: Meta?
+        val meta: Meta,
     )
 
     data class EpisodeLink(

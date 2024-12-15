@@ -1,6 +1,26 @@
 package com.megix
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+
+data class TorrentioResponse(val streams: List<TorrentioStream>)
+
+data class TorrentioStream(
+    val name: String?,
+    val title: String?,
+    val infoHash: String?,
+    val fileIdx: Int?,
+)
+
+data class TomResponse (
+  var videoSource    : String,
+  var subtitles      : ArrayList<TomSubtitles> = arrayListOf(),
+)
+
+data class TomSubtitles (
+  var file    : String,
+  var label   : String
+)
 
 data class StreamifyResponse(
     val streams: List<Streamify>
@@ -71,10 +91,12 @@ data class Daum(
 )
 
 data class MALSyncSites(
+    @JsonProperty("Gogoanime") val Gogoanime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("Zoro") val zoro: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("9anime") val nineAnime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("animepahe") val animepahe: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
 )
+
 data class HianimeResponses(
     @JsonProperty("html") val html: String? = null,
     @JsonProperty("link") val link: String? = null,
@@ -107,43 +129,67 @@ data class TwoEmbedStream(
     val playlist: String,
 )
 
-// data class AstraQuery(
-//     val stream: List<AstraStream>
-// )
+data class WHVXToken(
+    val token : String,
+)
 
-// data class AstraStream(
-//     val id: String,
-//     val type: String,
-//     val playlist: String,
-// )
+data class OrionStreamData(
+    val stream: List<OrionStream>
+)
 
-// data class NovaStream(
-//     val id: String,
-//     val qualities: Map<String, NovaQuality>,
-//     val captions: List<NovaCaption>
-// )
+data class OrionStream(
+    val id: String,
+    val type: String,
+    val playlist: String,
+    val flags: List<String>,
+    val captions: List<OrionCaption>
+)
 
-// data class NovaQuality(
-//     val type: String,
-//     val url: String
-// )
+data class OrionCaption(
+    val id: String,
+    val url: String,
+    val type: String,
+    val hasCorsRestrictions: Boolean,
+    val language: String
+)
 
-// data class NovaCaption(
-//     val id: String,
-//     val url: String,
-//     val type: String,
-//     val hasCorsRestrictions: Boolean,
-//     val language: String
-// )
+data class AstraQuery(
+    val stream: List<AstraStream>
+)
 
-// data class NovaVideoData(
-//     val stream: List<NovaStream>
-// )
+data class AstraStream(
+    val id: String,
+    val type: String,
+    val playlist: String,
+)
 
-// data class WHVX(
-//     val embedId: String,
-//     val url: String,
-// )
+data class NovaStream(
+    val id: String,
+    val qualities: Map<String, NovaQuality>,
+    val captions: List<NovaCaption>
+)
+
+data class NovaQuality(
+    val type: String,
+    val url: String
+)
+
+data class NovaCaption(
+    val id: String,
+    val url: String,
+    val type: String,
+    val hasCorsRestrictions: Boolean,
+    val language: String
+)
+
+data class NovaVideoData(
+    val stream: List<NovaStream>
+)
+
+data class WHVX(
+    val embedId: String,
+    val url: String,
+)
 
 data class WYZIESubtitle(
     val url: String,
@@ -169,40 +215,4 @@ data class ConsumetSource(
 data class ConsumetSubtitle(
     val url: String,
     val lang: String
-)
-
-data class NfSearchData(
-    val head: String,
-    val searchResult: List<NfSearchResult>,
-    val type: Int
-)
-
-data class NfSearchResult(
-    val id: String,
-    val t: String
-)
-
-data class NetflixSources(
-    @JsonProperty("file") val file: String? = null,
-    @JsonProperty("label") val label: String? = null,
-)
-
-data class NetflixEpisodes(
-    @JsonProperty("id") val id: String? = null,
-    @JsonProperty("t") val t: String? = null,
-    @JsonProperty("s") val s: String? = null,
-    @JsonProperty("ep") val ep: String? = null,
-)
-
-data class NetflixSeason(
-    @JsonProperty("s") val s: String? = null,
-    @JsonProperty("id") val id: String? = null,
-)
-
-data class NetflixResponse(
-    @JsonProperty("title") val title: String? = null,
-    @JsonProperty("year") val year : String? = null,
-    @JsonProperty("season") val season: ArrayList<NetflixSeason>? = arrayListOf(),
-    @JsonProperty("episodes") val episodes: ArrayList<NetflixEpisodes>? = arrayListOf(),
-    @JsonProperty("sources") val sources: ArrayList<NetflixSources>? = arrayListOf(),
 )

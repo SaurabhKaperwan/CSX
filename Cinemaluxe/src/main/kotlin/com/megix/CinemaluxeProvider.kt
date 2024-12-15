@@ -57,7 +57,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..25) {
+        for (i in 1..6) {
             val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("div.result-item").mapNotNull { it.toSearchResult() }

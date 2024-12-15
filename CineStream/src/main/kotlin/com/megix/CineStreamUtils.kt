@@ -6,13 +6,12 @@ import android.util.Base64
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
-suspend fun NFBypass(mainUrl : String): String {
-    val document = app.get("$mainUrl/home").document
-    val addhash = document.selectFirst("body").attr("data-addhash").toString()
-    val res = app.get("https://userverify.netmirror.app/verify?vhf=${addhash}&a=yy&t=${APIHolder.unixTime}") //make request for validation
-    val requestBody = FormBody.Builder().add("verify", addhash).build()
-    return app.post("$mainUrl/verify2.php", requestBody = requestBody).cookies["t_hash_t"].toString()
+suspend fun cinemaluxeBypass(url: String): String {
+    val document = app.get(url).document.toString()
+    val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
+    return base64Decode(encodeUrl)
 }
 
 fun getBaseUrl(url: String): String {
@@ -63,7 +62,7 @@ suspend fun loadSourceNameExtractor(
         callback.invoke(
             ExtractorLink(
                 "$source[${link.source}]",
-                "$source[${link.source}]",
+                "$source - ${link.name}",
                 link.url,
                 link.referer,
                 quality ?: link.quality ,
@@ -119,7 +118,6 @@ suspend fun loadCustomExtractor(
                 link.referer,
                 when {
                     link.name == "VidSrc" -> Qualities.P1080.value
-                    link.type == ExtractorLinkType.M3U8 -> link.quality
                     else -> quality ?: link.quality
                 },
                 link.type,

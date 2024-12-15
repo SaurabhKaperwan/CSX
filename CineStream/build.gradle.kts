@@ -1,12 +1,13 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 29
+version = 43
 
 android {
     defaultConfig {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
+        buildConfigField("String", "WHVX_TOKEN", "\"${properties.getProperty("WHVX_TOKEN")}\"")
     }
 }
 
@@ -19,7 +20,8 @@ cloudstream {
         "TvSeries",
         "Movie",
         "AsianDrama",
-        "Anime"
+        "Anime",
+        "Torrent",
     )
 
     iconUrl = "https://us.123rf.com/450wm/mrshamsjaman/mrshamsjaman2008/mrshamsjaman200800943/154338064-initial-letter-cs-logo-or-sc-logo-vector-design-template.jpg"

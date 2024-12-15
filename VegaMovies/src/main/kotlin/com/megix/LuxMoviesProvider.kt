@@ -43,26 +43,15 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.attr("title").replace("Download ", "")
         val href = this.attr("href")
-        var posterUrl = this.selectFirst("img")?.attr("data-lazy-src").toString()
-        if(posterUrl.isNullOrEmpty()) {
-            posterUrl = this.selectFirst("img")?.attr("src").toString()
-        }
-
-        val quality = if(title.contains("HDCAMRip", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
-            SearchQuality.CamRip
-        }
-        else {
-            null
-        }
+        var posterUrl = this.select("img").attr("src") ?: this.select("img").attr("data-lazy-src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
-            this.quality = quality
         }
     }
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
-        for (i in 1..25) {
+        for (i in 1..7) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
             val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
             if (results.isEmpty()) {
