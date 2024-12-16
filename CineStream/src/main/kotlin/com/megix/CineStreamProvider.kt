@@ -54,10 +54,10 @@ open class CineStreamProvider : MainAPI() {
     val mediaFusion = "https://mediafusion.elfhosted.com"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.ps"
-        const val rogMoviesAPI = "https://rogmovies.fun"
-        const val MovieDrive_API="https://moviesdrive.world"
-        const val topmoviesAPI = "https://topmovies.icu"
+        const val vegaMoviesAPI = "https://vegamovies.st"
+        const val rogMoviesAPI = "https://rogmovies.com"
+        const val MovieDrive_API = "https://moviesdrive.cloud"
+        const val topmoviesAPI = "https://topmovies.bet"
         const val MoviesmodAPI = "https://moviesmod.bot"
         const val Full4MoviesAPI = "https://www.full4movies.express"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
@@ -66,7 +66,7 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.icu"
+        const val uhdmoviesAPI = "https://uhdmovies.bet"
         const val myConsumetAPI = BuildConfig.CONSUMET_API
         const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
         const val moviesAPI = "https://moviesapi.club"
@@ -77,7 +77,7 @@ open class CineStreamProvider : MainAPI() {
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val viteAPI = "https://viet.autoembed.cc"
-        const val multimoviesAPI = "https://multimovies.bond"
+        const val multimoviesAPI = "https://multimovies.lat"
         const val anitaku = "https://anitaku.pe"
         const val cinemaluxeAPI = "https://cinemaluxe.click"
         const val bollyflixAPI = "https://bollyflix.meme"
