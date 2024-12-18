@@ -431,21 +431,16 @@ class fastdlserver : GDFlix() {
     override var mainUrl = "https://fastdlserver.online"
 }
 
-class GDFlix3 : GDFlix() {
-    override val mainUrl: String = "https://new3.gdflix.cfd"
-}
-
-class GDFlix2 : GDFlix() {
-    override val mainUrl: String = "https://new2.gdflix.cfd"
-}
-
 class GDFlix4 : GDFlix() {
     override val mainUrl: String = "https://new4.gdflix.cfd"
+}
+class GDFlix5 : GDFlix() {
+    override val mainUrl: String = "https://new5.gdflix.cfd"
 }
 
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new5.gdflix.cfd"
+    override val mainUrl: String = "https://new6.gdflix.cfd"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -509,6 +504,25 @@ open class GDFlix : ExtractorApi() {
                         getIndexQuality(fileName),
                     )
                 )
+            }
+            else if(text.contains("Index Links")) {
+                val link = it.attr("href")
+                val doc = app.get("$mainUrl$link").document
+                doc.select("a.btn.btn-outline-info").amap {
+                    val serverUrl = mainUrl + it.attr("href")
+                    app.get(serverUrl).document.select("div.mb-4 > a").amap {
+                        val source = it.attr("href")
+                        callback.invoke(
+                            ExtractorLink(
+                                "GDFlix[Index]",
+                                "GDFLix[Index] - $fileName",
+                                source,
+                                "",
+                                getIndexQuality(fileName),
+                            )
+                        )
+                    }
+                }
             }
             else if (text.contains("DRIVEBOT LINK"))
             {

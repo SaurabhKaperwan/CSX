@@ -28,11 +28,9 @@ import com.megix.CineStreamExtractors.invokeVidSrcNL
 import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
 //import com.megix.CineStreamExtractors.invokeFilmyxy
-import com.megix.CineStreamExtractors.invokeAutoembedDrama
 import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeVite
-import com.megix.CineStreamExtractors.invokeMultiAutoembed
 import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
 import com.megix.CineStreamExtractors.invokeCinemaluxe
@@ -67,12 +65,10 @@ open class CineStreamProvider : MainAPI() {
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
         const val uhdmoviesAPI = "https://uhdmovies.bet"
-        const val myConsumetAPI = BuildConfig.CONSUMET_API
         const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         //const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
-        const val AutoembedDramaAPI = "https://drama.autoembed.cc"
         const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
@@ -357,14 +353,6 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    invokeMultiAutoembed(
-                        res.tmdbId,
-                        res.season,
-                        res.episode,
-                        callback
-                    )   
-                },
-                {
                     invokeTom(
                         res.tmdbId,
                         res.season,
@@ -438,16 +426,16 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    if(!res.isAnime) invokeFull4Movies(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     if(!res.isAnime) invokeFull4Movies(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeCinemaluxe(
                         res.title,
@@ -485,16 +473,6 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     if(res.isAsian) invokeDramaCool(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
                 {
                     if(!res.isAnime) invokeW4U(
                         res.title,
@@ -614,16 +592,6 @@ open class CineStreamProvider : MainAPI() {
                 //         subtitleCallback
                 //     )   
                 // },
-                {
-                    if(res.isAsian) invokeAutoembedDrama(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
             )
         }
         return true
