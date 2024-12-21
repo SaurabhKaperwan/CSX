@@ -431,21 +431,16 @@ class fastdlserver : GDFlix() {
     override var mainUrl = "https://fastdlserver.online"
 }
 
-class GDFlix3 : GDFlix() {
-    override val mainUrl: String = "https://new3.gdflix.cfd"
-}
-
-class GDFlix2 : GDFlix() {
-    override val mainUrl: String = "https://new2.gdflix.cfd"
-}
-
 class GDFlix4 : GDFlix() {
     override val mainUrl: String = "https://new4.gdflix.cfd"
+}
+class GDFlix5 : GDFlix() {
+    override val mainUrl: String = "https://new5.gdflix.cfd"
 }
 
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new5.gdflix.cfd"
+    override val mainUrl: String = "https://new6.gdflix.cfd"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -459,12 +454,7 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        var originalUrl = url
-        if (originalUrl.startsWith("$mainUrl/goto/token/")) {
-            val partialurl = app.get(originalUrl).text.substringAfter("replace(\"").substringBefore("\")")
-            originalUrl = mainUrl + partialurl
-        }
-        val document = app.get(originalUrl).document
+        val document = app.get(url).document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
         document.select("div.text-center a").amap {
             val text = it.select("a").text()
@@ -486,7 +476,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
                 else {
-                    val trueurl=app.get("$mainUrl$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    val trueurl=app.get("https://new6.gdflix.cfd$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
@@ -509,6 +499,25 @@ open class GDFlix : ExtractorApi() {
                         getIndexQuality(fileName),
                     )
                 )
+            }
+            else if(text.contains("Index Links")) {
+                val link = it.attr("href")
+                val doc = app.get("https://new6.gdflix.cfd$link").document
+                doc.select("a.btn.btn-outline-info").amap {
+                    val serverUrl = mainUrl + it.attr("href")
+                    app.get(serverUrl).document.select("div.mb-4 > a").amap {
+                        val source = it.attr("href")
+                        callback.invoke(
+                            ExtractorLink(
+                                "GDFlix[Index]",
+                                "GDFLix[Index] - $fileName",
+                                source,
+                                "",
+                                getIndexQuality(fileName),
+                            )
+                        )
+                    }
+                }
             }
             else if (text.contains("DRIVEBOT LINK"))
             {
@@ -569,6 +578,18 @@ open class GDFlix : ExtractorApi() {
                     ExtractorLink(
                         "GDFlix[Instant Download]",
                         "GDFlix[Instant Download] - $fileName",
+                        link,
+                        "",
+                        getIndexQuality(fileName)
+                    )
+                )
+            }
+            else if(text.contains("CLOUD DOWNLOAD [FSL]")) {
+                val link = it.attr("href").substringAfter("url=")
+                callback.invoke(
+                    ExtractorLink(
+                        "GDFlix[FSL Instant Download]",
+                        "GDFlix[FSL Instant Download] - $fileName",
                         link,
                         "",
                         getIndexQuality(fileName)

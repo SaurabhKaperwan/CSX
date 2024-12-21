@@ -102,9 +102,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = searchDocument.select("div.title > a:matches((?i)($title $year))").attr("href")
         val document = app.get(url).document
         if(season == null) {
-            document.select("a.maxbutton").map {
+            document.select("a.maxbutton").amap {
                 val link = cinemaluxeBypass(it.attr("href"))
-                app.get(link).document.select("a.maxbutton").map {
+                app.get(link).document.select("a.maxbutton").amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",
                         it.attr("href"),
@@ -116,9 +116,13 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
         else {
-            document.select("div.wp-content > div:matches((?i)(Season ${season}))").map { div ->
+            var season = document.select("span.maxbutton-5-container:matches((?i)(Season $season))")
+            if(season.isEmpty()) {
+                season = document.select("div.wp-content > div:matches((?i)(Season $season))")
+            }
+            season.amap { div ->
                 val link = cinemaluxeBypass(div.select("a").attr("href"))
-                 app.get(link).document.select("a:matches((?i)(Episode ${episode}))").map {
+                 app.get(link).document.select("""a.maxbutton:matches((?i)(?:episode\s*[-]?\s*)(0?$episode))""").amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",
                         it.attr("href"),
@@ -155,13 +159,15 @@ object CineStreamExtractors : CineStreamProvider() {
             val decodedurl = base64Decode(encodedurl)
             if (season == null) {
                 val source =
-                    app.get(decodedurl, allowRedirects = false).headers["location"].toString()
+                    app.get(decodedurl).document.select("body").attr("onload")
+                    .substringAfter("location.replace('").substringBefore("'+document")
                 loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
             } else {
                 val link =
                     app.get(decodedurl).document.selectFirst("article h3 a:contains(Episode 0$episode)")!!
                         .attr("href")
-                val source = app.get(link, allowRedirects = false).headers["location"].toString()
+                val source = app.get(link).document.select("body").attr("onload")
+                    .substringAfter("location.replace('").substringBefore("'+document")
                 loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
             }
         }
@@ -272,33 +278,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     else -> ""
                 }
             }
-        }
-    }
-
-    suspend fun invokeMultiAutoembed(
-        id: Int?,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if(season != null && episode != null) "${AutoembedAPI}/embed/oplayer.php?id=${id}&s=${season}&e=${episode}" else "${AutoembedAPI}/embed/oplayer.php?id=${id}"
-        val document = app.get(url).document
-        val regex = Regex("""(?:"title":\s*"([^"]*)",\s*"file":\s*"([^"]*)")""")
-        val matches = regex.findAll(document.toString())
-
-        matches.forEach { match ->
-            val title = match.groups?.get(1)?.value ?: ""
-            val file = match.groups?.get(2)?.value ?: ""
-            callback.invoke(
-                ExtractorLink(
-                    "MultiAutoembed[${title}]",
-                    "MultiAutoembed[${title}]",
-                    file,
-                    referer = "",
-                    quality = Qualities.Unknown.value,
-                    true,
-                )
-            )
         }
     }
 
@@ -452,7 +431,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
-    //     val url = if(season != null && episode != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
+    //     val url = if(season != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
     //     val json = app.get(url, timeout = 20L).text
     //     val data = parseJson<NovaVideoData>(json) ?: return
     //     for (stream in data.stream) {
@@ -737,66 +716,6 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
     }
-
-    // suspend fun invokeDramaCool(
-    //     title: String,
-    //     year: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit,
-    // ) {
-    //     val json = if(season == null && episode == null) {
-    //         var episodeSlug = "$title episode 1".createSlug()
-    //         val url = "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}"
-    //         val res = app.get(url).text
-    //         if(res.contains("Media Not found")) {
-    //             val newEpisodeSlug = "$title $year episode 1".createSlug()
-    //             val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
-    //             app.get(newUrl).text
-    //         }
-    //         else {
-    //             res
-    //         }
-    //     }
-    //     else {
-    //         val seasonText = if(season == 1) "" else "season $season"
-    //         val episodeSlug = "$title $seasonText episode $episode".createSlug()
-    //         val url =  "${myConsumetAPI}/movies/dramacool/watch?episodeId=${episodeSlug}"
-    //         val res = app.get(url).text
-    //         if(res.contains("Media Not found")) {
-    //             val newEpisodeSlug = "$title $seasonText $year episode $episode".createSlug()
-    //             val newUrl = "$myConsumetAPI/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
-    //             app.get(newUrl).text
-    //         }
-    //         else {
-    //             res
-    //         }
-    //     }
-
-    //     val data = parseJson<ConsumetSources>(json)
-    //     data.sources?.forEach {
-    //         callback.invoke(
-    //             ExtractorLink(
-    //                 "DramaCool",
-    //                 "DramaCool",
-    //                 it.url,
-    //                 referer = "",
-    //                 quality = Qualities.P1080.value,
-    //                 isM3u8 = true
-    //             )
-    //         )
-    //     }
-        
-    //     data.subtitles?.forEach {
-    //         subtitleCallback.invoke(
-    //             SubtitleFile(
-    //                 it.lang,
-    //                 it.url
-    //             )
-    //         )
-    //     }
-    // }
 
     suspend fun invokeFull4Movies(
         title: String,
@@ -1231,38 +1150,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
         }
-    }
-    suspend fun invokeAutoembedDrama(
-        title: String,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if(season == null) {
-            val episodeSlug = "$title $year episode 1".createSlug()
-            "$AutoembedDramaAPI/embed/${episodeSlug}"
-        }
-        else {
-            val seasonText = if(season == 1) "" else "season $season"
-            val episodeSlug = "$title $seasonText $year episode $episode".createSlug()
-            "$AutoembedDramaAPI/embed/${episodeSlug}"
-        }
-
-        val document = app.get(url).document
-        val regex = Regex("""file:\s*"(https?:\/\/[^"]+)\"""")
-        val link = regex.find(document.toString())?.groupValues?.get(1) ?: ""
-        callback.invoke(
-            ExtractorLink(
-                "AutoembedDrama",
-                "AutoembedDrama",
-                link,
-                "",
-                Qualities.P1080.value,
-                isM3u8 = true,
-            )
-        )
     }
 
     private suspend fun invokeHianime(
