@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.bot"
+    override var mainUrl = "https://moviesmod.red"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
@@ -55,7 +55,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..25) {
+        for (i in 1..7) {
             val document = app.get("$mainUrl/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
