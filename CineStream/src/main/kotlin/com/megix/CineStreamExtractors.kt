@@ -159,13 +159,15 @@ object CineStreamExtractors : CineStreamProvider() {
             val decodedurl = base64Decode(encodedurl)
             if (season == null) {
                 val source =
-                    app.get(decodedurl, allowRedirects = false).headers["location"].toString()
+                    app.get(decodedurl).document.select("body").attr("onload")
+                    .substringAfter("location.replace('").substringBefore("'+document")
                 loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
             } else {
                 val link =
                     app.get(decodedurl).document.selectFirst("article h3 a:contains(Episode 0$episode)")!!
                         .attr("href")
-                val source = app.get(link, allowRedirects = false).headers["location"].toString()
+                val source = app.get(link).document.select("body").attr("onload")
+                    .substringAfter("location.replace('").substringBefore("'+document")
                 loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
             }
         }

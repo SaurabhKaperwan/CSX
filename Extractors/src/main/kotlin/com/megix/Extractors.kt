@@ -454,12 +454,7 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        var originalUrl = url
-        if (originalUrl.startsWith("$mainUrl/goto/token/")) {
-            val partialurl = app.get(originalUrl).text.substringAfter("replace(\"").substringBefore("\")")
-            originalUrl = mainUrl + partialurl
-        }
-        val document = app.get(originalUrl).document
+        val document = app.get(url).document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
         document.select("div.text-center a").amap {
             val text = it.select("a").text()
@@ -481,7 +476,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
                 else {
-                    val trueurl=app.get("$mainUrl$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    val trueurl=app.get("https://new6.gdflix.cfd$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
@@ -507,7 +502,7 @@ open class GDFlix : ExtractorApi() {
             }
             else if(text.contains("Index Links")) {
                 val link = it.attr("href")
-                val doc = app.get("$mainUrl$link").document
+                val doc = app.get("https://new6.gdflix.cfd$link").document
                 doc.select("a.btn.btn-outline-info").amap {
                     val serverUrl = mainUrl + it.attr("href")
                     app.get(serverUrl).document.select("div.mb-4 > a").amap {
@@ -583,6 +578,18 @@ open class GDFlix : ExtractorApi() {
                     ExtractorLink(
                         "GDFlix[Instant Download]",
                         "GDFlix[Instant Download] - $fileName",
+                        link,
+                        "",
+                        getIndexQuality(fileName)
+                    )
+                )
+            }
+            else if(text.contains("CLOUD DOWNLOAD [FSL]")) {
+                val link = it.attr("href").substringAfter("url=")
+                callback.invoke(
+                    ExtractorLink(
+                        "GDFlix[FSL Instant Download]",
+                        "GDFlix[FSL Instant Download] - $fileName",
                         link,
                         "",
                         getIndexQuality(fileName)

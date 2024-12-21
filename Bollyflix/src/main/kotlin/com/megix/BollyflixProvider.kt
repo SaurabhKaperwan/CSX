@@ -56,9 +56,9 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a") ?. attr("title") ?. replace("Download ", "").toString()
-        val href = this.selectFirst("a") ?. attr("href").toString()
-        val posterUrl = this.selectFirst("img") ?. attr("src").toString()
+        val title = this.select("a").attr("title").replace("Download ", "")
+        val href = this.select("a").attr("href")
+        val posterUrl = this.select("img").attr("src")
     
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -140,7 +140,8 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                     .filter { element -> !element.text().contains("Zip", true) }
                 var e = 1
                 epLinks.mapNotNull {
-                    val epUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"].toString()
+                    val epUrl = app.get(it.attr("href")).document.select("body").attr("onload")
+                        .substringAfter("location.replace('").substringBefore("'+document")
                     val key = Pair(realSeason, e)
                     if (episodesMap.containsKey(key)) {
                         val currentList = episodesMap[key] ?: emptyList()
@@ -188,7 +189,8 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             val data = document.select("a.dl").amap {
                 val id = it.attr("href").substringAfterLast("id=").toString()
                 val decodeUrl = bypass(id)
-                val source = app.get(decodeUrl, allowRedirects = false).headers["location"].toString()
+                val source = app.get(decodeUrl).document.select("body").attr("onload")
+                    .substringAfter("location.replace('").substringBefore("'+document")
                 EpisodeLink(
                     source
                 )
