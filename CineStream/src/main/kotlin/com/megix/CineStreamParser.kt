@@ -3,6 +3,30 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+data class HiAnime(
+    val subOrDub: String,
+    val episodes: List<HiAnimeEpisode>
+)
+
+data class HiAnimeEpisode(
+    val id: String,
+    val number: Int,
+)
+data class HiAnimeMedia(
+    val sources: List<HiAnimeSource>,
+    val subtitles: List<HiAnimeSubtitle>
+)
+data class HiAnimeSource(
+    val url: String,
+    val isM3U8: Boolean,
+    val type: String
+)
+
+data class HiAnimeSubtitle(
+    val url: String,
+    val lang: String
+)
+
 data class TorrentioResponse(val streams: List<TorrentioStream>)
 
 data class TorrentioStream(
