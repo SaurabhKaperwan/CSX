@@ -37,6 +37,7 @@ import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
+import com.megix.CineStreamExtractors.invokeDramaCool
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -66,6 +67,7 @@ open class CineStreamProvider : MainAPI() {
         const val WHVXAPI = "https://api.whvx.net"
         const val uhdmoviesAPI = "https://uhdmovies.bet"
         const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
+        const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         //const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
@@ -444,6 +446,16 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         callback,
                         subtitleCallback,
+                    )
+                },
+                {
+                    if(res.isAsian) invokeDramaCool(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
                     )
                 },
                 {

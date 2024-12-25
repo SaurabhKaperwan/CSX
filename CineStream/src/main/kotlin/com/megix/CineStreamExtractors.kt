@@ -17,6 +17,65 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeDramaCool(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val json = if(season == null) {
+            var episodeSlug = "$title episode 1".createSlug()
+            val url = "${CONSUMET_API}/movies/dramacool/watch?episodeId=${episodeSlug}"
+            val res = app.get(url).text
+            if(res.contains("Media Not found")) {
+                val newEpisodeSlug = "$title $year episode 1".createSlug()
+                val newUrl = "$CONSUMET_API/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
+                app.get(newUrl).text
+            }
+            else {
+                res
+            }
+        }
+        else {
+            val seasonText = if(season == 1) "" else "season $season"
+            val episodeSlug = "$title $seasonText episode $episode".createSlug()
+            val url =  "${CONSUMET_API}/movies/dramacool/watch?episodeId=${episodeSlug}"
+            val res = app.get(url).text
+            if(res.contains("Media Not found")) {
+                val newEpisodeSlug = "$title $seasonText $year episode $episode".createSlug()
+                val newUrl = "$CONSUMET_API/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
+                app.get(newUrl).text
+            }
+            else {
+                res
+            }
+        }
+        val data = parseJson<ConsumetSources>(json)
+        data.sources?.forEach {
+            callback.invoke(
+                ExtractorLink(
+                    "DramaCool",
+                    "DramaCool",
+                    it.url,
+                    referer = "",
+                    quality = Qualities.P1080.value,
+                    isM3u8 = true
+                )
+            )
+        }
+
+        data.subtitles?.forEach {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.lang,
+                    it.url
+                )
+            )
+        }
+    }
+
     suspend fun invokeTorrentio(
         id: String? = null,
         season: Int? = null,
@@ -320,7 +379,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
         argamap(
             {
-                invokeHianime(zoroIds, episode, subtitleCallback, callback)
+                val hianimeurl=malsync?.zoro?.firstNotNullOf { it.value["url"] }
+                invokeHianime(hianimeurl, episode, subtitleCallback, callback)
             },
             {
                 val animepahe = malsync?.animepahe?.firstNotNullOfOrNull { it.value["url"] }
@@ -1153,50 +1213,44 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     private suspend fun invokeHianime(
-        animeIds: List<String?>? = null,
+        url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val headers = mapOf(
-            "X-Requested-With" to "XMLHttpRequest",
-        )
-        animeIds?.apmap { id ->
-            val episodeId = app.get(
-                "$hianimeAPI/ajax/v2/episode/list/${id ?: return@apmap}",
-                headers = headers
-            ).parsedSafe<HianimeResponses>()?.html?.let {
-                Jsoup.parse(it)
-            }?.select("div.ss-list a")
-                ?.find { it.attr("data-number") == "${episode ?: 1}" }
-                ?.attr("data-id")
+        val id = url?.substringAfterLast("/") ?: return
+        val json = app.get("$CONSUMET_API/anime/zoro/info?id=$id").text
+        val data = tryParseJson<HiAnime>(json) ?: return
+        val epId = data.episodes.find { it.number == episode }?.id ?: return
+        val types =  mutableListOf("sub")
+        if(data.subOrDub == "both") types.add("dub")
+        val servers = mutableListOf("vidstreaming", "vidcloud")
+        types.map { t ->
+            servers.map { server ->
+                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=${epId.replace("both", t)}&server=$server").text
+                val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
-            val servers = app.get(
-                "$hianimeAPI/ajax/v2/episode/servers?episodeId=${episodeId ?: return@apmap}",
-                headers = headers
-            ).parsedSafe<HianimeResponses>()?.html?.let { Jsoup.parse(it) }
-                ?.select("div.item.server-item")?.map {
-                    Triple(
-                        it.text(),
-                        it.attr("data-id"),
-                        it.attr("data-type"),
+                epData.sources.map {
+                    callback.invoke(
+                        ExtractorLink(
+                            "HiAnime ${server.toUpperCase()} [${t.toUpperCase()}]",
+                            "HiAnime ${server.toUpperCase()} [${t.toUpperCase()}]",
+                            it.url,
+                            "",
+                            Qualities.Unknown.value,
+                            if(it.type == "hls") true else false
+                        )
                     )
                 }
 
-            servers?.map servers@{ server ->
-                val iframe = app.get(
-                    "$hianimeAPI/ajax/v2/episode/sources?id=${server.second ?: return@servers}",
-                    headers = headers
-                ).parsedSafe<HianimeResponses>()?.link
-                    ?: return@servers
-                val audio = if (server.third == "sub") "Raw" else "English Dub"
-                loadCustomTagExtractor(
-                    "HiAnime ${server.first} [$audio]",
-                    iframe,
-                    "$hianimeAPI/",
-                    subtitleCallback,
-                    callback,
-                )
+                epData.subtitles.map {
+                    subtitleCallback.invoke(
+                        SubtitleFile(
+                            it.lang,
+                            it.url,
+                        )
+                    )
+                }
             }
         }
     }
