@@ -1225,12 +1225,12 @@ object CineStreamExtractors : CineStreamProvider() {
         val types =  mutableListOf("sub")
         if(data.subOrDub == "both") types.add("dub")
         val servers = mutableListOf("vidstreaming", "vidcloud")
-        types.amap { t ->
-            servers.amap { server ->
+        types.map { t ->
+            servers.map { server ->
                 val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=${epId.replace("both", t)}&server=$server").text
-                val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@amap
+                val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
-                epData.sources.amap {
+                epData.sources.map {
                     callback.invoke(
                         ExtractorLink(
                             "HiAnime ${server.toUpperCase()} [${t.toUpperCase()}]",
@@ -1243,7 +1243,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
 
-                epData.subtitles.amap {
+                epData.subtitles.map {
                     subtitleCallback.invoke(
                         SubtitleFile(
                             it.lang,
