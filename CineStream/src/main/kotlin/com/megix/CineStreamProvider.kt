@@ -17,7 +17,6 @@ import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeFull4Movies
-// import com.megix.CineStreamExtractors.invokeDramaCool
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeWYZIESubs
@@ -27,7 +26,6 @@ import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invokeVidSrcNL
 import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
-//import com.megix.CineStreamExtractors.invokeFilmyxy
 import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeVite
@@ -55,7 +53,7 @@ open class CineStreamProvider : MainAPI() {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.st"
         const val rogMoviesAPI = "https://rogmovies.com"
-        const val MovieDrive_API = "https://moviesdrive.cloud"
+        const val MovieDrive_API = "https://moviesdrive.pro"
         const val topmoviesAPI = "https://topmovies.bet"
         const val MoviesmodAPI = "https://moviesmod.red"
         const val Full4MoviesAPI = "https://www.full4movies.express"
@@ -70,7 +68,6 @@ open class CineStreamProvider : MainAPI() {
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
-        //const val FilmyxyAPI = "https://filmxy.wafflehacker.io"
         const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
@@ -339,7 +336,23 @@ open class CineStreamProvider : MainAPI() {
                         res.imdbEpisode,
                         callback,
                     )
-                }
+                },
+                {
+                    invokeWHVXSubs(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback
+                    )
+                },
+                {
+                    invokeWYZIESubs(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback
+                    )
+                },
             )
         }
         else {
@@ -595,15 +608,6 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                // {
-                //     invokeFilmyxy(
-                //         res.id,
-                //         res.season,
-                //         res.episode,
-                //         callback,
-                //         subtitleCallback
-                //     )   
-                // },
             )
         }
         return true
