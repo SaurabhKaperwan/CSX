@@ -484,42 +484,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // suspend fun invokeFilmyxy(
-    //     id: String,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val url = if(season != null) "${FilmyxyAPI}/search?id=${id}&s=${season}&e=${episode}" else "${FilmyxyAPI}/search?id=${id}"
-    //     val json = app.get(url, timeout = 20L).text
-    //     val data = parseJson<NovaVideoData>(json) ?: return
-    //     for (stream in data.stream) {
-    //         for ((quality, details) in stream.qualities) {
-    //             callback.invoke(
-    //                 ExtractorLink(
-    //                     "Filmyxy",
-    //                     "Filmyxy",
-    //                     details.url,
-    //                     "",
-    //                     getQualityFromName(quality),
-    //                     INFER_TYPE,
-    //                 )
-    //             )
-    //         }
-    //     }
-    //     for (stream in data.stream) {
-    //         for (caption in stream.captions) {
-    //             subtitleCallback.invoke(
-    //                 SubtitleFile(
-    //                     caption.language,
-    //                     caption.url
-    //                 )
-    //             )
-    //         }
-    //     }
-    // }
-
     suspend fun invokeMovies(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -696,12 +660,12 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeWYZIESubs(
-        id: String,
+        id: String?,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null && episode != null) "${WYZIESubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WYZIESubsAPI}/search?id=${id}" 
+        val url = if(season != null) "${WYZIESubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WYZIESubsAPI}/search?id=${id}"
         val json = app.get(url).text
         val data = parseJson<ArrayList<WYZIESubtitle>>(json)
         data.forEach {
@@ -715,12 +679,12 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeWHVXSubs(
-        id: String,
+        id: String?,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null && episode != null) "${WHVXSubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WHVXSubsAPI}/search?id=${id}" 
+        val url = if(season != null) "${WHVXSubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WHVXSubsAPI}/search?id=${id}"
         val json = app.get(url).text
         val data = parseJson<ArrayList<WHVXSubtitle>>(json)
         data.forEach {
