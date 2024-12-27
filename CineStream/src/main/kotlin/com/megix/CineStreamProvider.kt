@@ -535,33 +535,6 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeVidbinge(
-                        "astra",
-                        res.title,
-                        res.id,
-                        res.tmdbId,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
-                    )
-                },
-                {
-                    invokeVidbinge(
-                        "nova",
-                        res.title,
-                        res.id,
-                        res.tmdbId,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
-                    )
-                },
-                {
-                    invokeVidbinge(
-                        "orion",
                         res.title,
                         res.id,
                         res.tmdbId,

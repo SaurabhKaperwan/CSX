@@ -221,9 +221,11 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     ): Boolean {
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
         sources.amap {
-            val source = it.source
-            val link = bypass(source).toString()
-            loadExtractor(link, subtitleCallback, callback)
+            var source = it.source
+            if(source.contains("unblocked")) {
+                source = bypass(source).toString()
+            }
+            loadExtractor(source, subtitleCallback, callback)
         }
         return true
     }

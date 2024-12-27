@@ -534,7 +534,6 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeVidbinge(
-        provider : String,
         title: String,
         imdb_id: String,
         tmdb_id: Int? = null,
@@ -544,7 +543,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val type=if (season==null) "movie" else "tv"
+        val providers = mutableListOf("astra", "nova", "orion")
+        val type=if (season == null) "movie" else "tv"
         val s= season ?: ""
         val e= episode ?: ""
         val query="""{"title":"$title","imdbId":"$imdb_id","tmdbId":"$tmdb_id","type":"$type","season":"$s","episode":"$e","releaseYear":"$year"}"""
@@ -558,75 +558,76 @@ object CineStreamExtractors : CineStreamProvider() {
         val token = parseJson<WHVXToken>(tokenJson).token
         val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString())
         val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
-        val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=${provider}&token=${encodedToken}", headers = headers).text
-        val data = tryParseJson<WHVX>(json) ?: return
-        val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
-        val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=${provider}", headers = headers).text
-
-        if(provider == "astra") {
-            val data2 = tryParseJson<AstraQuery>(json2) ?: return
-            data2.stream.forEach {
-                callback.invoke(
-                    ExtractorLink(
-                        "Astra",
-                        "Astra",
-                        it.playlist,
-                        "",
-                        Qualities.Unknown.value,
-                        INFER_TYPE
-                    )
-                )
-            }
-        }
-        else if(provider == "nova") {
-            val data2 = tryParseJson<NovaVideoData>(json2) ?: return
-            for (stream in data2.stream) {
-                for ((quality, details) in stream.qualities) {
+        providers.map { provider ->
+            val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=${provider}&token=${encodedToken}", headers = headers).text
+            val data = tryParseJson<WHVX>(json) ?: return@map
+            val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
+            val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=${provider}", headers = headers).text
+            if(provider == "astra") {
+                val data2 = tryParseJson<AstraQuery>(json2) ?: return@map
+                data2.stream.forEach {
                     callback.invoke(
                         ExtractorLink(
-                            "Nova",
-                            "Nova",
-                            details.url,
+                            "Astra",
+                            "Astra",
+                            it.playlist,
                             "",
-                            getQualityFromName(quality),
-                            INFER_TYPE,
+                            Qualities.Unknown.value,
+                            INFER_TYPE
                         )
                     )
                 }
             }
-
-            for (stream in data2.stream) {
-                for (caption in stream.captions) {
-                    subtitleCallback.invoke(
-                        SubtitleFile(
-                            caption.language,
-                            caption.url
+            else if(provider == "nova") {
+                val data2 = tryParseJson<NovaVideoData>(json2) ?: return@map
+                for (stream in data2.stream) {
+                    for ((quality, details) in stream.qualities) {
+                        callback.invoke(
+                            ExtractorLink(
+                                "Nova",
+                                "Nova",
+                                details.url,
+                                "",
+                                getQualityFromName(quality),
+                                INFER_TYPE,
+                            )
                         )
-                    )
+                    }
+                }
+
+                for (stream in data2.stream) {
+                    for (caption in stream.captions) {
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                caption.language,
+                                caption.url
+                            )
+                        )
+                    }
                 }
             }
-        }
-        else {
-            val data2 = tryParseJson<OrionStreamData>(json2) ?: return
-            for(stream in data2.stream) {
-                callback.invoke(
-                    ExtractorLink(
-                        "Orion",
-                        "Orion",
-                        stream.playlist,
-                        "",
-                        Qualities.Unknown.value,
-                        INFER_TYPE
-                    )
-                )
-
-                for (caption in stream.captions) {
-                    subtitleCallback.invoke(
-                        SubtitleFile(
-                            caption.language,
-                            caption.url
+            else {
+                val data2 = tryParseJson<OrionStreamData>(json2) ?: return@map
+                for(stream in data2.stream) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "Orion",
+                            "Orion",
+                            stream.playlist,
+                            "",
+                            Qualities.Unknown.value,
+                            INFER_TYPE
                         )
                     )
+
+                    for (caption in stream.captions) {
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                caption.language,
+                                caption.url
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -660,7 +661,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeWYZIESubs(
-        id: String?,
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -679,7 +680,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeWHVXSubs(
-        id: String?,
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -1161,17 +1162,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 headers = mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0")
             ).document.selectFirst(selector)?.let {
                 val link = it.attr("href")
-                if (link.contains("driveseed.org"))
-                {
-                    val file=app.get(link).toString().substringAfter("replace(\"").substringBefore("\")")
-                    val domain= getBaseUrl(link)
-                    val server="$domain$file"
-                    loadSourceNameExtractor("Moviesmod", server, "", subtitleCallback, callback)
-                }
-                val server = bypassHrefli(link) ?: ""
-                if (server.isNotEmpty()) {
-                    loadSourceNameExtractor("Moviesmod", server, "", subtitleCallback, callback)
-                }
+                loadSourceNameExtractor("Moviesmod", link, "", subtitleCallback, callback)
             }
         }
     }
