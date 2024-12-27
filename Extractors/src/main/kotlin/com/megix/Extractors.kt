@@ -92,7 +92,13 @@ open class Driveseed : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val document = app.get(url).document
+        val document = if(url.contains("r?key=")) {
+            val temp = app.get(url).document.selectFirst("script")?.data()?.substringAfter("replace(\"")?.substringBefore("\")") ?: ""
+            app.get(mainUrl + temp).document
+        }
+        else {
+            app.get(url).document
+        }
         val quality = document.selectFirst("li.list-group-item")?.text() ?: ""
         val fileName = quality.replace("Name : ", "")
         document.select("div.text-center > a").amap { element ->
