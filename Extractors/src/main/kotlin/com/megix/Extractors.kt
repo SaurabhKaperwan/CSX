@@ -299,9 +299,13 @@ class HubCloudInk : HubCloud() {
     override val mainUrl: String = "https://hubcloud.ink"
 }
 
+class HubCloudArt : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.art"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.art"
+    override val mainUrl: String = "https://hubcloud.tel"
     override val requiresReferer = false
 
     override suspend fun getUrl(
