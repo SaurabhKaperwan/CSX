@@ -14,8 +14,6 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(GDFlix4())
         registerExtractorAPI(PixelDrain())
         registerExtractorAPI(HubCloud())
-        registerExtractorAPI(HubCloudArt())
-        registerExtractorAPI(HubCloudInk())
         registerExtractorAPI(fastdlserver())
         registerExtractorAPI(Driveleech())
         registerExtractorAPI(Driveseed())
