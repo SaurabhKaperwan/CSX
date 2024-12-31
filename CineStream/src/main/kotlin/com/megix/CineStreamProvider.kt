@@ -75,7 +75,7 @@ open class CineStreamProvider : MainAPI() {
         const val multimoviesAPI = "https://multimovies.lat"
         const val anitaku = "https://anitaku.pe"
         const val cinemaluxeAPI = "https://cinemaluxe.fans"
-        const val bollyflixAPI = "https://bollyflix.meme"
+        const val bollyflixAPI = "https://bollyflix.diy"
         const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"

@@ -827,20 +827,11 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val cfInterceptor = CloudflareKiller()
-        val fixtitle = title?.substringBefore("-")?.substringBefore(":")?.replace("&", " ")
         val url = "$api/search/$id"
         val domain= api.substringAfter("//").substringBefore(".")
-        app.get(url, interceptor = cfInterceptor).document.select("#main-content article")
-            .filter { element ->
-                element.text().contains(
-                    fixtitle.toString(), true
-                )
-            }
+        app.get(url, interceptor = cfInterceptor).document.select("article h3 a")
             .amap {
-                val hrefpattern =
-                    Regex("""(?i)<a\s+href="([^"]+)"[^>]*?>[^<]*?\b($fixtitle)\b[^<]*?""").find(
-                        it.toString()
-                    )?.groupValues?.get(1)
+                val hrefpattern=it.attr("href") ?: null
                 if (hrefpattern!=null) {
                     val res = hrefpattern.let { app.get(it).document }
                     val hTag = if (season == null) "h5" else "h3,h5"
@@ -877,7 +868,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             {
                                 app.get(
                                     url, interceptor = wpRedisInterceptor
-                                ).document.select("div.entry-content > $selector").map { sources ->
+                                ).document.select("div.entry-inner > $selector").map { sources ->
                                     val server = sources.attr("href")
                                     loadSourceNameExtractor(
                                         "VegaMovies",

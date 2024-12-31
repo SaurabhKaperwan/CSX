@@ -295,6 +295,14 @@ class VCloud : ExtractorApi() {
     }
 }
 
+class HubCloudInk : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.ink"
+}
+
+class HubCloudArt : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.art"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
     override val mainUrl: String = "https://hubcloud.tel"
@@ -306,7 +314,8 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val doc = app.get(url).document
+        val newUrl = url.replace("ink", "tel").replace("art", "tel")
+        val doc = app.get(newUrl).document
         val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
             Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
@@ -398,16 +407,9 @@ class fastdlserver : GDFlix() {
     override var mainUrl = "https://fastdlserver.online"
 }
 
-class GDFlix4 : GDFlix() {
-    override val mainUrl: String = "https://new4.gdflix.cfd"
-}
-class GDFlix5 : GDFlix() {
-    override val mainUrl: String = "https://new5.gdflix.cfd"
-}
-
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new6.gdflix.cfd"
+    override val mainUrl: String = "https://new.gdflix.dad"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
