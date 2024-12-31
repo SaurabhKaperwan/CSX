@@ -221,21 +221,44 @@ class VCloud : ExtractorApi() {
             val header = document.select("div.card-header").text() ?: ""
             div?.select("h2 a.btn")?.apmap {
                 val link = it.attr("href")
-
-                if (link.contains("technorozen.workers.dev"))
+                val text = it.text()
+                if (text.contains("Download [FSL Server]"))
                 {
-                    val iframe = getGBurl(link)
                     callback.invoke(
                         ExtractorLink(
-                            "$name[Download]",
-                            "$name[Download] - $header",
-                            iframe,
+                            "$name[FSL Server]",
+                            "$name[FSL Server] - $header",
+                            link,
                             "",
                             getIndexQuality(header),
                         )
                     )
                 }
-                else if (link.contains("pixeldra.in")) {
+                else if (text.contains("Download [Server : 1]")) {
+                    callback.invoke(
+                        ExtractorLink(
+                            "$name",
+                            "$name - $header",
+                            link,
+                            "",
+                            getIndexQuality(header),
+                        )
+                    )
+                }
+                else if(text.contains("BuzzServer")) {
+                    val dlink = app.get("$link/download", allowRedirects = false).headers["location"] ?: ""
+                    callback.invoke(
+                        ExtractorLink(
+                            "$name[BuzzServer]",
+                            "$name[BuzzServer] - $header",
+                            link.substringBeforeLast("/") + dlink,
+                            "",
+                            getIndexQuality(header),
+                        )
+                    )
+                }
+
+                else if (link.contains("pixeldra")) {
                     callback.invoke(
                         ExtractorLink(
                             "Pixeldrain",
@@ -246,80 +269,43 @@ class VCloud : ExtractorApi() {
                         )
                     )
                 }
-                else if (link.contains(".dev")) {
-                    callback.invoke(
-                        ExtractorLink(
-                            name,
-                            "$name - $header",
-                            link,
-                            "",
-                            getIndexQuality(header),
-                        )
-                    )
-                }
-                else if (link.contains("fastdl.lol"))
-                {
+                else if (text.contains("Download [Server : 10Gbps]")) {
+                    val dlink = app.get(link, allowRedirects = false).headers["location"] ?: ""
                     callback.invoke(
                         ExtractorLink(
                             "$name[Download]",
                             "$name[Download] - $header",
-                            link,
+                            dlink.substringAfter("url="),
                             "",
                             getIndexQuality(header),
                         )
                     )
-                }
-                else if (link.contains("hubcdn.xyz"))
-                {
-                    callback.invoke(
-                        ExtractorLink(
-                            name,
-                            "$name - $header",
-                            link,
-                            "",
-                            getIndexQuality(header),
-                        )
-                    )
-                }
-                else if (link.contains("gofile.io"))
-                {
-                    loadExtractor(link,"",subtitleCallback, callback)
-                }
-                else if (link.contains("pixeldrain"))
-                {
-                    loadExtractor(link,"",subtitleCallback, callback)
                 }
                 else
                 {
-                    //Nothing
+                    loadExtractor(link,"",subtitleCallback, callback)
                 }
             }
         }
     }
 
-
     private fun getIndexQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
             ?: Qualities.Unknown.value
     }
-
-    private suspend fun getGBurl(url: String): String {
-        return app.get(url).document.selectFirst("#vd")?.attr("href") ?:""
-    }
-
 }
 
-class HubCloudClub : HubCloud() {
-    override val mainUrl: String = "https://hubcloud.club"
+class HubCloudInk : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.ink"
 }
 
-class HubCloudlol : HubCloud() {
-    override var mainUrl = "https://hubcloud.lol"
+class HubCloudArt : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.art"
 }
 
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.art"
+    override val mainUrl: String = "https://hubcloud.tel"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -328,40 +314,63 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val text = app.get(url).text
-        val newLink = text.substringAfter("url=").substringBefore("\"")
-        val newDoc = app.get(newLink).document
-        var gamerLink : String
+        val newUrl = url.replace("ink", "tel").replace("art", "tel")
+        val doc = app.get(newUrl).document
+        val link: String
 
-        if(newLink.contains("drive")) {
-            val scriptTag = newDoc.selectFirst("script:containsData(url)")?.toString() ?: ""
-            gamerLink = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+        if(newUrl.contains("drive")) {
+            val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
+            link = newUrl.substringBefore("/drive") + Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         }
 
         else {
-            gamerLink = newDoc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
+            link = doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
         }
 
-        val document = app.get(gamerLink).document
+        val document = app.get(link).document
         val div = document.selectFirst("div.card-body")
         val header = document.select("div.card-header").text() ?: ""
         div?.select("h2 a.btn")?.apmap {
             val link = it.attr("href")
+            val text = it.text()
 
-            if (link.contains("technorozen.workers.dev"))
+            if (text.contains("Download [FSL Server]"))
             {
-                val iframe = getGBurl(link)
                 callback.invoke(
                     ExtractorLink(
-                        "$name[Download]",
-                        "$name[Download] - $header",
-                        iframe,
+                        "$name[FSL Server]",
+                        "$name[FSL Server] - $header",
+                        link,
                         "",
                         getIndexQuality(header),
                     )
                 )
             }
-            else if (link.contains("pixeldra.in")) {
+            else if (text.contains("Download File")) {
+                callback.invoke(
+                    ExtractorLink(
+                        "$name",
+                        "$name - $header",
+                        link,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
+            else if(text.contains("BuzzServer")) {
+                val dlink = app.get("$link/download", allowRedirects = false).headers["location"] ?: ""
+                callback.invoke(
+                    ExtractorLink(
+                        "$name[BuzzServer]",
+                        "$name[BuzzServer] - $header",
+                        link.substringBeforeLast("/") + dlink,
+                        "",
+                        getIndexQuality(header),
+                    )
+                )
+            }
+
+            else if (link.contains("pixeldra")) {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",
@@ -372,52 +381,21 @@ open class HubCloud : ExtractorApi() {
                     )
                 )
             }
-            else if (link.contains(".dev")) {
-                callback.invoke(
-                    ExtractorLink(
-                        name,
-                        "$name - $header",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }
-            else if (link.contains("fastdl.lol"))
-            {
+            else if (text.contains("Download [Server : 10Gbps]")) {
+                val dlink = app.get(link, allowRedirects = false).headers["location"] ?: ""
                 callback.invoke(
                     ExtractorLink(
                         "$name[Download]",
                         "$name[Download] - $header",
-                        link,
+                        dlink.substringAfter("url="),
                         "",
                         getIndexQuality(header),
                     )
                 )
-            }
-            else if (link.contains("hubcdn.xyz"))
-            {
-                callback.invoke(
-                    ExtractorLink(
-                        name,
-                        "$name - $header",
-                        link,
-                        "",
-                        getIndexQuality(header),
-                    )
-                )
-            }
-            else if (link.contains("gofile.io"))
-            {
-                loadExtractor(link,"",subtitleCallback, callback)
-            }
-            else if (link.contains("pixeldrain"))
-            {
-                loadExtractor(link,"",subtitleCallback, callback)
             }
             else
             {
-                //Nothing
+                loadExtractor(link,"",subtitleCallback, callback)
             }
         }
     }
@@ -426,11 +404,6 @@ open class HubCloud : ExtractorApi() {
         return Regex("(\\d{3,4})[pP]").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
             ?: Qualities.Unknown.value
     }
-
-    private suspend fun getGBurl(url: String): String {
-        return app.get(url).document.selectFirst("#vd")?.attr("href") ?:""
-    }
-
 }
 
 class fastdlserver : GDFlix() {
@@ -594,8 +567,8 @@ open class GDFlix : ExtractorApi() {
                 val link = it.attr("href").substringAfter("url=")
                 callback.invoke(
                     ExtractorLink(
-                        "GDFlix[FSL Instant Download]",
-                        "GDFlix[FSL Instant Download] - $fileName",
+                        "GDFlix[FSL]",
+                        "GDFlix[FSL] - $fileName",
                         link,
                         "",
                         getIndexQuality(fileName)
