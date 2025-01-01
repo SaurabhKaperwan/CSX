@@ -56,7 +56,7 @@ open class CineStreamProvider : MainAPI() {
         const val MovieDrive_API = "https://moviesdrive.pro"
         const val topmoviesAPI = "https://topmovies.bet"
         const val MoviesmodAPI = "https://moviesmod.red"
-        const val Full4MoviesAPI = "https://www.full4movies.express"
+        const val Full4MoviesAPI = "https://www.full4movies.cool"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
         const val W4UAPI = "https://world4ufree.observer"
         const val WHVXSubsAPI = "https://subs.whvx.net"
@@ -414,8 +414,7 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     if(!res.isBollywood) invokeMoviesmod(
-                        res.title,
-                        year,
+                        res.id,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -441,16 +440,16 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     if(!res.isAnime) invokeFull4Movies(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
+                {
+                    if(!res.isAnime) invokeFull4Movies(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
                 {
                     invokeCinemaluxe(
                         res.title,

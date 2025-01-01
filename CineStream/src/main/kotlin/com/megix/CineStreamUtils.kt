@@ -130,6 +130,25 @@ suspend fun loadCustomExtractor(
     }
 }
 
+fun fixUrl(url: String, domain: String): String {
+    if (url.startsWith("http")) {
+        return url
+    }
+    if (url.isEmpty()) {
+        return ""
+    }
+
+    val startsWithNoHttp = url.startsWith("//")
+    if (startsWithNoHttp) {
+        return "https:$url"
+    } else {
+        if (url.startsWith('/')) {
+            return domain + url
+        }
+        return "$domain/$url"
+    }
+}
+
 suspend fun bypassHrefli(url: String): String? {
     fun Document.getFormUrl(): String {
         return this.select("form#landing").attr("action")
@@ -137,25 +156,6 @@ suspend fun bypassHrefli(url: String): String? {
 
     fun Document.getFormData(): Map<String, String> {
         return this.select("form#landing input").associate { it.attr("name") to it.attr("value") }
-    }
-
-    fun fixUrl(url: String, domain: String): String {
-        if (url.startsWith("http")) {
-            return url
-        }
-        if (url.isEmpty()) {
-            return ""
-        }
-
-        val startsWithNoHttp = url.startsWith("//")
-        if (startsWithNoHttp) {
-            return "https:$url"
-        } else {
-            if (url.startsWith('/')) {
-                return domain + url
-            }
-            return "$domain/$url"
-        }
     }
 
     val host = getBaseUrl(url)
@@ -180,3 +180,4 @@ suspend fun bypassHrefli(url: String): String? {
     if (path == "/404") return null
     return fixUrl(path, getBaseUrl(driveUrl))
 }
+
