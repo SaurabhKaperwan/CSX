@@ -364,7 +364,6 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeAnimes(
         malId: Int? = null,
         aniId: Int? = null,
-        season: Int? = null,
         episode: Int? = null,
         year: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
