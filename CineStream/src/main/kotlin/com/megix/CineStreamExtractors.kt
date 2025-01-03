@@ -213,21 +213,16 @@ object CineStreamExtractors : CineStreamProvider() {
             val href = it.nextElementSibling()?.select("a")?.attr("href")
             val token = href?.substringAfter("id=")
             val encodedurl =
-                app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
+                app.get("https://blog.finzoox.com/?id=$token").text.substringAfter("link\":\"")
                     .substringBefore("\"};")
             val decodedurl = base64Decode(encodedurl)
             if (season == null) {
-                val source =
-                    app.get(decodedurl).document.select("body").attr("onload")
-                    .substringAfter("location.replace('").substringBefore("'+document")
-                loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
+                loadSourceNameExtractor("Bollyflix", decodedurl , "", subtitleCallback, callback)
             } else {
                 val link =
                     app.get(decodedurl).document.selectFirst("article h3 a:contains(Episode 0$episode)")!!
                         .attr("href")
-                val source = app.get(link).document.select("body").attr("onload")
-                    .substringAfter("location.replace('").substringBefore("'+document")
-                loadSourceNameExtractor("Bollyflix", source , "", subtitleCallback, callback)
+                loadSourceNameExtractor("Bollyflix", link , "", subtitleCallback, callback)
             }
         }
     }
