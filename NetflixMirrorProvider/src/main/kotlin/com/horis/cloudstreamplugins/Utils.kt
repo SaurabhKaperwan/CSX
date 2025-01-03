@@ -83,12 +83,14 @@ data class VerifyUrl(
 suspend fun bypass(mainUrl : String): String {
     val homePageDocument = app.get("${mainUrl}/home").document
     val addHash          = homePageDocument.select("body").attr("data-addhash")
+    val time             = homePageDocument.select("body").attr("data-time")
 
     var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
     verificationUrl      = app.get(verificationUrl).parsed<VerifyUrl>().url.replace("###", addHash)
-    val hashDigits       = addHash.filter { it.isDigit() }
-    val first16Digits    = hashDigits.take(16)
-    app.get("${verificationUrl}&t=0.${first16Digits}")
+    // val hashDigits       = addHash.filter { it.isDigit() }
+    // val first16Digits    = hashDigits.take(16)
+    // app.get("${verificationUrl}&t=0.${first16Digits}")
+    app.get(verificationUrl + "&t=${time}")
 
     var verifyCheck: String
     var verifyResponse: NiceResponse
