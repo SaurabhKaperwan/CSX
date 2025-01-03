@@ -51,12 +51,12 @@ open class CineStreamProvider : MainAPI() {
     val mediaFusion = "https://mediafusion.elfhosted.com"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.st"
+        const val vegaMoviesAPI = "https://vegamovies.ms"
         const val rogMoviesAPI = "https://rogmovies.com"
         const val MovieDrive_API = "https://moviesdrive.pro"
         const val topmoviesAPI = "https://topmovies.bet"
         const val MoviesmodAPI = "https://moviesmod.red"
-        const val Full4MoviesAPI = "https://www.full4movies.cool"
+        const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
         const val W4UAPI = "https://world4ufree.observer"
         const val WHVXSubsAPI = "https://subs.whvx.net"
@@ -322,7 +322,6 @@ open class CineStreamProvider : MainAPI() {
                     invokeAnimes(
                         res.malId,
                         res.anilistId,
-                        res.season,
                         res.episode,
                         year,
                         subtitleCallback,
@@ -351,6 +350,16 @@ open class CineStreamProvider : MainAPI() {
                         res.imdbSeason,
                         res.imdbEpisode,
                         subtitleCallback
+                    )
+                },
+                {
+                    invokeMultimovies(
+                        multimoviesAPI,
+                        res.title,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback,
+                        callback
                     )
                 },
             )
@@ -532,18 +541,18 @@ open class CineStreamProvider : MainAPI() {
                         callback,
                     )
                 },
-                {
-                    invokeVidbinge(
-                        res.title,
-                        res.id,
-                        res.tmdbId,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
-                    )
-                },
+                // {
+                //     invokeVidbinge(
+                //         res.title,
+                //         res.id,
+                //         res.tmdbId,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )
+                // },
                 {
                     invokeUhdmovies(
                         res.title,

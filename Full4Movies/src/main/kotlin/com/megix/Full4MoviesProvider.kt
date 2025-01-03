@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class Full4MoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.full4movies.cool"
+    override var mainUrl = "https://www.full4movies.delivery"
     override var name = "Full4Movies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -130,10 +130,10 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         if(data.contains("4links")) {
             val doc = app.get(data).document
             val link = doc.select("iframe").attr("src")
-            loadExtractor(link, referer = "", subtitleCallback, callback)
+            loadExtractor(link, referer = link, subtitleCallback, callback)
         }
         else {
-            loadExtractor(data, referer = "", subtitleCallback, callback)
+            loadExtractor(data, referer = data, subtitleCallback, callback)
         }
         return true
     }

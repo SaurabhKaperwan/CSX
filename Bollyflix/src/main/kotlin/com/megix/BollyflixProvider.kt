@@ -186,7 +186,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             }
         }
         else {
-            val data = document.select("a.dl").amap {
+            val data = document.select("a.dl").map {
                 val id = it.attr("href").substringAfterLast("id=").toString()
                 val decodeUrl = bypass(id)
                 val source = app.get(decodeUrl).document.select("body").attr("onload")
