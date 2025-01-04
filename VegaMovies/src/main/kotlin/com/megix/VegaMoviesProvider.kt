@@ -11,7 +11,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.st"
+    override var mainUrl = "https://vegamovies.ms"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -40,16 +40,16 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         request: MainPageRequest
     ): HomePageResponse {
         val document = app.get(request.data.format(page), interceptor = cfInterceptor).document
-        val home = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
+        val home = document.select(".post-inner").mapNotNull { it.toSearchResult() }
         return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.attr("title").replace("Download ", "")
-        val href = this.attr("href")
-        var posterUrl = this.selectFirst("img")?.attr("data-src").toString()
+        val title = this.select("h2 > a").text().replace("Download ", "")
+        val href = this.select("a").attr("href")
+        var posterUrl = this.select("img").attr("data-src")
         if(posterUrl.isEmpty()) {
-            posterUrl = this.selectFirst("img")?.attr("src").toString()
+            posterUrl = this.select("img").attr("src")
         }
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
@@ -61,7 +61,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val searchResponse = mutableListOf<SearchResponse>()
         for (i in 1..7) {
             val document = app.get("$mainUrl/page/$i/?s=$query", interceptor = cfInterceptor).document
-            val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
+            val results = document.select(".post-inner").mapNotNull { it.toSearchResult() }
             if (results.isEmpty()) {
                 break
             }
@@ -75,7 +75,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         val ogTitle = title
         var posterUrl = document.select("meta[property=og:image]").attr("content")
-        val div = document.selectFirst("div.entry-content")
+        val div = document.selectFirst(".entry-content, .entry-inner")
         var description = div?.selectFirst("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")?.nextElementSibling()?.text()
         val imdbUrl = div?.selectFirst("a:matches((?i)(Rating))")?.attr("href")
         val heading = div?.selectFirst("h3")

@@ -28,9 +28,11 @@ fun String?.createSlug(): String? {
 }
 
 suspend fun extractMdrive(url: String): List<String> {
-    val doc= app.get(url).document
-    val href=doc.select("h5 > a,h3 > a").map { it.attr("href") }
-    return href
+    val doc = app.get(url).document
+    return doc.select("a")
+        .mapNotNull { it.attr("href").takeIf { href ->
+            href.contains(Regex("hubcloud|gdflix", RegexOption.IGNORE_CASE))
+        }}
 }
 
 
@@ -128,6 +130,25 @@ suspend fun loadCustomExtractor(
     }
 }
 
+fun fixUrl(url: String, domain: String): String {
+    if (url.startsWith("http")) {
+        return url
+    }
+    if (url.isEmpty()) {
+        return ""
+    }
+
+    val startsWithNoHttp = url.startsWith("//")
+    if (startsWithNoHttp) {
+        return "https:$url"
+    } else {
+        if (url.startsWith('/')) {
+            return domain + url
+        }
+        return "$domain/$url"
+    }
+}
+
 suspend fun bypassHrefli(url: String): String? {
     fun Document.getFormUrl(): String {
         return this.select("form#landing").attr("action")
@@ -135,25 +156,6 @@ suspend fun bypassHrefli(url: String): String? {
 
     fun Document.getFormData(): Map<String, String> {
         return this.select("form#landing input").associate { it.attr("name") to it.attr("value") }
-    }
-
-    fun fixUrl(url: String, domain: String): String {
-        if (url.startsWith("http")) {
-            return url
-        }
-        if (url.isEmpty()) {
-            return ""
-        }
-
-        val startsWithNoHttp = url.startsWith("//")
-        if (startsWithNoHttp) {
-            return "https:$url"
-        } else {
-            if (url.startsWith('/')) {
-                return domain + url
-            }
-            return "$domain/$url"
-        }
     }
 
     val host = getBaseUrl(url)
@@ -178,3 +180,4 @@ suspend fun bypassHrefli(url: String): String? {
     if (path == "/404") return null
     return fixUrl(path, getBaseUrl(driveUrl))
 }
+

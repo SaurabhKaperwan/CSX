@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class Full4MoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.full4movies.my"
+    override var mainUrl = "https://www.full4movies.delivery"
     override var name = "Full4Movies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -86,7 +86,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         val title = document.selectFirst("h1.title")?.text() ?: return null
         val posterUrl = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
 
-        val regex = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch)<\/a>""")
+        val regex = Regex("""<a[^>]*href="([^"]*)"[^>]*>(?:WCH|Watch|Watch Online)<\/a>""")
 
         val tvType = if (document.selectFirst("meta[property=article:section]")?.attr("content") == "Web series" || regex.containsMatchIn(document.html())) {
             TvType.TvSeries
@@ -110,7 +110,7 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
             }
         }
         else {
-            val movieUrl = Regex("""<a\s+class="myButton"\s+href="([^"]+)".*?>Watch Online 1<\/a>""").find(document.html())?.groupValues?.get(1) ?: ""
+            val movieUrl = regex.find(document.html())?.groupValues?.get(1) ?: ""
             return newMovieLoadResponse(title, url, TvType.Movie, movieUrl) {
                 this.posterUrl = posterUrl
                 this.plot = plot
@@ -127,13 +127,13 @@ class Full4MoviesProvider : MainAPI() { // all providers must be an instance of 
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        if(data.contains("4links.")) {
+        if(data.contains("4links")) {
             val doc = app.get(data).document
-            val link = doc.selectFirst("iframe").attr("src")
-            loadExtractor(link, referer = data, subtitleCallback, callback)
+            val link = doc.select("iframe").attr("src")
+            loadExtractor(link, referer = link, subtitleCallback, callback)
         }
         else {
-            loadExtractor(data, referer = mainUrl, subtitleCallback, callback)
+            loadExtractor(data, referer = data, subtitleCallback, callback)
         }
         return true
     }

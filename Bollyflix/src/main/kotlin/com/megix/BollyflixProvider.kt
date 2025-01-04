@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://bollyflix.meme"
+    override var mainUrl = "https://bollyflix.diy"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
@@ -53,7 +53,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     private suspend fun bypass(id: String): String {
-        val url = "https://web.sidexfee.com/?id=$id"
+        val url = "https://blog.finzoox.com/?id=$id"
         val document = app.get(url).text
         val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
         return base64Decode(encodeUrl)
@@ -144,8 +144,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                     .filter { element -> !element.text().contains("Zip", true) }
                 var e = 1
                 epLinks.mapNotNull {
-                    val epUrl = app.get(it.attr("href")).document.select("body").attr("onload")
-                        .substringAfter("location.replace('").substringBefore("'+document")
+                    val epUrl = it.attr("href")
                     val key = Pair(realSeason, e)
                     if (episodesMap.containsKey(key)) {
                         val currentList = episodesMap[key] ?: emptyList()
@@ -190,13 +189,11 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             }
         }
         else {
-            val data = document.select("a.dl").amap {
+            val data = document.select("a.dl").map {
                 val id = it.attr("href").substringAfterLast("id=").toString()
                 val decodeUrl = bypass(id)
-                val source = app.get(decodeUrl).document.select("body").attr("onload")
-                    .substringAfter("location.replace('").substringBefore("'+document")
                 EpisodeLink(
-                    source
+                    decodeUrl
                 )
             }
             return newMovieLoadResponse(title, url, TvType.Movie, data) {

@@ -316,15 +316,12 @@ open class HubCloud : ExtractorApi() {
     ) {
         val newUrl = url.replace("ink", "tel").replace("art", "tel")
         val doc = app.get(newUrl).document
-        val link: String
-
-        if(newUrl.contains("drive")) {
+        val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
-            link = newUrl.substringBefore("/drive") + Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+            Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         }
-
         else {
-            link = doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
+            doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
         }
 
         val document = app.get(link).document
@@ -410,16 +407,9 @@ class fastdlserver : GDFlix() {
     override var mainUrl = "https://fastdlserver.online"
 }
 
-class GDFlix4 : GDFlix() {
-    override val mainUrl: String = "https://new4.gdflix.cfd"
-}
-class GDFlix5 : GDFlix() {
-    override val mainUrl: String = "https://new5.gdflix.cfd"
-}
-
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new6.gdflix.cfd"
+    override val mainUrl: String = "https://new.gdflix.dad"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -455,7 +445,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
                 else {
-                    val trueurl=app.get("https://new6.gdflix.cfd$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    val trueurl=app.get("https://new.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
@@ -481,7 +471,7 @@ open class GDFlix : ExtractorApi() {
             }
             else if(text.contains("Index Links")) {
                 val link = it.attr("href")
-                val doc = app.get("https://new6.gdflix.cfd$link").document
+                val doc = app.get("https://new.gdflix.dad$link").document
                 doc.select("a.btn.btn-outline-info").amap {
                     val serverUrl = mainUrl + it.attr("href")
                     app.get(serverUrl).document.select("div.mb-4 > a").amap {
