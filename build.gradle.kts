@@ -10,7 +10,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.7.3")
+        classpath("com.android.tools.build:gradle:8.6.0")
         // Cloudstream gradle plugin which makes everything work and builds plugins
         classpath("com.github.recloudstream:gradle:master-SNAPSHOT")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
@@ -49,9 +49,6 @@ subprojects {
             compileSdkVersion(35)
             targetSdk = 35
         }
-    buildFeatures {
-        buildConfig = true
-    }
 
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_1_8
