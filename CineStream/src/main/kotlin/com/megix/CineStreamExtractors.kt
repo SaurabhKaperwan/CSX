@@ -1107,7 +1107,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         ExtractorLink(
                             "HiAnime ${server.uppercase()} [${t.uppercase()}]",
-                            "HiAnime ${server.uppercase()} [${t.touppercase()}]",
+                            "HiAnime ${server.uppercase()} [${t.uppercase()}]",
                             it.url,
                             "",
                             Qualities.Unknown.value,
