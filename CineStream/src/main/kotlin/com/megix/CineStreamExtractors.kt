@@ -1106,8 +1106,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 epData.sources.map {
                     callback.invoke(
                         ExtractorLink(
-                            "HiAnime ${server.toUpperCase()} [${t.toUpperCase()}]",
-                            "HiAnime ${server.toUpperCase()} [${t.toUpperCase()}]",
+                            "HiAnime ${server.uppercase()} [${t.uppercase()}]",
+                            "HiAnime ${server.uppercase()} [${t.touppercase()}]",
                             it.url,
                             "",
                             Qualities.Unknown.value,
