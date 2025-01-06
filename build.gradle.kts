@@ -49,6 +49,9 @@ subprojects {
             compileSdkVersion(35)
             targetSdk = 35
         }
+    buildFeatures {
+        buildConfig = true
+    }
 
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_1_8
