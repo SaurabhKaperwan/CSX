@@ -74,7 +74,7 @@ open class CineStreamProvider : MainAPI() {
         const val viteAPI = "https://viet.autoembed.cc"
         const val multimoviesAPI = "https://multimovies.lat"
         const val anitaku = "https://anitaku.pe"
-        const val cinemaluxeAPI = "https://cinemaluxe.fans"
+        const val cinemaluxeAPI = "https://cinemaluxe.cam"
         const val bollyflixAPI = "https://bollyflix.diy"
         const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
