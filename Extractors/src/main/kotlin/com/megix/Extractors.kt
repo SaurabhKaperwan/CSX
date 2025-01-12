@@ -314,7 +314,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace("ink", "tel").replace("art", "tel")
+        val newUrl = url.replace("ink", "dad").replace("art", "dad")
         val doc = app.get(newUrl).document
         val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
