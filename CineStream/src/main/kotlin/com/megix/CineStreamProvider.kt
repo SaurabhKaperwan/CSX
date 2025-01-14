@@ -52,7 +52,7 @@ open class CineStreamProvider : MainAPI() {
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.ms"
-        const val rogMoviesAPI = "https://rogmovies.com"
+        const val rogMoviesAPI = "https://luxmovies.cam"
         const val MovieDrive_API = "https://moviesdrive.pro"
         const val topmoviesAPI = "https://topmovies.bet"
         const val MoviesmodAPI = "https://moviesmod.red"
@@ -72,7 +72,7 @@ open class CineStreamProvider : MainAPI() {
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val viteAPI = "https://viet.autoembed.cc"
-        const val multimoviesAPI = "https://multimovies.lat"
+        const val multimoviesAPI = "https://multimovies.today"
         const val anitaku = "https://anitaku.pe"
         const val cinemaluxeAPI = "https://cinemaluxe.cam"
         const val bollyflixAPI = "https://bollyflix.diy"
@@ -368,8 +368,8 @@ open class CineStreamProvider : MainAPI() {
             argamap(
                 {
                     if(!res.isBollywood) invokeVegamovies(
-                        res.id,
                         res.title,
+                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,

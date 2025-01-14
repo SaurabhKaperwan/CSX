@@ -9,6 +9,25 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import android.util.Log
 
+class Luxdrive : ExtractorApi() {
+    override val name: String = "Luxdrive"
+    override val mainUrl: String = "https://new.luxedrive.online"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get(url).document
+        document.select("div > a").map {
+            val href = it.attr("href")
+            loadExtractor(href, "", subtitleCallback, callback)
+        }
+    }
+}
+
 class Driveleech : Driveseed() {
     override val name: String = "Driveleech"
     override val mainUrl: String = "https://driveleech.org"
@@ -275,7 +294,7 @@ class VCloud : ExtractorApi() {
                         ExtractorLink(
                             "$name[Download]",
                             "$name[Download] - $header",
-                            dlink.substringAfter("url="),
+                            dlink.substringAfter("link="),
                             "",
                             getIndexQuality(header),
                         )
@@ -384,7 +403,7 @@ open class HubCloud : ExtractorApi() {
                     ExtractorLink(
                         "$name[Download]",
                         "$name[Download] - $header",
-                        dlink.substringAfter("url="),
+                        dlink.substringAfter("link="),
                         "",
                         getIndexQuality(header),
                     )
