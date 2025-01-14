@@ -16,17 +16,17 @@ import com.megix.CineStreamExtractors.invokeRogmovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
-import com.megix.CineStreamExtractors.invokeFull4Movies
+// import com.megix.CineStreamExtractors.invokeFull4Movies
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeWYZIESubs
 import com.megix.CineStreamExtractors.invokeAutoembed
-import com.megix.CineStreamExtractors.invokeVidbinge
+// import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invokeVidSrcNL
 import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
-import com.megix.CineStreamExtractors.invokeRar
+// import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeVite
 import com.megix.CineStreamExtractors.invokeMultimovies
@@ -54,9 +54,9 @@ open class CineStreamProvider : MainAPI() {
         const val vegaMoviesAPI = "https://vegamovies.ms"
         const val rogMoviesAPI = "https://luxmovies.cam"
         const val MovieDrive_API = "https://moviesdrive.pro"
-        const val topmoviesAPI = "https://topmovies.bet"
+        const val topmoviesAPI = "https://topmovies.beer"
         const val MoviesmodAPI = "https://moviesmod.red"
-        const val Full4MoviesAPI = "https://www.full4movies.delivery"
+        // const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
         const val W4UAPI = "https://world4ufree.observer"
         const val WHVXSubsAPI = "https://subs.whvx.net"
@@ -68,14 +68,14 @@ open class CineStreamProvider : MainAPI() {
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
-        const val RarAPI = "https://nepu.to"
+        // const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val viteAPI = "https://viet.autoembed.cc"
         const val multimoviesAPI = "https://multimovies.today"
         const val anitaku = "https://anitaku.pe"
         const val cinemaluxeAPI = "https://cinemaluxe.cam"
-        const val bollyflixAPI = "https://bollyflix.diy"
+        const val bollyflixAPI = "https://bollyflix.spa"
         const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
@@ -352,16 +352,6 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                {
-                    invokeMultimovies(
-                        multimoviesAPI,
-                        res.title,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
             )
         }
         else {
@@ -440,25 +430,25 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeRar(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback
-                    )
-                },
-                {
-                    if(!res.isAnime) invokeFull4Movies(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeRar(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         callback
+                //     )
+                // },
+                // {
+                //     if(!res.isAnime) invokeFull4Movies(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeCinemaluxe(
                         res.title,
