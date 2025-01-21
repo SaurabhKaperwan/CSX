@@ -9,6 +9,25 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import android.util.Log
 
+class Luxdrive : ExtractorApi() {
+    override val name: String = "Luxdrive"
+    override val mainUrl: String = "https://new.luxedrive.online"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get(url).document
+        document.select("div > a").map {
+            val href = it.attr("href")
+            loadExtractor(href, "", subtitleCallback, callback)
+        }
+    }
+}
+
 class Driveleech : Driveseed() {
     override val name: String = "Driveleech"
     override val mainUrl: String = "https://driveleech.org"
@@ -275,7 +294,7 @@ class VCloud : ExtractorApi() {
                         ExtractorLink(
                             "$name[Download]",
                             "$name[Download] - $header",
-                            dlink.substringAfter("url="),
+                            dlink.substringAfter("link="),
                             "",
                             getIndexQuality(header),
                         )
@@ -305,7 +324,7 @@ class HubCloudArt : HubCloud() {
 
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.tel"
+    override val mainUrl: String = "https://hubcloud.dad"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -314,7 +333,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace("ink", "tel").replace("art", "tel")
+        val newUrl = url.replace("ink", "dad").replace("art", "dad")
         val doc = app.get(newUrl).document
         val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
@@ -384,7 +403,7 @@ open class HubCloud : ExtractorApi() {
                     ExtractorLink(
                         "$name[Download]",
                         "$name[Download] - $header",
-                        dlink.substringAfter("url="),
+                        dlink.substringAfter("link="),
                         "",
                         getIndexQuality(header),
                     )

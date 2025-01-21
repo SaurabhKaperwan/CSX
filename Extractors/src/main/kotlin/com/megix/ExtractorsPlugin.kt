@@ -8,6 +8,7 @@ import android.content.Context
 class ExtractorsPlugin: Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
+        registerExtractorAPI(Luxdrive())
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())
         registerExtractorAPI(PixelDrain())

@@ -16,17 +16,17 @@ import com.megix.CineStreamExtractors.invokeRogmovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
-import com.megix.CineStreamExtractors.invokeFull4Movies
+// import com.megix.CineStreamExtractors.invokeFull4Movies
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeWYZIESubs
 import com.megix.CineStreamExtractors.invokeAutoembed
-import com.megix.CineStreamExtractors.invokeVidbinge
+// import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invokeVidSrcNL
 import com.megix.CineStreamExtractors.invokeMovies
 import com.megix.CineStreamExtractors.invoke2embed
-import com.megix.CineStreamExtractors.invokeRar
+// import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeVite
 import com.megix.CineStreamExtractors.invokeMultimovies
@@ -36,6 +36,7 @@ import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeDramaCool
+import com.megix.CineStreamExtractors.invokeAnimia
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -52,31 +53,32 @@ open class CineStreamProvider : MainAPI() {
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.ms"
-        const val rogMoviesAPI = "https://rogmovies.com"
+        const val rogMoviesAPI = "https://luxmovies.cam"
         const val MovieDrive_API = "https://moviesdrive.pro"
-        const val topmoviesAPI = "https://topmovies.bet"
+        const val topmoviesAPI = "https://topmovies.beer"
         const val MoviesmodAPI = "https://moviesmod.red"
-        const val Full4MoviesAPI = "https://www.full4movies.delivery"
+        // const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/stream"
         const val W4UAPI = "https://world4ufree.observer"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.bet"
+        const val uhdmoviesAPI = "https://uhdmovies.beer"
         const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val moviesAPI = "https://moviesapi.club"
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
-        const val RarAPI = "https://nepu.to"
+        // const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val viteAPI = "https://viet.autoembed.cc"
-        const val multimoviesAPI = "https://multimovies.lat"
+        const val multimoviesAPI = "https://multimovies.today"
         const val anitaku = "https://anitaku.pe"
-        const val cinemaluxeAPI = "https://cinemaluxe.fans"
-        const val bollyflixAPI = "https://bollyflix.diy"
+        const val cinemaluxeAPI = "https://cinemaluxe.cam"
+        const val bollyflixAPI = "https://bollyflix.spa"
         const val TomAPI = "https://tom.autoembed.cc"
+        const val animiaAPI = "https://animia.buzz"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -100,24 +102,24 @@ open class CineStreamProvider : MainAPI() {
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Action" to "Top Action Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Action" to "Top Action Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Comedy" to "Top Comedy Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Comedy" to "Top Comedy Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Romance" to "Top Romance Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Romance" to "Top Romance Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Horror" to "Top Horror Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Horror" to "Top Horror Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Thriller" to "Top Thriller Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Thriller" to "Top Thriller Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Sci-Fi" to "Top Sci-Fi Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Sci-Fi" to "Top Sci-Fi Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Fantasy" to "Top Fantasy Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Fantasy" to "Top Fantasy Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Mystery" to "Top Mystery Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Mystery" to "Top Mystery Series",
-        "$mainUrl/imdbRating/catalog/movie/imdbRating/skip=###&genre=Crime" to "Top Crime Movies",
-        "$mainUrl/imdbRating/catalog/series/imdbRating/skip=###&genre=Crime" to "Top Crime Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Comedy" to "Top Comedy Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Comedy" to "Top Comedy Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Romance" to "Top Romance Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Romance" to "Top Romance Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Horror" to "Top Horror Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Horror" to "Top Horror Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Thriller" to "Top Thriller Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Thriller" to "Top Thriller Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Sci-Fi" to "Top Sci-Fi Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Sci-Fi" to "Top Sci-Fi Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Fantasy" to "Top Fantasy Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Fantasy" to "Top Fantasy Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Mystery" to "Top Mystery Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Mystery" to "Top Mystery Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Crime" to "Top Crime Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Crime" to "Top Crime Series",
     )
 
     override suspend fun getMainPage(
@@ -164,7 +166,7 @@ open class CineStreamProvider : MainAPI() {
                 this.posterUrl = it.poster.toString()
             })
         }
-        val movieJson = app.get("$cinemeta_url/catalog/movie/top/search=$query.json").text
+        val movieJson = app.get("$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json").text
         val movies = parseJson<SearchResult>(movieJson)
         movies.metas.forEach {
             searchResponse.add(newMovieSearchResponse(it.name, PassData(it.id, it.type).toJson(), TvType.Movie) {
@@ -172,7 +174,7 @@ open class CineStreamProvider : MainAPI() {
             })
         }
 
-        val seriesJson = app.get("$cinemeta_url/catalog/series/top/search=$query.json").text
+        val seriesJson = app.get("$streamio_TMDB/catalog/series/tmdb.top/search=$query.json").text
         val series = parseJson<SearchResult>(seriesJson)
         series.metas.forEach {
             searchResponse.add(newMovieSearchResponse(it.name, PassData(it.id, it.type).toJson(), TvType.Movie) {
@@ -329,6 +331,14 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
+                    invokeAnimia(
+                        res.anilistId,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
                     invokeTorrentio(
                         res.imdb_id,
                         res.imdbSeason,
@@ -352,24 +362,14 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                {
-                    invokeMultimovies(
-                        multimoviesAPI,
-                        res.title,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
             )
         }
         else {
             argamap(
                 {
                     if(!res.isBollywood) invokeVegamovies(
-                        res.id,
                         res.title,
+                        year,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -440,25 +440,25 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeRar(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback
-                    )
-                },
-                {
-                    if(!res.isAnime) invokeFull4Movies(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeRar(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         callback
+                //     )
+                // },
+                // {
+                //     if(!res.isAnime) invokeFull4Movies(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeCinemaluxe(
                         res.title,
