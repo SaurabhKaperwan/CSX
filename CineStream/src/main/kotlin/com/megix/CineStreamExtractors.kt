@@ -17,6 +17,43 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeAnimia(
+        id: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val json = app.get("$animiaAPI/api/episode/$id/${episode ?: 1}", timeout = 500L).text
+        val data = parseJson<AnimiaResponse>(json)
+        data.server1embedLink?.let {
+            loadSourceNameExtractor(
+                "Animia[SUB]",
+                it,
+                "",
+                subtitleCallback,
+                callback,
+            )
+        }
+        data.server2embedLink?.let {
+            loadSourceNameExtractor(
+                "Animia[SUB]",
+                it,
+                "",
+                subtitleCallback,
+                callback,
+            )
+        }
+        data.server3embedLink?.let {
+            loadSourceNameExtractor(
+                "Animia[SUB]",
+                it,
+                "",
+                subtitleCallback,
+                callback,
+            )
+        }
+    }
+
     suspend fun invokeDramaCool(
         title: String,
         year: Int? = null,

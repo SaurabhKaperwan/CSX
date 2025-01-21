@@ -3,6 +3,12 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+data class AnimiaResponse(
+    val server1embedLink: String? = null,
+    val server2embedLink: String? = null,
+    val server3embedLink: String? = null,
+)
+
 data class HiAnime(
     val subOrDub: String,
     val episodes: List<HiAnimeEpisode>
