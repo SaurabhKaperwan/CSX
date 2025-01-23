@@ -17,6 +17,36 @@ import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeTokyoInsider(
+        title: String,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val tvtype = if(episode == null) "_(Movie)" else "_(TV)"
+        val firstChar = getFirstCharacterOrZero(title).uppercase()
+        val newTitle = title.replace(" ","_")
+        val doc = app.get("$tokyoInsiderAPI/anime/$firstChar/$newTitle$tvtype", timeout = 500L).document
+        val selector = if(episode != null) "a.download-link:matches((?i)(episode $episode\\b))" else "a.download-link"
+        val aTag = doc.selectFirst(selector)
+        val epUrl = aTag?.attr("href") ?: return
+        val res = app.get(tokyoInsiderAPI + epUrl, timeout = 500L).document
+        res.select("div.c_h2 > div > a").map {
+            val name = it.text()
+            val url = it.attr("href")
+            callback.invoke(
+                ExtractorLink(
+                    "TokyoInsider",
+                    "[TokyoInsider] - $name",
+                    url,
+                    referer = "",
+                    getIndexQuality(name),
+                    INFER_TYPE,
+                )
+            )
+        }
+    }
+
     suspend fun invokeAnimia(
         id: Int? = null,
         episode: Int? = null,
@@ -305,7 +335,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val subDub = if (url!!.contains("-dub")) "Dub" else "Sub"
             val epUrl = url.replace("category/", "").plus("-episode-${episode}")
             val epRes = app.get(epUrl).document
-        epRes.select("div.anime_muti_link > ul > li").forEach {
+            epRes.select("div.anime_muti_link > ul > li").forEach {
                 val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
                 val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
                 if(iframe.contains("s3taku"))
