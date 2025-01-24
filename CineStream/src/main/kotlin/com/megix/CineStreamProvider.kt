@@ -37,6 +37,7 @@ import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeDramaCool
 import com.megix.CineStreamExtractors.invokeAnimia
+import com.megix.CineStreamExtractors.invokeTokyoInsider
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -55,6 +56,7 @@ open class CineStreamProvider : MainAPI() {
         const val vegaMoviesAPI = "https://vegamovies.ms"
         const val rogMoviesAPI = "https://luxmovies.cam"
         const val MovieDrive_API = "https://moviesdrive.pro"
+        const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.beer"
         const val MoviesmodAPI = "https://moviesmod.red"
         // const val Full4MoviesAPI = "https://www.full4movies.delivery"
@@ -333,6 +335,14 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeAnimia(
                         res.anilistId,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeTokyoInsider(
+                        res.title,
                         res.episode,
                         subtitleCallback,
                         callback

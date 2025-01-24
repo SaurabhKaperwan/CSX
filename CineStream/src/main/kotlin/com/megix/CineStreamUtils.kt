@@ -14,6 +14,15 @@ suspend fun cinemaluxeBypass(url: String): String {
     return base64Decode(encodeUrl)
 }
 
+fun getFirstCharacterOrZero(input: String): String {
+    val firstChar = input[0]
+    return if (!firstChar.isLetter()) {
+        "0"
+    } else {
+        firstChar.toString()
+    }
+}
+
 fun getBaseUrl(url: String): String {
     return URI(url).let {
         "${it.scheme}://${it.host}"
