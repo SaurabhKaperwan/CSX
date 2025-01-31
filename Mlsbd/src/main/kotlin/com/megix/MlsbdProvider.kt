@@ -54,80 +54,69 @@ class MlsbdProvider : MainAPI() { // all providers must be an instance of MainAP
         TvType.AsianDrama,
         TvType.AnimeMovie,
     )
-    private val headers =
-        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+    private val headers =   mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
-    ): HomePageResponse = withContext(Dispatchers.IO) {
-        val url = if (request.data == "") mainUrl else "$mainUrl${request.data}$page/"
+    ): HomePageResponse {
+        val url = if(request.data == "") mainUrl
+        else "$mainUrl${request.data}$page/"
         val doc = app.get(url, cacheTime = 1440, allowRedirects = true, timeout = 60, headers = headers).document
         val homeResponse = doc.select("div.single-post")
         val home = homeResponse.mapNotNull { post ->
             toResult(post)
         }
-        newHomePageResponse(HomePageList(request.name, home, isHorizontalImages = true), true)
+        return newHomePageResponse(HomePageList(request.name,home,isHorizontalImages = true), true)
     }
 
     private fun toResult(post: Element): SearchResponse {
-        val title = post.selectFirst(".post-title")?.text() ?: ""
-        val url = post.selectFirst(".thumb > a")?.attr("href") ?: ""
-        val posterUrl = post.selectFirst(".thumb>a>picture>img:nth-child(3)")?.attr("src") ?: ""
-
+        val title = post.select(".post-title").text()
+        val url = post.select(".thumb > a").attr("href")
         return newMovieSearchResponse(title, url, TvType.Movie) {
-            this.posterUrl = posterUrl
+            this.posterUrl = post.select(".thumb>a>picture>img:nth-child(3)")
+                .attr("src")
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> = withContext(Dispatchers.IO){
+    override suspend fun search(query: String): List<SearchResponse> {
         val doc = app.get("$mainUrl/?s=$query", cacheTime = 60, timeout = 30, headers = headers).document
         val searchResponse = doc.select("div.single-post")
-        searchResponse.mapNotNull { post ->
+        return searchResponse.mapNotNull { post ->
             toResult(post)
         }
     }
 
-    override suspend fun load(url: String): LoadResponse = withContext(Dispatchers.IO) {
+    override suspend fun load(url: String): LoadResponse {
         val doc = app.get(url, cacheTime = 60, timeout = 30).document
-        val title = doc.selectFirst(".name")?.text() ?: ""
+        val title = doc.select(".name").text()
         val year = "(?<=\\()\\d{4}(?=\\))".toRegex().find(title)?.value?.toIntOrNull()
-        val image = doc.selectFirst("img.aligncenter")?.attr("src") ?: ""
+        val image = doc.select("img.aligncenter").attr("src")
         doc.select("br").append("\\n")
-        val plot = buildString {
-            append(doc.selectFirst(".single-post-title")?.text() ?: "")
-            append("\n")
-            append(doc.selectFirst(".misc")?.text() ?: "")
-            append("\n")
-            append(doc.selectFirst(".details")?.text()?.replace("\\n ", "\n") ?: "")
-            append("\n")
-            append(doc.selectFirst(".storyline")?.text() ?: "")
-            append("\n")
-            append(doc.selectFirst(".production")?.text()?.replace("\\n ", "\n") ?: "")
-            append("\n")
-            append(doc.selectFirst(".media")?.text()?.replace("\\n ", "\n") ?: "")
-        }
+        val plot = doc.select(".single-post-title").text() + "\n" +
+                doc.select(".misc").text() + "\n" +
+                doc.select(".details").text().replace("\\n ", "\n") + "\n" +
+                doc.select(".storyline").text() + "\n" +
+                doc.select(".production").text().replace("\\n ", "\n") + "\n" +
+                doc.select(".media").text().replace("\\n ", "\n")
 
         val episodeDivs = doc.select("div.post-section-title.download").reversed()
         var link = ""
         when (episodeDivs.size) {
             1 -> {
-                val links = mutableListOf<String>()
                 episodeDivs[0].nextElementSibling()?.nextElementSibling()
                     ?.select("a.Dbtn.hd, a.Dbtn.sd, a.Dbtn.hevc")
                     ?.forEach {
-                        links.add(it.attr("href"))
+                        link += it.attr("href") + " ; "
                     }
-                    link = links.joinToString(" ; ")
-
-                newMovieLoadResponse(title, url, TvType.Movie, link) {
+                return newMovieLoadResponse(title, url, TvType.Movie, link) {
                     this.posterUrl = image
                     this.year = year
                     this.plot = plot
                 }
             }
 
-            0 -> newMovieLoadResponse(title, url, TvType.Movie, "") {
+            0 -> return newMovieLoadResponse(title, url, TvType.Movie, "") {
                 this.posterUrl = image
                 this.year = year
                 this.plot = plot
@@ -135,36 +124,36 @@ class MlsbdProvider : MainAPI() { // all providers must be an instance of MainAP
 
             else -> {
                 val episodesData = mutableListOf<Episode>()
-                episodeDivs.forEachIndexed { index, episodeDiv ->
+                for (episodeDiv in episodeDivs) {
                     var episodeUrl = ""
+                    var episodeNum = 0
+
+
                     var downloadLink = episodeDiv.nextElementSibling()?.nextElementSibling()
-                    val linksForEpisode = mutableListOf<String>()
 
                     //480p
-                    downloadLink?.selectFirst("a")?.attr("href")?.let { linksForEpisode.add(it) }
+                    episodeUrl += downloadLink?.selectFirst("a")?.attr("href") + " ; "
 
                     //720p
                     downloadLink = downloadLink?.nextElementSibling()
-                    downloadLink?.selectFirst("a")?.attr("href")?.let { linksForEpisode.add(it) }
+                    episodeUrl += downloadLink?.selectFirst("a")?.attr("href") + " ; "
 
                     //1080p
                     downloadLink = downloadLink?.nextElementSibling()
-                    downloadLink?.selectFirst("a")?.attr("href")?.let { linksForEpisode.add(it) }
+                    episodeUrl += downloadLink?.selectFirst("a")?.attr("href")
 
-                    episodeUrl = linksForEpisode.joinToString(" ; ")
-
+                    episodeNum++
                     episodesData.add(
                         Episode(
                             episodeUrl,
-                            "Episode ${index + 1}",
+                            "Episode $episodeNum",
                             1,
-                            index + 1
+                            episodeNum
                         )
                     )
                 }
-                newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodesData) {
+                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodesData) {
                     this.posterUrl = image
-
                     this.year = year
                     this.plot = plot
                 }
@@ -177,18 +166,18 @@ class MlsbdProvider : MainAPI() { // all providers must be an instance of MainAP
         isCasting: Boolean,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
-    ): Boolean = withContext(Dispatchers.IO){
-        data.split(" ; ").forEach { link ->
+    ): Boolean {
+        data.split(" ; ").forEach{ link ->
             if (link.contains("savelinks")) {
                 val doc = app.get(link, cacheTime = 60, timeout = 30).document
-                doc.select("div.col-sm-8:nth-child(4) > a").forEach {
+                doc.select("div.col-sm-8:nth-child(4) > a").forEach{
                     val url = it.attr("href")
-                    if (url.contains("gdflix")) {
+                    if (url.contains("gdflix")){
                         loadExtractor(url, subtitleCallback, callback)
                     }
                 }
             }
         }
-        true
+        return true
     }
 }
