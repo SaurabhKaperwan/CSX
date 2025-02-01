@@ -12,7 +12,7 @@ import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
 
 class CinevezProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.cinevez.io"
+    override var mainUrl = "https://www.cinevez.pm"
     override var name = "Cinevez"
     override val hasMainPage = true
     override var lang = "hi"
