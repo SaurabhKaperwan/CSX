@@ -53,7 +53,7 @@ open class CineStreamProvider : MainAPI() {
     val mediaFusion = "https://mediafusion.elfhosted.com"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.ms"
+        const val vegaMoviesAPI = "https://m.vegamovies.ms"
         const val rogMoviesAPI = "https://luxmovies.cam"
         const val MovieDrive_API = "https://moviesdrive.pro"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -78,7 +78,7 @@ open class CineStreamProvider : MainAPI() {
         const val multimoviesAPI = "https://multimovies.today"
         const val anitaku = "https://anitaku.pe"
         const val cinemaluxeAPI = "https://cinemaluxe.work"
-        const val bollyflixAPI = "https://bollyflix.spa"
+        const val bollyflixAPI = "https://bollyflix.africa"
         const val TomAPI = "https://tom.autoembed.cc"
         const val animiaAPI = "https://animia.buzz"
         const val torrentioAPI = "https://torrentio.strem.fun"
