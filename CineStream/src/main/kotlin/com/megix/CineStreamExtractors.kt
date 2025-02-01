@@ -229,6 +229,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = app.get(url).document
         if(season == null) {
             document.select("a.maxbutton").amap {
+                //val link = cinemaluxeBypass(it.attr("href"))
                 var link = it.attr("href")
                 if(link.contains("luxedailyupdates.xyz")) {
                     link = cinemaluxeBypass(link)
@@ -245,9 +246,12 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
         else {
-
-            val season = document.select("div[style*='margin-bottom: 20px'][style*='margin-top:20px']:matches((?i)(Season $season))")
+            var season = document.select("span.maxbutton-5-container:matches((?i)(Season $season))")
+            if(season.isEmpty()) {
+                season = document.select("div.wp-content > div:matches((?i)(Season $season))")
+            }
             season.amap { div ->
+                //val link = cinemaluxeBypass(div.select("a").attr("href"))
                 var link = div.select("a").attr("href")
                 if(link.contains("luxedailyupdates.xyz")) {
                     link = cinemaluxeBypass(link)
