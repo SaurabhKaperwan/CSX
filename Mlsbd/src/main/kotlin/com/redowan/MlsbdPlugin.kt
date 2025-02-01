@@ -6,7 +6,6 @@ import com.lagradost
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.lagradost.cloudstream3.extractors.StreamTape
 
 @CloudstreamPlugin
 class MlsbdPlugin : Plugin() {
@@ -22,7 +21,6 @@ class MlsbdPlugin : Plugin() {
         kotlinx.coroutines.launch {
             withContext(Dispatchers.Default) {
                 registerMainAPI(MlsbdProvider())
-                registerExtractorAPI(StreamTape())
             }
         }
 
