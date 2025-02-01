@@ -8,7 +8,6 @@ import com.lagradost.cloudstream3.utils.getQualityFromName
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
 
 class GDFlix1 : GDFlix() {
     override val mainUrl: String = "https://new3.gdflix.cfd"
