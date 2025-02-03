@@ -157,7 +157,8 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
                     link = bypass(link)
                 }
                 val doc = app.get(link).document
-                doc.select("a.maxbutton").mapNotNull {
+                val selector = if(link.contains("luxedrive")) "div > a" else "a.maxbutton"
+                doc.select(selector).mapNotNull {
                     val source = it.attr("href")
                     EpisodeLink(
                         source

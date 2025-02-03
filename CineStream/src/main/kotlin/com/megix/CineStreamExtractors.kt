@@ -192,7 +192,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
             "Referer" to "$AutoembedAPI/"
         )
-        val json = app.get(url).text
+        val json = app.get(url, headers = headers).text
         val data = tryParseJson<TomResponse>(json) ?: return
 
         callback.invoke(
@@ -233,7 +233,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(link.contains("luxedailyupdates.xyz")) {
                     link = cinemaluxeBypass(link)
                 }
-                app.get(link).document.select("a.maxbutton").amap {
+                val selector = if(link.contains("luxedrive")) "div > a" else "a.maxbutton"
+                app.get(link).document.select(selector).amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",
                         it.attr("href"),
@@ -246,7 +247,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
         else {
 
-            val season = document.select("div[style*='margin-bottom: 20px'][style*='margin-top:20px']:matches((?i)(Season $season))")
+            val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season))")
             season.amap { div ->
                 var link = div.select("a").attr("href")
                 if(link.contains("luxedailyupdates.xyz")) {
@@ -609,10 +610,10 @@ object CineStreamExtractors : CineStreamProvider() {
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
     //     val providers = mutableListOf("astra", "nova", "orion")
-    //     val type=if (season == null) "movie" else "tv"
-    //     val s= season ?: ""
-    //     val e= episode ?: ""
-    //     val query="""{"title":"$title","imdbId":"$imdb_id","tmdbId":"$tmdb_id","type":"$type","season":"$s","episode":"$e","releaseYear":"$year"}"""
+    //     val type = if (season == null) "movie" else "tv"
+    //     val s = season ?: ""
+    //     val e = episode ?: ""
+    //     val query = """{"title":"$title","imdbId":"$imdb_id","tmdbId":"$tmdb_id","type":"$type","season":"$s","episode":"$e","releaseYear":"$year"}"""
     //     val headers = mapOf(
     //         "accept" to "*/*",
     //         "origin" to "https://www.vidbinge.app",
