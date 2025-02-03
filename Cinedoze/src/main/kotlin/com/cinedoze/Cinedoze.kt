@@ -17,7 +17,7 @@ import android.util.Log
 import okhttp3.FormBody
 class Cinedoze : MainAPI() {
 
-    override var mainUrl = "https://cinedoze.com"
+    override var mainUrl = "https://cinedoze.com/"
     override var name = "Cinedoze"
     override val hasMainPage= true
     override var lang= "hi"
