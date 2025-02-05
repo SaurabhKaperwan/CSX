@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 65
+version = 66
 
 android {
     defaultConfig {
@@ -14,7 +14,7 @@ android {
 
 cloudstream {
     //language = "en"
-    description = "Multi API Extension"
+    description = "One stop solution for Movies, Series, Anime, Livetv, AsianDrama and Torrents"
     authors = listOf("megix")
     status = 1
     tvTypes = listOf(
@@ -23,6 +23,7 @@ cloudstream {
         "AsianDrama",
         "Anime",
         "Torrent",
+        "Live",
     )
 
     iconUrl = "https://us.123rf.com/450wm/mrshamsjaman/mrshamsjaman2008/mrshamsjaman200800943/154338064-initial-letter-cs-logo-or-sc-logo-vector-design-template.jpg"
