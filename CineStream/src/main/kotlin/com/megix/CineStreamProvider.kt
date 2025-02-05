@@ -60,9 +60,8 @@ open class CineStreamProvider : MainAPI() {
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.beer"
         const val MoviesmodAPI = "https://moviesmod.cash"
-        const val cricketStream = "https://cricketstreaming.vercel.app"
         // const val Full4MoviesAPI = "https://www.full4movies.delivery"
-        const val stremifyAPI = "https://stremify.hayd.uk/stream"
+        const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val W4UAPI = "https://world4ufree.capetown"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
@@ -107,7 +106,6 @@ open class CineStreamProvider : MainAPI() {
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
-        "$cricketStream/catalog/tv/cricket" to "Cricket Streams",
         "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
@@ -208,7 +206,6 @@ open class CineStreamProvider : MainAPI() {
         val meta_url =
             if(id.contains("kitsu")) kitsu_url
             else if(id.contains("tmdb")) streamio_TMDB
-            else if(id.contains("cricket")) cricketStream
             else if(id.contains("mf")) mediaFusion
             else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
@@ -337,21 +334,13 @@ open class CineStreamProvider : MainAPI() {
         val seasonYear = if(res.tvtype == "movie") year else res.firstAired?.substringBefore("-")?.toIntOrNull() ?: res.firstAired?.substringBefore("–")?.toIntOrNull()
 
         if(res.tvtype == "tv") {
-            if(res.id.contains("cricket")) {
-                invokeTvStream(
-                    res.id,
-                    cricketStream,
-                    subtitleCallback,
-                    callback
-                )
-            } else {
-                invokeTvStream(
-                    res.id,
-                    mediaFusion,
-                    subtitleCallback,
-                    callback
-                )
-            }
+
+            invokeTvStream(
+                res.id,
+                mediaFusion,
+                subtitleCallback,
+                callback
+            )
         }
         else if(res.isKitsu) {
             argamap(
@@ -437,10 +426,8 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    invokeStreamify(
+                    if(res.season == null) invokeStreamify(
                         res.id,
-                        res.season,
-                        res.episode,
                         callback
                     )
                 },

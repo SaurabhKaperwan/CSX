@@ -325,14 +325,12 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeStreamify(
         id: String,
-        season: Int? = null,
-        episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season != null) "$stremifyAPI/series/$id:$season:$episode.json" else "$stremifyAPI/movie/$id.json"
+        val url = "$stremifyAPI/movie/$id.json"
         val json = app.get(url).text
         val data = tryParseJson<StreamifyResponse>(json) ?: return
-        data.streams.amap {
+        data.streams.forEach {
             callback.invoke(
                 ExtractorLink(
                     it.name,
