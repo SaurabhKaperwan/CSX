@@ -97,17 +97,14 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$streamio_TMDB/catalog/movie/tmdb.trending/skip=###&genre=Day" to "Trending Movies Today",
-        "$streamio_TMDB/catalog/series/tmdb.trending/skip=###&genre=Day" to "Trending Series Today",
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
         "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
         "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
-        "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
         "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
-        "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
+        "$mainUrl/cctop/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Comedy" to "Top Comedy Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Comedy" to "Top Comedy Series",
@@ -134,7 +131,13 @@ open class CineStreamProvider : MainAPI() {
         val skip = if(page == 1) 0 else skipMap[request.name] ?: 0
         val newRequestData = request.data.replace("###", skip.toString())
         val json = app.get("$newRequestData.json").text
-        val movies = parseJson<Home>(json)
+        val movies = tryParseJson<Home>(json) ?: return newHomePageResponse(
+            list = HomePageList(
+                name = request.name,
+                list = emptyList(),
+            ),
+            hasNext = false
+        )
         val movieCount = movies.metas.size
         skipMap[request.name] = skip + movieCount
         val home = movies.metas.mapNotNull { movie ->
@@ -150,7 +153,7 @@ open class CineStreamProvider : MainAPI() {
         return newHomePageResponse(
             list = HomePageList(
                 name = request.name,
-                list = home
+                list = home,
             ),
             hasNext = true
         )
@@ -158,6 +161,7 @@ open class CineStreamProvider : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
+
         val animeJson = app.get("$kitsu_url/catalog/anime/kitsu-anime-list/search=$query.json").text
         val animes = tryParseJson<SearchResult>(animeJson)
         animes?.metas ?.forEach {
@@ -165,25 +169,25 @@ open class CineStreamProvider : MainAPI() {
                 this.posterUrl = it.poster.toString()
             })
         }
-        val movieJson = app.get("$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json").text
-        val movies = parseJson<SearchResult>(movieJson)
-        movies.metas.forEach {
+        val movieJson = app.get("$cinemeta_url/catalog/movie/top/search=$query.json").text
+        val movies = tryParseJson<SearchResult>(movieJson)
+        movies?.metas?.forEach {
             searchResponse.add(newMovieSearchResponse(it.name, PassData(it.id, it.type).toJson(), TvType.Movie) {
                 this.posterUrl = it.poster.toString()
             })
         }
 
-        val seriesJson = app.get("$streamio_TMDB/catalog/series/tmdb.top/search=$query.json").text
-        val series = parseJson<SearchResult>(seriesJson)
-        series.metas.forEach {
+        val seriesJson = app.get("$cinemeta_url/catalog/series/top/search=$query.json").text
+        val series = tryParseJson<SearchResult>(seriesJson)
+        series?.metas?.forEach {
             searchResponse.add(newMovieSearchResponse(it.name, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
                 this.posterUrl = it.poster.toString()
             })
         }
 
         val tvJson = app.get("$mediaFusion/catalog/tv/mediafusion_search_tv/search=$query.json").text
-        val tv = parseJson<SearchResult>(tvJson)
-        tv.metas.forEach {
+        val tv = tryParseJson<SearchResult>(tvJson)
+        tv?.metas?.forEach {
             searchResponse.add(newMovieSearchResponse(it.name, PassData(it.id, it.type).toJson(), TvType.Live) {
                 this.posterUrl = it.poster.toString()
             })
