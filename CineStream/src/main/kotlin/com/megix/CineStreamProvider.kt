@@ -104,7 +104,7 @@ open class CineStreamProvider : MainAPI() {
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
         "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
-        "$mainUrl/cctop/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Comedy" to "Top Comedy Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Comedy" to "Top Comedy Series",
