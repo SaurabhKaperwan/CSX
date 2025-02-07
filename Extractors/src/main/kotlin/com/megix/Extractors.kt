@@ -28,14 +28,14 @@ class Luxdrive : ExtractorApi() {
     }
 }
 
-class Driveleech : Driveseed() {
-    override val name: String = "Driveleech"
-    override val mainUrl: String = "https://driveleech.org"
-}
-
-open class Driveseed : ExtractorApi() {
+class Driveseed : Driveleech() {
     override val name: String = "Driveseed"
     override val mainUrl: String = "https://driveseed.org"
+}
+
+open class Driveleech : ExtractorApi() {
+    override val name: String = "Driveleech"
+    override val mainUrl: String = "https://driveleech.org"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -84,7 +84,7 @@ open class Driveseed : ExtractorApi() {
 
     private suspend fun instantLink(finallink: String): String {
         val url = if(finallink.contains("video-leech")) "video-leech.xyz" else "video-seed.xyz"
-        val token = finallink.substringAfter("https://$url/?url=")
+        val token = finallink.substringAfter("url=")
         val downloadlink = app.post(
             url = "https://$url/api",
             data = mapOf(
@@ -92,15 +92,13 @@ open class Driveseed : ExtractorApi() {
             ),
             referer = finallink,
             headers = mapOf(
-                "x-token" to url,
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
+                "x-token" to url
             )
         )
-        val finaldownloadlink =
+        val link =
             downloadlink.toString().substringAfter("url\":\"")
                 .substringBefore("\",\"name")
                 .replace("\\/", "/")
-        val link = finaldownloadlink
         return link
     }
 
@@ -125,16 +123,20 @@ open class Driveseed : ExtractorApi() {
             val href = element.attr("href")
             when {
                 text.contains("Instant Download") -> {
-                    val instant = instantLink(href)
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name Instant(Download)",
-                            "$name Instant(Download) - $fileName",
-                            instant,
-                            "",
-                            getIndexQuality(quality)
+                    try{
+                        val instant = instantLink(href)
+                        callback.invoke(
+                            ExtractorLink(
+                                "$name Instant(Download)",
+                                "$name Instant(Download) - $fileName",
+                                instant,
+                                "",
+                                getIndexQuality(quality)
+                            )
                         )
-                    )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
                 }
                 text.contains("Resume Worker Bot") -> {
                     val resumeLink = resumeBot(href)
@@ -428,6 +430,10 @@ class fastdlserver : GDFlix() {
 
 class GDLink : GDFlix() {
     override var mainUrl = "https://gdlink.dev"
+}
+
+class GDFlix2 : GDFlix() {
+    override var mainUrl = "https://new.gdflix.dad"
 }
 
 open class GDFlix : ExtractorApi() {
