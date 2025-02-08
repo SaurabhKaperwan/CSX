@@ -139,42 +139,55 @@ open class Driveleech : ExtractorApi() {
                     }
                 }
                 text.contains("Resume Worker Bot") -> {
-                    val resumeLink = resumeBot(href)
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name ResumeBot(VLC)",
-                            "$name ResumeBot(VLC) - $fileName",
-                            resumeLink,
-                            "",
-                            getIndexQuality(quality)
-                        )
-                    )
-                }
-                text.contains("Direct Links") -> {
-                    val link = mainUrl + href
-                    CFType1(link).forEach {
+                    try{
+                        val resumeLink = resumeBot(href)
                         callback.invoke(
                             ExtractorLink(
-                                "$name CF Type1",
-                                "$name CF Type1 - $fileName",
-                                it,
+                                "$name ResumeBot(VLC)",
+                                "$name ResumeBot(VLC) - $fileName",
+                                resumeLink,
                                 "",
                                 getIndexQuality(quality)
                             )
                         )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+
+                }
+                text.contains("Direct Links") -> {
+                    try {
+                        val link = mainUrl + href
+                        CFType1(link).forEach {
+                            callback.invoke(
+                                ExtractorLink(
+                                    "$name CF Type1",
+                                    "$name CF Type1 - $fileName",
+                                    it,
+                                    "",
+                                    getIndexQuality(quality)
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
                     }
                 }
                 text.contains("Resume Cloud") -> {
-                    val resumeCloud = resumeCloudLink(href)
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name ResumeCloud",
-                            "$name ResumeCloud - $fileName",
-                            resumeCloud,
-                            "",
-                            getIndexQuality(quality)
+                    try {
+                        val resumeCloud = resumeCloudLink(href)
+                        callback.invoke(
+                            ExtractorLink(
+                                "$name ResumeCloud",
+                                "$name ResumeCloud - $fileName",
+                                resumeCloud,
+                                "",
+                                getIndexQuality(quality)
+                            )
                         )
-                    )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
                 }
                 else -> {
                 }
