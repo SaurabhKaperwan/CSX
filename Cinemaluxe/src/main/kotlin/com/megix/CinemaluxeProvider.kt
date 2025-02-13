@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemaluxe.work"
+    override var mainUrl = "https://luxecinema.zip"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -39,7 +39,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
     }
 
     private suspend fun bypass(url: String): String {
-        val document = app.get(url).document.toString()
+        val document = app.get(url, allowRedirects = true).document.toString()
         val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
         return base64Decode(encodeUrl)
     }
@@ -109,9 +109,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
                     val spanTag = hTag.nextElementSibling()
                     spanTag ?.selectFirst("a")?.attr("href").toString()
                 }
-                if(seasonLink.contains("luxedailyupdates.xyz")) {
-                    seasonLink = bypass(seasonLink)
-                }
+                seasonLink = bypass(seasonLink)
                 val doc = app.get(seasonLink).document
                 var aTags = doc.select("a.maxbutton:matches((?i)(Episode))")
                 
@@ -153,9 +151,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             val buttons = document.select("a.maxbutton")
             val data = buttons.flatMap { button ->
                 var link = button.attr("href")
-                if(link.contains("luxedailyupdates.xyz")) {
-                    link = bypass(link)
-                }
+                link = bypass(link)
                 val doc = app.get(link).document
                 val selector = if(link.contains("luxedrive")) "div > a" else "a.maxbutton"
                 doc.select(selector).mapNotNull {

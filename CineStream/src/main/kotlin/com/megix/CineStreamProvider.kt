@@ -56,12 +56,12 @@ open class CineStreamProvider : MainAPI() {
     val mediaFusion = "https://mediafusion.elfhosted.com"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://m.vegamovies.ms"
+        const val vegaMoviesAPI = "https://vegamovies.rs"
         const val rogMoviesAPI = "https://rogmovies.cfd"
         const val MovieDrive_API = "https://moviesdrive.pro"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-        const val topmoviesAPI = "https://topmovies.beer"
-        const val MoviesmodAPI = "https://moviesmod.cash"
+        const val topmoviesAPI = "https://topmovies.fyi"
+        const val MoviesmodAPI = "https://moviesmod.how"
         // const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val W4UAPI = "https://world4ufree.capetown"
@@ -69,7 +69,7 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.beer"
+        const val uhdmoviesAPI = "https://uhdmovies.fyi"
         const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val moviesAPI = "https://moviesapi.club"
@@ -78,9 +78,9 @@ open class CineStreamProvider : MainAPI() {
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val viteAPI = "https://viet.autoembed.cc"
-        const val multimoviesAPI = "https://multimovies.today"
+        const val multimoviesAPI = "https://multimovies.life"
         const val anitaku = "https://anitaku.pe"
-        const val cinemaluxeAPI = "https://cinemaluxe.work"
+        const val cinemaluxeAPI = "https://luxecinema.zip"
         const val bollyflixAPI = "https://bollyflix.pet"
         const val TomAPI = "https://tom.autoembed.cc"
         const val animiaAPI = "https://animia.buzz"
@@ -237,7 +237,7 @@ open class CineStreamProvider : MainAPI() {
         id = if(isKitsu) id.replace(":", "%3A") else id
         val json = app.get("$meta_url/meta/$tvtype/$id.json").text
         val movieData = tryParseJson<ResponseData>(json)
-        val title = movieData ?.meta ?.name.toString()
+        val title = movieData?.meta?.name.toString()
         val posterUrl = movieData ?.meta?.poster.toString()
         val imdbRating = movieData?.meta?.imdbRating
         val year = movieData?.meta?.year

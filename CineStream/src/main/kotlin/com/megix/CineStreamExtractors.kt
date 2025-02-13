@@ -254,9 +254,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if(season == null) {
             document.select("a.maxbutton").amap {
                 var link = it.attr("href")
-                if(link.contains("luxedailyupdates.xyz")) {
-                    link = cinemaluxeBypass(link)
-                }
+                link = cinemaluxeBypass(link)
                 val selector = if(link.contains("luxedrive")) "div > a" else "a.maxbutton"
                 app.get(link).document.select(selector).amap {
                     loadSourceNameExtractor(
@@ -274,9 +272,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season\b))")
             season.amap { div ->
                 var link = div.select("a").attr("href")
-                if(link.contains("luxedailyupdates.xyz")) {
-                    link = cinemaluxeBypass(link)
-                }
+                link = cinemaluxeBypass(link)
                  app.get(link).document.select("""a.maxbutton:matches((?i)(?:episode\s*[-]?\s*)(0?$episode))""").amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",

@@ -11,6 +11,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(Luxdrive())
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())
+        registerExtractorAPI(GDFlix3())
         registerExtractorAPI(GDFlix2())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(PixelDrain())
