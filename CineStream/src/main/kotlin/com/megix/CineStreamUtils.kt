@@ -7,9 +7,10 @@ import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.api.Log
 
 suspend fun cinemaluxeBypass(url: String): String {
-    val document = app.get(url).document.toString()
+    val document = app.get(url, allowRedirects = true).document.toString()
     val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
     return base64Decode(encodeUrl)
 }

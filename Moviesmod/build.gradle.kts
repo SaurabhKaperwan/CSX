@@ -1,4 +1,4 @@
-version = 18
+version = 19
 
 cloudstream {
     //language = "hi"
@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://moviesmod.cash/wp-content/uploads/2024/06/moviesmod-logo.png"
+    iconUrl = "https://moviesmod.how/wp-content/uploads/2022/12/moviesmodnew-Custom.png"
 }

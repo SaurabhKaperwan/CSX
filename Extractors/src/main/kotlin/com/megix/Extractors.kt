@@ -28,14 +28,14 @@ class Luxdrive : ExtractorApi() {
     }
 }
 
-class Driveleech : Driveseed() {
-    override val name: String = "Driveleech"
-    override val mainUrl: String = "https://driveleech.org"
-}
-
-open class Driveseed : ExtractorApi() {
+class Driveseed : Driveleech() {
     override val name: String = "Driveseed"
     override val mainUrl: String = "https://driveseed.org"
+}
+
+open class Driveleech : ExtractorApi() {
+    override val name: String = "Driveleech"
+    override val mainUrl: String = "https://driveleech.org"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -84,7 +84,7 @@ open class Driveseed : ExtractorApi() {
 
     private suspend fun instantLink(finallink: String): String {
         val url = if(finallink.contains("video-leech")) "video-leech.xyz" else "video-seed.xyz"
-        val token = finallink.substringAfter("https://$url/?url=")
+        val token = finallink.substringAfter("url=")
         val downloadlink = app.post(
             url = "https://$url/api",
             data = mapOf(
@@ -92,15 +92,13 @@ open class Driveseed : ExtractorApi() {
             ),
             referer = finallink,
             headers = mapOf(
-                "x-token" to url,
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
+                "x-token" to url
             )
         )
-        val finaldownloadlink =
+        val link =
             downloadlink.toString().substringAfter("url\":\"")
                 .substringBefore("\",\"name")
                 .replace("\\/", "/")
-        val link = finaldownloadlink
         return link
     }
 
@@ -125,54 +123,71 @@ open class Driveseed : ExtractorApi() {
             val href = element.attr("href")
             when {
                 text.contains("Instant Download") -> {
-                    val instant = instantLink(href)
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name Instant(Download)",
-                            "$name Instant(Download) - $fileName",
-                            instant,
-                            "",
-                            getIndexQuality(quality)
-                        )
-                    )
-                }
-                text.contains("Resume Worker Bot") -> {
-                    val resumeLink = resumeBot(href)
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name ResumeBot(VLC)",
-                            "$name ResumeBot(VLC) - $fileName",
-                            resumeLink,
-                            "",
-                            getIndexQuality(quality)
-                        )
-                    )
-                }
-                text.contains("Direct Links") -> {
-                    val link = mainUrl + href
-                    CFType1(link).forEach {
+                    try{
+                        val instant = instantLink(href)
                         callback.invoke(
                             ExtractorLink(
-                                "$name CF Type1",
-                                "$name CF Type1 - $fileName",
-                                it,
+                                "$name Instant(Download)",
+                                "$name Instant(Download) - $fileName",
+                                instant,
                                 "",
                                 getIndexQuality(quality)
                             )
                         )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+                }
+                text.contains("Resume Worker Bot") -> {
+                    try{
+                        val resumeLink = resumeBot(href)
+                        callback.invoke(
+                            ExtractorLink(
+                                "$name ResumeBot(VLC)",
+                                "$name ResumeBot(VLC) - $fileName",
+                                resumeLink,
+                                "",
+                                getIndexQuality(quality)
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+
+                }
+                text.contains("Direct Links") -> {
+                    try {
+                        val link = mainUrl + href
+                        CFType1(link).forEach {
+                            callback.invoke(
+                                ExtractorLink(
+                                    "$name CF Type1",
+                                    "$name CF Type1 - $fileName",
+                                    it,
+                                    "",
+                                    getIndexQuality(quality)
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
                     }
                 }
                 text.contains("Resume Cloud") -> {
-                    val resumeCloud = resumeCloudLink(href)
-                    callback.invoke(
-                        ExtractorLink(
-                            "$name ResumeCloud",
-                            "$name ResumeCloud - $fileName",
-                            resumeCloud,
-                            "",
-                            getIndexQuality(quality)
+                    try {
+                        val resumeCloud = resumeCloudLink(href)
+                        callback.invoke(
+                            ExtractorLink(
+                                "$name ResumeCloud",
+                                "$name ResumeCloud - $fileName",
+                                resumeCloud,
+                                "",
+                                getIndexQuality(quality)
+                            )
                         )
-                    )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
                 }
                 else -> {
                 }
@@ -333,8 +348,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace("ink", "dad").replace("art", "dad")
-        val doc = app.get(newUrl).document
+        val doc = app.get(url, allowRedirects = true).document
         val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
             Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
@@ -426,9 +440,21 @@ class fastdlserver : GDFlix() {
     override var mainUrl = "https://fastdlserver.online"
 }
 
+class GDLink : GDFlix() {
+    override var mainUrl = "https://gdlink.dev"
+}
+
+class GDFlix3 : GDFlix() {
+    override var mainUrl = "https://new1.gdflix.dad"
+}
+
+class GDFlix2 : GDFlix() {
+    override var mainUrl = "https://new.gdflix.dad"
+}
+
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new.gdflix.dad"
+    override val mainUrl: String = "https://new2.gdflix.dad"
     override val requiresReferer = false
 
     private fun getIndexQuality(str: String?): Int {
@@ -442,7 +468,8 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val document = app.get(url).document
+        val res = app.get(url, allowRedirects = true)
+        val document = res.document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
         document.select("div.text-center a").amap {
             val text = it.select("a").text()
@@ -464,7 +491,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
                 else {
-                    val trueurl=app.get("https://new.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    val trueurl=app.get("https://new2.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
@@ -490,7 +517,7 @@ open class GDFlix : ExtractorApi() {
             }
             else if(text.contains("Index Links")) {
                 val link = it.attr("href")
-                val doc = app.get("https://new.gdflix.dad$link").document
+                val doc = app.get("https://new2.gdflix.dad$link").document
                 doc.select("a.btn.btn-outline-info").amap {
                     val serverUrl = mainUrl + it.attr("href")
                     app.get(serverUrl).document.select("div.mb-4 > a").amap {
