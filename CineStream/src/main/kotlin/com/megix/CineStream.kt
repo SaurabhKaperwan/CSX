@@ -45,5 +45,6 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Bestx())
         registerExtractorAPI(Boltx())
         registerExtractorAPI(Boosterx())
+        registerExtractorAPI(Pahe())
     }
 }

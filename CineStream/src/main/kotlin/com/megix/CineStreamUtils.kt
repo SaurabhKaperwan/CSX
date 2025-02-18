@@ -101,10 +101,7 @@ suspend fun loadCustomTagExtractor(
                 "${link.name} $tag",
                 link.url,
                 link.referer,
-                when (link.type) {
-                    ExtractorLinkType.M3U8 -> link.quality
-                    else -> quality ?: link.quality
-                },
+                quality ?: link.quality,
                 link.type,
                 link.headers,
                 link.extractorData

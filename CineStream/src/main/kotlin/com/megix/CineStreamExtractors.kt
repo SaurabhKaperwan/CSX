@@ -241,16 +241,17 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeCinemaluxe(
-        title: String? = null,
+        title: String,
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val searchDocument = app.get("$cinemaluxeAPI/?s=$title $year").document
-        val url = searchDocument.select("div.title > a:matches((?i)($title $year))").attr("href")
+        val type = if(episode != null) "tvshow" else "movie"
+        val url = "$cinemaluxeAPI/$type/${title.replace(" ", "-")}-$year"
         val document = app.get(url).document
+
         if(season == null) {
             document.select("a.maxbutton").amap {
                 var link = it.attr("href")
@@ -268,8 +269,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
         else {
-
-            val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season\b))")
+            val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season))")
             season.amap { div ->
                 var link = div.select("a").attr("href")
                 link = cinemaluxeBypass(link)
@@ -471,13 +471,12 @@ object CineStreamExtractors : CineStreamProvider() {
                 if (animepahe!=null)
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
-            {
-                val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
-                if (Gogourl != null)
-                    invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
-            }
+            // {
+            //     val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
+            //     if (Gogourl != null)
+            //         invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
+            // }
         )
-
     }
 
     private suspend fun invokeAnimepahe(
@@ -493,24 +492,38 @@ object CineStreamExtractors : CineStreamProvider() {
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
         val session = animeData?.find { it.episode == episode }?.session ?: ""
-        app.get("$animepaheAPI/play/$id/$session", headers).document.select("div.dropup button")
-            .map {
-                var lang=""
-                val dub=it.select("span").text()
-                if (dub.contains("eng")) lang="DUB" else lang="SUB"
-                val quality = it.attr("data-resolution")
-                val href = it.attr("data-src")
-                if (href.contains("kwik.si")) {
-                    loadCustomExtractor(
-                        "Animepahe [$lang]",
-                        href,
-                        mainUrl,
-                        subtitleCallback,
-                        callback,
-                        getQualityFromName(quality)
-                    )
-                }
+        val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
+        doc.select("div.dropup button").amap {
+            var lang=""
+            val dub=it.select("span").text()
+            if (dub.contains("eng")) lang="DUB" else lang="SUB"
+            val quality = it.attr("data-resolution")
+            val href = it.attr("data-src")
+            if (href.contains("kwik.si")) {
+                loadCustomExtractor(
+                    "Animepahe(VLC) [$lang]",
+                    href,
+                    mainUrl,
+                    subtitleCallback,
+                    callback,
+                    getQualityFromName(quality)
+                )
             }
+        }
+        doc.select("div#pickDownload > a").amap {
+            val href = it.attr("href")
+            var type = "SUB"
+            if(it.select("span").text().contains("eng"))
+                type="DUB"
+            loadCustomExtractor(
+                "Animepahe [$type]",
+                href,
+                "",
+                subtitleCallback,
+                callback,
+                getIndexQuality(it.text())
+            )
+        }
     }
 
     // suspend fun invokeRar(
@@ -1224,7 +1237,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             "HiAnime ${server.uppercase()} [${t.uppercase()}]",
                             it.url,
                             "",
-                            Qualities.Unknown.value,
+                            Qualities.P1080.value,
                             if(it.type == "hls") true else false
                         )
                     )
