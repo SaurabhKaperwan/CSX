@@ -3,6 +3,75 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Anichi
+
+data class Anichi(
+    val data: AnichiData,
+)
+
+data class AnichiData(
+    val shows: AnichiShows,
+)
+
+data class AnichiShows(
+    val pageInfo: PageInfo,
+    val edges: List<Edge>,
+)
+
+data class PageInfo(
+    val total: Long,
+)
+
+data class Edge(
+    @JsonProperty("_id")
+    val id: String,
+    val name: String,
+    val englishName: String,
+    val nativeName: String,
+)
+
+//Anichi Ep Parser
+
+data class AnichiEP(
+    val data: AnichiEPData,
+)
+
+data class AnichiEPData(
+    val episode: AnichiEpisode,
+)
+
+data class AnichiEpisode(
+    val sourceUrls: List<SourceUrl>,
+)
+
+data class SourceUrl(
+    val sourceUrl: String,
+    val sourceName: String,
+    val downloads: AnichiDownloads?,
+)
+
+data class AnichiDownloads(
+    val sourceName: String,
+    val downloadUrl: String,
+)
+
+//Anichi Download URL Parser
+
+data class AnichiDownload(
+    val links: List<AnichiDownloadLink>,
+)
+
+data class AnichiDownloadLink(
+    val link: String,
+    val hls: Boolean,
+    val mp4: Boolean?,
+    val resolutionStr: String,
+    val priority: Long,
+    val src: String?,
+)
+
+
+
 data class TvStreamsResponse(
     val streams: List<TvStream>
 )

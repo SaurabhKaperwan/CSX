@@ -37,10 +37,10 @@ import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
-import com.megix.CineStreamExtractors.invokeDramaCool
 import com.megix.CineStreamExtractors.invokeAnimia
 import com.megix.CineStreamExtractors.invokeTokyoInsider
 import com.megix.CineStreamExtractors.invokeTvStream
+import com.megix.CineStreamExtractors.invokeAllanime
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -85,6 +85,7 @@ open class CineStreamProvider : MainAPI() {
         const val TomAPI = "https://tom.autoembed.cc"
         const val animiaAPI = "https://animia.buzz"
         const val torrentioAPI = "https://torrentio.strem.fun"
+        const val AllanimeAPI = "https://api.allanime.day/api"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
     }
@@ -393,6 +394,15 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
+                    invokeAllanime(
+                        res.title,
+                        year,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
                     invokeTorrentio(
                         res.imdb_id,
                         res.imdbSeason,
@@ -519,16 +529,6 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         callback,
                         subtitleCallback,
-                    )
-                },
-                {
-                    if(res.isAsian) invokeDramaCool(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
                     )
                 },
                 {
