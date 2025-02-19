@@ -43,6 +43,42 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeKdramahood(
+        title: String,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val titleSlug = title.replace(" ", "-")
+        val s = if(season != 1) "-season-$season" else ""
+        val url = "$stremio_Dramacool/stream/series/kdhd-$titleSlug-$s::$titleSlug${s}-ep-$episode.json"
+        val json = app.get(url).text
+        val data = tryParseJson<Dramacool>(json) ?: return
+        data.streams.forEach {
+
+            callback.invoke(
+                ExtractorLink(
+                    it.title,
+                    it.title,
+                    it.url,
+                    "",
+                    Qualities.Unknown.value,
+                    INFER_TYPE
+                )
+            )
+
+            it.subtitles.forEach {
+                subtitleCallback.invoke(
+                    SubtitleFile(
+                        it.lang,
+                        it.url
+                    )
+                )
+            }
+        }
+    }
+
     suspend fun invokeTokyoInsider(
         title: String,
         episode: Int? = null,
