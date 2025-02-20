@@ -410,7 +410,51 @@ object CineStreamExtractors : CineStreamProvider() {
                 if (animepahe!=null)
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
+            {
+                val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
+                if (Gogourl != null)
+                    invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
+            },
         )
+    }
+
+    suspend fun invokeAnitaku(
+        url: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+            val subDub = if (url!!.contains("-dub")) "Dub" else "Sub"
+            val epUrl = url.replace("category/", "").plus("-episode-${episode}")
+            val epRes = app.get(epUrl).document
+            epRes.select("div.anime_muti_link > ul > li").forEach {
+                val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
+                val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
+                if(iframe.contains("s3taku"))
+                {
+                    val iv = "3134003223491201"
+                    val secretKey = "37911490979715163134003223491201"
+                    val secretDecryptKey = "54674138327930866480207815084989"
+                    GogoHelper.extractVidstream(
+                        iframe,
+                        "Anitaku Vidstreaming [$subDub]",
+                        callback,
+                        iv,
+                        secretKey,
+                        secretDecryptKey,
+                        isUsingAdaptiveKeys = false,
+                        isUsingAdaptiveData = true
+                    )
+                }
+                else
+                loadCustomExtractor(
+                    "Anitaku $sourcename [$subDub]",
+                    iframe,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
     }
 
     private suspend fun invokeAnimepahe(
