@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
 import com.lagradost.cloudstream3.argamap
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
+import com.lagradost.cloudstream3.mvvm.safeApiCall
+
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -38,6 +40,42 @@ object CineStreamExtractors : CineStreamProvider() {
                     headers = it.behaviorHints.proxyHeaders.request ?: mapOf(),
                 )
             )
+        }
+    }
+
+    suspend fun invokeKdramahood(
+        title: String,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val titleSlug = title.replace(" ", "-")
+        val s = if(season != 1) "-season-$season" else ""
+        val url = "$stremio_Dramacool/stream/series/kdhd-$titleSlug-$s::$titleSlug${s}-ep-$episode.json"
+        val json = app.get(url).text
+        val data = tryParseJson<Dramacool>(json) ?: return
+        data.streams.forEach {
+
+            callback.invoke(
+                ExtractorLink(
+                    it.title,
+                    it.title,
+                    it.url,
+                    "",
+                    Qualities.Unknown.value,
+                    INFER_TYPE
+                )
+            )
+
+            it.subtitles.forEach {
+                subtitleCallback.invoke(
+                    SubtitleFile(
+                        it.lang,
+                        it.url
+                    )
+                )
+            }
         }
     }
 
@@ -104,65 +142,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 "",
                 subtitleCallback,
                 callback,
-            )
-        }
-    }
-
-    suspend fun invokeDramaCool(
-        title: String,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val json = if(season == null) {
-            var episodeSlug = "$title episode 1".createSlug()
-            val url = "${CONSUMET_API}/movies/dramacool/watch?episodeId=${episodeSlug}"
-            val res = app.get(url).text
-            if(res.contains("Media Not found")) {
-                val newEpisodeSlug = "$title $year episode 1".createSlug()
-                val newUrl = "$CONSUMET_API/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
-                app.get(newUrl).text
-            }
-            else {
-                res
-            }
-        }
-        else {
-            val seasonText = if(season == 1) "" else "season $season"
-            val episodeSlug = "$title $seasonText episode $episode".createSlug()
-            val url =  "${CONSUMET_API}/movies/dramacool/watch?episodeId=${episodeSlug}"
-            val res = app.get(url).text
-            if(res.contains("Media Not found")) {
-                val newEpisodeSlug = "$title $seasonText $year episode $episode".createSlug()
-                val newUrl = "$CONSUMET_API/movies/dramacool/watch?episodeId=${newEpisodeSlug}"
-                app.get(newUrl).text
-            }
-            else {
-                res
-            }
-        }
-        val data = parseJson<ConsumetSources>(json)
-        data.sources?.forEach {
-            callback.invoke(
-                ExtractorLink(
-                    "DramaCool",
-                    "DramaCool",
-                    it.url,
-                    referer = "",
-                    quality = Qualities.P1080.value,
-                    isM3u8 = true
-                )
-            )
-        }
-
-        data.subtitles?.forEach {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.lang,
-                    it.url
-                )
             )
         }
     }
@@ -241,16 +220,17 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeCinemaluxe(
-        title: String? = null,
+        title: String,
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val searchDocument = app.get("$cinemaluxeAPI/?s=$title $year").document
-        val url = searchDocument.select("div.title > a:matches((?i)($title $year))").attr("href")
+        val type = if(episode != null) "tvshow" else "movie"
+        val url = "$cinemaluxeAPI/$type/${title.replace(" ", "-")}-$year"
         val document = app.get(url).document
+
         if(season == null) {
             document.select("a.maxbutton").amap {
                 var link = it.attr("href")
@@ -268,8 +248,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
         else {
-
-            val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season\b))")
+            val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season))")
             season.amap { div ->
                 var link = div.select("a").attr("href")
                 link = cinemaluxeBypass(link)
@@ -338,46 +317,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             )
         }
-    }
-
-
-    suspend fun invokeAnitaku(
-        url: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-            val subDub = if (url!!.contains("-dub")) "Dub" else "Sub"
-            val epUrl = url.replace("category/", "").plus("-episode-${episode}")
-            val epRes = app.get(epUrl).document
-            epRes.select("div.anime_muti_link > ul > li").forEach {
-                val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
-                val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
-                if(iframe.contains("s3taku"))
-                {
-                    val iv = "3134003223491201"
-                    val secretKey = "37911490979715163134003223491201"
-                    val secretDecryptKey = "54674138327930866480207815084989"
-                    GogoHelper.extractVidstream(
-                        iframe,
-                        "Anitaku Vidstreaming [$subDub]",
-                        callback,
-                        iv,
-                        secretKey,
-                        secretDecryptKey,
-                        isUsingAdaptiveKeys = false,
-                        isUsingAdaptiveData = true
-                    )
-                }
-                else
-                loadCustomExtractor(
-                    "Anitaku $sourcename [$subDub]",
-                    iframe,
-                    "",
-                    subtitleCallback,
-                    callback
-                )
-            }
     }
 
     suspend fun invokeMultimovies(
@@ -475,9 +414,47 @@ object CineStreamExtractors : CineStreamProvider() {
                 val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
                 if (Gogourl != null)
                     invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
-            }
+            },
         )
+    }
 
+    suspend fun invokeAnitaku(
+        url: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+            val subDub = if (url!!.contains("-dub")) "Dub" else "Sub"
+            val epUrl = url.replace("category/", "").plus("-episode-${episode}")
+            val epRes = app.get(epUrl).document
+            epRes.select("div.anime_muti_link > ul > li").forEach {
+                val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
+                val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
+                if(iframe.contains("s3taku"))
+                {
+                    val iv = "3134003223491201"
+                    val secretKey = "37911490979715163134003223491201"
+                    val secretDecryptKey = "54674138327930866480207815084989"
+                    GogoHelper.extractVidstream(
+                        iframe,
+                        "Anitaku Vidstreaming [$subDub]",
+                        callback,
+                        iv,
+                        secretKey,
+                        secretDecryptKey,
+                        isUsingAdaptiveKeys = false,
+                        isUsingAdaptiveData = true
+                    )
+                }
+                else
+                loadCustomExtractor(
+                    "Anitaku $sourcename [$subDub]",
+                    iframe,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
     }
 
     private suspend fun invokeAnimepahe(
@@ -493,24 +470,38 @@ object CineStreamExtractors : CineStreamProvider() {
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
         val session = animeData?.find { it.episode == episode }?.session ?: ""
-        app.get("$animepaheAPI/play/$id/$session", headers).document.select("div.dropup button")
-            .map {
-                var lang=""
-                val dub=it.select("span").text()
-                if (dub.contains("eng")) lang="DUB" else lang="SUB"
-                val quality = it.attr("data-resolution")
-                val href = it.attr("data-src")
-                if (href.contains("kwik.si")) {
-                    loadCustomExtractor(
-                        "Animepahe [$lang]",
-                        href,
-                        mainUrl,
-                        subtitleCallback,
-                        callback,
-                        getQualityFromName(quality)
-                    )
-                }
+        val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
+        doc.select("div.dropup button").amap {
+            var lang=""
+            val dub=it.select("span").text()
+            if (dub.contains("eng")) lang="DUB" else lang="SUB"
+            val quality = it.attr("data-resolution")
+            val href = it.attr("data-src")
+            if (href.contains("kwik.si")) {
+                loadCustomExtractor(
+                    "Animepahe(VLC) [$lang]",
+                    href,
+                    mainUrl,
+                    subtitleCallback,
+                    callback,
+                    getQualityFromName(quality)
+                )
             }
+        }
+        doc.select("div#pickDownload > a").amap {
+            val href = it.attr("href")
+            var type = "SUB"
+            if(it.select("span").text().contains("eng"))
+                type="DUB"
+            loadCustomExtractor(
+                "Animepahe [$type]",
+                href,
+                "",
+                subtitleCallback,
+                callback,
+                getIndexQuality(it.text())
+            )
+        }
     }
 
     // suspend fun invokeRar(
@@ -1224,7 +1215,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             "HiAnime ${server.uppercase()} [${t.uppercase()}]",
                             it.url,
                             "",
-                            Qualities.Unknown.value,
+                            Qualities.P1080.value,
                             if(it.type == "hls") true else false
                         )
                     )
@@ -1237,6 +1228,89 @@ object CineStreamExtractors : CineStreamProvider() {
                             it.url,
                         )
                     )
+                }
+            }
+        }
+    }
+
+    suspend fun invokeAllanime(
+        title: String,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val referer = "https://allmanga.to/"
+        val sha256Hash = "06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a"
+        val epSha256Hash = "5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0"
+        val type = if (episode == null) {
+            "Movie"
+        } else {
+            "TV"
+        }
+        val url = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$title","year":$year},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$sha256Hash"}}"""
+        val response = app.get(url, referer = referer).parsedSafe<Anichi>()?.data?.shows?.edges
+        if (response != null) {
+            val id = response.firstOrNull()?.id
+            val langType = listOf("sub", "dub")
+            for (lang in langType) {
+                val epData =
+                    """$AllanimeAPI?variables={"showId":"$id","translationType":"$lang","episodeString":"$episode"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$epSha256Hash"}}"""
+                val eplinks = app.get(epData, referer = referer)
+                    .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
+                eplinks?.apmap { source ->
+                    safeApiCall {
+                        val sourceUrl = source.sourceUrl
+                        val downloadUrl = source.downloads?.downloadUrl ?: ""
+                        if (downloadUrl.contains("blog.allanime.day")) {
+                            if (downloadUrl.isNotEmpty()) {
+                                val downloadid = downloadUrl.substringAfter("id=")
+                                val sourcename = downloadUrl.getHost()
+                                app.get("https://allanime.day/apivtwo/clock.json?id=$downloadid")
+                                    .parsedSafe<AnichiDownload>()?.links?.map {
+                                    val href = it.link
+                                    loadCustomExtractor(
+                                        "Allanime [${lang.uppercase()}] [$sourcename]",
+                                        href,
+                                        "",
+                                        subtitleCallback,
+                                        callback,
+                                        Qualities.P1080.value
+                                    )
+                                }
+                            } else {
+                                Log.d("Error:", "Not Found")
+                            }
+                        } else {
+                            if (sourceUrl.startsWith("http")) {
+                                if (sourceUrl.contains("embtaku.pro")) {
+                                    val iv = "3134003223491201"
+                                    val secretKey = "37911490979715163134003223491201"
+                                    val secretDecryptKey = "54674138327930866480207815084989"
+                                    GogoHelper.extractVidstream(
+                                        sourceUrl,
+                                        "Allanime [${lang.uppercase()}] [Vidstreaming]",
+                                        callback,
+                                        iv,
+                                        secretKey,
+                                        secretDecryptKey,
+                                        isUsingAdaptiveKeys = false,
+                                        isUsingAdaptiveData = true
+                                    )
+                                }
+                                val sourcename = sourceUrl.getHost()
+                                loadCustomExtractor(
+                                    "Allanime [${lang.uppercase()}] [$sourcename]",
+                                    sourceUrl ?: "",
+                                    "",
+                                    subtitleCallback,
+                                    callback,
+                                )
+                            } else {
+                                Log.d("Error:", "Not Found")
+                            }
+                        }
+                    }
                 }
             }
         }
