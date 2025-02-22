@@ -65,6 +65,18 @@ val SPEC_OPTIONS = mapOf(
         mapOf("value" to "HDR", "label" to "HDR"),
         mapOf("value" to "SDR", "label" to "SDR")
     )
+    "language" to listOf(
+        mapOf("value" to "HIN", "label" to "Hindi"),
+        mapOf("value" to "Hindi", "label" to "Hindi"),
+        mapOf("value" to "Tamil", "label" to "Tamil"),
+        mapOf("value" to "ENG", "label" to "English"),
+        mapOf("value" to "English", "label" to "English"),
+        mapOf("value" to "Korean", "label" to "Korean"),
+        mapOf("value" to "KOR", "label" to "Korean"),
+        mapOf("value" to "Japanese", "label" to "Japanese"),
+        mapOf("value" to "Chinese", "label" to "Chinese"),
+        mapOf("value" to "Telugu", "label" to "Telugu"),
+    )
 )
 
 fun extractSpecs(inputString: String): Map<String, List<String>> {
@@ -88,8 +100,9 @@ fun Regex.escape(input: String): String {
     return input.replace(Regex("[.\\+*?^$()\\[\\]{}|\\\\]"), "\\\\$0")
 }
 
-fun buildExtractedTitle(extracted: Map<String, List<String>>, orderedCategories: List<String>): String {
+fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
     var extractedTitle = ""
+    val orderedCategories = listOf("quality", "codec", "audio", "hdr", "language")
 
     for (category in orderedCategories) {
         val values = extracted[category] ?: emptyList()
@@ -207,8 +220,7 @@ open class Driveleech : ExtractorApi() {
         val quality = document.selectFirst("li.list-group-item")?.text() ?: ""
         val fileName = quality.replace("Name : ", "")
         val extracted = extractSpecs(fileName)
-        val orderedCategories = listOf("quality", "codec", "audio", "hdr")
-        val extractedSpecs = buildExtractedTitle(extracted, orderedCategories)
+        val extractedSpecs = buildExtractedTitle(extracted)
 
         document.select("div.text-center > a").amap { element ->
             val text = element.text()
@@ -346,8 +358,7 @@ class VCloud : ExtractorApi() {
             val div = document.selectFirst("div.card-body")
             val header = document.select("div.card-header").text() ?: ""
             val extracted = extractSpecs(header)
-            val orderedCategories = listOf("quality", "codec", "audio", "hdr")
-            val extractedSpecs = buildExtractedTitle(extracted, orderedCategories)
+            val extractedSpecs = buildExtractedTitle(extracted)
             div?.select("h2 a.btn")?.apmap {
                 val link = it.attr("href")
                 val text = it.text()
@@ -451,8 +462,7 @@ open class HubCloud : ExtractorApi() {
         val div = document.selectFirst("div.card-body")
         val header = document.select("div.card-header").text() ?: ""
         val extracted = extractSpecs(header)
-        val orderedCategories = listOf("quality", "codec", "audio", "hdr")
-        val extractedSpecs = buildExtractedTitle(extracted, orderedCategories)
+        val extractedSpecs = buildExtractedTitle(extracted)
         div?.select("h2 a.btn")?.apmap {
             val link = it.attr("href")
             val text = it.text()
@@ -555,8 +565,7 @@ open class GDFlix : ExtractorApi() {
         val document = res.document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
         val extracted = extractSpecs(fileName)
-        val orderedCategories = listOf("quality", "codec", "audio", "hdr")
-        val extractedSpecs = buildExtractedTitle(extracted, orderedCategories)
+        val extractedSpecs = buildExtractedTitle(extracted)
         document.select("div.text-center a").amap {
             val text = it.select("a").text()
             if (
