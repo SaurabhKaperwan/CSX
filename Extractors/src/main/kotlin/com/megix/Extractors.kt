@@ -64,7 +64,7 @@ val SPEC_OPTIONS = mapOf(
         mapOf("value" to "HDR10+", "label" to "HDR10+"),
         mapOf("value" to "HDR", "label" to "HDR"),
         mapOf("value" to "SDR", "label" to "SDR")
-    )
+    ),
     "language" to listOf(
         mapOf("value" to "HIN", "label" to "Hindi"),
         mapOf("value" to "Hindi", "label" to "Hindi"),
