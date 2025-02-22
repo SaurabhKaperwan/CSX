@@ -2,15 +2,49 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import android.util.Base64
+import com.lagradost.cloudstream3.base64Decode
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import java.net.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.api.Log
+import com.lagradost.nicehttp.NiceResponse
+import kotlinx.coroutines.delay
 
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
+}
+
+var NfCookie = ""
+
+suspend fun NFBypass(mainUrl : String): String {
+    if(NfCookie != "") {
+        return NfCookie
+    }
+    val homePageDocument = app.get("${mainUrl}/home").document
+    val addHash          = homePageDocument.select("body").attr("data-addhash")
+    val time             = homePageDocument.select("body").attr("data-time")
+
+    var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
+    verificationUrl      = app.get(verificationUrl).parsed<NFVerifyUrl>().url.replace("###", addHash)
+    // val hashDigits       = addHash.filter { it.isDigit() }
+    // val first16Digits    = hashDigits.take(16)
+    // app.get("${verificationUrl}&t=0.${first16Digits}")
+    app.get(verificationUrl + "&t=${time}")
+
+    var verifyCheck: String
+    var verifyResponse: NiceResponse
+    var tries = 0
+
+    do {
+        delay(1000)
+        tries++
+        val requestBody = FormBody.Builder().add("verify", addHash).build()
+        verifyResponse  = app.post("${mainUrl}/verify2.php", requestBody = requestBody)
+        verifyCheck     = verifyResponse.text
+    } while (!verifyCheck.contains("\"statusup\":\"All Done\"") || tries < 7)
+
+    return verifyResponse.cookies["t_hash_t"].orEmpty()
 }
 
 suspend fun cinemaluxeBypass(url: String): String {

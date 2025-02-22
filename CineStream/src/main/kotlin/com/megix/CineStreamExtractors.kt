@@ -109,6 +109,135 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokePrimeVideo(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        NfCookie = NFBypass(netflixAPI)
+        val cookies = mapOf(
+            "t_hash_t" to NfCookie,
+            "ott" to "pv",
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                val episodeId =
+                    app.get(
+                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/"
+                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                ExtractorLink(
+                    "PrimeVideo",
+                    "PrimeVideo",
+                    "$netflixAPI/${it.file}",
+                    "$netflixAPI/",
+                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
+                    INFER_TYPE,
+                    headers = mapOf("Cookie" to "hd=on")
+                )
+            )
+        }
+    }
+
+    suspend fun invokeNetflix(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        NfCookie = NFBypass(netflixAPI)
+        val cookies = mapOf(
+            "t_hash_t" to NfCookie,
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                val episodeId =
+                    app.get(
+                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/"
+                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                ExtractorLink(
+                    "Netflix",
+                    "Netflix",
+                    "$netflixAPI/${it.file}",
+                    "$netflixAPI/",
+                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
+                    INFER_TYPE,
+                    headers = mapOf("Cookie" to "hd=on")
+                )
+            )
+        }
+    }
+
     suspend fun invokeAnimia(
         id: Int? = null,
         episode: Int? = null,
@@ -411,9 +540,11 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
             {
-                val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
-                if (Gogourl != null)
-                    invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
+                malsync?.Gogoanime?.forEach { (_, entry) ->
+                    entry["url"]?.let { url ->
+                        invokeAnitaku(url, episode, subtitleCallback, callback)
+                    }
+                }
             },
         )
     }

@@ -3,6 +3,47 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//NF
+data class NFVerifyUrl(
+    val url: String
+)
+
+data class NfSearchData(
+    val head: String,
+    val searchResult: List<NfSearchResult>,
+    val type: Int
+)
+
+data class NfSearchResult(
+    val id: String,
+    val t: String
+)
+
+data class NetflixSources(
+    @JsonProperty("file") val file: String? = null,
+    @JsonProperty("label") val label: String? = null,
+)
+
+data class NetflixEpisodes(
+    @JsonProperty("id") val id: String? = null,
+    @JsonProperty("t") val t: String? = null,
+    @JsonProperty("s") val s: String? = null,
+    @JsonProperty("ep") val ep: String? = null,
+)
+
+data class NetflixSeason(
+    @JsonProperty("s") val s: String? = null,
+    @JsonProperty("id") val id: String? = null,
+)
+
+data class NetflixResponse(
+    @JsonProperty("title") val title: String? = null,
+    @JsonProperty("year") val year : String? = null,
+    @JsonProperty("season") val season: ArrayList<NetflixSeason>? = arrayListOf(),
+    @JsonProperty("episodes") val episodes: ArrayList<NetflixEpisodes>? = arrayListOf(),
+    @JsonProperty("sources") val sources: ArrayList<NetflixSources>? = arrayListOf(),
+)
+
 //Dramacool
 data class Dramacool (
   var streams : ArrayList<DramacoolStreams> = arrayListOf()

@@ -42,6 +42,8 @@ import com.megix.CineStreamExtractors.invokeTokyoInsider
 import com.megix.CineStreamExtractors.invokeTvStream
 import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeKdramahood
+import com.megix.CineStreamExtractors.invokeNetflix
+import com.megix.CineStreamExtractors.invokePrimeVideo
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -85,6 +87,7 @@ open class CineStreamProvider : MainAPI() {
         const val TomAPI = "https://tom.autoembed.cc"
         const val animiaAPI = "https://animia.buzz"
         const val torrentioAPI = "https://torrentio.strem.fun"
+        const val netflixAPI = "https://iosmirror.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
@@ -448,6 +451,26 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         callback,
                         subtitleCallback
+                    )
+                },
+                {
+                    invokeNetflix(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokePrimeVideo(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
                     )
                 },
                 {
