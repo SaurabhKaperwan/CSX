@@ -7,113 +7,13 @@ import okhttp3.FormBody
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import android.util.Log
+import com.lagradost.api.Log
+
 
 fun getIndexQuality(str: String?): Int {
     return Regex("""(\d{3,4})[pP]""").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
         ?: Qualities.Unknown.value
 }
-
-val SPEC_OPTIONS = mapOf(
-    // "resolution" to listOf(
-    //     mapOf("value" to "480p", "label" to "480p (SD)"),
-    //     mapOf("value" to "576p", "label" to "576p (SD)"),
-    //     mapOf("value" to "720p", "label" to "720p (HD)"),
-    //     mapOf("value" to "1080p", "label" to "1080p (Full HD)"),
-    //     mapOf("value" to "1440p", "label" to "1440p (2K)"),
-    //     mapOf("value" to "2160p", "label" to "2160p (4K)"),
-    //     mapOf("value" to "4K", "label" to "4K UHD")
-    // ),
-    "quality" to listOf(
-        mapOf("value" to "BluRay", "label" to "BluRay"),
-        mapOf("value" to "BluRay REMUX", "label" to "BluRay REMUX"),
-        mapOf("value" to "BRRip", "label" to "BRRip"),
-        mapOf("value" to "BDRip", "label" to "BDRip"),
-        mapOf("value" to "WEB-DL", "label" to "WEB-DL"),
-        mapOf("value" to "HDRip", "label" to "HDRip"),
-        mapOf("value" to "DVDRip", "label" to "DVDRip"),
-        mapOf("value" to "HDTV", "label" to "HDTV"),
-        mapOf("value" to "CAM", "label" to "CAM"),
-        mapOf("value" to "TeleSync", "label" to "TeleSync"),
-        mapOf("value" to "SCR", "label" to "SCR")
-    ),
-    "codec" to listOf(
-        mapOf("value" to "x264", "label" to "x264"),
-        mapOf("value" to "x265", "label" to "x265 (HEVC)"),
-        mapOf("value" to "h.264", "label" to "H.264 (AVC)"),
-        mapOf("value" to "h.265", "label" to "H.265 (HEVC)"),
-        mapOf("value" to "hevc", "label" to "HEVC"),
-        mapOf("value" to "avc", "label" to "AVC"),
-        mapOf("value" to "mpeg-2", "label" to "MPEG-2"),
-        mapOf("value" to "mpeg-4", "label" to "MPEG-4"),
-        mapOf("value" to "vp9", "label" to "VP9")
-    ),
-    "audio" to listOf(
-        mapOf("value" to "AAC", "label" to "AAC"),
-        mapOf("value" to "AC3", "label" to "AC3 (Dolby Digital)"),
-        mapOf("value" to "DTS", "label" to "DTS"),
-        mapOf("value" to "DTS-HD MA", "label" to "DTS-HD MA"),
-        mapOf("value" to "TrueHD", "label" to "Dolby TrueHD"),
-        mapOf("value" to "Atmos", "label" to "Dolby Atmos"),
-        mapOf("value" to "DD+", "label" to "DD+"),
-        mapOf("value" to "Dolby Digital Plus", "label" to "Dolby Digital Plus"),
-        mapOf("value" to "DTS Lossless", "label" to "DTS Lossless")
-    ),
-    "hdr" to listOf(
-        mapOf("value" to "DV", "label" to "Dolby Vision"),
-        mapOf("value" to "HDR10+", "label" to "HDR10+"),
-        mapOf("value" to "HDR", "label" to "HDR"),
-        mapOf("value" to "SDR", "label" to "SDR")
-    ),
-    "language" to listOf(
-        mapOf("value" to "HIN", "label" to "Hindi"),
-        mapOf("value" to "Hindi", "label" to "Hindi"),
-        mapOf("value" to "Tamil", "label" to "Tamil"),
-        mapOf("value" to "ENG", "label" to "English"),
-        mapOf("value" to "English", "label" to "English"),
-        mapOf("value" to "Korean", "label" to "Korean"),
-        mapOf("value" to "KOR", "label" to "Korean"),
-        mapOf("value" to "Japanese", "label" to "Japanese"),
-        mapOf("value" to "Chinese", "label" to "Chinese"),
-        mapOf("value" to "Telugu", "label" to "Telugu"),
-    )
-)
-
-fun extractSpecs(inputString: String): Map<String, List<String>> {
-    val results = mutableMapOf<String, List<String>>()
-
-    SPEC_OPTIONS.forEach { (category, options) ->
-        val matches = options.filter { option ->
-            val value = option["value"] as String
-            val regexPattern = "\\b${Regex.escape(value)}\\b".toRegex(RegexOption.IGNORE_CASE)
-            regexPattern.containsMatchIn(inputString)
-        }.map { it["label"] as String }
-
-        results[category] = matches
-    }
-
-    return results.toMap()
-}
-
-// Helper function to escape regex special characters
-fun Regex.escape(input: String): String {
-    return input.replace(Regex("[.\\+*?^$()\\[\\]{}|\\\\]"), "\\\\$0")
-}
-
-fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
-    var extractedTitle = ""
-    val orderedCategories = listOf("quality", "codec", "audio", "hdr", "language")
-
-    for (category in orderedCategories) {
-        val values = extracted[category] ?: emptyList()
-        if (values.isNotEmpty()) {
-            extractedTitle += values.joinToString(" ") + " "
-        }
-    }
-
-    return extractedTitle.trim()
-}
-
 
 class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
@@ -219,8 +119,6 @@ open class Driveleech : ExtractorApi() {
         }
         val quality = document.selectFirst("li.list-group-item")?.text() ?: ""
         val fileName = quality.replace("Name : ", "")
-        val extracted = extractSpecs(fileName)
-        val extractedSpecs = buildExtractedTitle(extracted)
 
         document.select("div.text-center > a").amap { element ->
             val text = element.text()
@@ -232,7 +130,7 @@ open class Driveleech : ExtractorApi() {
                         callback.invoke(
                             ExtractorLink(
                                 "$name Instant(Download)",
-                                "$name[Instant(Download)] $extractedSpecs",
+                                "$name[Instant(Download)] $fileName",
                                 instant,
                                 "",
                                 getIndexQuality(quality)
@@ -248,7 +146,7 @@ open class Driveleech : ExtractorApi() {
                         callback.invoke(
                             ExtractorLink(
                                 "$name ResumeBot(VLC)",
-                                "$name[ResumeBot(VLC)] $extractedSpecs",
+                                "$name[ResumeBot(VLC)] $fileName",
                                 resumeLink,
                                 "",
                                 getIndexQuality(quality)
@@ -266,7 +164,7 @@ open class Driveleech : ExtractorApi() {
                             callback.invoke(
                                 ExtractorLink(
                                     "$name CF Type1",
-                                    "$name[CF Type1] $extractedSpecs",
+                                    "$name[CF Type1] $fileName",
                                     it,
                                     "",
                                     getIndexQuality(quality)
@@ -283,7 +181,7 @@ open class Driveleech : ExtractorApi() {
                         callback.invoke(
                             ExtractorLink(
                                 "$name ResumeCloud",
-                                "$name[ResumeCloud] $extractedSpecs",
+                                "$name[ResumeCloud] $fileName",
                                 resumeCloud,
                                 "",
                                 getIndexQuality(quality)
@@ -357,8 +255,7 @@ class VCloud : ExtractorApi() {
             val document = app.get(urlValue).document
             val div = document.selectFirst("div.card-body")
             val header = document.select("div.card-header").text() ?: ""
-            val extracted = extractSpecs(header)
-            val extractedSpecs = buildExtractedTitle(extracted)
+
             div?.select("h2 a.btn")?.apmap {
                 val link = it.attr("href")
                 val text = it.text()
@@ -367,7 +264,7 @@ class VCloud : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "$name[FSL Server]",
-                            "$name[FSL Server] $extractedSpecs",
+                            "$name[FSL Server] $header",
                             link,
                             "",
                             getIndexQuality(header),
@@ -378,7 +275,7 @@ class VCloud : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "$name",
-                            "$name $extractedSpecs",
+                            "$name $header",
                             link,
                             "",
                             getIndexQuality(header),
@@ -390,7 +287,7 @@ class VCloud : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "$name[BuzzServer]",
-                            "$name[BuzzServer] $extractedSpecs",
+                            "$name[BuzzServer] $header",
                             link.substringBeforeLast("/") + dlink,
                             "",
                             getIndexQuality(header),
@@ -402,7 +299,7 @@ class VCloud : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "Pixeldrain",
-                            "Pixeldrain $extractedSpecs",
+                            "Pixeldrain $header",
                             link,
                             "",
                             getIndexQuality(header),
@@ -414,7 +311,7 @@ class VCloud : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "$name[Download]",
-                            "$name[Download] $extractedSpecs",
+                            "$name[Download] $header",
                             dlink.substringAfter("link="),
                             "",
                             getIndexQuality(header),
@@ -461,8 +358,7 @@ open class HubCloud : ExtractorApi() {
         val document = app.get(link).document
         val div = document.selectFirst("div.card-body")
         val header = document.select("div.card-header").text() ?: ""
-        val extracted = extractSpecs(header)
-        val extractedSpecs = buildExtractedTitle(extracted)
+
         div?.select("h2 a.btn")?.apmap {
             val link = it.attr("href")
             val text = it.text()
@@ -472,7 +368,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "$name[FSL Server]",
-                        "$name[FSL Server] $extractedSpecs",
+                        "$name[FSL Server] $header",
                         link,
                         "",
                         getIndexQuality(header),
@@ -483,7 +379,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "$name",
-                        "$name $extractedSpecs",
+                        "$name $header",
                         link,
                         "",
                         getIndexQuality(header),
@@ -495,7 +391,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "$name[BuzzServer]",
-                        "$name[BuzzServer] $extractedSpecs",
+                        "$name[BuzzServer] $header",
                         link.substringBeforeLast("/") + dlink,
                         "",
                         getIndexQuality(header),
@@ -507,7 +403,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "Pixeldrain",
-                        "Pixeldrain $extractedSpecs",
+                        "Pixeldrain $header",
                         link,
                         "",
                         getIndexQuality(header),
@@ -519,7 +415,7 @@ open class HubCloud : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "$name[Download]",
-                        "$name[Download] $extractedSpecs",
+                        "$name[Download] $header",
                         dlink.substringAfter("link="),
                         "",
                         getIndexQuality(header),
@@ -564,8 +460,7 @@ open class GDFlix : ExtractorApi() {
         val res = app.get(url, allowRedirects = true)
         val document = res.document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
-        val extracted = extractSpecs(fileName)
-        val extractedSpecs = buildExtractedTitle(extracted)
+
         document.select("div.text-center a").amap {
             val text = it.select("a").text()
             if (
@@ -578,7 +473,7 @@ open class GDFlix : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
-                            "GDFLix[Fast Cloud] $extractedSpecs",
+                            "GDFLix[Fast Cloud] $fileName",
                             link,
                             "",
                             getIndexQuality(fileName),
@@ -590,7 +485,7 @@ open class GDFlix : ExtractorApi() {
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
-                            "GDFLix[Fast Cloud] $extractedSpecs",
+                            "GDFLix[Fast Cloud] $fileName",
                             trueurl,
                             "",
                             getIndexQuality(fileName)
@@ -603,7 +498,7 @@ open class GDFlix : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[Direct]",
-                        "GDFLix[Direct] $extractedSpecs",
+                        "GDFLix[Direct] $fileName",
                         link,
                         "",
                         getIndexQuality(fileName),
@@ -620,7 +515,7 @@ open class GDFlix : ExtractorApi() {
                         callback.invoke(
                             ExtractorLink(
                                 "GDFlix[Index]",
-                                "GDFLix[Index] $extractedSpecs",
+                                "GDFLix[Index] $fileName",
                                 source,
                                 "",
                                 getIndexQuality(fileName),
@@ -671,7 +566,7 @@ open class GDFlix : ExtractorApi() {
                         callback.invoke(
                             ExtractorLink(
                                 "GDFlix[DriveBot]",
-                                "GDFlix[DriveBot] $extractedSpecs",
+                                "GDFlix[DriveBot] $fileName",
                                 downloadlink,
                                 baseUrl,
                                 getIndexQuality(fileName)
@@ -687,7 +582,7 @@ open class GDFlix : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[Instant Download]",
-                        "GDFlix[Instant Download] $extractedSpecs",
+                        "GDFlix[Instant Download] $fileName",
                         link,
                         "",
                         getIndexQuality(fileName)
@@ -699,7 +594,7 @@ open class GDFlix : ExtractorApi() {
                 callback.invoke(
                     ExtractorLink(
                         "GDFlix[FSL]",
-                        "GDFlix[FSL] $extractedSpecs",
+                        "GDFlix[FSL] $fileName",
                         link,
                         "",
                         getIndexQuality(fileName)

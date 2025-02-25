@@ -690,55 +690,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeMovies(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = if (season == null) {
-            "$moviesAPI/movie/$tmdbId"
-        } else {
-            "$moviesAPI/tv/$tmdbId-$season-$episode"
-        }
-
-        val iframe =
-            app.get(
-                url,
-                referer = "https://pressplay.top/"
-            ).document.selectFirst("iframe")
-                ?.attr("src")
-
-        loadExtractor(iframe ?: return, "$moviesAPI/", subtitleCallback, callback)
-    }
-
-    suspend fun invokeVidSrcNL(
-        id: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val sources = listOf("vidcloud", "upstream", "hindi", "english")
-        sources.forEach { source ->
-            val url = if(season != null) "https://${source}.vidsrc.nl/stream/tv/${id}/${season}/{episode}" else "https://${source}.vidsrc.nl/stream/movie/${id}"
-            val doc = app.get(url).document
-            val link = doc.selectFirst("div#player-container > media-player")?.attr("src")
-            if (!link.isNullOrEmpty()) {
-                callback.invoke(
-                    ExtractorLink(
-                        "VidSrcNL[${source}]",
-                        "VidSrcNL[${source}]",
-                        link,
-                        referer = "",
-                        quality = Qualities.Unknown.value,
-                        isM3u8 = true,
-                    )
-                )
-            }
-        }
-    }
-
     suspend fun invokeVidbinge(
         title: String,
         imdb_id: String,
@@ -1331,8 +1282,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get("$CONSUMET_API/anime/zoro/info?id=$id").text
         val data = tryParseJson<HiAnime>(json) ?: return
         val epId = data.episodes.find { it.number == episode }?.id ?: return
+        val isDubbed = data.episodes.find { it.number == episode }?.isDubbed ?: false
         val types =  mutableListOf("sub")
-        if(data.subOrDub == "both") types.add("dub")
+        //if(isDubbed == true) types.add("dub")
         val servers = mutableListOf("vidstreaming", "vidcloud")
         types.map { t ->
             servers.map { server ->

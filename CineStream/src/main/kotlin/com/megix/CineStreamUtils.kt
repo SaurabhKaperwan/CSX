@@ -11,6 +11,97 @@ import com.lagradost.api.Log
 import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
 
+val SPEC_OPTIONS = mapOf(
+    "quality" to listOf(
+        mapOf("value" to "BluRay", "label" to "BluRay"),
+        mapOf("value" to "BluRay REMUX", "label" to "BluRay REMUX"),
+        mapOf("value" to "BRRip", "label" to "BRRip"),
+        mapOf("value" to "BDRip", "label" to "BDRip"),
+        mapOf("value" to "WEB-DL", "label" to "WEB-DL"),
+        mapOf("value" to "HDRip", "label" to "HDRip"),
+        mapOf("value" to "DVDRip", "label" to "DVDRip"),
+        mapOf("value" to "HDTV", "label" to "HDTV"),
+        mapOf("value" to "CAM", "label" to "CAM"),
+        mapOf("value" to "TeleSync", "label" to "TeleSync"),
+        mapOf("value" to "SCR", "label" to "SCR")
+    ),
+    "codec" to listOf(
+        mapOf("value" to "x264", "label" to "x264"),
+        mapOf("value" to "x265", "label" to "x265 (HEVC)"),
+        mapOf("value" to "h.264", "label" to "H.264 (AVC)"),
+        mapOf("value" to "h.265", "label" to "H.265 (HEVC)"),
+        mapOf("value" to "hevc", "label" to "HEVC"),
+        mapOf("value" to "avc", "label" to "AVC"),
+        mapOf("value" to "mpeg-2", "label" to "MPEG-2"),
+        mapOf("value" to "mpeg-4", "label" to "MPEG-4"),
+        mapOf("value" to "vp9", "label" to "VP9")
+    ),
+    "audio" to listOf(
+        mapOf("value" to "AAC", "label" to "AAC"),
+        mapOf("value" to "AC3", "label" to "AC3 (Dolby Digital)"),
+        mapOf("value" to "DTS", "label" to "DTS"),
+        mapOf("value" to "DTS-HD MA", "label" to "DTS-HD MA"),
+        mapOf("value" to "TrueHD", "label" to "Dolby TrueHD"),
+        mapOf("value" to "Atmos", "label" to "Dolby Atmos"),
+        mapOf("value" to "DD+", "label" to "DD+"),
+        mapOf("value" to "Dolby Digital Plus", "label" to "Dolby Digital Plus"),
+        mapOf("value" to "DTS Lossless", "label" to "DTS Lossless")
+    ),
+    "hdr" to listOf(
+        mapOf("value" to "DV", "label" to "Dolby Vision"),
+        mapOf("value" to "HDR10+", "label" to "HDR10+"),
+        mapOf("value" to "HDR", "label" to "HDR"),
+        mapOf("value" to "SDR", "label" to "SDR")
+    ),
+    "language" to listOf(
+        mapOf("value" to "HIN", "label" to "Hindi"),
+        mapOf("value" to "Hindi", "label" to "Hindi"),
+        mapOf("value" to "Tamil", "label" to "Tamil"),
+        mapOf("value" to "ENG", "label" to "English"),
+        mapOf("value" to "English", "label" to "English"),
+        mapOf("value" to "Korean", "label" to "Korean"),
+        mapOf("value" to "KOR", "label" to "Korean"),
+        mapOf("value" to "Japanese", "label" to "Japanese"),
+        mapOf("value" to "Chinese", "label" to "Chinese"),
+        mapOf("value" to "Telugu", "label" to "Telugu"),
+    )
+)
+
+fun extractSpecs(inputString: String): Map<String, List<String>> {
+    val results = mutableMapOf<String, List<String>>()
+
+    SPEC_OPTIONS.forEach { (category, options) ->
+        val matches = options.filter { option ->
+            val value = option["value"] as String
+            val regexPattern = "\\b${Regex.escape(value)}\\b".toRegex(RegexOption.IGNORE_CASE)
+            regexPattern.containsMatchIn(inputString)
+        }.map { it["label"] as String }
+
+        results[category] = matches
+    }
+
+    return results.toMap()
+}
+
+// Helper function to escape regex special characters
+fun Regex.escape(input: String): String {
+    return input.replace(Regex("[.\\+*?^$()\\[\\]{}|\\\\]"), "\\\\$0")
+}
+
+fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
+    var extractedTitle = ""
+    val orderedCategories = listOf("quality", "codec", "audio", "hdr", "language")
+
+    for (category in orderedCategories) {
+        val values = extracted[category] ?: emptyList()
+        if (values.isNotEmpty()) {
+            extractedTitle += values.joinToString(" ") + " "
+        }
+    }
+
+    return extractedTitle.trim()
+}
+
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
@@ -109,10 +200,12 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
 ) {
     loadExtractor(url, referer, subtitleCallback) { link ->
+        val extracted = extractSpecs(link.name)
+        val extractedSpecs = buildExtractedTitle(extracted)
         callback.invoke(
             ExtractorLink(
                 "$source[${link.source}]",
-                "$source - ${link.name}",
+                "$source[${link.source}] $extractedSpecs",
                 link.url,
                 link.referer,
                 quality ?: link.quality ,
