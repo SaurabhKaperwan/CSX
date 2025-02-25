@@ -22,10 +22,11 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeTvStream(
         id: String,
         api: String,
+        tvtype: String,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$api/stream/tv/$id.json"
+        val url = "$api/stream/$tvtype/$id.json"
         val json = app.get(url).text
         val data = parseJson<TvStreamsResponse>(json)
         data.streams.forEach {
