@@ -1086,21 +1086,19 @@ object CineStreamExtractors : CineStreamProvider() {
                 if (href.isNotBlank()) {
                     val doc = app.get(href).document
                     val fEp = doc.selectFirst("h5:matches((?i)$sep)")
-                    if (fEp.isNullOrEmpty()) {
-                        val linklist = mutableListOf<String>()
-                        val source1 = fEp.nextElementSibling()?.selectFirst("a")?.attr("href")
-                        val source2 = fEp.nextElementSibling()?.nextElementSibling()?.selectFirst("a")?.attr("href")
-                        if (source1 != null) linklist.add(source1)
-                        if (source2 != null) linklist.add(source2)
-                        linklist.forEach { url ->
-                            loadSourceNameExtractor(
-                                "MoviesDrive",
-                                url,
-                                referer = "",
-                                subtitleCallback,
-                                callback
-                            )
-                        }
+                    val linklist = mutableListOf<String>()
+                    val source1 = fEp?.nextElementSibling()?.selectFirst("a")?.attr("href")
+                    val source2 = fEp?.nextElementSibling()?.nextElementSibling()?.selectFirst("a")?.attr("href")
+                    if (source1 != null) linklist.add(source1)
+                    if (source2 != null) linklist.add(source2)
+                    linklist.forEach { url ->
+                        loadSourceNameExtractor(
+                            "MoviesDrive",
+                            url,
+                            referer = "",
+                            subtitleCallback,
+                            callback
+                        )
                     }
                 }
             }
