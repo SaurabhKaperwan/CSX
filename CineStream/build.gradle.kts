@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 79
+version = 80
 
 android {
     defaultConfig {

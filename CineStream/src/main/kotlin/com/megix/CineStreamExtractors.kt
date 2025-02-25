@@ -1085,29 +1085,23 @@ object CineStreamExtractors : CineStreamProvider() {
                 val href = entry.nextElementSibling()?.selectFirst("a")?.attr("href") ?: ""
                 if (href.isNotBlank()) {
                     val doc = app.get(href).document
-                    val fEp = doc.selectFirst("h5:matches((?i)$sep)")?.toString()
+                    val fEp = doc.selectFirst("h5:matches((?i)$sep)")
                     if (fEp.isNullOrEmpty()) {
-                        val furl = doc.select("h5 a:contains(HubCloud)").attr("href")
-                        loadSourceNameExtractor("MoviesDrive",furl, "", subtitleCallback, callback)
-                    } else
-                        doc.selectFirst("h5:matches((?i)$sep)")?.let { epElement ->
-                            val linklist = mutableListOf<String>()
-                            val firstHubCloudH5 = epElement.nextElementSibling()
-                            val secondHubCloudH5 = firstHubCloudH5?.nextElementSibling()
-                            val firstLink = firstHubCloudH5?.selectFirst("a")?.attr("href")
-                            val secondLink = secondHubCloudH5?.selectFirst("a")?.attr("href")
-                            if (firstLink != null) linklist.add(firstLink)
-                            if (secondLink != null) linklist.add(secondLink)
-                            linklist.forEach { url ->
-                                loadSourceNameExtractor(
-                                    "MoviesDrive",
-                                    url,
-                                    referer = "",
-                                    subtitleCallback,
-                                    callback
-                                )
-                            }
+                        val linklist = mutableListOf<String>()
+                        val source1 = fEp.nextElementSibling()?.selectFirst("a")?.attr("href")
+                        val source2 = fEp.nextElementSibling()?.nextElementSibling()?.selectFirst("a")?.attr("href")
+                        if (source1 != null) linklist.add(source1)
+                        if (source2 != null) linklist.add(source2)
+                        linklist.forEach { url ->
+                            loadSourceNameExtractor(
+                                "MoviesDrive",
+                                url,
+                                referer = "",
+                                subtitleCallback,
+                                callback
+                            )
                         }
+                    }
                 }
             }
         }
