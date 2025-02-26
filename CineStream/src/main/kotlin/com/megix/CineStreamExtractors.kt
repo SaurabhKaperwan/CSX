@@ -1277,11 +1277,11 @@ object CineStreamExtractors : CineStreamProvider() {
         val epId = data.episodes.find { it.number == episode }?.id ?: return
         val isDubbed = data.episodes.find { it.number == episode }?.isDubbed ?: false
         val types =  mutableListOf("sub")
-        //if(isDubbed == true) types.add("dub")
+        if(isDubbed == true) types.add("dub")
         val servers = mutableListOf("vidstreaming", "vidcloud")
         types.map { t ->
             servers.map { server ->
-                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=${epId.replace("both", t)}&server=$server").text
+                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId&${'$'}${t}&server=$server").text
                 val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
                 epData.sources.map {
