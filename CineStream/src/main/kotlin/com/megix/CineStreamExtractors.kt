@@ -1281,7 +1281,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val servers = mutableListOf("vidstreaming", "vidcloud")
         types.map { t ->
             servers.map { server ->
-                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId&${'$'}${t}&server=$server").text
+                val type = if(t == "sub") "false" else "true"
+                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId&dub=$type&server=$server").text
                 val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
                 epData.sources.map {
