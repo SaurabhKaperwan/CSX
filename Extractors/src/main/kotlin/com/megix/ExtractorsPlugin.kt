@@ -13,6 +13,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())
         registerExtractorAPI(GDFlix3())
+        registerExtractorAPI(GDFlix4())
         registerExtractorAPI(GDFlix2())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(PixelDrain())

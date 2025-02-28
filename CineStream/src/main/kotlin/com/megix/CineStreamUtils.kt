@@ -200,20 +200,24 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
 ) {
     loadExtractor(url, referer, subtitleCallback) { link ->
-        val extracted = extractSpecs(link.name)
-        val extractedSpecs = buildExtractedTitle(extracted)
-        callback.invoke(
-            ExtractorLink(
-                "$source[${link.source}]",
-                "$source[${link.source}] $extractedSpecs",
-                link.url,
-                link.referer,
-                quality ?: link.quality ,
-                link.type,
-                link.headers,
-                link.extractorData
+        val name = link.name
+        val source = link.source
+        if(!source.contains("Download")) {
+            val extracted = extractSpecs(name)
+            val extractedSpecs = buildExtractedTitle(extracted)
+            callback.invoke(
+                ExtractorLink(
+                    "$source[$source]",
+                    "$source[$source] $extractedSpecs",
+                    link.url,
+                    link.referer,
+                    quality ?: link.quality,
+                    link.type,
+                    link.headers,
+                    link.extractorData
+                )
             )
-        )
+        }
     }
 }
 

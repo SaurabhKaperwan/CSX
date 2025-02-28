@@ -351,7 +351,8 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val doc = app.get(url, allowRedirects = true).document
+        val newUrl = url.replace(mainUrl, "https://hubcloud.dad")
+        val doc = app.get(newUrl).document
         val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
             Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
@@ -447,13 +448,17 @@ class GDFlix3 : GDFlix() {
     override var mainUrl = "https://new1.gdflix.dad"
 }
 
+class GDFlix4 : GDFlix() {
+    override var mainUrl = "https://new2.gdflix.dad"
+}
+
 class GDFlix2 : GDFlix() {
     override var mainUrl = "https://new.gdflix.dad"
 }
 
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new2.gdflix.dad"
+    override val mainUrl: String = "https://new3.gdflix.dad"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -462,7 +467,7 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://new2.gdflix.dad")
+        val newUrl = url.replace(mainUrl, "https://new3.gdflix.dad")
         val document = app.get(newUrl).document
 
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
@@ -487,7 +492,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
                 else {
-                    val trueurl=app.get("https://new2.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    val trueurl=app.get("https://new3.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
@@ -513,7 +518,7 @@ open class GDFlix : ExtractorApi() {
             }
             else if(text.contains("Index Links")) {
                 val link = it.attr("href")
-                val doc = app.get("https://new2.gdflix.dad$link").document
+                val doc = app.get("https://new3.gdflix.dad$link").document
                 doc.select("a.btn.btn-outline-info").amap {
                     val serverUrl = mainUrl + it.attr("href")
                     app.get(serverUrl).document.select("div.mb-4 > a").amap {
