@@ -44,8 +44,9 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeKdramahood(
+    suspend fun invokeDramacool(
         title: String,
+        provider: String,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -53,7 +54,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val titleSlug = title.replace(" ", "-")
         val s = if(season != 1) "-season-$season" else ""
-        val url = "$stremio_Dramacool/stream/series/kdhd-$titleSlug-$s::$titleSlug${s}-ep-$episode.json"
+        val url = "$stremio_Dramacool/stream/series/$provider-${titleSlug}${s}::$titleSlug${s}-ep-$episode.json"
         val json = app.get(url).text
         val data = tryParseJson<Dramacool>(json) ?: return
         data.streams.forEach {
@@ -601,7 +602,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val animeData =
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
-        val session = animeData?.find { it.episode == episode }?.session ?: ""
+        val session = animeData?.find { it.episode == episode }?.session ?: return
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
         doc.select("div.dropup button").amap {
             var lang=""
@@ -818,38 +819,20 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeWYZIESubs(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val url = if(season != null) "${WYZIESubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WYZIESubsAPI}/search?id=${id}"
-        val json = app.get(url).text
-        val data = parseJson<ArrayList<WYZIESubtitle>>(json)
-        data.forEach {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.display,
-                    it.url
-                )
-            )
-        }
-    }
-
     suspend fun invokeWHVXSubs(
+        api: String,
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null) "${WHVXSubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WHVXSubsAPI}/search?id=${id}"
+        val url = if(season != null) "$api/search?id=$id&season=$season&episode=$episode" else "$api/search?id=$id"
         val json = app.get(url).text
         val data = parseJson<ArrayList<WHVXSubtitle>>(json)
         data.forEach {
             subtitleCallback.invoke(
                 SubtitleFile(
-                    it.languageName,
+                    it.languageName ?: it.display ?: "Unknown",
                     it.url
                 )
             )
@@ -1263,6 +1246,40 @@ object CineStreamExtractors : CineStreamProvider() {
                 loadSourceNameExtractor("Moviesmod", bypassedLink, "", subtitleCallback, callback)
             }
         }
+    }
+
+    suspend fun invokeAnizone(
+        title: String,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = "$anizoneAPI/anime?search=$title"
+        val link = app.get(url).document.select("div.truncate > a").firstOrNull {
+            it.text() == title
+        } ?.attr("href") ?: return
+        val document = app.get("$link/$episode").document
+
+        val subtitles = document.select("track").map {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.attr("label"),
+                    it.attr("src")
+                )
+            )
+        }
+
+        val source = document.select("media-player").attr("src")
+        callback.invoke(
+            ExtractorLink(
+                "Anizone[Multi Lang]",
+                "Anizone[Multi Lang]",
+                source,
+                "",
+                Qualities.P1080.value,
+                isM3u8 = true,
+            )
+        )
     }
 
     private suspend fun invokeHianime(

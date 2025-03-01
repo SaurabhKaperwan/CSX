@@ -368,14 +368,12 @@ data class WHVX(
     val url: String,
 )
 
-data class WYZIESubtitle(
-    val url: String,
-    val display: String,
-)
 
+//Subtitles
 data class WHVXSubtitle(
     val url: String,
-    val languageName: String,
+    val languageName: String?,
+    val display: String?,
 )
 
 data class ConsumetSources(
