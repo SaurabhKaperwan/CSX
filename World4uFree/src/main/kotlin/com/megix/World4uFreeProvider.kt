@@ -10,7 +10,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class World4uFreeProvider : MainAPI() {
-    override var mainUrl = "https://world4ufree.capetown"
+    override var mainUrl = "https://world4ufree.fyi"
     override var name = "World4uFree"
     override val hasMainPage = true
     override var lang = "hi"

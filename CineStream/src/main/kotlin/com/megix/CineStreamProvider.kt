@@ -58,14 +58,14 @@ open class CineStreamProvider : MainAPI() {
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.rs"
-        const val rogMoviesAPI = "https://rogmovies.cfd"
+        const val rogMoviesAPI = "https://rogmovies.icu"
         const val MovieDrive_API = "https://moviesdrive.club"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.nexus"
         const val MoviesmodAPI = "https://moviesmod.how"
         // const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
-        const val W4UAPI = "https://world4ufree.capetown"
+        const val W4UAPI = "https://world4ufree.fyi"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
@@ -85,7 +85,7 @@ open class CineStreamProvider : MainAPI() {
         const val animiaAPI = "https://animia.buzz"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
-        const val netflixAPI = "https://iosmirror.cc"
+        const val netflixAPI = "https://netfree.cc/mobile"
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
@@ -415,15 +415,15 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeAllanime(
-                        res.title,
-                        year,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeAllanime(
+                //         res.title,
+                //         year,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeAnizone(
                         res.title,
@@ -505,16 +505,16 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeCinemaluxe(
-                        imdbTitle,
-                        imdbYear,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        callback,
-                        subtitleCallback,
-                    )
-                },
+                // {
+                //     invokeCinemaluxe(
+                //         imdbTitle,
+                //         imdbYear,
+                //         res.imdbSeason,
+                //         res.imdbEpisode,
+                //         callback,
+                //         subtitleCallback,
+                //     )
+                // },
                 {
                     invokeAutoembed(
                         tmdbId,
@@ -696,16 +696,16 @@ open class CineStreamProvider : MainAPI() {
                 //         callback
                 //     )
                 // },
-                {
-                    invokeCinemaluxe(
-                        res.title,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback,
-                    )
-                },
+                // {
+                //     invokeCinemaluxe(
+                //         res.title,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback,
+                //     )
+                // },
                 {
                     invokeBollyflix(
                         res.id,
