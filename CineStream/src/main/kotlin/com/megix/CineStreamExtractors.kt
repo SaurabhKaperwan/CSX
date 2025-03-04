@@ -22,10 +22,11 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeTvStream(
         id: String,
         api: String,
+        tvtype: String,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$api/stream/tv/$id.json"
+        val url = "$api/stream/$tvtype/$id.json"
         val json = app.get(url).text
         val data = parseJson<TvStreamsResponse>(json)
         data.streams.forEach {
@@ -43,8 +44,9 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeKdramahood(
+    suspend fun invokeDramacool(
         title: String,
+        provider: String,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -52,7 +54,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val titleSlug = title.replace(" ", "-")
         val s = if(season != 1) "-season-$season" else ""
-        val url = "$stremio_Dramacool/stream/series/kdhd-$titleSlug-$s::$titleSlug${s}-ep-$episode.json"
+        val url = "$stremio_Dramacool/stream/series/$provider-${titleSlug}${s}::$titleSlug${s}-ep-$episode.json"
         val json = app.get(url).text
         val data = tryParseJson<Dramacool>(json) ?: return
         data.streams.forEach {
@@ -104,6 +106,135 @@ object CineStreamExtractors : CineStreamProvider() {
                     referer = "",
                     getIndexQuality(name),
                     INFER_TYPE,
+                )
+            )
+        }
+    }
+
+    suspend fun invokePrimeVideo(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        NfCookie = NFBypass(netflixAPI)
+        val cookies = mapOf(
+            "t_hash_t" to NfCookie,
+            "ott" to "pv",
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                val episodeId =
+                    app.get(
+                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/"
+                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                ExtractorLink(
+                    "PrimeVideo",
+                    "PrimeVideo",
+                    "$netflixAPI/${it.file}",
+                    "$netflixAPI/",
+                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
+                    INFER_TYPE,
+                    headers = mapOf("Cookie" to "hd=on")
+                )
+            )
+        }
+    }
+
+    suspend fun invokeNetflix(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        NfCookie = NFBypass(netflixAPI)
+        val cookies = mapOf(
+            "t_hash_t" to NfCookie,
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                val episodeId =
+                    app.get(
+                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/"
+                    ).parsedSafe<NetflixResponse>()?.episodes?.find { it.ep == "E$episode" }?.id
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/"
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                ExtractorLink(
+                    "Netflix",
+                    "Netflix",
+                    "$netflixAPI/${it.file}",
+                    "$netflixAPI/",
+                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
+                    INFER_TYPE,
+                    headers = mapOf("Cookie" to "hd=on")
                 )
             )
         }
@@ -411,9 +542,11 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
             {
-                val Gogourl = malsync?.Gogoanime?.firstNotNullOfOrNull { it.value["url"] }
-                if (Gogourl != null)
-                    invokeAnitaku(Gogourl, episode, subtitleCallback, callback)
+                malsync?.Gogoanime?.forEach { (_, entry) ->
+                    entry["url"]?.let { url ->
+                        invokeAnitaku(url, episode, subtitleCallback, callback)
+                    }
+                }
             },
         )
     }
@@ -469,7 +602,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val animeData =
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
-        val session = animeData?.find { it.episode == episode }?.session ?: ""
+        val session = animeData?.find { it.episode == episode }?.session ?: return
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
         doc.select("div.dropup button").amap {
             var lang=""
@@ -556,55 +689,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     INFER_TYPE,
                 )
             )
-        }
-    }
-
-    suspend fun invokeMovies(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = if (season == null) {
-            "$moviesAPI/movie/$tmdbId"
-        } else {
-            "$moviesAPI/tv/$tmdbId-$season-$episode"
-        }
-
-        val iframe =
-            app.get(
-                url,
-                referer = "https://pressplay.top/"
-            ).document.selectFirst("iframe")
-                ?.attr("src")
-
-        loadExtractor(iframe ?: return, "$moviesAPI/", subtitleCallback, callback)
-    }
-
-    suspend fun invokeVidSrcNL(
-        id: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val sources = listOf("vidcloud", "upstream", "hindi", "english")
-        sources.forEach { source ->
-            val url = if(season != null) "https://${source}.vidsrc.nl/stream/tv/${id}/${season}/{episode}" else "https://${source}.vidsrc.nl/stream/movie/${id}"
-            val doc = app.get(url).document
-            val link = doc.selectFirst("div#player-container > media-player")?.attr("src")
-            if (!link.isNullOrEmpty()) {
-                callback.invoke(
-                    ExtractorLink(
-                        "VidSrcNL[${source}]",
-                        "VidSrcNL[${source}]",
-                        link,
-                        referer = "",
-                        quality = Qualities.Unknown.value,
-                        isM3u8 = true,
-                    )
-                )
-            }
         }
     }
 
@@ -735,38 +819,20 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeWYZIESubs(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val url = if(season != null) "${WYZIESubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WYZIESubsAPI}/search?id=${id}"
-        val json = app.get(url).text
-        val data = parseJson<ArrayList<WYZIESubtitle>>(json)
-        data.forEach {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.display,
-                    it.url
-                )
-            )
-        }
-    }
-
     suspend fun invokeWHVXSubs(
+        api: String,
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null) "${WHVXSubsAPI}/search?id=${id}&season=${season}&episode=${episode}" else "${WHVXSubsAPI}/search?id=${id}"
+        val url = if(season != null) "$api/search?id=$id&season=$season&episode=$episode" else "$api/search?id=$id"
         val json = app.get(url).text
         val data = parseJson<ArrayList<WHVXSubtitle>>(json)
         data.forEach {
             subtitleCallback.invoke(
                 SubtitleFile(
-                    it.languageName,
+                    it.languageName ?: it.display ?: "Unknown",
                     it.url
                 )
             )
@@ -1002,29 +1068,21 @@ object CineStreamExtractors : CineStreamProvider() {
                 val href = entry.nextElementSibling()?.selectFirst("a")?.attr("href") ?: ""
                 if (href.isNotBlank()) {
                     val doc = app.get(href).document
-                    val fEp = doc.selectFirst("h5:matches((?i)$sep)")?.toString()
-                    if (fEp.isNullOrEmpty()) {
-                        val furl = doc.select("h5 a:contains(HubCloud)").attr("href")
-                        loadSourceNameExtractor("MoviesDrive",furl, "", subtitleCallback, callback)
-                    } else
-                        doc.selectFirst("h5:matches((?i)$sep)")?.let { epElement ->
-                            val linklist = mutableListOf<String>()
-                            val firstHubCloudH5 = epElement.nextElementSibling()
-                            val secondHubCloudH5 = firstHubCloudH5?.nextElementSibling()
-                            val firstLink = firstHubCloudH5?.selectFirst("a")?.attr("href")
-                            val secondLink = secondHubCloudH5?.selectFirst("a")?.attr("href")
-                            if (firstLink != null) linklist.add(firstLink)
-                            if (secondLink != null) linklist.add(secondLink)
-                            linklist.forEach { url ->
-                                loadSourceNameExtractor(
-                                    "MoviesDrive",
-                                    url,
-                                    referer = "",
-                                    subtitleCallback,
-                                    callback
-                                )
-                            }
-                        }
+                    val fEp = doc.selectFirst("h5:matches((?i)$sep)")
+                    val linklist = mutableListOf<String>()
+                    val source1 = fEp?.nextElementSibling()?.selectFirst("a")?.attr("href")
+                    val source2 = fEp?.nextElementSibling()?.nextElementSibling()?.selectFirst("a")?.attr("href")
+                    if (source1 != null) linklist.add(source1)
+                    if (source2 != null) linklist.add(source2)
+                    linklist.forEach { url ->
+                        loadSourceNameExtractor(
+                            "MoviesDrive",
+                            url,
+                            referer = "",
+                            subtitleCallback,
+                            callback
+                        )
+                    }
                 }
             }
         }
@@ -1190,6 +1248,40 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeAnizone(
+        title: String,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = "$anizoneAPI/anime?search=$title"
+        val link = app.get(url).document.select("div.truncate > a").firstOrNull {
+            it.text() == title
+        } ?.attr("href") ?: return
+        val document = app.get("$link/$episode").document
+
+        val subtitles = document.select("track").map {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.attr("label"),
+                    it.attr("src")
+                )
+            )
+        }
+
+        val source = document.select("media-player").attr("src")
+        callback.invoke(
+            ExtractorLink(
+                "Anizone[Multi Lang]",
+                "Anizone[Multi Lang]",
+                source,
+                "",
+                Qualities.P1080.value,
+                isM3u8 = true,
+            )
+        )
+    }
+
     private suspend fun invokeHianime(
         url: String? = null,
         episode: Int? = null,
@@ -1200,12 +1292,14 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get("$CONSUMET_API/anime/zoro/info?id=$id").text
         val data = tryParseJson<HiAnime>(json) ?: return
         val epId = data.episodes.find { it.number == episode }?.id ?: return
+        val isDubbed = data.episodes.find { it.number == episode }?.isDubbed ?: false
         val types =  mutableListOf("sub")
-        if(data.subOrDub == "both") types.add("dub")
+        if(isDubbed == true) types.add("dub")
         val servers = mutableListOf("vidstreaming", "vidcloud")
         types.map { t ->
             servers.map { server ->
-                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=${epId.replace("both", t)}&server=$server").text
+                val type = if(t == "sub") "false" else "true"
+                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId&dub=$type&server=$server").text
                 val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
                 epData.sources.map {

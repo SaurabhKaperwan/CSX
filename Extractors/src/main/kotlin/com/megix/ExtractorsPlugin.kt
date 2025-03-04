@@ -9,9 +9,11 @@ class ExtractorsPlugin: Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerExtractorAPI(Luxdrive())
+        registerExtractorAPI(Luxdrive2())
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())
         registerExtractorAPI(GDFlix3())
+        registerExtractorAPI(GDFlix4())
         registerExtractorAPI(GDFlix2())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(PixelDrain())

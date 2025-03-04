@@ -1,4 +1,4 @@
-version = 18
+version = 19
 
 cloudstream {
     language = "hi"
@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "http://luxecinema.zip/wp-content/uploads/2023/12/fresh-logo-dark-theme-.jpg"
+    iconUrl = "http://luxecinema.fans/wp-content/uploads/2023/12/fresh-logo-dark-theme-.jpg"
 }
