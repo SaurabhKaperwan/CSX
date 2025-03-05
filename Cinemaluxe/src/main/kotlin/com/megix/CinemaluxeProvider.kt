@@ -6,6 +6,8 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://luxecinema.fans"
@@ -38,10 +40,21 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         return newHomePageResponse(request.name, home)
     }
 
+    data class RedirectUrl(
+        val redirectUrl: String
+    )
+
     private suspend fun bypass(url: String): String {
-        val document = app.get(url, allowRedirects = true).document.toString()
-        val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-        return base64Decode(encodeUrl)
+        val jsonBody = """{"url":"$url"}"""
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val json = app.post(
+            "https://ext.8man.me/api/cinemaluxe",
+            headers = mapOf(
+                "Content-Type" to "application/json",
+            ),
+            requestBody = requestBody
+        ).text
+        return parseJson<RedirectUrl>(json).redirectUrl
     }
 
     private fun Element.toSearchResult(): SearchResponse? {

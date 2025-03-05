@@ -415,15 +415,15 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     invokeAllanime(
-                //         res.title,
-                //         year,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
+                {
+                    invokeAllanime(
+                        res.title,
+                        year,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
                 {
                     invokeAnizone(
                         res.title,
@@ -478,8 +478,7 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeVegamovies(
-                        imdbTitle,
-                        imdbYear,
+                        res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
                         subtitleCallback,
@@ -505,16 +504,16 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     invokeCinemaluxe(
-                //         imdbTitle,
-                //         imdbYear,
-                //         res.imdbSeason,
-                //         res.imdbEpisode,
-                //         callback,
-                //         subtitleCallback,
-                //     )
-                // },
+                {
+                    invokeCinemaluxe(
+                        imdbTitle,
+                        imdbYear,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        callback,
+                        subtitleCallback,
+                    )
+                },
                 {
                     invokeAutoembed(
                         tmdbId,
@@ -567,8 +566,7 @@ open class CineStreamProvider : MainAPI() {
             argamap(
                 {
                     if(!res.isBollywood) invokeVegamovies(
-                        res.title,
-                        year,
+                        res.id,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -657,16 +655,16 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    if(res.isAsian && res.season != null) invokeDramacool(
-                        res.title,
-                        "ottv",
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     if(res.isAsian && res.season != null) invokeDramacool(
+                //         res.title,
+                //         "ottv",
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeMoviesdrive(
                         res.title,
@@ -696,16 +694,16 @@ open class CineStreamProvider : MainAPI() {
                 //         callback
                 //     )
                 // },
-                // {
-                //     invokeCinemaluxe(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         callback,
-                //         subtitleCallback,
-                //     )
-                // },
+                {
+                    invokeCinemaluxe(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        callback,
+                        subtitleCallback,
+                    )
+                },
                 {
                     invokeBollyflix(
                         res.id,

@@ -10,6 +10,8 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.api.Log
 import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -139,9 +141,16 @@ suspend fun NFBypass(mainUrl : String): String {
 }
 
 suspend fun cinemaluxeBypass(url: String): String {
-    val document = app.get(url, allowRedirects = true).document.toString()
-    val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-    return base64Decode(encodeUrl)
+    val jsonBody = """{"url":"$url"}"""
+    val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+    val json = app.post(
+        "https://ext.8man.me/api/cinemaluxe",
+        headers = mapOf(
+            "Content-Type" to "application/json",
+        ),
+        requestBody = requestBody
+    ).text
+    return parseJson<CinemaluxeRedirectUrl>(json).redirectUrl
 }
 
 fun getFirstCharacterOrZero(input: String): String {

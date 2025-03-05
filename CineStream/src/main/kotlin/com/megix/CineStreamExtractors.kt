@@ -418,6 +418,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 app.get("https://blog.finzoox.com/?id=$token").text.substringAfter("link\":\"")
                     .substringBefore("\"};")
             val decodedurl = base64Decode(encodedurl)
+
             if (season == null) {
                 loadSourceNameExtractor("Bollyflix", decodedurl , "", subtitleCallback, callback)
             } else {
@@ -939,47 +940,37 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
     suspend fun invokeVegamovies(
-        title: String,
-        year: Int? = null,
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val cfInterceptor = CloudflareKiller()
-        val fixtitle = title?.substringBefore("-")?.substringBefore(":")?.replace("&", " ")
-        val url = if (season == null) {
-            "$vegaMoviesAPI/?s=$fixtitle $year"
-        } else {
-            "$vegaMoviesAPI/?s=$fixtitle season $season"
-        }
-        app.get(url, interceptor = cfInterceptor).document.select("article h2").amap {
-            val hrefpattern = Regex("""(?i)<a\s+href="([^"]+)"[^>]*?>[^<]*?\b($title)\b[^<]*?""").find( it.toString() )?.groupValues?.get(1)
-            if(hrefpattern != null) {
-                val res = hrefpattern.let { app.get(it).document }
-                if(season == null) {
-                    res.select("button.dwd-button").amap {
-                        val link = it.parent()?.attr("href") ?: return@amap
-                        val doc = app.get(link).document
-                        val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud))")
-                            ?.parent()
+        val url = "$vegaMoviesAPI/?s=$id"
+        app.get(url, interceptor = cfInterceptor).document.select("article h2 a").amap {
+            val res = app.get(it.attr("href")).document
+            if(season == null) {
+                res.select("button.dwd-button").amap {
+                    val link = it.parent()?.attr("href") ?: return@amap
+                    val doc = app.get(link).document
+                    val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud))")
+                        ?.parent()
+                        ?.attr("href")
+                        ?: return@amap
+                    loadSourceNameExtractor("VegaMovies", source, referer = "", subtitleCallback, callback)
+                }
+            }
+            else {
+                res.select("h4:matches((?i)(Season $season)), h3:matches((?i)(Season $season))").amap { h4 ->
+                    h4.nextElementSibling()?.select("a:matches((?i)(V-Cloud|Single|Episode|G-Direct))")?.amap {
+                        val doc = app.get(it.attr("href")).document
+                        val epLink = doc.selectFirst("h4:contains(Episodes):contains($episode)")
+                            ?.nextElementSibling()
+                            ?.selectFirst("a:matches((?i)(V-Cloud))")
                             ?.attr("href")
                             ?: return@amap
-                        loadSourceNameExtractor("VegaMovies", source, referer = "", subtitleCallback, callback)
-                    }
-                }
-                else {
-                    res.select("h4:matches((?i)(Season $season)), h3:matches((?i)(Season $season))").amap { h4 ->
-                        h4.nextElementSibling()?.select("a:matches((?i)(V-Cloud|Single|Episode|G-Direct))")?.amap {
-                            val doc = app.get(it.attr("href")).document
-                            val epLink = doc.selectFirst("h4:contains(Episodes):contains($episode)")
-                                ?.nextElementSibling()
-                                ?.selectFirst("a:matches((?i)(V-Cloud))")
-                                ?.attr("href")
-                                ?: return@amap
-                            loadSourceNameExtractor("VegaMovies", epLink, referer = "", subtitleCallback, callback)
-                        }
+                        loadSourceNameExtractor("VegaMovies", epLink, referer = "", subtitleCallback, callback)
                     }
                 }
             }
@@ -999,7 +990,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = "$api/search/$id"
         app.get(url, interceptor = cfInterceptor).document.select("article h3 a")
             .amap {
-                val hrefpattern=it.attr("href") ?: null
+                val hrefpattern = it.attr("href") ?: null
                 if (hrefpattern != null) {
                     val res = hrefpattern.let { app.get(it).document }
                     if(season == null) {

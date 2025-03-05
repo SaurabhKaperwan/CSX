@@ -15,6 +15,25 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+class Vifix: ExtractorApi() {
+    override val name: String = "Vifix"
+    override val mainUrl: String = "https://vifix.site"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val location = app.get(url, allowRedirects = false).headers["location"]
+        if(location != null) {
+            loadExtractor(location, "", subtitleCallback, callback)
+        }
+
+    }
+}
+
 class Luxdrive2 : Luxdrive() {
     override val mainUrl = "https://files.luxedrive.space"
 }
@@ -436,8 +455,22 @@ open class HubCloud : ExtractorApi() {
     }
 }
 
-class fastdlserver : GDFlix() {
+class fastdlserver : ExtractorApi() {
+    override val name: String = "fastdlserver"
     override var mainUrl = "https://fastdlserver.online"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val location = app.get(url, allowRedirects = false).headers["location"]
+        if (location != null) {
+            loadExtractor(location, "", subtitleCallback, callback)
+        }
+    }
 }
 
 class GDLink : GDFlix() {

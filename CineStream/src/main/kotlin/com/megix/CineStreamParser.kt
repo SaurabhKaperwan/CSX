@@ -3,6 +3,11 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+data class CinemaluxeRedirectUrl(
+    val redirectUrl: String
+)
+
+
 //NF
 data class NFVerifyUrl(
     val url: String
