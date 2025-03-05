@@ -1319,29 +1319,38 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeAllanime(
-        title: String,
+        name: String,
         year: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val referer = "https://allmanga.to/"
-        val sha256Hash = "06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a"
-        val epSha256Hash = "5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0"
-        val type = if (episode == null) {
-            "Movie"
+        val privatereferer = "https://allmanga.to"
+        val ephash = "5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0"
+        val queryhash = "06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a"
+        var type = ""
+        if (episode == null) {
+            type = "Movie"
         } else {
-            "TV"
+            type = "TV"
         }
-        val url = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$title","year":$year},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$sha256Hash"}}"""
-        val response = app.get(url, referer = referer).parsedSafe<Anichi>()?.data?.shows?.edges
+
+        val query =
+            """$AllanimeAPI?variables={"search":{"types":["$type"],"year":$year,"query":"$name"},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
+        val response =
+            app.get(query, referer = privatereferer).parsedSafe<Anichi>()?.data?.shows?.edges
         if (response != null) {
-            val id = response.firstOrNull()?.id
+            val id = response.firstOrNull {
+                it.name.contains("$name", ignoreCase = true) || it.englishName.contains(
+                    "$name",
+                    ignoreCase = true
+                )
+            }?.id
             val langType = listOf("sub", "dub")
-            for (lang in langType) {
+            for (i in langType) {
                 val epData =
-                    """$AllanimeAPI?variables={"showId":"$id","translationType":"$lang","episodeString":"$episode"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$epSha256Hash"}}"""
-                val eplinks = app.get(epData, referer = referer)
+                    """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"$episode"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
+                val eplinks = app.get(epData, referer = privatereferer)
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
                 eplinks?.apmap { source ->
                     safeApiCall {
@@ -1352,10 +1361,10 @@ object CineStreamExtractors : CineStreamProvider() {
                                 val downloadid = downloadUrl.substringAfter("id=")
                                 val sourcename = downloadUrl.getHost()
                                 app.get("https://allanime.day/apivtwo/clock.json?id=$downloadid")
-                                    .parsedSafe<AnichiDownload>()?.links?.map {
+                                    .parsedSafe<AnichiDownload>()?.links?.amap {
                                     val href = it.link
-                                    loadCustomExtractor(
-                                        "Allanime [${lang.uppercase()}] [$sourcename]",
+                                    loadNameExtractor(
+                                        "Allanime [${i.uppercase()}] [$sourcename]",
                                         href,
                                         "",
                                         subtitleCallback,
@@ -1374,7 +1383,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                     val secretDecryptKey = "54674138327930866480207815084989"
                                     GogoHelper.extractVidstream(
                                         sourceUrl,
-                                        "Allanime [${lang.uppercase()}] [Vidstreaming]",
+                                        "Allanime [${i.uppercase()}] [Vidstreaming]",
                                         callback,
                                         iv,
                                         secretKey,
@@ -1385,8 +1394,9 @@ object CineStreamExtractors : CineStreamProvider() {
                                 }
                                 val sourcename = sourceUrl.getHost()
                                 loadCustomExtractor(
-                                    "Allanime [${lang.uppercase()}] [$sourcename]",
-                                    sourceUrl ?: "",
+                                    "Allanime [${i.uppercase()}] [$sourcename]",
+                                    sourceUrl
+                                        ?: "",
                                     "",
                                     subtitleCallback,
                                     callback,

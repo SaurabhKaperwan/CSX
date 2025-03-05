@@ -183,6 +183,25 @@ suspend fun extractMdrive(url: String): List<String> {
         }}
 }
 
+fun loadNameExtractor(
+    name: String? = null,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int,
+) {
+        callback.invoke(
+            ExtractorLink(
+                name ?: "",
+                name ?: "",
+                url,
+                referer ?: "",
+                quality,
+                if (url.contains("m3u8"))ExtractorLinkType.M3U8 else INFER_TYPE,
+            )
+        )
+}
 
 fun getEpisodeSlug(
     season: Int? = null,
