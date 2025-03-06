@@ -1273,6 +1273,108 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
+    suspend fun invokeGoku(
+        title: String,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val type = if (season == null) "watch-movie" else "watch-series"
+        val searchJson = app.get("$CONSUMET_API/movies/goku/$title").text
+        val searchData = tryParseJson<ConsumetSearch>(searchJson) ?: return
+        val id = searchData.results.firstOrNull {
+            it.title == title && it.id.contains(type)
+        }?.id ?: return
+        val infoJson = app.get("$CONSUMET_API/movies/goku/info?id=$id").text
+        val infoData = tryParseJson<ConsumetInfo>(infoJson) ?: return
+        val epId = if(season == null) { infoData.episodes.firstOrNull()?.id ?: return }
+        else {
+            infoData.episodes.firstOrNull { it.number  == episode && it.season == season }?.id ?: return
+        }
+
+        val servers = listOf("upcloud", "vidcloud")
+        servers.amap {
+            val epJson = app.get("$CONSUMET_API/movies/goku/watch?episodeId=$epId&mediaId=$id&server=$it").text
+            val epData = tryParseJson<ConsumetWatch>(epJson) ?: return@amap
+            val referer = epData.headers.Referer ?: ""
+
+            epData.sources.map {
+                callback.invoke(
+                    ExtractorLink(
+                        "Goku",
+                        "Goku",
+                        it.url,
+                        referer,
+                        it.quality.toIntOrNull() ?: Qualities.Unknown.value,
+                        isM3u8 = it.isM3U8
+
+                    )
+                )
+            }
+
+            epData.subtitles.map {
+                subtitleCallback.invoke(
+                    SubtitleFile(
+                        it.lang,
+                        it.url
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun invokeFlixhq(
+        title: String,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val type = if (season == null) "Movie" else "TV Series"
+        val searchJson = app.get("$CONSUMET_API/movies/flixhq/$title").text
+        val searchData = tryParseJson<ConsumetSearch>(searchJson) ?: return
+        val id = searchData.results.firstOrNull {
+            it.title == title && it.type == type
+        }?.id ?: return
+        val infoJson = app.get("$CONSUMET_API/movies/flixhq/info?id=$id").text
+        val infoData = tryParseJson<ConsumetInfo>(infoJson) ?: return
+        val epId = if(season == null) { infoData.episodes.firstOrNull()?.id ?: return }
+        else {
+            infoData.episodes.firstOrNull { it.number  == episode && it.season == season }?.id ?: return
+        }
+
+        val servers = listOf("upcloud", "vidcloud")
+        servers.amap {
+            val epJson = app.get("$CONSUMET_API/movies/flixhq/watch?episodeId=$epId&mediaId=$id&server=$it").text
+            val epData = tryParseJson<ConsumetWatch>(epJson) ?: return@amap
+            val referer = epData.headers.Referer ?: ""
+
+            epData.sources.map {
+                callback.invoke(
+                    ExtractorLink(
+                        "Flixhq",
+                        "Flixhq",
+                        it.url,
+                        referer,
+                        it.quality.toIntOrNull() ?: Qualities.Unknown.value,
+                        isM3u8 = it.isM3U8
+
+                    )
+                )
+            }
+
+            epData.subtitles.map {
+                subtitleCallback.invoke(
+                    SubtitleFile(
+                        it.lang,
+                        it.url
+                    )
+                )
+            }
+        }
+    }
+
     private suspend fun invokeHianime(
         url: String? = null,
         episode: Int? = null,
@@ -1282,8 +1384,12 @@ object CineStreamExtractors : CineStreamProvider() {
         val id = url?.substringAfterLast("/") ?: return
         val json = app.get("$CONSUMET_API/anime/zoro/info?id=$id").text
         val data = tryParseJson<HiAnime>(json) ?: return
-        val epId = data.episodes.find { it.number == episode }?.id ?: return
-        val isDubbed = data.episodes.find { it.number == episode }?.isDubbed ?: false
+        val epId = if(episode == null) { data.episodes.firstOrNull()?.id ?: return }
+        else {
+            data.episodes.find { it.number == episode }?.id ?: return
+        }
+        val isDubbed = if(episode == null) { data.episodes.firstOrNull()?.isDubbed ?: false }
+        else { data.episodes.find { it.number == episode }?.isDubbed ?: false }
         val types =  mutableListOf("sub")
         if(isDubbed == true) types.add("dub")
         val servers = mutableListOf("vidstreaming", "vidcloud")

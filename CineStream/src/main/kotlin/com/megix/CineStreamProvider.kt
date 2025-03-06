@@ -42,6 +42,8 @@ import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeDramacool
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
+import com.megix.CineStreamExtractors.invokeGoku
+import com.megix.CineStreamExtractors.invokeFlixhq
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -529,6 +531,24 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
+                    invokeGoku(
+                        imdbTitle,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    invokeFlixhq(
+                        imdbTitle,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
                     invokeAutoembed(
                         tmdbId,
                         res.imdbSeason,
@@ -716,6 +736,24 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         callback,
                         subtitleCallback,
+                    )
+                },
+                {
+                    invokeGoku(
+                        res.title,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    invokeFlixhq(
+                        res.title,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
                     )
                 },
                 {

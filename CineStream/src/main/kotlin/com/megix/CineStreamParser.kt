@@ -381,18 +381,47 @@ data class WHVXSubtitle(
     val display: String?,
 )
 
-data class ConsumetSources(
-    val sources: List<ConsumetSource>?,
-    val subtitles: List<ConsumetSubtitle>?,
-    val download: String?
-)
-    
-data class ConsumetSource(
-    val url: String,
-    val isM3u8: Boolean
+//Consumet
+
+data class ConsumetSearch (
+    var results     : ArrayList<ConsumetResults> = arrayListOf()
 )
 
-data class ConsumetSubtitle(
-    val url: String,
-    val lang: String
+data class ConsumetResults (
+    var id          : String,
+    var title       : String,
+    var type        : String
+)
+
+data class ConsumetInfo (
+    var id          : String,
+    var episodes    : ArrayList<ConsumetEpisodes> = arrayListOf()
+)
+
+
+data class ConsumetEpisodes (
+    var id     : String,
+    var number : Int? = null,
+    var season : Int? = null,
+)
+
+data class ConsumetWatch (
+    var headers   : ConsumetHeaders      = ConsumetHeaders(),
+    var sources   : ArrayList<ConsumetSources>   = arrayListOf(),
+    var subtitles : ArrayList<ConsumetSubtitles> = arrayListOf()
+)
+
+data class ConsumetHeaders (
+  var Referer : String? = null,
+)
+
+data class ConsumetSources (
+    var url     : String,
+    var quality : String,
+    var isM3U8  : Boolean
+)
+
+data class ConsumetSubtitles (
+    var url  : String,
+    var lang : String
 )
