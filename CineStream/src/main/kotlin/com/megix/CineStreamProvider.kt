@@ -336,8 +336,25 @@ open class CineStreamProvider : MainAPI() {
                     addDate(ep.firstAired?.substringBefore("T"))
                 }
             } ?: emptyList()
+            if(isAnime) {
+                return newAnimeLoadResponse(title, url, TvType.Anime) {
+                    addEpisodes(DubStatus.Subbed, episodes)
+                    this.posterUrl = posterUrl
+                    this.backgroundPosterUrl = background
+                    this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
+                    this.plot = description
+                    this.tags = genre
+                    this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
+                    this.rating = imdbRating.toRatingInt()
+                    this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
+                    addActors(cast)
+                    addAniListId(anilistId)
+                    addMalId(malId)
+                    addImdbId(id)
+                }
+            }
 
-            return newTvSeriesLoadResponse(title, url, if(isAnime) TvType.Anime else type, episodes) {
+            return newTvSeriesLoadResponse(title, url, type, episodes) {
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
@@ -347,11 +364,8 @@ open class CineStreamProvider : MainAPI() {
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
                 addActors(cast)
-                addAniListId(anilistId)
                 addImdbId(id)
-                addMalId(malId)
             }
-
         }
     }
 

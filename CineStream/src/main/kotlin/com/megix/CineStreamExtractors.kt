@@ -358,9 +358,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val type = if(episode != null) "tvshow" else "movie"
-        val url = "$cinemaluxeAPI/$type/${title.replace(" ", "-")}-$year"
-        val document = app.get(url).document
+        val url = "$cinemaluxeAPI/?s=$title $year"
+        val link = app.get(url).document.selectFirst("div.title > a:matches((?i)($title $year))")?.attr("href") ?: return
+        val document = app.get(link).document
 
         if(season == null) {
             document.select("a.maxbutton").amap {
@@ -1340,12 +1340,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val response =
             app.get(query, referer = privatereferer).parsedSafe<Anichi>()?.data?.shows?.edges
         if (response != null) {
-            val id = response.firstOrNull {
-                it.name.contains("$name", ignoreCase = true) || it.englishName.contains(
-                    "$name",
-                    ignoreCase = true
-                )
-            }?.id
+            val id = response.firstOrNull()?.id ?: return
             val langType = listOf("sub", "dub")
             for (i in langType) {
                 val epData =
