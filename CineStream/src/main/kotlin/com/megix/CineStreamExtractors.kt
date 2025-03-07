@@ -383,7 +383,7 @@ object CineStreamExtractors : CineStreamProvider() {
             season.amap { div ->
                 var link = div.select("a").attr("href")
                 link = cinemaluxeBypass(link)
-                 app.get(link).document.select("""a.maxbutton:matches((?i)(?:episode\s*[-]?\s*)(0?$episode))""").amap {
+                 app.get(link).document.select("""a.maxbutton:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",
                         it.attr("href"),
@@ -603,7 +603,11 @@ object CineStreamExtractors : CineStreamProvider() {
         val animeData =
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
-        val session = animeData?.find { it.episode == episode }?.session ?: return
+        val session = if(episode == null) {
+            animeData?.firstOrNull()?.session ?: return
+        } else {
+            animeData?.find { it.episode == episode }?.session ?: return
+        }
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
         doc.select("div.dropup button").amap {
             var lang=""
@@ -987,7 +991,7 @@ object CineStreamExtractors : CineStreamProvider() {
         api: String
     ) {
         val cfInterceptor = CloudflareKiller()
-        val url = "$api/search/$id"
+        val url = "$api/?s=$id"
         app.get(url, interceptor = cfInterceptor).document.select("article h3 a")
             .amap {
                 val hrefpattern = it.attr("href") ?: null
@@ -997,7 +1001,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         res.select("button.dwd-button").amap {
                             val link = it.parent()?.attr("href") ?: return@amap
                             val doc = app.get(link).document
-                            val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud))")
+                            val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud||Download))")
                                 ?.parent()
                                 ?.attr("href")
                                 ?: return@amap
@@ -1006,7 +1010,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                     else {
                         res.select("h3:matches((?i)(Season $season))").amap { h3 ->
-                            val link = h3.nextElementSibling()?.selectFirst("a:matches((?i)(V-Cloud))")?.attr("href") ?: return@amap
+                            val link = h3.nextElementSibling()?.selectFirst("a:matches((?i)(V-Cloud|Download))")?.attr("href") ?: return@amap
                             val doc = app.get(link).document
                             val epLink = doc.selectFirst("h4:contains(Episodes):contains($episode)")
                                 ?.nextElementSibling()
@@ -1450,7 +1454,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val langType = listOf("sub", "dub")
             for (i in langType) {
                 val epData =
-                    """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"$episode"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
+                    """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
                 val eplinks = app.get(epData, referer = privatereferer)
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
                 eplinks?.apmap { source ->
