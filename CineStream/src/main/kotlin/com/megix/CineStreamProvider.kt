@@ -415,14 +415,14 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeAnimia(
-                        res.anilistId,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeAnimia(
+                //         res.anilistId,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeTokyoInsider(
                         res.title,

@@ -7,7 +7,6 @@ data class CinemaluxeRedirectUrl(
     val redirectUrl: String
 )
 
-
 //NF
 data class NFVerifyUrl(
     val url: String
@@ -47,6 +46,7 @@ data class NetflixResponse(
     @JsonProperty("season") val season: ArrayList<NetflixSeason>? = arrayListOf(),
     @JsonProperty("episodes") val episodes: ArrayList<NetflixEpisodes>? = arrayListOf(),
     @JsonProperty("sources") val sources: ArrayList<NetflixSources>? = arrayListOf(),
+    @JsonProperty("nextPageShow") val nextPageShow: Int? = null,
 )
 
 //Dramacool
