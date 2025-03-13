@@ -28,5 +28,8 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(FastLinks())
         registerExtractorAPI(Sendcm())
         registerExtractorAPI(Photolinx())
+        registerExtractorAPI(Watchadsontape())
+        registerExtractorAPI(Howblogs())
+        registerExtractorAPI(Smoothpre())
     }
 }

@@ -254,40 +254,140 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeAnimia(
-        id: Int? = null,
+    suspend fun invokeEmbed123(
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val type = if(season == null) "movie" else "tv"
+        val url = if(season == null) "$embed123API/$type/$id" else "$embed123API/$type/$id/$season/$episode"
+        val json = app.get(url).text
+        val data = tryParseJson<Embed123>(json) ?: return
+
+        data.playlist.map {
+            callback.invoke(
+                ExtractorLink(
+                    "Embed123",
+                    "Embed123",
+                    it.file,
+                    "",
+                    Qualities.Unknown.value,
+                    isM3u8 = if(it.type == "hls") true else false,
+                    headers = mapOf("Origin" to "https://play2.123embed.net")
+                )
+            )
+        }
+
+    }
+
+    suspend fun invokeSkymovies(
+        title: String? = null,
+        year: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit,
     ) {
-        val json = app.get("$animiaAPI/api/episode/$id/${episode ?: 1}", timeout = 500L).text
-        val data = parseJson<AnimiaResponse>(json)
-        data.server1embedLink?.let {
-            loadSourceNameExtractor(
-                "Animia[SUB]",
-                it,
-                "",
-                subtitleCallback,
-                callback,
-            )
+        val url = "$skymoviesAPI/search.php?search=$title ($year)&cat=All"
+        app.get(url).document.select("div.L a").amap {
+            app.get(skymoviesAPI + it.attr("href")).document.select("div.Bolly > a").amap {
+                val text = it.text()
+                if(episode == null) {
+                  loadSourceNameExtractor(
+                        "Skymovies",
+                        it.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback,
+                    )
+                }
+                else if(episode != null && text.contains("Episode")) {
+                    if(text.contains("Episode $episode") || text.contains("Episode 0$episode")) {
+                        loadSourceNameExtractor(
+                            "Skymovies",
+                            it.attr("href"),
+                            "",
+                            subtitleCallback,
+                            callback,
+                        )
+                    }
+                }
+                else {
+                    loadSourceNameExtractor(
+                        "Skymovies(Combined)",
+                        it.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback,
+                    )
+                }
+            }
         }
-        data.server2embedLink?.let {
-            loadSourceNameExtractor(
-                "Animia[SUB]",
-                it,
-                "",
-                subtitleCallback,
-                callback,
-            )
-        }
-        data.server3embedLink?.let {
-            loadSourceNameExtractor(
-                "Animia[SUB]",
-                it,
-                "",
-                subtitleCallback,
-                callback,
-            )
+    }
+
+    suspend fun invokeMoviesflix(
+        sourceName: String,
+        api: String,
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        app.get("$api/?s=$id").document.select("a.post-image").amap {
+            val doc = app.get(it.attr("href")).document
+            if(episode == null) {
+                doc.select("a.maxbutton").amap { button ->
+                    val document = app.get(button.attr("href")).document
+                    document.select("a.maxbutton").amap { source ->
+                        val linkText = source.text()
+                        if (!linkText.contains("Google Drive", ignoreCase = true) &&
+                            !linkText.contains("Other Download Links", ignoreCase = true) &&
+                            !linkText.contains("G-Direct", ignoreCase = true)
+                        ) {
+                            loadSourceNameExtractor(
+                                sourceName,
+                                source.attr("href"),
+                                "",
+                                subtitleCallback,
+                                callback,
+                            )
+                        }
+                    }
+                }
+            }
+            else {
+                doc.select("p:has(a.maxbutton)").amap { p ->
+                    val possibleMatches = listOf(
+                        "Season $season",
+                        "Season 0$season",
+                        "S$season",
+                        "S0$season"
+                    )
+                    if(possibleMatches.any {
+                        p.previousElementSibling()?.previousElementSibling()?.text()?.contains(it) == true
+                    }) {
+                        p.select("a.maxbutton").amap { button ->
+                            val buttonText = button.text()
+                            if(!buttonText.contains("G-Direct", ignoreCase = true) &&
+                                !buttonText.contains("Drop Galaxy", ignoreCase = true) &&
+                                !buttonText.contains("G-Drive", ignoreCase = true) &&
+                                !buttonText.contains("Mega.nz", ignoreCase = true)
+                            ) {
+                                app.get(button.attr("href")).document.select("h3 a:contains(Episode $episode|Episode 0$episode|E0$episode|E$episode)").amap { source ->
+                                    loadSourceNameExtractor(
+                                        sourceName,
+                                        source.attr("href"),
+                                        "",
+                                        subtitleCallback,
+                                        callback,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -732,7 +832,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         )
 
-        val tokenJson = app.get(WHVX_TOKEN, timeout = 500L).text
+        val tokenJson = app.get("$BYPASS_API/whvxToken", timeout = 500L).text
         val token = parseJson<WHVXToken>(tokenJson).token
         val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString())
         val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
@@ -1291,57 +1391,6 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeGoku(
-        title: String,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val type = if (season == null) "watch-movie" else "watch-series"
-        val searchJson = app.get("$CONSUMET_API/movies/goku/$title").text
-        val searchData = tryParseJson<ConsumetSearch>(searchJson) ?: return
-        val id = searchData.results.firstOrNull {
-            it.title == title && it.id.contains(type)
-        }?.id ?: return
-        val infoJson = app.get("$CONSUMET_API/movies/goku/info?id=$id").text
-        val infoData = tryParseJson<ConsumetInfo>(infoJson) ?: return
-        val epId = if(season == null) { infoData.episodes.firstOrNull()?.id ?: return }
-        else {
-            infoData.episodes.firstOrNull { it.number  == episode && it.season == season }?.id ?: return
-        }
-
-        val servers = listOf("upcloud", "vidcloud")
-        servers.amap {
-            val epJson = app.get("$CONSUMET_API/movies/goku/watch?episodeId=$epId&mediaId=$id&server=$it").text
-            val epData = tryParseJson<ConsumetWatch>(epJson) ?: return@amap
-            val referer = epData.headers.Referer ?: ""
-
-            epData.sources.map {
-                callback.invoke(
-                    ExtractorLink(
-                        "Goku",
-                        "Goku",
-                        it.url,
-                        referer,
-                        it.quality.toIntOrNull() ?: Qualities.Unknown.value,
-                        isM3u8 = it.isM3U8
-
-                    )
-                )
-            }
-
-            epData.subtitles.map {
-                subtitleCallback.invoke(
-                    SubtitleFile(
-                        it.lang,
-                        it.url
-                    )
-                )
-            }
-        }
-    }
-
     suspend fun invokeFlixhq(
         title: String,
         season: Int? = null,
@@ -1413,8 +1462,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val servers = mutableListOf("vidstreaming", "vidcloud")
         types.map { t ->
             servers.map { server ->
-                val type = if(t == "sub") "false" else "true"
-                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId&dub=$type&server=$server").text
+                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId${'$'}$t&server=$server").text
                 val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
                 epData.sources.map {

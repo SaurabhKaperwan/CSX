@@ -35,15 +35,16 @@ import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
-import com.megix.CineStreamExtractors.invokeAnimia
 import com.megix.CineStreamExtractors.invokeTokyoInsider
 import com.megix.CineStreamExtractors.invokeTvStream
 import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeDramacool
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
-import com.megix.CineStreamExtractors.invokeGoku
 import com.megix.CineStreamExtractors.invokeFlixhq
+import com.megix.CineStreamExtractors.invokeSkymovies
+import com.megix.CineStreamExtractors.invokeMoviesflix
+import com.megix.CineStreamExtractors.invokeEmbed123
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -73,9 +74,10 @@ open class CineStreamProvider : MainAPI() {
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
         const val uhdmoviesAPI = "https://uhdmovies.fyi"
-        const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
+        const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
+        const val embed123API = "https://play2.123embed.net/server/3?path="
         // const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
@@ -84,11 +86,13 @@ open class CineStreamProvider : MainAPI() {
         const val cinemaluxeAPI = "https://luxecinema.fans"
         const val bollyflixAPI = "https://bollyflix.phd"
         const val TomAPI = "https://tom.autoembed.cc"
-        const val animiaAPI = "https://animia.buzz"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val netflixAPI = "https://iosmirror.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
+        const val skymoviesAPI = "https://skymovieshd.farm"
+        const val moviesflixAPI = "https://themoviesflix.bio"
+        const val hdmoviesflixAPI = "https://hdmoviesflix.name"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -415,14 +419,6 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     invokeAnimia(
-                //         res.anilistId,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
                 {
                     invokeTokyoInsider(
                         res.title,
@@ -528,24 +524,6 @@ open class CineStreamProvider : MainAPI() {
                         res.imdbEpisode,
                         callback,
                         subtitleCallback,
-                    )
-                },
-                {
-                    invokeGoku(
-                        imdbTitle,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback,
-                    )
-                },
-                {
-                    invokeFlixhq(
-                        imdbTitle,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback,
                     )
                 },
                 {
@@ -739,9 +717,9 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    invokeGoku(
+                    if(!res.isAnime) invokeSkymovies(
                         res.title,
-                        res.season,
+                        seasonYear,
                         res.episode,
                         subtitleCallback,
                         callback,
@@ -849,6 +827,36 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         callback,
                         subtitleCallback
+                    )
+                },
+                {
+                    invokeEmbed123(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback
+                    )
+                },
+                {
+                    if(!res.isBollywood || !res.isAnime) invokeMoviesflix(
+                        "Moviesflix",
+                        moviesflixAPI,
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    if(res.isBollywood) invokeMoviesflix(
+                        "Hdmoviesflix",
+                        hdmoviesflixAPI,
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
                     )
                 },
             )

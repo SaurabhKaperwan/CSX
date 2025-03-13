@@ -8,11 +8,37 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.api.Log
-
+import com.lagradost.cloudstream3.extractors.StreamTape
+import com.lagradost.cloudstream3.extractors.VidHidePro
 
 fun getIndexQuality(str: String?): Int {
     return Regex("""(\d{3,4})[pP]""").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
         ?: Qualities.Unknown.value
+}
+
+class Watchadsontape : StreamTape() {
+    override var mainUrl: String = "https://watchadsontape.com"
+}
+
+class Smoothpre : VidHidePro() {
+    override var mainUrl: String = "https://smoothpre.com"
+}
+
+class Howblogs : ExtractorApi() {
+    override val name: String = "Howblogs"
+    override val mainUrl: String = "https://howblogs.xyz"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        app.get(url).document.select("div.center_it a").amap {
+            loadExtractor(it.attr("href"), referer, subtitleCallback, callback)
+        }
+    }
 }
 
 class Vifix: ExtractorApi() {
@@ -280,7 +306,7 @@ class VCloud : ExtractorApi() {
             val div = document.selectFirst("div.card-body")
             val header = document.select("div.card-header").text() ?: ""
 
-            div?.select("h2 a.btn")?.apmap {
+            div?.select("h2 a.btn")?.amap {
                 val link = it.attr("href")
                 val text = it.text()
                 if (text.contains("Download [FSL Server]"))
@@ -384,7 +410,7 @@ open class HubCloud : ExtractorApi() {
         val div = document.selectFirst("div.card-body")
         val header = document.select("div.card-header").text() ?: ""
 
-        div?.select("h2 a.btn")?.apmap {
+        div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
             val text = it.text()
 

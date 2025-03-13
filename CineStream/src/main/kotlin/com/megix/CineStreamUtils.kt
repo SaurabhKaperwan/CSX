@@ -144,7 +144,7 @@ suspend fun cinemaluxeBypass(url: String): String {
     val jsonBody = """{"url":"$url"}"""
     val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
     val json = app.post(
-        "https://ext.8man.me/api/cinemaluxe",
+        "${BuildConfig.BYPASS_API}/cinemaluxe",
         headers = mapOf(
             "Content-Type" to "application/json",
         ),

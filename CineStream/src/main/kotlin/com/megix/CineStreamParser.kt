@@ -3,6 +3,16 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Embed123
+data class Embed123 (
+    var playlist : ArrayList<Embed123Playlist> = arrayListOf()
+)
+
+data class Embed123Playlist (
+    var file : String,
+    var type : String
+)
+
 data class CinemaluxeRedirectUrl(
     val redirectUrl: String
 )
