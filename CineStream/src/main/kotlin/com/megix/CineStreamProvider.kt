@@ -64,8 +64,8 @@ open class CineStreamProvider : MainAPI() {
         const val rogMoviesAPI = "https://rogmovies.icu"
         const val MovieDrive_API = "https://moviesdrive.club"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-        const val topmoviesAPI = "https://topmovies.nexus"
-        const val MoviesmodAPI = "https://moviesmod.how"
+        const val topmoviesAPI = "https://topmovies.wales"
+        const val MoviesmodAPI = "https://moviesmod.gift"
         // const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val W4UAPI = "https://world4ufree.fyi"
@@ -73,7 +73,7 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val AutoembedAPI = "https://autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.fyi"
+        const val uhdmoviesAPI = "https://uhdmovies.wales"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"

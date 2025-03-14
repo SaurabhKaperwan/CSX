@@ -143,7 +143,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 var episodeId : String? = null
                 var page = 1
 
-                while(episodeId == null) {
+                while(episodeId == null && page < 10) {
                     val data = app.get(
                         "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
@@ -214,9 +214,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 val seasonId = media?.season?.find { it.s == "$season" }?.id
                 var episodeId : String? = null
                 var page = 1
-                while(episodeId == null) {
+                while(episodeId == null && page < 10) {
                     val data = app.get(
-                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
+                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
                         referer = "$netflixAPI/"
