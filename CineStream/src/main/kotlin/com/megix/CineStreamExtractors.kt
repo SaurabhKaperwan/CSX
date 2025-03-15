@@ -126,12 +126,12 @@ object CineStreamExtractors : CineStreamProvider() {
             "hd" to "on"
         )
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
+        val url = "$netflixAPI/mobile/pv/search.php?s=$title&t=${APIHolder.unixTime}"
         val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
         val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
 
         val (nfTitle, id) = app.get(
-            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            "$netflixAPI/mobile/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/"
@@ -145,7 +145,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
                 while(episodeId == null && page < 10) {
                     val data = app.get(
-                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
+                        "$netflixAPI/mobile/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
                         referer = "$netflixAPI/"
@@ -163,7 +163,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflixAPI/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflixAPI/mobile/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/"
@@ -198,12 +198,12 @@ object CineStreamExtractors : CineStreamProvider() {
             "hd" to "on"
         )
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
+        val url = "$netflixAPI/mobile/search.php?s=$title&t=${APIHolder.unixTime}"
         val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
         val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals(title.trim(), ignoreCase = true) }?.id
 
         val (nfTitle, id) = app.get(
-            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            "$netflixAPI/mobile/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/"
@@ -216,7 +216,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 var page = 1
                 while(episodeId == null && page < 10) {
                     val data = app.get(
-                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
+                        "$netflixAPI/mobile/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
                         referer = "$netflixAPI/"
@@ -233,7 +233,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflixAPI/mobile/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/"
@@ -278,7 +278,27 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             )
         }
+    }
 
+    suspend fun invokeHdmovie2(
+        title: String? = null,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val link = app.get("$hdmovie2API/movies/${title.createSlug()}-$year").document
+            .select("div.wp-content p a").filter { !it.text().contains("EP") }.first().attr("href")
+        val type = if(episode != null) "(Combined)" else ""
+        app.get(link).document.select("div > p > a").amap {
+            loadSourceNameExtractor(
+                "Hdmovie2$type",
+                it.attr("href"),
+                "",
+                subtitleCallback,
+                callback,
+            )
+        }
     }
 
     suspend fun invokeSkymovies(
@@ -1039,25 +1059,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
     // }
 
-    suspend fun invokeRogmovies(
-        id: String? = null,
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        invokeWpredis(
-            id,
-            title,
-            season,
-            episode,
-            subtitleCallback,
-            callback,
-            rogMoviesAPI
-        )
-    }
     suspend fun invokeVegamovies(
+        api: String,
+        sourceName: String,
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -1065,8 +1069,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val cfInterceptor = CloudflareKiller()
-        val url = "$vegaMoviesAPI/?s=$id"
-        app.get(url, interceptor = cfInterceptor).document.select("article h2 a").amap {
+        val url = "$api/?s=$id"
+        app.get(url, interceptor = cfInterceptor).document.select("article h2 a, article h3 a").amap {
             val res = app.get(it.attr("href")).document
             if(season == null) {
                 res.select("button.dwd-button").amap {
@@ -1076,7 +1080,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         ?.parent()
                         ?.attr("href")
                         ?: return@amap
-                    loadSourceNameExtractor("VegaMovies", source, referer = "", subtitleCallback, callback)
+                    loadSourceNameExtractor(sourceName, source, referer = "", subtitleCallback, callback)
                 }
             }
             else {
@@ -1088,55 +1092,11 @@ object CineStreamExtractors : CineStreamProvider() {
                             ?.selectFirst("a:matches((?i)(V-Cloud))")
                             ?.attr("href")
                             ?: return@amap
-                        loadSourceNameExtractor("VegaMovies", epLink, referer = "", subtitleCallback, callback)
+                        loadSourceNameExtractor(sourceName, epLink, referer = "", subtitleCallback, callback)
                     }
                 }
             }
         }
-    }
-
-    private suspend fun invokeWpredis(
-        id: String? = null,
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-        api: String
-    ) {
-        val cfInterceptor = CloudflareKiller()
-        val url = "$api/?s=$id"
-        app.get(url, interceptor = cfInterceptor).document.select("article h3 a")
-            .amap {
-                val hrefpattern = it.attr("href") ?: null
-                if (hrefpattern != null) {
-                    val res = hrefpattern.let { app.get(it).document }
-                    if(season == null) {
-                        res.select("button.dwd-button").amap {
-                            val link = it.parent()?.attr("href") ?: return@amap
-                            val doc = app.get(link).document
-                            val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud||Download))")
-                                ?.parent()
-                                ?.attr("href")
-                                ?: return@amap
-                            loadSourceNameExtractor("LuxMovies", source, referer = "", subtitleCallback, callback)
-                        }
-                    }
-                    else {
-                        res.select("h3:matches((?i)(Season $season))").amap { h3 ->
-                            val link = h3.nextElementSibling()?.selectFirst("a:matches((?i)(V-Cloud|Download))")?.attr("href") ?: return@amap
-                            val doc = app.get(link).document
-                            val epLink = doc.selectFirst("h4:contains(Episodes):contains($episode)")
-                                ?.nextElementSibling()
-                                ?.selectFirst("a:matches((?i)(V-Cloud))")
-                                ?.attr("href")
-                                ?: return@amap
-
-                            loadSourceNameExtractor("LuxMovies", epLink, referer = "", subtitleCallback, callback)
-                        }
-                    }
-                }
-            }
     }
 
     suspend fun invokeMoviesdrive(
@@ -1205,7 +1165,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val doc = app.get("$uhdmoviesAPI/download-${title.replace(" ", "-")}").document
+        val url = app.get("$uhdmoviesAPI/search/$title $year").document
+            .select("article div.entry-image a").attr("href")
+        val doc = app.get(url).document
 
         val selector = if (season == null) {
             "div.entry-content p:matches($year)"

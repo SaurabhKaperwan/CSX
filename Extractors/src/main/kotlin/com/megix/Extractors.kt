@@ -594,7 +594,7 @@ open class GDFlix : ExtractorApi() {
                     }
                 }
             }
-            else if (text.contains("DRIVEBOT LINK"))
+            else if (text.contains("DRIVEBOT"))
             {
                 val driveLink = it.attr("href")
                 val id = driveLink.substringAfter("id=").substringBefore("&")

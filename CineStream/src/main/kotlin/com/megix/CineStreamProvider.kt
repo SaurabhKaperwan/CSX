@@ -14,7 +14,6 @@ import kotlin.math.roundToInt
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.megix.CineStreamExtractors.invokeVegamovies
-import com.megix.CineStreamExtractors.invokeRogmovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
@@ -45,6 +44,7 @@ import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
 import com.megix.CineStreamExtractors.invokeEmbed123
+import com.megix.CineStreamExtractors.invokeHdmovie2
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -88,11 +88,12 @@ open class CineStreamProvider : MainAPI() {
         const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
-        const val netflixAPI = "https://iosmirror.cc"
+        const val netflixAPI = "https://netfree.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val skymoviesAPI = "https://skymovieshd.farm"
         const val moviesflixAPI = "https://themoviesflix.bio"
         const val hdmoviesflixAPI = "https://hdmoviesflix.name"
+        const val hdmovie2API = "https://hdmovie2.network"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -490,6 +491,8 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeVegamovies(
+                        vegaMoviesAPI,
+                        "VegaMovies",
                         res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
@@ -552,32 +555,14 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeNetflix(
-                        imdbTitle,
-                        imdbYear,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
-                {
-                    invokePrimeVideo(
-                        imdbTitle,
-                        imdbYear,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
             )
         }
         else {
             argamap(
                 {
                     if(!res.isBollywood) invokeVegamovies(
+                        vegaMoviesAPI,
+                        "VegaMovies",
                         res.id,
                         res.season,
                         res.episode,
@@ -629,9 +614,10 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    if(res.isBollywood) invokeRogmovies(
+                    if(res.isBollywood) invokeVegamovies(
+                        rogMoviesAPI,
+                        "RogMovies",
                         res.id,
-                        res.title,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -718,6 +704,15 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     if(!res.isAnime) invokeSkymovies(
+                        res.title,
+                        seasonYear,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    if(!res.isAnime) invokeHdmovie2(
                         res.title,
                         seasonYear,
                         res.episode,

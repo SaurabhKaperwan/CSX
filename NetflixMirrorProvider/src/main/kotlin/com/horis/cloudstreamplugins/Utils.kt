@@ -81,7 +81,7 @@ data class VerifyUrl(
 )
 
 suspend fun bypass(mainUrl : String): String {
-    val homePageDocument = app.get("${mainUrl}/home").document
+    val homePageDocument = app.get("${mainUrl}/mobile/home").document
     val addHash          = homePageDocument.select("body").attr("data-addhash")
     val time             = homePageDocument.select("body").attr("data-time")
 
@@ -98,7 +98,7 @@ suspend fun bypass(mainUrl : String): String {
     do {
         delay(1000)
         val requestBody = FormBody.Builder().add("verify", addHash).build()
-        verifyResponse  = app.post("${mainUrl}/verify2.php", requestBody = requestBody)
+        verifyResponse  = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
         verifyCheck     = verifyResponse.text
     } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
 
