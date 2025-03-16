@@ -64,9 +64,13 @@ class Luxdrive2 : Luxdrive() {
     override val mainUrl = "https://files.luxedrive.space"
 }
 
+class Luxdrive3 : Luxdrive() {
+    override val mainUrl = "https://new.luxedrive.online"
+}
+
 open class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://new.luxedrive.online"
+    override val mainUrl: String = "https://download.luxedrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
