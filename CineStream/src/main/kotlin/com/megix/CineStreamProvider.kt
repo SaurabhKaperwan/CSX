@@ -181,13 +181,13 @@ open class CineStreamProvider : MainAPI() {
         val searchResponse = mutableListOf<SearchResponse>()
 
         val movieUrls = listOf(
-            "$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json",
             "$cinemeta_url/catalog/movie/top/search=$query.json",
+            "$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json",
         )
 
         val seriesUrls = listOf(
-            "$streamio_TMDB/catalog/series/tmdb.top/search=$query.json",
             "$cinemeta_url/catalog/series/top/search=$query.json",
+            "$streamio_TMDB/catalog/series/tmdb.top/search=$query.json",
         )
 
         val animeUrls = listOf(

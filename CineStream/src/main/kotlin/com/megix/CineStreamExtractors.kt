@@ -493,7 +493,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
         val newTitle = title.replace(" ", "+").replace("’s", "")
-        val url = "$cinemaluxeAPI/?s=$title $year"
+        val url = "$cinemaluxeAPI/?s=$newTitle+$year"
         val link = app.get(url).document.selectFirst("div.title > a:matches((?i)($title $year))")?.attr("href") ?: return
         val document = app.get(link).document
 
