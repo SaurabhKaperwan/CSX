@@ -62,7 +62,7 @@ open class CineStreamProvider : MainAPI() {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.rs"
         const val rogMoviesAPI = "https://rogmovies.icu"
-        const val MovieDrive_API = "https://moviesdrive.club"
+        const val MovieDrive_API = "https://moviesdrive.guru"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.wales"
         const val MoviesmodAPI = "https://moviesmod.gift"
@@ -93,7 +93,7 @@ open class CineStreamProvider : MainAPI() {
         const val skymoviesAPI = "https://skymovieshd.farm"
         const val moviesflixAPI = "https://themoviesflix.bio"
         const val hdmoviesflixAPI = "https://hdmoviesflix.name"
-        const val hdmovie2API = "https://hdmovie2.network"
+        const val hdmovie2API = "https://hdmovie2.horse"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -182,11 +182,17 @@ open class CineStreamProvider : MainAPI() {
 
         val movieUrls = listOf(
             "$cinemeta_url/catalog/movie/top/search=$query.json",
+        )
+
+        val tmdbMovieUrls = listOf(
             "$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json",
         )
 
         val seriesUrls = listOf(
             "$cinemeta_url/catalog/series/top/search=$query.json",
+        )
+
+        val tmdbSeriesUrls = listOf(
             "$streamio_TMDB/catalog/series/tmdb.top/search=$query.json",
         )
 
@@ -213,6 +219,22 @@ open class CineStreamProvider : MainAPI() {
 
         val series = fetchWithRetry(seriesUrls)
         series?.metas?.forEach {
+            val title = it.name ?: it.description ?: "Empty"
+            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
+                this.posterUrl = it.poster.toString()
+            })
+        }
+
+        val tmdbMovies = fetchWithRetry(tmdbMovieUrls)
+        tmdbMovies?.metas?.forEach {
+            val title = it.name ?: it.description ?: "Empty"
+            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.Movie) {
+                this.posterUrl = it.poster.toString()
+            })
+        }
+
+        val tmdbSeries = fetchWithRetry(tmdbSeriesUrls)
+        tmdbSeries?.metas?.forEach {
             val title = it.name ?: it.description ?: "Empty"
             searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
                 this.posterUrl = it.poster.toString()

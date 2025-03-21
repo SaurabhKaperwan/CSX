@@ -1071,7 +1071,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val cfInterceptor = CloudflareKiller()
         val url = "$api/?s=$id"
-        app.get(url, interceptor = cfInterceptor).document.select("article h2 a, article h3 a").amap {
+        app.get(url, interceptor = cfInterceptor).document.select("article h2 a,article h3 a").amap {
             val res = app.get(it.attr("href")).document
             if(season == null) {
                 res.select("button.dwd-button").amap {
