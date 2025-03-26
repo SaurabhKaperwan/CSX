@@ -15,7 +15,10 @@ import org.jsoup.Jsoup
 import com.lagradost.cloudstream3.argamap
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.mvvm.safeApiCall
-
+import com.lagradost.nicehttp.RequestBodyTypes
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -287,8 +290,9 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val link = app.get("$hdmovie2API/movies/${title.createSlug()}-$year").document
-            .select("div.wp-content p a").filter { !it.text().contains("EP") }.first().attr("href")
+        val headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+        val link = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
+            .select("div.wp-content p a").attr("href")
         val type = if(episode != null) "(Combined)" else ""
         app.get(link).document.select("div > p > a").amap {
             loadSourceNameExtractor(
@@ -443,42 +447,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     "",
                     getIndexQuality(stream.name),
                     ExtractorLinkType.MAGNET,
-                )
-            )
-        }
-    }
-
-    suspend fun invokeTom(
-        id: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit
-    ) {
-        val url = if(season == null) "$TomAPI/api/getVideoSource?type=movie&id=$id" else "$TomAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
-            "Referer" to "$AutoembedAPI/"
-        )
-        val json = app.get(url, headers = headers).text
-        val data = tryParseJson<TomResponse>(json) ?: return
-
-        callback.invoke(
-            ExtractorLink(
-                "Tom",
-                "Tom",
-                data.videoSource,
-                "",
-                Qualities.Unknown.value,
-                true
-            )
-        )
-
-        data.subtitles.map {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.label,
-                    it.file,
                 )
             )
         }
@@ -932,28 +900,73 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeAutoembed(
-        id: Int?,
+    suspend fun invokeMultiAutoembed(
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val url = if(season != null && episode != null) "${AutoembedAPI}/embed/player.php?id=${id}&s=${season}&e=${episode}" else "${AutoembedAPI}/embed/player.php?id=${id}"
-        val document = app.get(url).document
-        val regex = Regex("""(?:"title":\s*"([^"]*)",\s*"file":\s*"([^"]*)")""")
-        val matches = regex.findAll(document.toString())
+        val url =  if(season != null) "$MultiembedAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
+        else "$MultiembedAPI/api/getVideoSource?type=movie&id=$id"
+        val jsonBody = app.get(url, headers = mapOf("Referer" to MultiembedAPI)).text.toJson()
+            .toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
+        val headers = mapOf(
+            "Content-Type" to "application/json",
+            "Referer" to "$MultiembedAPI/",
+        )
+        val json = app.post("$MultiembedAPI/api/decryptVideoSource",
+            requestBody = jsonBody, headers = headers
+        ).text
 
-        matches.forEach { match ->
-            val title = match.groups?.get(1)?.value ?: ""
-            val file = match.groups?.get(2)?.value ?: ""
+        val data = tryParseJson<MultiAutoembedResponse>(json) ?: return
+        data.audioTracks.forEach {
             callback.invoke(
                 ExtractorLink(
-                    "Autoembed[${title}]",
-                    "Autoembed[${title}]",
-                    file,
-                    referer = "",
-                    quality = Qualities.Unknown.value,
-                    true,
+                    "MultiAutoembed[${it.label}]",
+                    "MultiAutoembed[${it.label}]",
+                    it.file,
+                    "https://autoembed.cc/",
+                    Qualities.Unknown.value,
+                )
+            )
+        }
+    }
+
+    suspend fun invokeNonoAutoembed(
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url =  if(season != null) "$NonoembedAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
+        else "$NonoembedAPI/api/getVideoSource?type=movie&id=$id"
+        val jsonBody = app.get(url, headers = mapOf("Referer" to NonoembedAPI)).text.toJson()
+            .toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
+        val headers = mapOf(
+            "Content-Type" to "application/json",
+            "Referer" to "$NonoembedAPI/",
+        )
+        val json = app.post("$NonoembedAPI/api/decryptVideoSource",
+            requestBody = jsonBody, headers = headers
+        ).text
+
+        val data = tryParseJson<NonoAutoembedResponse>(json) ?: return
+        callback.invoke(
+            ExtractorLink(
+                "NonoAutoembed",
+                "NonoAutoembed",
+                data.videoSource,
+                "",
+                Qualities.Unknown.value,
+            )
+        )
+        data.subtitles.forEach {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.label,
+                    it.file
                 )
             )
         }

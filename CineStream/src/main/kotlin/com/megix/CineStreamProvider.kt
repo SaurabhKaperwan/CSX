@@ -21,7 +21,8 @@ import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeAnizone
-import com.megix.CineStreamExtractors.invokeAutoembed
+import com.megix.CineStreamExtractors.invokeMultiAutoembed
+import com.megix.CineStreamExtractors.invokeNonoAutoembed
 import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invoke2embed
@@ -32,7 +33,6 @@ import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
 import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
-import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeTokyoInsider
 import com.megix.CineStreamExtractors.invokeTvStream
@@ -60,7 +60,7 @@ open class CineStreamProvider : MainAPI() {
     val animeCatalog = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.rs"
+        const val vegaMoviesAPI = "https://vegamovies.band"
         const val rogMoviesAPI = "https://rogmovies.icu"
         const val MovieDrive_API = "https://moviesdrive.guru"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -71,7 +71,8 @@ open class CineStreamProvider : MainAPI() {
         const val W4UAPI = "https://world4ufree.fyi"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
-        const val AutoembedAPI = "https://autoembed.cc"
+        const val MultiembedAPI = "https://hin.autoembed.cc"
+        const val NonoembedAPI = "https://nono.autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
         const val uhdmoviesAPI = "https://uhdmovies.wales"
         const val BYPASS_API = BuildConfig.BYPASS_API
@@ -85,15 +86,14 @@ open class CineStreamProvider : MainAPI() {
         const val multimoviesAPI = "https://multimovies.world"
         const val cinemaluxeAPI = "https://luxecinema.fans"
         const val bollyflixAPI = "https://bollyflix.phd"
-        const val TomAPI = "https://tom.autoembed.cc"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val netflixAPI = "https://netfree.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val skymoviesAPI = "https://skymovieshd.farm"
         const val moviesflixAPI = "https://themoviesflix.bio"
-        const val hdmoviesflixAPI = "https://hdmoviesflix.name"
-        const val hdmovie2API = "https://hdmovie2.horse"
+        const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
+        const val hdmovie2API = "https://hdmovie2.works"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -523,15 +523,6 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    invokeTom(
-                        tmdbId,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        callback,
-                        subtitleCallback
-                    )
-                },
-                {
                     invokeMoviesdrive(
                         imdbTitle,
                         res.imdbSeason,
@@ -549,14 +540,6 @@ open class CineStreamProvider : MainAPI() {
                         res.imdbEpisode,
                         callback,
                         subtitleCallback,
-                    )
-                },
-                {
-                    invokeAutoembed(
-                        tmdbId,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        callback,
                     )
                 },
                 {
@@ -590,15 +573,6 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         subtitleCallback,
                         callback
-                    )
-                },
-                {
-                    invokeTom(
-                        res.tmdbId,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
                     )
                 },
                 {
@@ -792,27 +766,19 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeWHVXSubs(
                         WHVXSubsAPI,
-                        res.imdb_id,
-                        res.imdbSeason,
-                        res.imdbEpisode,
+                        res.id,
+                        res.season,
+                        res.episode,
                         subtitleCallback
                     )
                 },
                 {
                     invokeWHVXSubs(
                         WYZIESubsAPI,
-                        res.imdb_id,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback
-                    )
-                },
-                {
-                    invokeAutoembed(
-                        res.tmdbId,
+                        res.id,
                         res.season,
                         res.episode,
-                        callback,
+                        subtitleCallback
                     )
                 },
                 {
@@ -844,6 +810,24 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         callback,
                         subtitleCallback
+                    )
+                },
+                {
+                    invokeMultiAutoembed(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeNonoAutoembed(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
                     )
                 },
                 {

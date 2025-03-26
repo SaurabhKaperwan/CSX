@@ -3,6 +3,26 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Nonoautoembed
+data class NonoAutoembedResponse (
+  var videoSource : String,
+  var subtitles   : ArrayList<NonoAutoembedSubtitles> = arrayListOf()
+)
+
+data class NonoAutoembedSubtitles (
+  var file    : String,
+  var label   : String,
+)
+
+//Multiautoembed
+data class MultiAutoembedResponse (
+  var audioTracks : ArrayList<MultiembedAudioTracks> = arrayListOf()
+)
+
+data class MultiembedAudioTracks (
+  var label : String,
+  var file  : String
+)
 //Embed123
 data class Embed123 (
     var playlist : ArrayList<Embed123Playlist> = arrayListOf()
@@ -202,16 +222,6 @@ data class TorrentioStream(
     val title: String?,
     val infoHash: String?,
     val fileIdx: Int?,
-)
-
-data class TomResponse (
-  var videoSource    : String,
-  var subtitles      : ArrayList<TomSubtitles> = arrayListOf(),
-)
-
-data class TomSubtitles (
-  var file    : String,
-  var label   : String
 )
 
 data class StreamifyResponse(
