@@ -926,8 +926,9 @@ object CineStreamExtractors : CineStreamProvider() {
                     "MultiAutoembed[${it.label}]",
                     "MultiAutoembed[${it.label}]",
                     it.file,
-                    "https://autoembed.cc/",
+                    "",
                     Qualities.Unknown.value,
+                    isM3u8 = true,
                 )
             )
         }
