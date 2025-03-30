@@ -16,12 +16,14 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(GDFlix())
         registerExtractorAPI(GDFlix3())
         registerExtractorAPI(GDFlix4())
+        registerExtractorAPI(GDFlix5())
         registerExtractorAPI(GDFlix2())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(PixelDrain())
         registerExtractorAPI(HubCloud())
         registerExtractorAPI(HubCloudInk())
         registerExtractorAPI(HubCloudArt())
+        registerExtractorAPI(HubCloudDad())
         registerExtractorAPI(fastdlserver())
         registerExtractorAPI(Driveleech())
         registerExtractorAPI(Driveseed())
@@ -32,5 +34,6 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(Watchadsontape())
         registerExtractorAPI(Howblogs())
         registerExtractorAPI(Smoothpre())
+        registerExtractorAPI(Gofile())
     }
 }

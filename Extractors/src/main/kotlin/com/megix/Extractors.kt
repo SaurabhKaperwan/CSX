@@ -389,9 +389,13 @@ class HubCloudArt : HubCloud() {
     override val mainUrl: String = "https://hubcloud.art"
 }
 
+class HubCloudDad : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.dad"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.dad"
+    override val mainUrl: String = "https://hubcloud.bz"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -400,7 +404,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://hubcloud.dad")
+        val newUrl = url.replace(mainUrl, "https://hubcloud.bz")
         val doc = app.get(newUrl).document
         val link = if(url.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
@@ -519,9 +523,13 @@ class GDFlix2 : GDFlix() {
     override var mainUrl = "https://new.gdflix.dad"
 }
 
+class GDFlix5 : GDFlix() {
+    override var mainUrl = "https://new3.gdflix.dad"
+}
+
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new3.gdflix.dad"
+    override val mainUrl: String = "https://new4.gdflix.dad"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -530,9 +538,8 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://new3.gdflix.dad")
+        val newUrl = url.replace(mainUrl, "https://new4.gdflix.dad")
         val document = app.get(newUrl).document
-
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
 
         document.select("div.text-center a").amap {
@@ -555,7 +562,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
                 else {
-                    val trueurl=app.get("https://new3.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
+                    val trueurl=app.get("https://new4.gdflix.dad$link", timeout = 100L).document.selectFirst("a.btn-success")?.attr("href") ?:""
                     callback.invoke(
                         ExtractorLink(
                             "GDFlix[Fast Cloud]",
@@ -581,7 +588,7 @@ open class GDFlix : ExtractorApi() {
             }
             else if(text.contains("Index Links")) {
                 val link = it.attr("href")
-                val doc = app.get("https://new3.gdflix.dad$link").document
+                val doc = app.get("https://new4.gdflix.dad$link").document
                 doc.select("a.btn.btn-outline-info").amap {
                     val serverUrl = mainUrl + it.attr("href")
                     app.get(serverUrl).document.select("div.mb-4 > a").amap {
@@ -663,21 +670,85 @@ open class GDFlix : ExtractorApi() {
                     )
                 )
             }
-            else if(text.contains("CLOUD DOWNLOAD [FSL]")) {
+            else if(text.contains("CLOUD DOWNLOAD")) {
                 callback.invoke(
                     ExtractorLink(
-                        "GDFlix[FSL]",
-                        "GDFlix[FSL] $fileName",
+                        "GDFlix[CLOUD DOWNLOAD]",
+                        "GDFlix[CLOUD DOWNLOAD] $fileName",
                         it.attr("href"),
                         "",
                         getIndexQuality(fileName)
                     )
                 )
             }
+            else if(text.contains("GoFile")) {
+                app.get(it.attr("href")).document.select(".row .row a").amap {
+                    val link = it.attr("href")
+                    if(link.contains("gofile")) {
+                        Gofile().getUrl(link, "", subtitleCallback, callback)
+                    }
+                }
+            }
             else {
                 Log.d("Error", "No Server matched")
             }
         }
+    }
+}
+
+open class Gofile : ExtractorApi() {
+    override val name = "Gofile"
+    override val mainUrl = "https://gofile.io"
+    override val requiresReferer = false
+    private val mainApi = "https://api.gofile.io"
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        val res = app.get(url)
+        val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+        val genAccountRes = app.post("$mainApi/accounts").text
+        val jsonResp = JSONObject(genAccountRes)
+        val token = jsonResp.getJSONObject("data").getString("token") ?: return
+
+        val globalRes = app.get("$mainUrl/dist/js/global.js").text
+        val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+        val response = app.get("$mainApi/contents/$id?wt=$wt",
+            headers = mapOf(
+                "Authorization" to "Bearer $token",
+            )
+        ).text
+
+        val jsonResponse = JSONObject(response)
+        val data = jsonResponse.getJSONObject("data")
+        val children = data.getJSONObject("children")
+        val oId = children.keys().next()
+        val link = children.getJSONObject(oId).getString("link")
+        val fileName = children.getJSONObject(oId).getString("name")
+        if(link != null && fileName != null) {
+            callback.invoke(
+                ExtractorLink(
+                    "Gofile",
+                    "Gofile $fileName",
+                    link,
+                    "",
+                    getQuality(fileName),
+                    headers = mapOf(
+                        "Cookie" to "accountToken=$token",
+                    )
+                )
+            )
+        }
+    }
+
+    private fun getQuality(str: String?): Int {
+        return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
+            ?: Qualities.Unknown.value
     }
 }
 

@@ -170,7 +170,8 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                             hTag != null &&
                             (
                                 hTag.text().contains("HubCloud", ignoreCase = true) ||
-                                hTag.text().contains("gdflix", ignoreCase = true)
+                                hTag.text().contains("gdflix", ignoreCase = true) ||
+                                hTag.text().contains("gdlink", ignoreCase = true)
                             )
                         ) {
                             val aTag = hTag.selectFirst("a")
@@ -239,7 +240,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 val link = button.attr("href")
                 val doc = app.get(link).document
                 val innerButtons = doc.select("a").filter {
-                    it.attr("href").contains(Regex("hubcloud|gdflix", RegexOption.IGNORE_CASE))
+                    it.attr("href").contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
                 }
                 innerButtons.mapNotNull { innerButton ->
                     val source = innerButton.attr("href")
