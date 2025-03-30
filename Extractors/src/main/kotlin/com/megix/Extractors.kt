@@ -199,8 +199,8 @@ open class Driveleech : ExtractorApi() {
                         val resumeLink = resumeBot(href)
                         callback.invoke(
                             ExtractorLink(
-                                "$name ResumeBot(VLC)",
-                                "$name[ResumeBot(VLC)] $fileName",
+                                "$name ResumeBot",
+                                "$name[ResumeBot] $fileName",
                                 resumeLink,
                                 "",
                                 getIndexQuality(quality)
@@ -246,6 +246,7 @@ open class Driveleech : ExtractorApi() {
                     }
                 }
                 else -> {
+                    loadExtractor(href, "", subtitleCallback, callback)
                 }
             }
         }
