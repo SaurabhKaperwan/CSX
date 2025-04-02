@@ -43,6 +43,7 @@ import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
 import com.megix.CineStreamExtractors.invokeEmbed123
 import com.megix.CineStreamExtractors.invokeHdmovie2
+import com.megix.CineStreamExtractors.invokeHindmoviez
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -87,6 +88,7 @@ open class CineStreamProvider : MainAPI() {
         const val netflixAPI = "https://netfree.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val skymoviesAPI = "https://skymovieshd.beer"
+        const val hindMoviezAPI = "https://hindmoviez.co.in"
         const val moviesflixAPI = "https://themoviesflix.gift"
         const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
         const val hdmovie2API = "https://hdmovie2.travel"
@@ -508,6 +510,14 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
+                    invokeHindmoviez(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        callback,
+                    )
+                },
+                {
                     invokeVegamovies(
                         vegaMoviesAPI,
                         "VegaMovies",
@@ -706,6 +716,14 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeTorrentio(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback,
+                    )
+                },
+                {
+                    invokeHindmoviez(
                         res.id,
                         res.season,
                         res.episode,

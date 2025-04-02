@@ -219,6 +219,29 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+suspend fun getHindMoviezLinks(
+    url: String,
+    callback: (ExtractorLink) -> Unit
+) {
+    val doc = app.get(url).document
+    val link = doc.select("a.btn-info").attr("href")
+    val document = app.get(link).document
+    val name = document.select("div.container > h2").text()
+    val extracted = extractSpecs(name)
+    val extractedSpecs = buildExtractedTitle(extracted)
+    document.select("a.button").map {
+        callback.invoke(
+            ExtractorLink(
+                "HindMoviez",
+                "HindMoviez $extractedSpecs",
+                it.attr("href"),
+                "",
+                getIndexQuality(name),
+            )
+        )
+    }
+}
+
 suspend fun loadSourceNameExtractor(
     source: String,
     url: String,

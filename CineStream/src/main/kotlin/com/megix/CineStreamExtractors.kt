@@ -47,6 +47,35 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeHindmoviez(
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        app.get("$hindMoviezAPI/?s=$id").document.select("h2.entry-title > a").amap {
+            val doc = app.get(it.attr("href")).document
+            if(episode == null) {
+                doc.select("a.maxbutton").amap {
+                    val res = app.get(it.attr("href")).document
+                    val link = res.select("h3 > a").attr("href")
+                    getHindMoviezLinks(link, callback)
+                }
+            }
+            else {
+                doc.select("a.maxbutton").amap {
+                    val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
+                    if(text.contains("Season $season")) {
+                        val res = app.get(it.attr("href")).document
+                        res.select("h3 > a").getOrNull(episode-1)?.let { link ->
+                            getHindMoviezLinks(link.attr("href"), callback)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     suspend fun invokeDramacool(
         title: String,
         provider: String,
