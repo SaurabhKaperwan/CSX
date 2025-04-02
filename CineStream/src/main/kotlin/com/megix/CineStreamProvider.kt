@@ -17,18 +17,16 @@ import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
-// import com.megix.CineStreamExtractors.invokeFull4Movies
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeAnizone
 import com.megix.CineStreamExtractors.invokeMultiAutoembed
 import com.megix.CineStreamExtractors.invokeNonoAutoembed
-import com.megix.CineStreamExtractors.invokeVidbinge
+// import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invoke2embed
 // import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
-import com.megix.CineStreamExtractors.invokeVite
 import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
 import com.megix.CineStreamExtractors.invokeCinemaluxe
@@ -66,7 +64,6 @@ open class CineStreamProvider : MainAPI() {
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.wales"
         const val MoviesmodAPI = "https://moviesmod.gift"
-        // const val Full4MoviesAPI = "https://www.full4movies.delivery"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val W4UAPI = "https://world4ufree.fyi"
         const val WHVXSubsAPI = "https://subs.whvx.net"
@@ -82,18 +79,17 @@ open class CineStreamProvider : MainAPI() {
         // const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
-        const val viteAPI = "https://viet.autoembed.cc"
-        const val multimoviesAPI = "https://multimovies.world"
+        const val multimoviesAPI = "https://multimovies.press"
         const val cinemaluxeAPI = "https://luxecinema.in"
         const val bollyflixAPI = "https://bollyflix.phd"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val netflixAPI = "https://netfree.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
-        const val skymoviesAPI = "https://skymovieshd.farm"
+        const val skymoviesAPI = "https://skymovieshd.beer"
         const val moviesflixAPI = "https://themoviesflix.gift"
         const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
-        const val hdmovie2API = "https://hdmovie2.gs"
+        const val hdmovie2API = "https://hdmovie2.travel"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -552,14 +548,6 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                {
-                    invokeVite(
-                        res.imdb_id.toString(),
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        callback
-                    )
-                },
             )
         }
         else {
@@ -592,14 +580,6 @@ open class CineStreamProvider : MainAPI() {
                         res.season,
                         res.episode,
                         subtitleCallback,
-                        callback
-                    )
-                },
-                {
-                    invokeVite(
-                        res.id,
-                        res.season,
-                        res.episode,
                         callback
                     )
                 },
@@ -675,16 +655,6 @@ open class CineStreamProvider : MainAPI() {
                 //         year,
                 //         res.season,
                 //         res.episode,
-                //         callback
-                //     )
-                // },
-                // {
-                //     if(!res.isAnime) invokeFull4Movies(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         subtitleCallback,
                 //         callback
                 //     )
                 // },
@@ -781,18 +751,18 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                {
-                    invokeVidbinge(
-                        res.title,
-                        res.id,
-                        res.tmdbId,
-                        year,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
-                    )
-                },
+                // {
+                //     invokeVidbinge(
+                //         res.title,
+                //         res.id,
+                //         res.tmdbId,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )
+                // },
                 {
                     if(!res.isBollywood) invokeUhdmovies(
                         res.title,
