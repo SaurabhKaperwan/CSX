@@ -324,13 +324,15 @@ object CineStreamExtractors : CineStreamProvider() {
             .select("div.wp-content p a").attr("href")
         val type = if(episode != null) "(Combined)" else ""
         app.get(link).document.select("div > p > a").amap {
-            loadSourceNameExtractor(
-                "Hdmovie2$type",
-                it.attr("href"),
-                "",
-                subtitleCallback,
-                callback,
-            )
+            if(!it.text().contains("EP")) {
+                loadSourceNameExtractor(
+                    "Hdmovie2$type",
+                    it.attr("href"),
+                    "",
+                    subtitleCallback,
+                    callback,
+                )
+            }
         }
     }
 
@@ -495,10 +497,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = app.get(link).document
 
         if(season == null) {
-            document.select("a.maxbutton").amap {
+            document.select("div.ep-button-container > a").amap {
                 var link = it.attr("href")
                 link = cinemaluxeBypass(link)
-                val selector = if(link.contains("luxedrive")) "div > a" else "a.maxbutton"
+                val selector = if(link.contains("linkstore")) "div.ep-button-container > a" else "div.mirror-buttons a"
                 app.get(link).document.select(selector).amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",
@@ -511,11 +513,11 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
         else {
-            val season = document.select("a.maxbutton-5:matches((?i)(Season 0?$season))")
+            val season = document.select("div.ep-button-container > a:matches((?i)(Season 0?$season))")
             season.amap { div ->
                 var link = div.select("a").attr("href")
                 link = cinemaluxeBypass(link)
-                 app.get(link).document.select("""a.maxbutton:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
+                 app.get(link).document.select("""div.ep-button-container > a:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
                     loadSourceNameExtractor(
                         "Cinemaluxe",
                         it.attr("href"),

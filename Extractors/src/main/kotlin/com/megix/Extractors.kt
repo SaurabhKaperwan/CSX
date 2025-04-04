@@ -41,7 +41,12 @@ class Howblogs : ExtractorApi() {
     }
 }
 
-class Vifix: ExtractorApi() {
+class Ziddiflix: Vifix() {
+    override val name: String = "Ziddiflix"
+    override val mainUrl: String = "https://ziddiflix.com"
+    override val requiresReferer = false
+}
+open class Vifix: ExtractorApi() {
     override val name: String = "Vifix"
     override val mainUrl: String = "https://vifix.site"
     override val requiresReferer = false
@@ -60,17 +65,9 @@ class Vifix: ExtractorApi() {
     }
 }
 
-class Luxdrive2 : Luxdrive() {
-    override val mainUrl = "https://files.luxedrive.space"
-}
-
-class Luxdrive3 : Luxdrive() {
-    override val mainUrl = "https://new.luxedrive.online"
-}
-
 open class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://download.luxedrive.space"
+    override val mainUrl: String = "https://new.luxedrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -513,7 +510,7 @@ class GDLink : GDFlix() {
 }
 
 class GDFlix3 : GDFlix() {
-    override var mainUrl = "https://new1.gdflix.dad"
+    override var mainUrl = "https://new4.gdflix.dad"
 }
 
 class GDFlix4 : GDFlix() {
@@ -530,7 +527,7 @@ class GDFlix5 : GDFlix() {
 
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new4.gdflix.dad"
+    override val mainUrl: String = "https://new5.gdflix.dad"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -539,7 +536,7 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://new4.gdflix.dad")
+        val newUrl = url.replace(mainUrl, "https://new5.gdflix.dad")
         val document = app.get(newUrl).document
         val fileName = document.selectFirst("ul > li.list-group-item")?.text()?.substringAfter("Name : ") ?: ""
 
@@ -573,7 +570,7 @@ open class GDFlix : ExtractorApi() {
             else if(text.contains("Index Links")) {
                 try {
                     val link = it.attr("href")
-                    app.get("https://new4.gdflix.dad$link")
+                    app.get("https://new5.gdflix.dad$link")
                     .document.select("a.btn.btn-outline-info").amap {
                         val serverUrl = mainUrl + it.attr("href")
                         app.get(serverUrl).document.select("div.mb-4 > a").amap {
