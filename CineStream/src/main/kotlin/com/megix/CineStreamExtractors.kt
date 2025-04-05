@@ -34,15 +34,13 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = parseJson<TvStreamsResponse>(json)
         data.streams.forEach {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     it.name ?: it.title ?: "TV",
                     it.description ?: it.title ?: "TV",
                     it.url,
-                    "",
-                    Qualities.Unknown.value,
-                    INFER_TYPE,
-                    headers = it.behaviorHints.proxyHeaders.request ?: mapOf(),
-                )
+                ) {
+                    this.headers = it.behaviorHints.proxyHeaders.request ?: mapOf()
+                }
             )
         }
     }
@@ -92,13 +90,10 @@ object CineStreamExtractors : CineStreamProvider() {
         data.streams.forEach {
 
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     it.title,
                     it.title,
                     it.url,
-                    "",
-                    Qualities.Unknown.value,
-                    INFER_TYPE
                 )
             )
 
@@ -131,14 +126,13 @@ object CineStreamExtractors : CineStreamProvider() {
             val name = it.text()
             val url = it.attr("href")
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "TokyoInsider",
                     "[TokyoInsider] - $name",
                     url,
-                    referer = "",
-                    getIndexQuality(name),
-                    INFER_TYPE,
-                )
+                ) {
+                    this.quality = getIndexQuality(name)
+                }
             )
         }
     }
@@ -203,15 +197,15 @@ object CineStreamExtractors : CineStreamProvider() {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
                     "$netflixAPI/${it.file}",
-                    "$netflixAPI/",
-                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
-                    INFER_TYPE,
-                    headers = mapOf("Cookie" to "hd=on")
-                )
+                ) {
+                    this.referer = "$netflixAPI/"
+                    this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
+                    this.headers = mapOf("Cookie" to "hd=on")
+                }
             )
         }
     }
@@ -273,15 +267,15 @@ object CineStreamExtractors : CineStreamProvider() {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "Netflix",
                     "Netflix",
                     "$netflixAPI/${it.file}",
-                    "$netflixAPI/",
-                    getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in")),
-                    INFER_TYPE,
-                    headers = mapOf("Cookie" to "hd=on")
-                )
+                ) {
+                    this.referer = "$netflixAPI/"
+                    this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
+                    this.headers = mapOf("Cookie" to "hd=on")
+                }
             )
         }
     }
@@ -299,15 +293,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.playlist.map {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "Embed123",
                     "Embed123",
                     it.file,
-                    "",
-                    Qualities.Unknown.value,
-                    isM3u8 = if(it.type == "hls") true else false,
-                    headers = mapOf("Origin" to "https://play2.123embed.net")
-                )
+                    type = if(it.type == "hls") ExtractorLinkType.M3U8 else INFER_TYPE,
+                ) {
+                    this.headers = mapOf("Origin" to "https://play2.123embed.net")
+                }
             )
         }
     }
@@ -320,18 +313,35 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
-        val link = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
-            .select("div.wp-content p a").attr("href")
-        val type = if(episode != null) "(Combined)" else ""
-        app.get(link).document.select("div > p > a").amap {
-            if(!it.text().contains("EP")) {
-                loadSourceNameExtractor(
-                    "Hdmovie2$type",
-                    it.attr("href"),
-                    "",
-                    subtitleCallback,
-                    callback,
-                )
+        val document = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
+        document.select("div.wp-content p a").amap {
+            if(episode != null && it.text().contains("EP")) {
+                if(
+                    it.text().contains("EP$episode")||
+                    it.text().contains("EP0$episode")
+                ) {
+                    app.get(it.attr("href")).document.select("div > p > a").amap {
+                        loadSourceNameExtractor(
+                            "Hdmovie2",
+                            it.attr("href"),
+                            "",
+                            subtitleCallback,
+                            callback,
+                        )
+                    }
+                }
+            }
+            else {
+                val type = if(episode != null) "(Combined)" else ""
+                app.get(it.attr("href")).document.select("div > p > a").amap {
+                    loadSourceNameExtractor(
+                        "Hdmovie2$type",
+                        it.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback,
+                    )
+                }
             }
         }
     }
@@ -471,14 +481,14 @@ object CineStreamExtractors : CineStreamProvider() {
                     .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
             val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "Torrentio",
                     stream.title ?: stream.name ?: "",
                     magnet,
-                    "",
-                    getIndexQuality(stream.name),
-                    ExtractorLinkType.MAGNET,
-                )
+                    type = ExtractorLinkType.MAGNET,
+                ) {
+                    this.quality = getIndexQuality(stream.name)
+                }
             )
         }
     }
@@ -573,13 +583,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = tryParseJson<StreamifyResponse>(json) ?: return
         data.streams.forEach {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     it.name,
                     "[${it.name}] ${it.title}",
                     it.url,
-                    "",
-                    Qualities.Unknown.value,
-                    INFER_TYPE,
                 )
             )
         }
@@ -798,13 +805,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = parseJson<TwoEmbedQuery>(json)
         data.stream.forEach {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "2embed[${it.type}]",
                     "2embed[${it.type}]",
                     it.playlist,
-                    referer = "",
-                    quality = Qualities.Unknown.value,
-                    INFER_TYPE,
                 )
             )
         }
@@ -932,13 +936,11 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = tryParseJson<MultiAutoembedResponse>(json) ?: return
         data.audioTracks.forEach {
             callback.invoke(
-                ExtractorLink(
+                newExtractorLink(
                     "MultiAutoembed[${it.label}]",
                     "MultiAutoembed[${it.label}]",
                     it.file,
-                    "",
-                    Qualities.Unknown.value,
-                    isM3u8 = true,
+                    type = ExtractorLinkType.M3U8,
                 )
             )
         }
@@ -965,12 +967,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val data = tryParseJson<NonoAutoembedResponse>(json) ?: return
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 "NonoAutoembed",
                 "NonoAutoembed",
                 data.videoSource,
-                "",
-                Qualities.Unknown.value,
             )
         )
         data.subtitles.forEach {
@@ -1330,14 +1330,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val source = document.select("media-player").attr("src")
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 "Anizone[Multi Lang]",
                 "Anizone[Multi Lang]",
                 source,
-                "",
-                Qualities.P1080.value,
-                isM3u8 = true,
-            )
+                type = ExtractorLinkType.M3U8,
+            ) {
+                this.quality = Qualities.P1080.value
+            }
         )
     }
 
@@ -1369,15 +1369,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
             epData.sources.map {
                 callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                         "Flixhq ${server.uppercase()}",
                         "Flixhq ${server.uppercase()}",
                         it.url,
-                        referer,
-                        it.quality.toIntOrNull() ?: Qualities.Unknown.value,
-                        isM3u8 = it.isM3U8
-
-                    )
+                        type = if(it.isM3U8) ExtractorLinkType.M3U8 else INFER_TYPE,
+                    ) {
+                        this.referer = referer
+                        this.quality = it.quality.toIntOrNull() ?: Qualities.Unknown.value
+                    }
                 )
             }
 

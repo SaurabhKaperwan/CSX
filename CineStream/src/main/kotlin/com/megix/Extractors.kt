@@ -74,13 +74,11 @@ class Kwik : ExtractorApi() {
         val unpacked = getAndUnpack(script ?: return)
         val m3u8 =Regex("source=\\s*'(.*?m3u8.*?)'").find(unpacked)?.groupValues?.getOrNull(1) ?:""
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 name,
                 name,
                 m3u8,
-                "",
-                getQualityFromName(""),
-                INFER_TYPE
+                type = ExtractorLinkType.M3U8
             )
         )
     }
@@ -179,13 +177,10 @@ class Pahe : ExtractorApi() {
         content?.close()
 
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 name,
                 name,
                 location,
-                "",
-                Qualities.Unknown.value,
-                INFER_TYPE
             )
         )
     }

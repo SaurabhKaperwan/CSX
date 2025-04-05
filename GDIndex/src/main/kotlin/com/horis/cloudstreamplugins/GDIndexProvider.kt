@@ -109,13 +109,11 @@ class GDIndexProvider : MainAPI() {
     ): Boolean {
         val file = parseJson<GDFile>(data)
         val path = file.path
-        callback(
-            ExtractorLink(
+        callback.invoke(
+            newExtractorLink(
                 name,
                 name,
                 path,
-                "",
-                Qualities.Unknown.value,
             )
         )
         return true

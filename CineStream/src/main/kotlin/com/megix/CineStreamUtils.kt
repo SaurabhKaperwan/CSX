@@ -12,6 +12,10 @@ import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -183,7 +187,7 @@ suspend fun extractMdrive(url: String): List<String> {
         }}
 }
 
-fun loadNameExtractor(
+suspend fun loadNameExtractor(
     name: String? = null,
     url: String,
     referer: String? = null,
@@ -191,16 +195,17 @@ fun loadNameExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int,
 ) {
-        callback.invoke(
-            ExtractorLink(
-                name ?: "",
-                name ?: "",
-                url,
-                referer ?: "",
-                quality,
-                if (url.contains("m3u8"))ExtractorLinkType.M3U8 else INFER_TYPE,
-            )
-        )
+    callback.invoke(
+        newExtractorLink(
+            name ?: "",
+            name ?: "",
+            url,
+            type = if (url.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+        ) {
+            this.referer = referer ?: ""
+            this.quality = quality
+        }
+    )
 }
 
 fun getEpisodeSlug(
@@ -231,13 +236,13 @@ suspend fun getHindMoviezLinks(
     val extractedSpecs = buildExtractedTitle(extracted)
     document.select("a.button").map {
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 "HindMoviez",
                 "HindMoviez $extractedSpecs",
                 it.attr("href"),
-                "",
-                getIndexQuality(name),
-            )
+            ) {
+                this.quality = getIndexQuality(name)
+            }
         )
     }
 }
@@ -250,47 +255,55 @@ suspend fun loadSourceNameExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
+    val scope = CoroutineScope(Dispatchers.Default + Job())
+
     loadExtractor(url, referer, subtitleCallback) { link ->
-        if(!link.source.contains("Download")) {
-            val extracted = extractSpecs(link.name)
-            val extractedSpecs = buildExtractedTitle(extracted)
-            callback.invoke(
-                ExtractorLink(
+        if (!link.source.contains("Download")) {
+            scope.launch {
+                val extracted = extractSpecs(link.name)
+                val extractedSpecs = buildExtractedTitle(extracted)
+                val newLink = newExtractorLink(
                     "$source[${link.source}]",
                     "$source[${link.source}] $extractedSpecs",
                     link.url,
-                    link.referer,
-                    quality ?: link.quality,
-                    link.type,
-                    link.headers,
-                    link.extractorData
-                )
-            )
+                    type = link.type
+                ) {
+                    this.referer = link.referer
+                    this.quality = quality ?: link.quality
+                    this.headers = link.headers
+                    this.extractorData = link.extractorData
+                }
+                callback.invoke(newLink)
+            }
         }
     }
 }
 
 suspend fun loadCustomTagExtractor(
-        tag: String? = null,
-        url: String,
-        referer: String? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-        quality: Int? = null,
+    tag: String? = null,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int? = null,
 ) {
+    val scope = CoroutineScope(Dispatchers.Default + Job())
+
     loadExtractor(url, referer, subtitleCallback) { link ->
-        callback.invoke(
-            ExtractorLink(
+        scope.launch {
+            val newLink = newExtractorLink(
                 link.source,
                 "${link.name} $tag",
                 link.url,
-                link.referer,
-                quality ?: link.quality,
-                link.type,
-                link.headers,
-                link.extractorData
-            )
-        )
+                link.type
+            ) {
+                this.quality = quality ?: link.quality
+                this.referer = link.referer
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
+            callback.invoke(newLink)
+        }
     }
 }
 
@@ -302,22 +315,24 @@ suspend fun loadCustomExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
+    // Define a scope for the coroutine
+    val scope = CoroutineScope(Dispatchers.Default + Job())
+
     loadExtractor(url, referer, subtitleCallback) { link ->
-        callback.invoke(
-            ExtractorLink(
+        scope.launch {
+            val newLink = newExtractorLink(
                 name ?: link.source,
                 name ?: link.name,
                 link.url,
-                link.referer,
-                when {
-                    link.name == "VidSrc" -> Qualities.P1080.value
-                    else -> quality ?: link.quality
-                },
-                link.type,
-                link.headers,
-                link.extractorData
-            )
-        )
+                type = link.type
+            ) {
+                this.quality = quality ?: link.quality
+                this.referer = link.referer
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
+            callback.invoke(newLink)
+        }
     }
 }
 

@@ -106,14 +106,13 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
         val href = lastElement?.attr("href") ?: ""
 
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 this.name,
                 this.name,
                 href,
-                referer = href,
-                quality = Qualities.Unknown.value,
-                //headers = mapOf("Range" to "bytes=0-"),
-            )
+            ){
+                this.referer = href
+            }
         )
 
         return true

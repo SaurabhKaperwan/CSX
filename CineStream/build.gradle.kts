@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 106
+version = 107
 
 android {
     defaultConfig {
@@ -13,7 +13,7 @@ android {
 }
 
 cloudstream {
-    //language = "en"
+    // language = "en"
     description = "One stop solution for Movies, Series, Anime, Livetv, AsianDrama and Torrents"
     authors = listOf("megix")
     status = 1
