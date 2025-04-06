@@ -3,6 +3,20 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//TMDB to mal
+data class AniMedia(
+    @JsonProperty("id") var id: Int? = null,
+    @JsonProperty("idMal") var idMal: Int? = null
+)
+
+data class AniPage(@JsonProperty("media") var media: java.util.ArrayList<AniMedia> = arrayListOf())
+
+data class AniData(@JsonProperty("Page") var Page: AniPage? = AniPage())
+
+data class AniSearch(@JsonProperty("data") var data: AniData? = AniData())
+
+data class AniIds(var id: Int? = null, var idMal: Int? = null)
+
 //Nonoautoembed
 data class NonoAutoembedResponse (
   var videoSource : String,

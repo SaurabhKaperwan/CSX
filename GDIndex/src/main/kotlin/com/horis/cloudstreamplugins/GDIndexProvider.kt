@@ -16,7 +16,7 @@ class GDIndexProvider : MainAPI() {
         TvType.TvSeries,
     )
     override var lang = "en"
-    override var mainUrl = "https://a.datadiff.us.kg"
+    override var mainUrl = "https://a.111477.xyz"
     override var name = "GDIndex"
 
     override val hasMainPage = true

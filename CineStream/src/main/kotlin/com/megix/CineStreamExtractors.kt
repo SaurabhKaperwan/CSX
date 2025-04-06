@@ -366,7 +366,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         callback,
                     )
                 }
-                else if(episode != null && text.contains("Episode")) {
+                else if(text.contains("Episode")) {
                     if(text.contains("Episode $episode") || text.contains("Episode 0$episode")) {
                         loadSourceNameExtractor(
                             "Skymovies",
@@ -642,6 +642,7 @@ object CineStreamExtractors : CineStreamProvider() {
         aniId: Int? = null,
         episode: Int? = null,
         year: Int? = null,
+        origin: String,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
@@ -668,6 +669,31 @@ object CineStreamExtractors : CineStreamProvider() {
                         invokeAnitaku(url, episode, subtitleCallback, callback)
                     }
                 }
+            },
+            {
+                if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
+                    zorotitle,
+                    episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                if(origin == "imdb" && zorotitle != null) invokeAllanime(
+                    zorotitle,
+                    year,
+                    episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                if(origin == "imdb" && zorotitle != null) invokeAnizone(
+                    zorotitle,
+                    episode,
+                    subtitleCallback,
+                    callback
+                )
             },
         )
     }
@@ -1469,7 +1495,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
                 val eplinks = app.get(epData, referer = privatereferer)
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
-                eplinks?.apmap { source ->
+                eplinks?.amap { source ->
                     safeApiCall {
                         val sourceUrl = source.sourceUrl
                         val downloadUrl = source.downloads?.downloadUrl ?: ""

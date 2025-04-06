@@ -12,6 +12,9 @@ import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import com.lagradost.nicehttp.RequestBodyTypes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -387,3 +390,75 @@ suspend fun bypassHrefli(url: String): String? {
     return fixUrl(path, getBaseUrl(driveUrl))
 }
 
+
+suspend fun convertTmdbToAnimeId(
+    title: String?,
+    year: Int?,
+    airedDate: String?,
+    type: TvType
+): AniIds {
+    val sAiredDate = airedDate?.split("-")
+    val airedYear = sAiredDate?.firstOrNull()?.toIntOrNull()
+    val airedSeason = getSeason(sAiredDate?.get(1)?.toIntOrNull())
+
+    return if (type == TvType.AnimeMovie) {
+        tmdbToAnimeId(title, year, "", type)
+    } else {
+        tmdbToAnimeId(title, airedYear, airedSeason, type)
+    }
+}
+
+suspend fun tmdbToAnimeId(title: String?, year: Int?, season: String?, type: TvType): AniIds {
+    val anilistAPI = "https://graphql.anilist.co"
+    val query = """
+        query (
+          ${'$'}page: Int = 1
+          ${'$'}search: String
+          ${'$'}sort: [MediaSort] = [POPULARITY_DESC, SCORE_DESC]
+          ${'$'}type: MediaType
+          ${'$'}season: MediaSeason
+          ${'$'}seasonYear: Int
+          ${'$'}format: [MediaFormat]
+        ) {
+          Page(page: ${'$'}page, perPage: 20) {
+            media(
+              search: ${'$'}search
+              sort: ${'$'}sort
+              type: ${'$'}type
+              season: ${'$'}season
+              seasonYear: ${'$'}seasonYear
+              format_in: ${'$'}format
+            ) {
+              id
+              idMal
+            }
+          }
+        }
+    """.trimIndent().trim()
+
+    val variables = mapOf(
+        "search" to title,
+        "sort" to "SEARCH_MATCH",
+        "type" to "ANIME",
+        "season" to season?.uppercase(),
+        "seasonYear" to year,
+        "format" to listOf(if (type == TvType.AnimeMovie) "MOVIE" else "TV", "ONA")
+    ).filterValues { value -> value != null && value.toString().isNotEmpty() }
+    val data = mapOf(
+        "query" to query,
+        "variables" to variables
+    ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
+    val res = app.post(anilistAPI, requestBody = data)
+        .parsedSafe<AniSearch>()?.data?.Page?.media?.firstOrNull()
+    return AniIds(res?.id, res?.idMal)
+}
+
+
+fun getSeason(month: Int?): String? {
+    val seasons = arrayOf(
+        "Winter", "Winter", "Spring", "Spring", "Spring", "Summer",
+        "Summer", "Summer", "Fall", "Fall", "Fall", "Winter"
+    )
+    if (month == null) return null
+    return seasons[month - 1]
+}
