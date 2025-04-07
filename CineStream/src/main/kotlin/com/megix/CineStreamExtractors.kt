@@ -835,7 +835,12 @@ object CineStreamExtractors : CineStreamProvider() {
                     "2embed[${it.type}]",
                     "2embed[${it.type}]",
                     it.playlist,
-                )
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.headers = mapOf(
+                        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                    )
+                }
             )
         }
     }
@@ -969,6 +974,28 @@ object CineStreamExtractors : CineStreamProvider() {
                     type = ExtractorLinkType.M3U8,
                 )
             )
+        }
+    }
+
+    suspend fun invokeMostraguarda(
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season == null) "$MostraguardaAPI/movie/$id" else "$MostraguardaAPI/serie/$id/$season/$episode"
+        val doc = app.get(url).document
+        doc.select("ul > li").amap {
+            if(it.text().contains("supervideo")) {
+                val source = "https:" + it.attr("data-link")
+                loadExtractor(
+                    source,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
         }
     }
 

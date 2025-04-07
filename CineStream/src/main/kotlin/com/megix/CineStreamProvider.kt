@@ -44,6 +44,7 @@ import com.megix.CineStreamExtractors.invokeMoviesflix
 import com.megix.CineStreamExtractors.invokeEmbed123
 import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
+import com.megix.CineStreamExtractors.invokeMostraguarda
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -61,7 +62,7 @@ open class CineStreamProvider : MainAPI() {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.band"
         const val rogMoviesAPI = "https://rogmovies.lol"
-        const val MovieDrive_API = "https://moviesdrive.guru"
+        const val MovieDrive_API = "https://moviesdrive.xyz"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.loan"
         const val MoviesmodAPI = "https://moviesmod.gift"
@@ -70,6 +71,7 @@ open class CineStreamProvider : MainAPI() {
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val MultiembedAPI = "https://hin.autoembed.cc"
+        const val MostraguardaAPI = "https://mostraguarda.stream"
         const val NonoembedAPI = "https://nono.autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
         const val uhdmoviesAPI = "https://uhdmovies.wales"
@@ -91,7 +93,7 @@ open class CineStreamProvider : MainAPI() {
         const val hindMoviezAPI = "https://hindmoviez.co.in"
         const val moviesflixAPI = "https://themoviesflix.gift"
         const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
-        const val hdmovie2API = "https://hdmovie2.travel"
+        const val hdmovie2API = "https://hdmovie2.contact"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -803,6 +805,15 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeMultiAutoembed(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeMostraguarda(
                         res.id,
                         res.season,
                         res.episode,

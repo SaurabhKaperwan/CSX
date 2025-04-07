@@ -115,7 +115,10 @@ class GDIndexProvider : MainAPI() {
                 name,
                 name,
                 path,
-            )
+                INFER_TYPE
+            ) {
+                this.referer = "$mainUrl/"
+            }
         )
         return true
     }
@@ -141,19 +144,6 @@ class GDIndexProvider : MainAPI() {
             )
         }
         return files
-    }
-
-    @Suppress("ObjectLiteralToLambda")
-    override fun getVideoInterceptor(extractorLink: ExtractorLink): Interceptor {
-        return object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                val request = chain.request()
-                    .newBuilder()
-                    .removeHeader("referer")
-                    .build()
-                return chain.proceed(request)
-            }
-        }
     }
 
     private fun error(msg: String = "加载数据失败"): Nothing {
