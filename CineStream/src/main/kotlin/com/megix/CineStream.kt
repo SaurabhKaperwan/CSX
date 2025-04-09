@@ -19,5 +19,6 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Pahe())
         registerExtractorAPI(Smoothpre())
         registerExtractorAPI(Ryderjet())
+        registerExtractorAPI(Gofile())
     }
 }

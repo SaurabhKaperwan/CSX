@@ -12,6 +12,9 @@ import java.net.URLEncoder
 import okhttp3.FormBody
 import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.json.JSONArray
+import org.json.JSONObject
 import com.lagradost.cloudstream3.argamap
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.mvvm.safeApiCall
@@ -385,6 +388,128 @@ object CineStreamExtractors : CineStreamProvider() {
                         subtitleCallback,
                         callback,
                     )
+                }
+            }
+        }
+    }
+
+    fun decodeHtml(encodedArray: Array<String>): String {
+        val joined = encodedArray.joinToString("")
+
+        val unescaped = joined
+            .replace("\\\"", "\"")
+            .replace("\\'", "'")
+
+        val cleaned = unescaped
+            .replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace("\\r", "\r")
+
+        val decoded = cleaned
+            .replace("&quot;", "\"")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+
+        return decoded
+    }
+
+    fun decodeMeta(document: Document): Document? {
+        val scriptContent = document.selectFirst("script:containsData(decodeURIComponent)")?.data().toString()
+        val splitByEqual = scriptContent.split(" = ")
+        if (splitByEqual.size > 1) {
+            val partAfterEqual = splitByEqual[1]
+            val trimmed = partAfterEqual.split("protomovies")[0].trim()
+            val sliced = if (trimmed.isNotEmpty()) trimmed.dropLast(1) else ""
+            val jsonArray = JSONArray(sliced)
+            val htmlString = decodeHtml(Array(jsonArray.length()) { i -> jsonArray.getString(i) })
+            val decodedDoc = Jsoup.parse(htmlString)
+            return decodedDoc
+        }
+        return null
+    }
+
+
+
+    suspend fun invokeProtonmovies(
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+            "Referer" to protonmoviesAPI
+        )
+        val url = "$protonmoviesAPI/search/$id"
+        val text = app.get(url, headers = headers).text
+        val regex = Regex("""\[(?=.*?\"<div class\")(.*?)\]""")
+        val htmlArray = regex.findAll(text).map { it.value }.toList()
+        if (htmlArray.isNotEmpty()) {
+            val lastJsonArray = JSONArray(htmlArray.last())
+            val html = decodeHtml(Array(lastJsonArray.length()) { i -> lastJsonArray.getString(i) })
+            val doc = Jsoup.parse(html)
+            val link = doc.select(".col.mb-4 h5 a").attr("href")
+            val document = app.get("${protonmoviesAPI}${link}", headers = headers).document
+            val decodedDoc = decodeMeta(document)
+            if (decodedDoc != null) {
+                if(episode == null) {
+                    getProtonStream(decodedDoc, subtitleCallback, callback)
+                } else{
+                    val episodeDiv = decodedDoc.select("div.episode-block:has(div.episode-number:matchesOwn(S${season}E${episode}))").firstOrNull()
+                    episodeDiv?.selectFirst("a")?.attr("href")?.let {
+                        val source = protonmoviesAPI + it
+                        val doc2 = app.get(source, headers = headers).document
+
+                        val decodedDoc = decodeMeta(doc2)
+                        if(decodedDoc != null) {
+                            getProtonStream(decodedDoc, subtitleCallback, callback)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun getProtonStream(
+        doc: Document,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        doc.select("tr")
+            .filter { it.text().contains("1080p") || it.text().contains("720p") || it.text().contains("480p") }
+            .amap { tr ->
+            val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
+
+            if(id != null) {
+                val requestBody = FormBody.Builder()
+                    .add("downloadid", id)
+                    .add("token", "ok")
+                    .build()
+                val postHeaders = mapOf(
+                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                    "Referer" to protonmoviesAPI,
+                    "Content-Type" to "multipart/form-data",
+                )
+                val idData = app.post(
+                    "$protonmoviesAPI/ppd.php",
+                    headers = postHeaders,
+                    requestBody = requestBody
+                ).text
+
+                val headers = mapOf(
+                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                    "Referer" to protonmoviesAPI
+                )
+
+                val idRes = app.post(
+                    "$protonmoviesAPI/tmp/$idData",
+                    headers = headers
+                ).text
+
+                JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+                    Gofile().getUrl(it, "", subtitleCallback, callback)
                 }
             }
         }
