@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -461,4 +462,50 @@ fun getSeason(month: Int?): String? {
     )
     if (month == null) return null
     return seasons[month - 1]
+}
+
+suspend fun gofileExtractor(
+    source: String,
+    url: String,
+    referer: String?,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+) {
+    val mainUrl = "https://gofile.io"
+    val mainApi = "https://api.gofile.io"
+    val res = app.get(url)
+    val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+    val genAccountRes = app.post("$mainApi/accounts").text
+    val jsonResp = JSONObject(genAccountRes)
+    val token = jsonResp.getJSONObject("data").getString("token") ?: return
+
+    val globalRes = app.get("$mainUrl/dist/js/global.js").text
+    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+    val response = app.get("$mainApi/contents/$id?wt=$wt",
+        headers = mapOf(
+            "Authorization" to "Bearer $token",
+        )
+    ).text
+
+    val jsonResponse = JSONObject(response)
+    val data = jsonResponse.getJSONObject("data")
+    val children = data.getJSONObject("children")
+    val oId = children.keys().next()
+    val link = children.getJSONObject(oId).getString("link")
+    val fileName = children.getJSONObject(oId).getString("name")
+    if(link != null && fileName != null) {
+        callback.invoke(
+            newExtractorLink(
+                "$source[Gofile]",
+                "$source[Gofile-$fileName]",
+                link,
+            ) {
+                this.quality = getIndexQuality(fileName)
+                this.headers = mapOf(
+                    "Cookie" to "accountToken=$token"
+                )
+            }
+        )
+    }
 }

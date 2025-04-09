@@ -41,7 +41,7 @@ import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
-import com.megix.CineStreamExtractors.invokeEmbed123
+// import com.megix.CineStreamExtractors.invokeEmbed123
 import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
 import com.megix.CineStreamExtractors.invokeMostraguarda
@@ -80,7 +80,7 @@ open class CineStreamProvider : MainAPI() {
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
-        const val embed123API = "https://play2.123embed.net/server/3?path="
+        // const val embed123API = "https://play2.123embed.net/server/3?path="
         // const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
@@ -850,14 +850,14 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeEmbed123(
-                        res.id,
-                        res.season,
-                        res.episode,
-                        callback
-                    )
-                },
+                // {
+                //     invokeEmbed123(
+                //         res.id,
+                //         res.season,
+                //         res.episode,
+                //         callback
+                //     )
+                // },
                 {
                     if(!res.isBollywood || !res.isAnime) invokeMoviesflix(
                         "Moviesflix",
