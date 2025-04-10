@@ -151,7 +151,7 @@ open class CineStreamProvider : MainAPI() {
             else 20
         val skip = (page - 1) * skipNumber
         val newRequestData = request.data.replace("###", skip.toString())
-        val json = app.get("$newRequestData.json", timeout = 15000L).text
+        val json = app.get("$newRequestData.json").text
         val movies = tryParseJson<Home>(json) ?: return newHomePageResponse(
             list = HomePageList(
                 name = request.name,
@@ -277,7 +277,7 @@ open class CineStreamProvider : MainAPI() {
         val malId = if(externalIds != null) externalIds.myanimelist else null
         val anilistId = if(externalIds != null) externalIds.anilist else null
         id = if(isKitsu) id.replace(":", "%3A") else id
-        val json = app.get("$meta_url/meta/$tvtype/$id.json", timeout = 15000L).text
+        val json = app.get("$meta_url/meta/$tvtype/$id.json").text
         val movieData = tryParseJson<ResponseData>(json)
         val title = movieData?.meta?.name.toString()
         val posterUrl = movieData ?.meta?.poster.toString()
@@ -1040,7 +1040,7 @@ open class CineStreamProvider : MainAPI() {
     ) : SearchResult? {
         for(url in urls) {
             try {
-                val json = app.get(url, timeout = 15000L).text
+                val json = app.get(url).text
                 val movieJson = tryParseJson<SearchResult>(json)
                 if(movieJson != null) {
                     return movieJson
