@@ -1,6 +1,7 @@
 package com.horis.cloudstreamplugins
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
@@ -15,7 +16,7 @@ class GDIndexProvider : MainAPI() {
         TvType.TvSeries,
     )
     override var lang = "en"
-    override var mainUrl = "https://a.datadiff.us.kg"
+    override var mainUrl = "https://a.111477.xyz"
     override var name = "GDIndex"
 
     override val hasMainPage = true
@@ -109,14 +110,15 @@ class GDIndexProvider : MainAPI() {
     ): Boolean {
         val file = parseJson<GDFile>(data)
         val path = file.path
-        callback(
-            ExtractorLink(
+        callback.invoke(
+            newExtractorLink(
                 name,
                 name,
                 path,
-                "",
-                Qualities.Unknown.value,
-            )
+                INFER_TYPE
+            ) {
+                this.referer = "$mainUrl/"
+            }
         )
         return true
     }
@@ -142,19 +144,6 @@ class GDIndexProvider : MainAPI() {
             )
         }
         return files
-    }
-
-    @Suppress("ObjectLiteralToLambda")
-    override fun getVideoInterceptor(extractorLink: ExtractorLink): Interceptor {
-        return object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                val request = chain.request()
-                    .newBuilder()
-                    .removeHeader("referer")
-                    .build()
-                return chain.proceed(request)
-            }
-        }
     }
 
     private fun error(msg: String = "加载数据失败"): Nothing {

@@ -44,11 +44,11 @@ jobs:
       - name: Access Secrets
         env:
           CONSUMET_API: ${{ secrets.CONSUMET_API }}
-          WHVX_TOKEN: ${{ secrets.WHVX_TOKEN }}
+          BYPASS_API: ${{ secrets.BYPASS_API }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
-          echo WHVX_TOKEN=$WHVX_TOKEN >> local.properties
+          echo BYPASS_API=$BYPASS_API >> local.properties
 
       - name: Build Plugins
         run: |

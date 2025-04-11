@@ -1,4 +1,15 @@
-version = 19
+import org.jetbrains.kotlin.konan.properties.Properties
+
+version = 25
+
+android {
+    defaultConfig {
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        android.buildFeatures.buildConfig=true
+        buildConfigField("String", "BYPASS_API", "\"${properties.getProperty("BYPASS_API")}\"")
+    }
+}
 
 cloudstream {
     language = "hi"
@@ -20,5 +31,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "http://luxecinema.fans/wp-content/uploads/2023/12/fresh-logo-dark-theme-.jpg"
+    iconUrl = "https://luxecinema.in/wp-content/uploads/2025/03/Logo_ergerg1.png"
 }

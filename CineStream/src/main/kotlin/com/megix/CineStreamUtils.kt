@@ -10,6 +10,16 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.api.Log
 import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import com.lagradost.nicehttp.RequestBodyTypes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -112,7 +122,7 @@ suspend fun NFBypass(mainUrl : String): String {
     if(NfCookie != "") {
         return NfCookie
     }
-    val homePageDocument = app.get("${mainUrl}/home").document
+    val homePageDocument = app.get("${mainUrl}/mobile/home").document
     val addHash          = homePageDocument.select("body").attr("data-addhash")
     val time             = homePageDocument.select("body").attr("data-time")
 
@@ -131,7 +141,7 @@ suspend fun NFBypass(mainUrl : String): String {
         delay(1000)
         tries++
         val requestBody = FormBody.Builder().add("verify", addHash).build()
-        verifyResponse  = app.post("${mainUrl}/verify2.php", requestBody = requestBody)
+        verifyResponse  = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
         verifyCheck     = verifyResponse.text
     } while (!verifyCheck.contains("\"statusup\":\"All Done\"") || tries < 7)
 
@@ -139,9 +149,16 @@ suspend fun NFBypass(mainUrl : String): String {
 }
 
 suspend fun cinemaluxeBypass(url: String): String {
-    val document = app.get(url, allowRedirects = true).document.toString()
-    val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-    return base64Decode(encodeUrl)
+    val jsonBody = """{"url":"$url"}"""
+    val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+    val json = app.post(
+        "${BuildConfig.BYPASS_API}/cinemaluxe",
+        headers = mapOf(
+            "Content-Type" to "application/json",
+        ),
+        requestBody = requestBody
+    ).text
+    return parseJson<CinemaluxeRedirectUrl>(json).redirectUrl
 }
 
 fun getFirstCharacterOrZero(input: String): String {
@@ -174,6 +191,26 @@ suspend fun extractMdrive(url: String): List<String> {
         }}
 }
 
+suspend fun loadNameExtractor(
+    name: String? = null,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int,
+) {
+    callback.invoke(
+        newExtractorLink(
+            name ?: "",
+            name ?: "",
+            url,
+            type = if (url.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+        ) {
+            this.referer = referer ?: ""
+            this.quality = quality
+        }
+    )
+}
 
 fun getEpisodeSlug(
     season: Int? = null,
@@ -191,6 +228,29 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+suspend fun getHindMoviezLinks(
+    url: String,
+    callback: (ExtractorLink) -> Unit
+) {
+    val doc = app.get(url).document
+    val link = doc.select("a.btn-info").attr("href")
+    val document = app.get(link).document
+    val name = document.select("div.container > h2").text()
+    val extracted = extractSpecs(name)
+    val extractedSpecs = buildExtractedTitle(extracted)
+    document.select("a.button").map {
+        callback.invoke(
+            newExtractorLink(
+                "HindMoviez",
+                "HindMoviez $extractedSpecs",
+                it.attr("href"),
+            ) {
+                this.quality = getIndexQuality(name)
+            }
+        )
+    }
+}
+
 suspend fun loadSourceNameExtractor(
     source: String,
     url: String,
@@ -199,47 +259,55 @@ suspend fun loadSourceNameExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
+    val scope = CoroutineScope(Dispatchers.Default + Job())
+
     loadExtractor(url, referer, subtitleCallback) { link ->
-        if(!link.source.contains("Download")) {
-            val extracted = extractSpecs(link.name)
-            val extractedSpecs = buildExtractedTitle(extracted)
-            callback.invoke(
-                ExtractorLink(
+        if (!link.source.contains("Download")) {
+            scope.launch {
+                val extracted = extractSpecs(link.name)
+                val extractedSpecs = buildExtractedTitle(extracted)
+                val newLink = newExtractorLink(
                     "$source[${link.source}]",
                     "$source[${link.source}] $extractedSpecs",
                     link.url,
-                    link.referer,
-                    quality ?: link.quality,
-                    link.type,
-                    link.headers,
-                    link.extractorData
-                )
-            )
+                    type = link.type
+                ) {
+                    this.referer = link.referer
+                    this.quality = quality ?: link.quality
+                    this.headers = link.headers
+                    this.extractorData = link.extractorData
+                }
+                callback.invoke(newLink)
+            }
         }
     }
 }
 
 suspend fun loadCustomTagExtractor(
-        tag: String? = null,
-        url: String,
-        referer: String? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-        quality: Int? = null,
+    tag: String? = null,
+    url: String,
+    referer: String? = null,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+    quality: Int? = null,
 ) {
+    val scope = CoroutineScope(Dispatchers.Default + Job())
+
     loadExtractor(url, referer, subtitleCallback) { link ->
-        callback.invoke(
-            ExtractorLink(
+        scope.launch {
+            val newLink = newExtractorLink(
                 link.source,
                 "${link.name} $tag",
                 link.url,
-                link.referer,
-                quality ?: link.quality,
-                link.type,
-                link.headers,
-                link.extractorData
-            )
-        )
+                link.type
+            ) {
+                this.quality = quality ?: link.quality
+                this.referer = link.referer
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
+            callback.invoke(newLink)
+        }
     }
 }
 
@@ -251,22 +319,24 @@ suspend fun loadCustomExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
+    // Define a scope for the coroutine
+    val scope = CoroutineScope(Dispatchers.Default + Job())
+
     loadExtractor(url, referer, subtitleCallback) { link ->
-        callback.invoke(
-            ExtractorLink(
+        scope.launch {
+            val newLink = newExtractorLink(
                 name ?: link.source,
                 name ?: link.name,
                 link.url,
-                link.referer,
-                when {
-                    link.name == "VidSrc" -> Qualities.P1080.value
-                    else -> quality ?: link.quality
-                },
-                link.type,
-                link.headers,
-                link.extractorData
-            )
-        )
+                type = link.type
+            ) {
+                this.quality = quality ?: link.quality
+                this.referer = link.referer
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
+            callback.invoke(newLink)
+        }
     }
 }
 
@@ -321,3 +391,123 @@ suspend fun bypassHrefli(url: String): String? {
     return fixUrl(path, getBaseUrl(driveUrl))
 }
 
+
+suspend fun convertTmdbToAnimeId(
+    title: String?,
+    year: Int?,
+    airedDate: String?,
+    type: TvType
+): AniIds {
+    val sAiredDate = airedDate?.split("-")
+    val airedYear = sAiredDate?.firstOrNull()?.toIntOrNull()
+    val airedSeason = getSeason(sAiredDate?.get(1)?.toIntOrNull())
+
+    return if (type == TvType.AnimeMovie) {
+        tmdbToAnimeId(title, year, "", type)
+    } else {
+        tmdbToAnimeId(title, airedYear, airedSeason, type)
+    }
+}
+
+suspend fun tmdbToAnimeId(title: String?, year: Int?, season: String?, type: TvType): AniIds {
+    val anilistAPI = "https://graphql.anilist.co"
+    val query = """
+        query (
+          ${'$'}page: Int = 1
+          ${'$'}search: String
+          ${'$'}sort: [MediaSort] = [POPULARITY_DESC, SCORE_DESC]
+          ${'$'}type: MediaType
+          ${'$'}season: MediaSeason
+          ${'$'}seasonYear: Int
+          ${'$'}format: [MediaFormat]
+        ) {
+          Page(page: ${'$'}page, perPage: 20) {
+            media(
+              search: ${'$'}search
+              sort: ${'$'}sort
+              type: ${'$'}type
+              season: ${'$'}season
+              seasonYear: ${'$'}seasonYear
+              format_in: ${'$'}format
+            ) {
+              id
+              idMal
+            }
+          }
+        }
+    """.trimIndent().trim()
+
+    val variables = mapOf(
+        "search" to title,
+        "sort" to "SEARCH_MATCH",
+        "type" to "ANIME",
+        "season" to season?.uppercase(),
+        "seasonYear" to year,
+        "format" to listOf(if (type == TvType.AnimeMovie) "MOVIE" else "TV", "ONA")
+    ).filterValues { value -> value != null && value.toString().isNotEmpty() }
+    val data = mapOf(
+        "query" to query,
+        "variables" to variables
+    ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
+    val res = app.post(anilistAPI, requestBody = data)
+        .parsedSafe<AniSearch>()?.data?.Page?.media?.firstOrNull()
+    return AniIds(res?.id, res?.idMal)
+}
+
+
+fun getSeason(month: Int?): String? {
+    val seasons = arrayOf(
+        "Winter", "Winter", "Spring", "Spring", "Spring", "Summer",
+        "Summer", "Summer", "Fall", "Fall", "Fall", "Winter"
+    )
+    if (month == null) return null
+    return seasons[month - 1]
+}
+
+suspend fun gofileExtractor(
+    source: String,
+    url: String,
+    referer: String?,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+) {
+    val mainUrl = "https://gofile.io"
+    val mainApi = "https://api.gofile.io"
+    //val res = app.get(url)
+    val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+    val genAccountRes = app.post("$mainApi/accounts").text
+    val jsonResp = JSONObject(genAccountRes)
+    val token = jsonResp.getJSONObject("data").getString("token") ?: return
+
+    val globalRes = app.get("$mainUrl/dist/js/global.js").text
+    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+    val response = app.get("$mainApi/contents/$id?wt=$wt",
+        headers = mapOf(
+            "Authorization" to "Bearer $token",
+        )
+    ).text
+
+    val jsonResponse = JSONObject(response)
+    val data = jsonResponse.getJSONObject("data")
+    val children = data.getJSONObject("children")
+    val oId = children.keys().next()
+    val link = children.getJSONObject(oId).getString("link")
+    val fileName = children.getJSONObject(oId).getString("name")
+    if(link != null && fileName != null) {
+        val extracted = extractSpecs(fileName)
+        val extractedSpecs = buildExtractedTitle(extracted)
+        callback.invoke(
+            newExtractorLink(
+                "$source[Gofile]",
+                "$source[Gofile $extractedSpecs]",
+                link,
+            ) {
+                this.quality = getIndexQuality(fileName)
+                this.headers = mapOf(
+                    "Cookie" to "accountToken=$token"
+                )
+            }
+        )
+    }
+}

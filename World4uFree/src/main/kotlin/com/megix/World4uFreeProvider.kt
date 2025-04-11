@@ -8,6 +8,10 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class World4uFreeProvider : MainAPI() {
     override var mainUrl = "https://world4ufree.fyi"
@@ -266,20 +270,24 @@ class World4uFreeProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
         quality: Int = Qualities.Unknown.value,
-    ){
-        loadExtractor(url,subtitleCallback) { link ->
-            callback.invoke (
-                ExtractorLink (
+    ) {
+        val scope = CoroutineScope(Dispatchers.Default + Job())
+
+        loadExtractor(url, null, subtitleCallback) { link ->
+            scope.launch {
+                val newLink = newExtractorLink(
                     link.source,
                     link.name,
                     link.url,
-                    link.referer,
-                    if(link.quality == Qualities.Unknown.value) quality else link.quality,
-                    link.type,
-                    link.headers,
-                    link.extractorData
-                )
-            )
+                    link.type
+                ) {
+                    this.referer = link.referer
+                    this.quality = quality ?: link.quality
+                    this.headers = link.headers
+                    this.extractorData = link.extractorData
+                }
+                callback.invoke(newLink)
+            }
         }
     }
 

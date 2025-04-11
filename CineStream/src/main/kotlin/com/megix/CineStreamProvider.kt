@@ -14,34 +14,38 @@ import kotlin.math.roundToInt
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.megix.CineStreamExtractors.invokeVegamovies
-import com.megix.CineStreamExtractors.invokeRogmovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
-// import com.megix.CineStreamExtractors.invokeFull4Movies
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeAnizone
-import com.megix.CineStreamExtractors.invokeAutoembed
-import com.megix.CineStreamExtractors.invokeVidbinge
+import com.megix.CineStreamExtractors.invokeMultiAutoembed
+import com.megix.CineStreamExtractors.invokeNonoAutoembed
+// import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invoke2embed
 // import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
-import com.megix.CineStreamExtractors.invokeVite
 import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
 import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
-import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeTorrentio
-import com.megix.CineStreamExtractors.invokeAnimia
 import com.megix.CineStreamExtractors.invokeTokyoInsider
 import com.megix.CineStreamExtractors.invokeTvStream
 import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeDramacool
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
+import com.megix.CineStreamExtractors.invokeFlixhq
+import com.megix.CineStreamExtractors.invokeSkymovies
+import com.megix.CineStreamExtractors.invokeMoviesflix
+// import com.megix.CineStreamExtractors.invokeEmbed123
+import com.megix.CineStreamExtractors.invokeHdmovie2
+import com.megix.CineStreamExtractors.invokeHindmoviez
+import com.megix.CineStreamExtractors.invokeMostraguarda
+import com.megix.CineStreamExtractors.invokeProtonmovies
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -57,36 +61,41 @@ open class CineStreamProvider : MainAPI() {
     val animeCatalog = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.rs"
-        const val rogMoviesAPI = "https://rogmovies.icu"
-        const val MovieDrive_API = "https://moviesdrive.club"
+        const val vegaMoviesAPI = "https://vegamovies.band"
+        const val rogMoviesAPI = "https://rogmovies.lol"
+        const val MovieDrive_API = "https://moviesdrive.xyz"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-        const val topmoviesAPI = "https://topmovies.nexus"
-        const val MoviesmodAPI = "https://moviesmod.how"
-        // const val Full4MoviesAPI = "https://www.full4movies.delivery"
+        const val topmoviesAPI = "https://topmovies.loan"
+        const val MoviesmodAPI = "https://moviesmod.gift"
+        const val protonmoviesAPI = "https://m2.protonmovies.top"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val W4UAPI = "https://world4ufree.fyi"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
-        const val AutoembedAPI = "https://autoembed.cc"
+        const val MultiembedAPI = "https://hin.autoembed.cc"
+        const val MostraguardaAPI = "https://mostraguarda.stream"
+        const val NonoembedAPI = "https://nono.autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.fyi"
-        const val WHVX_TOKEN = BuildConfig.WHVX_TOKEN
+        const val uhdmoviesAPI = "https://uhdmovies.wales"
+        const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
+        // const val embed123API = "https://play2.123embed.net/server/3?path="
         // const val RarAPI = "https://nepu.to"
         const val hianimeAPI = "https://hianime.to"
         const val animepaheAPI = "https://animepahe.ru"
-        const val viteAPI = "https://viet.autoembed.cc"
-        const val multimoviesAPI = "https://multimovies.world"
-        const val cinemaluxeAPI = "https://luxecinema.fans"
-        const val bollyflixAPI = "https://bollyflix.phd"
-        const val TomAPI = "https://tom.autoembed.cc"
-        const val animiaAPI = "https://animia.buzz"
+        const val multimoviesAPI = "https://multimovies.press"
+        const val cinemaluxeAPI = "https://luxecinema.in"
+        const val bollyflixAPI = "https://bollyflix.kiwi"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
-        const val netflixAPI = "https://netfree.cc/mobile"
+        const val netflixAPI = "https://netfree.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
+        const val skymoviesAPI = "https://skymovieshd.beer"
+        const val hindMoviezAPI = "https://hindmoviez.co.in"
+        const val moviesflixAPI = "https://themoviesflix.gift"
+        const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
+        const val hdmovie2API = "https://hdmovie2.navy"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
@@ -174,13 +183,19 @@ open class CineStreamProvider : MainAPI() {
         val searchResponse = mutableListOf<SearchResponse>()
 
         val movieUrls = listOf(
-            "$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json",
             "$cinemeta_url/catalog/movie/top/search=$query.json",
         )
 
+        val tmdbMovieUrls = listOf(
+            "$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json",
+        )
+
         val seriesUrls = listOf(
-            "$streamio_TMDB/catalog/series/tmdb.top/search=$query.json",
             "$cinemeta_url/catalog/series/top/search=$query.json",
+        )
+
+        val tmdbSeriesUrls = listOf(
+            "$streamio_TMDB/catalog/series/tmdb.top/search=$query.json",
         )
 
         val animeUrls = listOf(
@@ -206,6 +221,22 @@ open class CineStreamProvider : MainAPI() {
 
         val series = fetchWithRetry(seriesUrls)
         series?.metas?.forEach {
+            val title = it.name ?: it.description ?: "Empty"
+            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
+                this.posterUrl = it.poster.toString()
+            })
+        }
+
+        val tmdbMovies = fetchWithRetry(tmdbMovieUrls)
+        tmdbMovies?.metas?.forEach {
+            val title = it.name ?: it.description ?: "Empty"
+            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.Movie) {
+                this.posterUrl = it.poster.toString()
+            })
+        }
+
+        val tmdbSeries = fetchWithRetry(tmdbSeriesUrls)
+        tmdbSeries?.metas?.forEach {
             val title = it.name ?: it.description ?: "Empty"
             searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
                 this.posterUrl = it.poster.toString()
@@ -336,8 +367,25 @@ open class CineStreamProvider : MainAPI() {
                     addDate(ep.firstAired?.substringBefore("T"))
                 }
             } ?: emptyList()
+            if(isAnime) {
+                return newAnimeLoadResponse(title, url, TvType.Anime) {
+                    addEpisodes(DubStatus.Subbed, episodes)
+                    this.posterUrl = posterUrl
+                    this.backgroundPosterUrl = background
+                    this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
+                    this.plot = description
+                    this.tags = genre
+                    this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
+                    this.rating = imdbRating.toRatingInt()
+                    this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
+                    addActors(cast)
+                    addAniListId(anilistId)
+                    addMalId(malId)
+                    addImdbId(id)
+                }
+            }
 
-            return newTvSeriesLoadResponse(title, url, if(isAnime) TvType.Anime else type, episodes) {
+            return newTvSeriesLoadResponse(title, url, type, episodes) {
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
@@ -347,11 +395,8 @@ open class CineStreamProvider : MainAPI() {
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
                 addActors(cast)
-                addAniListId(anilistId)
                 addImdbId(id)
-                addMalId(malId)
             }
-
         }
     }
 
@@ -395,14 +440,7 @@ open class CineStreamProvider : MainAPI() {
                         res.anilistId,
                         res.episode,
                         year,
-                        subtitleCallback,
-                        callback
-                    )
-                },
-                {
-                    invokeAnimia(
-                        res.anilistId,
-                        res.episode,
+                        "kitsu",
                         subtitleCallback,
                         callback
                     )
@@ -415,15 +453,15 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     invokeAllanime(
-                //         res.title,
-                //         year,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
+                {
+                    invokeAllanime(
+                        res.title,
+                        year,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
                 {
                     invokeAnizone(
                         res.title,
@@ -477,22 +515,31 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
+                    invokeProtonmovies(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    invokeHindmoviez(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        callback,
+                    )
+                },
+                {
                     invokeVegamovies(
-                        imdbTitle,
-                        imdbYear,
+                        vegaMoviesAPI,
+                        "VegaMovies",
+                        res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
                         subtitleCallback,
                         callback
-                    )
-                },
-                {
-                    invokeTom(
-                        tmdbId,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        callback,
-                        subtitleCallback
                     )
                 },
                 {
@@ -505,22 +552,14 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                // {
-                //     invokeCinemaluxe(
-                //         imdbTitle,
-                //         imdbYear,
-                //         res.imdbSeason,
-                //         res.imdbEpisode,
-                //         callback,
-                //         subtitleCallback,
-                //     )
-                // },
                 {
-                    invokeAutoembed(
-                        tmdbId,
+                    invokeCinemaluxe(
+                        imdbTitle,
+                        imdbYear,
                         res.imdbSeason,
                         res.imdbEpisode,
                         callback,
+                        subtitleCallback,
                     )
                 },
                 {
@@ -533,55 +572,19 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                {
-                    invokeVite(
-                        res.imdb_id.toString(),
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        callback
-                    )
-                },
-                {
-                    invokeNetflix(
-                        imdbTitle,
-                        imdbYear,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
-                {
-                    invokePrimeVideo(
-                        imdbTitle,
-                        imdbYear,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
             )
         }
         else {
             argamap(
                 {
                     if(!res.isBollywood) invokeVegamovies(
-                        res.title,
-                        year,
+                        vegaMoviesAPI,
+                        "VegaMovies",
+                        res.id,
                         res.season,
                         res.episode,
                         subtitleCallback,
                         callback
-                    )
-                },
-                {
-                    invokeTom(
-                        res.tmdbId,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
                     )
                 },
                 {
@@ -601,14 +604,6 @@ open class CineStreamProvider : MainAPI() {
                         res.season,
                         res.episode,
                         subtitleCallback,
-                        callback
-                    )
-                },
-                {
-                    invokeVite(
-                        res.id,
-                        res.season,
-                        res.episode,
                         callback
                     )
                 },
@@ -619,9 +614,10 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    if(res.isBollywood) invokeRogmovies(
+                    if(res.isBollywood) invokeVegamovies(
+                        rogMoviesAPI,
+                        "RogMovies",
                         res.id,
-                        res.title,
                         res.season,
                         res.episode,
                         subtitleCallback,
@@ -657,16 +653,16 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    if(res.isAsian && res.season != null) invokeDramacool(
-                        res.title,
-                        "ottv",
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     if(res.isAsian && res.season != null) invokeDramacool(
+                //         res.title,
+                //         "ottv",
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     invokeMoviesdrive(
                         res.title,
@@ -686,26 +682,43 @@ open class CineStreamProvider : MainAPI() {
                 //         callback
                 //     )
                 // },
-                // {
-                //     if(!res.isAnime) invokeFull4Movies(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         subtitleCallback,
-                //         callback
-                //     )
-                // },
-                // {
-                //     invokeCinemaluxe(
-                //         res.title,
-                //         year,
-                //         res.season,
-                //         res.episode,
-                //         callback,
-                //         subtitleCallback,
-                //     )
-                // },
+                {
+                    invokeCinemaluxe(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        callback,
+                        subtitleCallback,
+                    )
+                },
+                {
+                    if(!res.isAnime) invokeSkymovies(
+                        res.title,
+                        seasonYear,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    if(!res.isAnime) invokeHdmovie2(
+                        res.title,
+                        seasonYear,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    invokeFlixhq(
+                        res.title,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
                 {
                     invokeBollyflix(
                         res.id,
@@ -717,6 +730,14 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeTorrentio(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback,
+                    )
+                },
+                {
+                    invokeHindmoviez(
                         res.id,
                         res.season,
                         res.episode,
@@ -747,41 +768,33 @@ open class CineStreamProvider : MainAPI() {
                 {
                     invokeWHVXSubs(
                         WHVXSubsAPI,
-                        res.imdb_id,
-                        res.imdbSeason,
-                        res.imdbEpisode,
+                        res.id,
+                        res.season,
+                        res.episode,
                         subtitleCallback
                     )
                 },
                 {
                     invokeWHVXSubs(
                         WYZIESubsAPI,
-                        res.imdb_id,
-                        res.imdbSeason,
-                        res.imdbEpisode,
-                        subtitleCallback
-                    )
-                },
-                {
-                    invokeAutoembed(
-                        res.tmdbId,
-                        res.season,
-                        res.episode,
-                        callback,
-                    )
-                },
-                {
-                    invokeVidbinge(
-                        res.title,
                         res.id,
-                        res.tmdbId,
-                        year,
                         res.season,
                         res.episode,
-                        callback,
                         subtitleCallback
                     )
                 },
+                // {
+                //     invokeVidbinge(
+                //         res.title,
+                //         res.id,
+                //         res.tmdbId,
+                //         year,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )
+                // },
                 {
                     if(!res.isBollywood) invokeUhdmovies(
                         res.title,
@@ -801,6 +814,92 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
+                {
+                    invokeProtonmovies(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeMultiAutoembed(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeMostraguarda(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeNonoAutoembed(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                // {
+                //     invokeEmbed123(
+                //         res.id,
+                //         res.season,
+                //         res.episode,
+                //         callback
+                //     )
+                // },
+                {
+                    if(!res.isBollywood || !res.isAnime) invokeMoviesflix(
+                        "Moviesflix",
+                        moviesflixAPI,
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    if(res.isBollywood) invokeMoviesflix(
+                        "Hdmoviesflix",
+                        hdmoviesflixAPI,
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback,
+                    )
+                },
+                {
+                    if(res.isAnime) {
+                        val (aniId, malId) = convertTmdbToAnimeId(
+                            res.title,
+                            year,
+                            res.firstAired,
+                            if(res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime
+                        )
+
+                        invokeAnimes(
+                            malId,
+                            aniId,
+                            res.episode,
+                            seasonYear,
+                            "imdb",
+                            subtitleCallback,
+                            callback
+                        )
+                    }
+                }
             )
         }
         return true

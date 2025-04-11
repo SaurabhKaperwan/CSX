@@ -1,5 +1,5 @@
 // use an integer for version numbers
-version = 15
+version = 18
 
 cloudstream {
     //language = "en"
@@ -21,5 +21,5 @@ cloudstream {
         "TvSeries"
     )
 
-    iconUrl = "https://iosmirror.cc/img/nf2/icon_x192.png"
+    iconUrl = "https://netfree.cc/mobile/img/nf2/C192.png"
 }

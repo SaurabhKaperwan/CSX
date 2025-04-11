@@ -5,6 +5,7 @@ import com.horis.cloudstreamplugins.entities.PlayList
 import com.horis.cloudstreamplugins.entities.PostData
 import com.horis.cloudstreamplugins.entities.SearchData
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
@@ -24,7 +25,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://netfree.cc/mobile"
+    override var mainUrl = "https://netfree.cc"
     override var name = "PrimeVideoMirror"
 
     override val hasMainPage = true
@@ -33,8 +34,6 @@ class PrimeVideoMirrorProvider : MainAPI() {
         "X-Requested-With" to "XMLHttpRequest"
     )
 
-    
-
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
@@ -42,11 +41,11 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "ott" to "pv",
             "hd" to "on"
         )
-        val document = app.get("$mainUrl/home", cookies = cookies).document
+        val document = app.get("$mainUrl/mobile/home", cookies = cookies).document
         val items = document.select(".tray-container, #top10").map {
             it.toHomePageList()
         }
-        return HomePageResponse(items, false)
+        return newHomePageResponse(items, false)
     }
 
     private fun Element.toHomePageList(): HomePageList {
@@ -78,7 +77,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "ott" to "pv",
             "hd" to "on"
         )
-        val url = "$mainUrl/pv/search.php?s=$query&t=${APIHolder.unixTime}"
+        val url = "$mainUrl/mobile/pv/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(url, referer = "$mainUrl/", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
@@ -98,7 +97,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val data = app.get(
-            "$mainUrl/pv/post.php?id=$id&t=${APIHolder.unixTime}", headers, referer = "$mainUrl/", cookies = cookies
+            "$mainUrl/mobile/pv/post.php?id=$id&t=${APIHolder.unixTime}", headers, referer = "$mainUrl/", cookies = cookies
         ).parsed<PostData>()
 
         val episodes = arrayListOf<Episode>()
@@ -167,7 +166,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
         var pg = page
         while (true) {
             val data = app.get(
-                "$mainUrl/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
+                "$mainUrl/mobile/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
                 headers,
                 referer = "$mainUrl/",
                 cookies = cookies
@@ -200,7 +199,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$mainUrl/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/mobile/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/",
             cookies = cookies
@@ -209,14 +208,15 @@ class PrimeVideoMirrorProvider : MainAPI() {
         playlist.forEach { item ->
             item.sources.forEach {
                 callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                         name,
                         it.label,
                         fixUrl(it.file),
-                        "$mainUrl/",
-                        getQualityFromName(it.file.substringAfter("q=", "")),
-                        true
-                    )
+                        type = ExtractorLinkType.M3U8
+                    ) {
+                        this.referer = "$mainUrl/"
+                        this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
+                    }
                 )
             }
 

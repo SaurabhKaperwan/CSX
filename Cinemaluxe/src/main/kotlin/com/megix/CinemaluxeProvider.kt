@@ -4,11 +4,12 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://luxecinema.fans"
+    override var mainUrl = "https://luxecinema.in"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -38,16 +39,27 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         return newHomePageResponse(request.name, home)
     }
 
+    data class RedirectUrl(
+        val redirectUrl: String
+    )
+
     private suspend fun bypass(url: String): String {
-        val document = app.get(url, allowRedirects = true).document.toString()
-        val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-        return base64Decode(encodeUrl)
+        val jsonBody = """{"url":"$url"}"""
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val json = app.post(
+            "${BuildConfig.BYPASS_API}/cinemaluxe",
+            headers = mapOf(
+                "Content-Type" to "application/json",
+            ),
+            requestBody = requestBody
+        ).text
+        return parseJson<RedirectUrl>(json).redirectUrl
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("img") ?. attr("alt") ?: ""
-        val href = this.selectFirst("a") ?. attr("href") ?: ""
-        val posterUrl = this.selectFirst("img") ?. attr("data-src") ?: ""
+        val title = this.select("img").attr("alt")
+        val href = this.select("a").attr("href")
+        val posterUrl = this.select("img").attr("data-src")
     
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -73,15 +85,9 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val title = document.selectFirst("div.sheader > div.data > h1")?.text().toString()
-        var posterUrl = document.selectFirst("div.sheader noscript img")?.attr("src")
-        if (posterUrl.isNullOrEmpty()) {
-            posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content")
-        }
-        var description = document.selectFirst("div[itemprop=description]")?.ownText()
-        if(description.isNullOrEmpty()) {
-            description = document.selectFirst("div.wp-content")?.text()
-        }
+        val title = document.select("div.data > h1").text()
+        val posterUrl = document.select("div.poster > img").attr("data-src")
+        val description = document.selectFirst("div.wp-content")?.ownText() ?: ""
 
         val tvType = if (url.contains("tvshow")) {
             "series"
@@ -91,32 +97,22 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
 
         if(tvType == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            var hTags = document.select("h3:matches((?i)(4K|[0-9]*0p))")
-            if(hTags.isEmpty()) {
-                hTags = document.select("a.maxbutton-5")
-            }
+            val aTags = document.select("div.ep-button-container > a")
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
 
-            hTags.mapNotNull{ hTag ->
-                val seasonText = hTag.text()
+            aTags.mapNotNull{ aTag ->
+                val seasonText = aTag.text()
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val matchResult = realSeasonRegex.find(seasonText.toString())
+                val matchResult = realSeasonRegex.find(seasonText)
                 val realSeason = matchResult?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                var seasonLink =  if(hTag.tagName() == "a") {
-                    hTag.attr("href")
-                }
-                else {
-                    val spanTag = hTag.nextElementSibling()
-                    spanTag ?.selectFirst("a")?.attr("href").toString()
-                }
-                seasonLink = bypass(seasonLink)
+                val seasonLink = bypass(aTag.attr("href"))
                 val doc = app.get(seasonLink).document
-                var aTags = doc.select("a.maxbutton:matches((?i)(Episode))")
+                var innerATags = doc.select("div.ep-button-container > a:matches((?i)(Episode))")
                 
-                aTags.mapNotNull { aTag ->
-                    val epText = aTag.text()
+                innerATags.mapNotNull { innerATag ->
+                    val epText = innerATag.text()
                     val e = Regex("""(?i)(?:episode\s*[-]?\s*)(\d{1,2})""").find(epText)?.groups?.get(1)?.value ?.toIntOrNull() ?: 0
-                    val epUrl = aTag.attr("href")
+                    val epUrl = innerATag.attr("href")
                     val key = Pair(realSeason, e)
                     if (episodesMap.containsKey(key)) {
                         val currentList = episodesMap[key] ?: emptyList()
@@ -148,12 +144,12 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             }
         }
         else {
-            val buttons = document.select("a.maxbutton")
+            val buttons = document.select("div.ep-button-container > a")
             val data = buttons.flatMap { button ->
                 var link = button.attr("href")
                 link = bypass(link)
                 val doc = app.get(link).document
-                val selector = if(link.contains("luxedrive")) "div > a" else "a.maxbutton"
+                val selector = if(link.contains("linkstore")) "div.ep-button-container > a" else "div.mirror-buttons a"
                 doc.select(selector).mapNotNull {
                     val source = it.attr("href")
                     EpisodeLink(

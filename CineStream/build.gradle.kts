@@ -1,19 +1,19 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 87
+version = 112
 
 android {
     defaultConfig {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
         android.buildFeatures.buildConfig=true
-        buildConfigField("String", "WHVX_TOKEN", "\"${properties.getProperty("WHVX_TOKEN")}\"")
+        buildConfigField("String", "BYPASS_API", "\"${properties.getProperty("BYPASS_API")}\"")
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
     }
 }
 
 cloudstream {
-    //language = "en"
+    // language = "en"
     description = "One stop solution for Movies, Series, Anime, Livetv, AsianDrama and Torrents"
     authors = listOf("megix")
     status = 1
