@@ -473,7 +473,7 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    val res = app.get(url)
+    //val res = app.get(url)
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
     val genAccountRes = app.post("$mainApi/accounts").text
     val jsonResp = JSONObject(genAccountRes)
@@ -495,10 +495,12 @@ suspend fun gofileExtractor(
     val link = children.getJSONObject(oId).getString("link")
     val fileName = children.getJSONObject(oId).getString("name")
     if(link != null && fileName != null) {
+        val extracted = extractSpecs(fileName)
+        val extractedSpecs = buildExtractedTitle(extracted)
         callback.invoke(
             newExtractorLink(
                 "$source[Gofile]",
-                "$source[Gofile-$fileName]",
+                "$source[Gofile $extractedSpecs]",
                 link,
             ) {
                 this.quality = getIndexQuality(fileName)

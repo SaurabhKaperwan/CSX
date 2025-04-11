@@ -95,7 +95,7 @@ open class CineStreamProvider : MainAPI() {
         const val hindMoviezAPI = "https://hindmoviez.co.in"
         const val moviesflixAPI = "https://themoviesflix.gift"
         const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
-        const val hdmovie2API = "https://hdmovie2.contact"
+        const val hdmovie2API = "https://hdmovie2.navy"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
