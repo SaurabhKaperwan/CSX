@@ -24,7 +24,7 @@ import com.megix.CineStreamExtractors.invokeMultiAutoembed
 import com.megix.CineStreamExtractors.invokeNonoAutoembed
 // import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
-import com.megix.CineStreamExtractors.invoke2embed
+// import com.megix.CineStreamExtractors.invoke2embed
 // import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeMultimovies
@@ -61,7 +61,7 @@ open class CineStreamProvider : MainAPI() {
     val animeCatalog = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.band"
+        const val vegaMoviesAPI = "https://vegamovies.bot"
         const val rogMoviesAPI = "https://rogmovies.lol"
         const val MovieDrive_API = "https://moviesdrive.xyz"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -69,7 +69,7 @@ open class CineStreamProvider : MainAPI() {
         const val MoviesmodAPI = "https://moviesmod.gift"
         const val protonmoviesAPI = "https://m2.protonmovies.top"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
-        const val W4UAPI = "https://world4ufree.fyi"
+        const val W4UAPI = "https://world4ufree.rodeo"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val MultiembedAPI = "https://hin.autoembed.cc"
@@ -79,12 +79,10 @@ open class CineStreamProvider : MainAPI() {
         const val uhdmoviesAPI = "https://uhdmovies.wales"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
-        const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
+        // const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
         // const val embed123API = "https://play2.123embed.net/server/3?path="
         // const val RarAPI = "https://nepu.to"
-        const val hianimeAPI = "https://hianime.to"
-        const val animepaheAPI = "https://animepahe.ru"
-        const val multimoviesAPI = "https://multimovies.press"
+        const val multimoviesAPI = "https://multimovies.guru"
         const val cinemaluxeAPI = "https://luxecinema.in"
         const val bollyflixAPI = "https://bollyflix.kiwi"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -805,15 +803,15 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                {
-                    invoke2embed(
-                        res.id,
-                        res.season,
-                        res.episode,
-                        callback,
-                        subtitleCallback
-                    )
-                },
+                // {
+                //     invoke2embed(
+                //         res.id,
+                //         res.season,
+                //         res.episode,
+                //         callback,
+                //         subtitleCallback
+                //     )
+                // },
                 {
                     invokeProtonmovies(
                         res.id,

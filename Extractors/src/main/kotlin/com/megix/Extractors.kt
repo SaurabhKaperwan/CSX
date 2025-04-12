@@ -487,13 +487,17 @@ class GDFlix2 : GDFlix() {
     override var mainUrl = "https://new.gdflix.dad"
 }
 
+class GDFlix6 : GDFlix() {
+    override var mainUrl = "https://new5.gdflix.dad"
+}
+
 class GDFlix5 : GDFlix() {
     override var mainUrl = "https://new3.gdflix.dad"
 }
 
 open class GDFlix : ExtractorApi() {
     override val name: String = "GDFlix"
-    override val mainUrl: String = "https://new5.gdflix.dad"
+    override val mainUrl: String = "https://new6.gdflix.dad"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -660,7 +664,7 @@ open class GDFlix : ExtractorApi() {
     }
 }
 
-open class Gofile : ExtractorApi() {
+class Gofile : ExtractorApi() {
     override val name = "Gofile"
     override val mainUrl = "https://gofile.io"
     override val requiresReferer = false

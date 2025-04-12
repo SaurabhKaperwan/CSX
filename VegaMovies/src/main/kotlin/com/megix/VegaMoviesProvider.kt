@@ -11,7 +11,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.band"
+    override var mainUrl = "https://vegamovies.bot"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"

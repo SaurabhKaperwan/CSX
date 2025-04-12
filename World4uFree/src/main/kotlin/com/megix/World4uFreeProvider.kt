@@ -14,7 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class World4uFreeProvider : MainAPI() {
-    override var mainUrl = "https://world4ufree.fyi"
+    override var mainUrl = "https://world4ufree.rodeo"
     override var name = "World4uFree"
     override val hasMainPage = true
     override var lang = "hi"

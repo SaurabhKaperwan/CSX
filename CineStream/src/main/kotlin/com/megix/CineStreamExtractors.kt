@@ -942,31 +942,31 @@ object CineStreamExtractors : CineStreamProvider() {
     //     )
     // }
 
-    suspend fun invoke2embed(
-        id:  String,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val url = if(season != null && episode != null) "${TwoEmbedAPI}/scrape?id=${id}&s=${season}&e=${episode}" else "${TwoEmbedAPI}/scrape?id=${id}"
-        val json = app.get(url).text
-        val data = parseJson<TwoEmbedQuery>(json)
-        data.stream.forEach {
-            callback.invoke(
-                newExtractorLink(
-                    "2embed[${it.type}]",
-                    "2embed[${it.type}]",
-                    it.playlist,
-                    ExtractorLinkType.M3U8
-                ) {
-                    this.headers = mapOf(
-                        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-                    )
-                }
-            )
-        }
-    }
+    // suspend fun invoke2embed(
+    //     id:  String,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     val url = if(season != null && episode != null) "${TwoEmbedAPI}/scrape?id=${id}&s=${season}&e=${episode}" else "${TwoEmbedAPI}/scrape?id=${id}"
+    //     val json = app.get(url).text
+    //     val data = parseJson<TwoEmbedQuery>(json)
+    //     data.stream.forEach {
+    //         callback.invoke(
+    //             newExtractorLink(
+    //                 "2embed[${it.type}]",
+    //                 "2embed[${it.type}]",
+    //                 it.playlist,
+    //                 ExtractorLinkType.M3U8
+    //             ) {
+    //                 this.headers = mapOf(
+    //                     "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    //                 )
+    //             }
+    //         )
+    //     }
+    // }
 
     // suspend fun invokeVidbinge(
     //     title: String,

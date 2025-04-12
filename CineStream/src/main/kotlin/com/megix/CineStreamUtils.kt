@@ -500,7 +500,7 @@ suspend fun gofileExtractor(
         callback.invoke(
             newExtractorLink(
                 "$source[Gofile]",
-                "$source[Gofile $extractedSpecs]",
+                "$source[Gofile] $extractedSpecs",
                 link,
             ) {
                 this.quality = getIndexQuality(fileName)
