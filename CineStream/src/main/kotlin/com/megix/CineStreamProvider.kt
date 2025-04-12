@@ -83,6 +83,7 @@ open class CineStreamProvider : MainAPI() {
         // const val embed123API = "https://play2.123embed.net/server/3?path="
         // const val RarAPI = "https://nepu.to"
         const val multimoviesAPI = "https://multimovies.guru"
+        const val animepaheAPI = "https://animepahe.ru"
         const val cinemaluxeAPI = "https://luxecinema.in"
         const val bollyflixAPI = "https://bollyflix.kiwi"
         const val torrentioAPI = "https://torrentio.strem.fun"
