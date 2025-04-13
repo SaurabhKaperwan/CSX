@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.gift"
+    override var mainUrl = "https://moviesmod.email"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"

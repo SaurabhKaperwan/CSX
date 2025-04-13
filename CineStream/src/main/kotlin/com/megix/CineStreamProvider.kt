@@ -53,6 +53,7 @@ open class CineStreamProvider : MainAPI() {
     override val hasMainPage = true
     override var lang = "en"
     override val hasDownloadSupport = true
+    private val skipMap: MutableMap<String, Int> = mutableMapOf()
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
@@ -66,7 +67,7 @@ open class CineStreamProvider : MainAPI() {
         const val MovieDrive_API = "https://moviesdrive.xyz"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.loan"
-        const val MoviesmodAPI = "https://moviesmod.gift"
+        const val MoviesmodAPI = "https://moviesmod.email"
         const val protonmoviesAPI = "https://m2.protonmovies.top"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val W4UAPI = "https://world4ufree.rodeo"
@@ -92,8 +93,8 @@ open class CineStreamProvider : MainAPI() {
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val skymoviesAPI = "https://skymovieshd.beer"
         const val hindMoviezAPI = "https://hindmoviez.co.in"
-        const val moviesflixAPI = "https://themoviesflix.gift"
-        const val hdmoviesflixAPI = "https://hdmoviesflix.fit"
+        const val moviesflixAPI = "https://themoviesflix.at"
+        const val hdmoviesflixAPI = "https://hdmoviesflix.center"
         const val hdmovie2API = "https://hdmovie2.navy"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
@@ -117,7 +118,8 @@ open class CineStreamProvider : MainAPI() {
         "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
         "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
-        "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Trending Anime",
+        """$animeCatalog/{"anilist_trending-now":"on"}/catalog/anime/anilist_trending-now/skip=###""" to "Trending Anime",
+        "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
         "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
         "$mediaFusion/catalog/events/live_sport_events/skip=###" to "Live Sports Events",
@@ -145,10 +147,7 @@ open class CineStreamProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val skipNumber = if(request.data.contains(mainUrl) || request.data.contains(mediaFusion)) 50
-            else if(request.data.contains(kitsu_url)) 40
-            else 20
-        val skip = (page - 1) * skipNumber
+        val skip = if(page == 1) 0 else skipMap[request.name] ?: 0
         val newRequestData = request.data.replace("###", skip.toString())
         val json = app.get("$newRequestData.json").text
         val movies = tryParseJson<Home>(json) ?: return newHomePageResponse(
@@ -158,6 +157,8 @@ open class CineStreamProvider : MainAPI() {
             ),
             hasNext = false
         )
+        val movieCount = movies.metas.size
+        skipMap[request.name] = skip + movieCount
         val home = movies.metas.mapNotNull { movie ->
             val type =
                 if(movie.type == "tv" || movie.type == "events") TvType.Live
