@@ -33,7 +33,9 @@ val SPEC_OPTIONS = mapOf(
         mapOf("value" to "HDTV", "label" to "HDTV"),
         mapOf("value" to "CAM", "label" to "CAM"),
         mapOf("value" to "TeleSync", "label" to "TeleSync"),
-        mapOf("value" to "SCR", "label" to "SCR")
+        mapOf("value" to "SCR", "label" to "SCR"),
+        mapOf("value" to "10bit", "label" to "10bit"),
+        mapOf("value" to "8bit", "label" to "8bit"),
     ),
     "codec" to listOf(
         mapOf("value" to "x264", "label" to "x264"),
@@ -90,6 +92,12 @@ fun extractSpecs(inputString: String): Map<String, List<String>> {
         results[category] = matches
     }
 
+    val fileSizeRegex = """(\d+(?:\.\d+)?\s?(?:MB|GB))""".toRegex(RegexOption.IGNORE_CASE)
+    val sizeMatch = fileSizeRegex.find(inputString)
+    if (sizeMatch != null) {
+        results["size"] = listOf(sizeMatch.groupValues[1])
+    }
+
     return results.toMap()
 }
 
@@ -99,17 +107,20 @@ fun Regex.escape(input: String): String {
 }
 
 fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
-    var extractedTitle = ""
     val orderedCategories = listOf("quality", "codec", "audio", "hdr", "language")
 
-    for (category in orderedCategories) {
-        val values = extracted[category] ?: emptyList()
-        if (values.isNotEmpty()) {
-            extractedTitle += values.joinToString(" ") + " "
-        }
-    }
+    val specs = orderedCategories
+        .flatMap { extracted[it] ?: emptyList() }
+        .distinct()
+        .joinToString(" ")
 
-    return extractedTitle.trim()
+    val size = extracted["size"]?.firstOrNull()
+
+    return if (size != null) {
+        "$specs [$size]"
+    } else {
+        specs
+    }
 }
 
 fun String.getHost(): String {
@@ -233,6 +244,7 @@ suspend fun getHindMoviezLinks(
     callback: (ExtractorLink) -> Unit
 ) {
     val doc = app.get(url).document
+    val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ") ?: ""
     val link = doc.select("a.btn-info").attr("href")
     val document = app.get(link).document
     val name = document.select("div.container > h2").text()
@@ -242,7 +254,7 @@ suspend fun getHindMoviezLinks(
         callback.invoke(
             newExtractorLink(
                 "HindMoviez",
-                "HindMoviez $extractedSpecs",
+                "HindMoviez $extractedSpecs[$fileSize]",
                 it.attr("href"),
             ) {
                 this.quality = getIndexQuality(name)

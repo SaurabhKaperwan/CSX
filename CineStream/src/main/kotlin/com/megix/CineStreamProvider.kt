@@ -66,7 +66,7 @@ open class CineStreamProvider : MainAPI() {
         const val rogMoviesAPI = "https://rogmovies.lol"
         const val MovieDrive_API = "https://moviesdrive.xyz"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-        const val topmoviesAPI = "https://topmovies.loan"
+        const val topmoviesAPI = "https://topmovies.tips"
         const val MoviesmodAPI = "https://moviesmod.email"
         const val protonmoviesAPI = "https://m2.protonmovies.top"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
@@ -77,7 +77,7 @@ open class CineStreamProvider : MainAPI() {
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val NonoembedAPI = "https://nono.autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
-        const val uhdmoviesAPI = "https://uhdmovies.wales"
+        const val uhdmoviesAPI = "https://uhdmovies.tips"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
@@ -117,7 +117,7 @@ open class CineStreamProvider : MainAPI() {
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
         "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
         "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
-        "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
+        // "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         """$animeCatalog/{"anilist_trending-now":"on"}/catalog/anime/anilist_trending-now/skip=###""" to "Trending Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
