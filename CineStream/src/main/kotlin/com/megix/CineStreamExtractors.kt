@@ -332,6 +332,8 @@ object CineStreamExtractors : CineStreamProvider() {
                             callback,
                         )
                     }
+                } else {
+                    return@amap;
                 }
             }
             else {
@@ -475,8 +477,12 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        doc.select("tr")
-            .filter { it.text().contains("1080p") || it.text().contains("720p") || it.text().contains("480p") }
+        doc.select("tr").toList()
+            .filterIndexed { _, element ->
+            element.text().contains("1080p") ||
+                    element.text().contains("720p") ||
+                    element.text().contains("480p")
+        }
             .amap { tr ->
             val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
 
@@ -1702,5 +1708,138 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
         }
+    }
+
+    suspend fun invokePlayer4U(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        year: String? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val fixTitle = title?.createPlayerSlug().orEmpty()
+        val fixQuery = (season?.let { "$fixTitle S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$fixTitle $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
+        val allLinks = HashSet<Player4uLinkData>()
+
+        var page = 0
+        var nextPageExists: Boolean = true
+
+        do {
+            val url = if(page == 0) {"$Player4uApi/embed?key=$fixQuery"} else {"$Player4uApi/embed?key=$fixQuery&page=$page"}
+            try {
+                var document = app.get(url, timeout = 20).document
+                android.util.Log.d("salman731 html",document.html())
+                allLinks.addAll(
+                    document.select(".playbtnx").map {
+                        Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                    }
+                )
+
+                if(page == 0 && season == null && allLinks.size == 0)
+                {
+                    document = app.get("$Player4uApi/embed?key=${fixTitle.replace(" ","+")}", timeout = 20).document
+                    allLinks.addAll(
+                        document.select(".playbtnx").map {
+                            Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                        }
+                    )
+                    break
+                }
+
+                nextPageExists = document.select("div a").any { it.text().contains("Next", true) }
+            } catch (e: Exception) {}
+            page++
+        } while (nextPageExists && page <= 4)
+
+        allLinks.distinctBy { it.name }.forEach { link ->
+            try {
+
+                val splitName = link.name.split("|").reversed()
+                val firstPart = splitName.getOrNull(0)?.trim().orEmpty()
+                val nameFormatted = "Player4U ${if(firstPart.isNullOrEmpty()) { "" } else { "{$firstPart}" }}"
+
+                val qualityFromName = Regex("""(\d{3,4}p|4K|CAM|HQ|HD|SD|WEBRip|DVDRip|BluRay|HDRip|TVRip|HDTC|PREDVD)""", RegexOption.IGNORE_CASE)
+                    .find(nameFormatted)?.value?.uppercase() ?: "UNKNOWN"
+
+
+                val selectedQuality = getPlayer4UQuality(qualityFromName)
+
+                val subLink = "go\\('(.*)'\\)".toRegex().find(link.url)?.groups?.get(1)?.value ?: return@forEach
+                android.util.Log.d("salman731 subLink",subLink)
+                val iframeSource = app.get("$Player4uApi$subLink", timeout = 10, referer = Player4uApi)
+                    .document.select("iframe").attr("src")
+                android.util.Log.d("salman731 iframeSource",iframeSource)
+                getPlayer4uUrl(
+                    nameFormatted,
+                    selectedQuality,
+                    "https://uqloads.xyz/e/$iframeSource",
+                    Player4uApi,
+                    callback
+                )
+
+            } catch (_: Exception) { }
+        }
+    }
+
+    suspend fun invokePrimeWire(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if (season == null) {
+            "$Primewire/embed/movie?imdb=$imdbId"
+        } else {
+            "$Primewire/embed/tv?imdb=$imdbId&season=$season&episode=$episode"
+        }
+        val doc = app.get(url, timeout = 10).document
+        val userData = doc.select("#user-data")
+        android.util.Log.d("salman731 v",userData.toString())
+        var decryptedLinks = decryptLinks(userData.attr("v"))
+        android.util.Log.d("salman731 dl",decryptedLinks.toString())
+        for (link in decryptedLinks) {
+            val url = "$Primewire/links/go/$link"
+            val oUrl = app.get(url,timeout = 10)
+            loadSourceNameExtractor(
+                "Primewire",
+                oUrl.url,
+                "",
+                subtitleCallback,
+                callback
+            )
+        }
+    }
+
+    suspend fun invokeThepiratebay(
+        imdbId: String? =null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        try {
+            val url = if(season == null) {
+                "$ThePirateBayApi/stream/movie/$imdbId.json"
+            }
+            else {
+                "$ThePirateBayApi/stream/series/$imdbId:$season:$episode.json"
+            }
+            val res = app.get(url, timeout = 10).parsedSafe<TBPResponse>()
+            Log.d("salman731 TBP",res.toString())
+            for(stream in res?.streams!!)
+            {
+                val magnetLink = generateMagnetLink(TRACKER_LIST_URL,stream.infoHash)
+                callback.invoke(
+                    newExtractorLink(
+                        "ThePirateBay",
+                        "ThePirateBay [${stream.title}]",
+                        url = magnetLink,
+                        INFER_TYPE
+                    ) {
+                        this.quality = getIndexQuality(stream.title)
+                    }
+                )
+            }
+        } catch (_: Exception) { }
     }
 }

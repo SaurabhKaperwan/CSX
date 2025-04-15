@@ -20,6 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -521,5 +523,98 @@ suspend fun gofileExtractor(
                 )
             }
         )
+    }
+}
+
+fun String?.createPlayerSlug(): String? {
+    return this?.replace(Regex("[^A-Za-z0-9]+"), " ")?.replace(Regex("\\s+"), " ")?.trim() // Replace spaces with hyphens
+}
+
+fun getPlayer4UQuality (quality :String) : Int
+{
+    return when (quality) {
+        "4K", "2160P" -> Qualities.P2160.value
+        "FHD", "1080P" -> Qualities.P1080.value
+        "HQ", "HD", "720P","DVDRIP","TVRIP","HDTC","PREDVD" -> Qualities.P720.value
+        "480P" -> Qualities.P480.value
+        "360P","CAM" -> Qualities.P360.value
+        "DS" -> Qualities.P144.value
+        "SD" -> Qualities.P480.value
+        "WEBRIP" -> Qualities.P720.value
+        "BLURAY", "BRRIP" -> Qualities.P1080.value
+        "HDRIP" -> Qualities.P1080.value
+        "TS" -> Qualities.P480.value
+        "R5" -> Qualities.P480.value
+        "SCR" -> Qualities.P480.value
+        "TC" -> Qualities.P480.value
+        else -> Qualities.Unknown.value
+    }
+}
+
+suspend fun getPlayer4uUrl(
+    name: String,
+    selectedQuality: Int,
+    url: String,
+    referer: String?,
+    callback: (ExtractorLink) -> Unit
+) {
+    val response = app.get(url, referer = referer)
+    var script = getAndUnpack(response.text).takeIf { it.isNotEmpty() }
+        ?: response.document.selectFirst("script:containsData(sources:)")?.data()
+
+    if (script == null) {
+        val iframeUrl = Regex("""<iframe src="(.*?)"""").find(response.text)?.groupValues?.getOrNull(1) ?: return
+        val iframeResponse = app.get(iframeUrl, referer = null, headers = mapOf("Accept-Language" to "en-US,en;q=0.5"))
+        script = getAndUnpack(iframeResponse.text).takeIf { it.isNotEmpty() } ?: return
+    }
+    val m3u8 = Regex("\"hls2\":\\s*\"(.*?m3u8.*?)\"").find(script)?.groupValues?.getOrNull(1).orEmpty()
+    callback.invoke(
+        newExtractorLink(
+            name,
+            name,
+            m3u8,
+            type = ExtractorLinkType.M3U8
+        ) {
+            this.quality = selectedQuality
+        }
+    )
+
+}
+
+fun decryptBase64BlowfishEbc(base64Encrypted: String, key: String): String {
+    try {
+        val encryptedBytes =  base64DecodeArray(base64Encrypted)
+        val secretKeySpec = SecretKeySpec(key.toByteArray(), "Blowfish")
+        val cipher = Cipher.getInstance("Blowfish/ECB/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec)
+        val decryptedBytes = cipher.doFinal(encryptedBytes)
+        return String(decryptedBytes)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return "Decryption failed: ${e.message}"
+    }
+}
+
+// Decrypt Links using Blowfish
+fun decryptLinks(data: String): List<String> {
+    val key = data.substring(data.length - 10)
+    val ct = data.substring(0, data.length - 10)
+    val pt = decryptBase64BlowfishEbc(ct, key)
+    return pt.chunked(5)
+}
+
+suspend fun generateMagnetLink(url: String, hash: String?): String {
+    // Fetch the content of the file from the provided URL
+    val response = app.get(url)
+    val trackerList = response.text.trim().split("\n") // Assuming each tracker is on a new line
+
+    // Build the magnet link
+    return buildString {
+        append("magnet:?xt=urn:btih:$hash")
+        trackerList.forEach { tracker ->
+            if (tracker.isNotBlank()) {
+                append("&tr=").append(tracker.trim())
+            }
+        }
     }
 }

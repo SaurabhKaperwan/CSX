@@ -239,8 +239,8 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
             val data = buttons.flatMap { button ->
                 val link = button.attr("href")
                 val doc = app.get(link).document
-                val innerButtons = doc.select("a").filter {
-                    it.attr("href").contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
+                val innerButtons = doc.select("a").filter { element ->
+                    element.attr("href").contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
                 }
                 innerButtons.mapNotNull { innerButton ->
                     val source = innerButton.attr("href")

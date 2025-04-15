@@ -459,3 +459,22 @@ data class ConsumetSubtitles (
     var url  : String,
     var lang : String
 )
+
+data class Player4uLinkData(
+    val name: String,
+    val url: String,
+)
+
+data class TBPResponse(
+    val streams: List<TBPStream>,
+    val cacheMaxAge: Long,
+    val staleRevalidate: Long,
+    val staleError: Long,
+)
+
+data class TBPStream(
+    val name: String,
+    val title: String,
+    val infoHash: String,
+    val tag: String,
+)
