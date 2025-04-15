@@ -242,6 +242,7 @@ fun getIndexQuality(str: String?): Int {
 }
 
 suspend fun getHindMoviezLinks(
+    source: String,
     url: String,
     callback: (ExtractorLink) -> Unit
 ) {
@@ -255,8 +256,8 @@ suspend fun getHindMoviezLinks(
     document.select("a.button").map {
         callback.invoke(
             newExtractorLink(
-                "HindMoviez",
-                "HindMoviez $extractedSpecs[$fileSize]",
+                source,
+                "$source $extractedSpecs[$fileSize]",
                 it.attr("href"),
             ) {
                 this.quality = getIndexQuality(name)
@@ -487,7 +488,7 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    //val res = app.get(url)
+    //val res = app.get(url).document
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
     val genAccountRes = app.post("$mainApi/accounts").text
     val jsonResp = JSONObject(genAccountRes)
@@ -508,13 +509,22 @@ suspend fun gofileExtractor(
     val oId = children.keys().next()
     val link = children.getJSONObject(oId).getString("link")
     val fileName = children.getJSONObject(oId).getString("name")
-    if(link != null && fileName != null) {
+    val size = children.getJSONObject(oId).getLong("size")
+    val formattedSize = if (size < 1024L * 1024 * 1024) {
+        val sizeInMB = size.toDouble() / (1024 * 1024)
+        "%.2f MB".format(sizeInMB)
+    } else {
+        val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
+        "%.2f GB".format(sizeInGB)
+    }
+
+    if(link != null) {
         val extracted = extractSpecs(fileName)
         val extractedSpecs = buildExtractedTitle(extracted)
         callback.invoke(
             newExtractorLink(
                 "$source[Gofile]",
-                "$source[Gofile] $extractedSpecs",
+                "$source[Gofile] $extractedSpecs[$formattedSize]",
                 link,
             ) {
                 this.quality = getIndexQuality(fileName)
@@ -570,7 +580,7 @@ suspend fun getPlayer4uUrl(
     val m3u8 = Regex("\"hls2\":\\s*\"(.*?m3u8.*?)\"").find(script)?.groupValues?.getOrNull(1).orEmpty()
     callback.invoke(
         newExtractorLink(
-            name,
+            "Player4U",
             name,
             m3u8,
             type = ExtractorLinkType.M3U8

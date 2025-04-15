@@ -640,8 +640,8 @@ open class GDFlix : ExtractorApi() {
             else if(text.contains("CLOUD DOWNLOAD")) {
                 callback.invoke(
                     newExtractorLink(
-                        "GDFlix[CLOUD DOWNLOAD]",
-                        "GDFlix[CLOUD DOWNLOAD] $fileName[$fileSize]",
+                        "GDFlix[CLOUD]",
+                        "GDFlix[CLOUD] $fileName[$fileSize]",
                         it.attr("href"),
                     ) {
                         this.quality = getIndexQuality(fileName)
@@ -701,11 +701,20 @@ class Gofile : ExtractorApi() {
         val oId = children.keys().next()
         val link = children.getJSONObject(oId).getString("link")
         val fileName = children.getJSONObject(oId).getString("name")
-        if(link != null && fileName != null) {
+        val size = children.getJSONObject(oId).getLong("size")
+        val formattedSize = if (size < 1024L * 1024 * 1024) {
+                val sizeInMB = size.toDouble() / (1024 * 1024)
+                "%.2f MB".format(sizeInMB)
+        } else {
+            val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
+            "%.2f GB".format(sizeInGB)
+        }
+
+        if(link != null) {
             callback.invoke(
                 newExtractorLink(
                     "Gofile",
-                    "Gofile $fileName",
+                    "Gofile $fileName[$formattedSize]",
                     link,
                 ) {
                     this.quality = getQuality(fileName)

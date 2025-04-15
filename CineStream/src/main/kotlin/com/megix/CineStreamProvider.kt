@@ -94,8 +94,9 @@ open class CineStreamProvider : MainAPI() {
         const val anizoneAPI = "https://anizone.to"
         const val netflixAPI = "https://netfree2.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
-        const val skymoviesAPI = "https://skymovieshd.beer"
+        const val skymoviesAPI = "https://skymovieshd.pink"
         const val hindMoviezAPI = "https://hindmoviez.co.in"
+        const val jaduMoviesAPI = "https://jadumovies.com"
         const val moviesflixAPI = "https://themoviesflix.at"
         const val hdmoviesflixAPI = "https://hdmoviesflix.center"
         const val hdmovie2API = "https://hdmovie2.navy"
@@ -352,7 +353,7 @@ open class CineStreamProvider : MainAPI() {
                         year ?: releaseInfo,
                         ep.season,
                         ep.episode,
-                        ep.firstAired,
+                        ep.firstAired ?: ep.released,
                         isAnime,
                         isBollywood,
                         isAsian,
@@ -371,7 +372,7 @@ open class CineStreamProvider : MainAPI() {
                     this.posterUrl = ep.thumbnail
                     this.description = ep.overview
                     this.rating = ep.rating?.toFloat()?.times(10)?.roundToInt()
-                    addDate(ep.firstAired?.substringBefore("T"))
+                    addDate(ep.firstAired?.substringBefore("T") ?: ep.released?.substringBefore("T"))
                 }
             } ?: emptyList()
             if(isAnime) {
@@ -505,7 +506,7 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeMoviesmod(
-                        res.imdb_id.toString(),
+                        res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
                         subtitleCallback,
@@ -514,7 +515,7 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeBollyflix(
-                        res.imdb_id.toString(),
+                        res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
                         subtitleCallback,
@@ -532,6 +533,8 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeHindmoviez(
+                        "HindMoviez",
+                        hindMoviezAPI,
                         res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
@@ -556,6 +559,24 @@ open class CineStreamProvider : MainAPI() {
                         res.imdbEpisode,
                         imdbYear,
                         subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokePrimeWire(
+                        res.imdb_id,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokePlayer4U(
+                        imdbTitle,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        seasonYear,
                         callback
                     )
                 },
@@ -745,6 +766,18 @@ open class CineStreamProvider : MainAPI() {
                 },
                 {
                     invokeHindmoviez(
+                        "HindMoviez",
+                        hindMoviezAPI,
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback,
+                    )
+                },
+                {
+                    if(res.isBollywood) invokeHindmoviez(
+                        "JaduMovies",
+                        jaduMoviesAPI,
                         res.id,
                         res.season,
                         res.episode,
@@ -921,7 +954,7 @@ open class CineStreamProvider : MainAPI() {
                         res.title,
                         res.season,
                         res.episode,
-                        res.year,
+                        seasonYear,
                         callback
                     )
                 },

@@ -49,18 +49,20 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeHindmoviez(
+        source: String,
+        api: String,
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        app.get("$hindMoviezAPI/?s=$id").document.select("h2.entry-title > a").amap {
+        app.get("$api/?s=$id").document.select("h2.entry-title > a").amap {
             val doc = app.get(it.attr("href")).document
             if(episode == null) {
                 doc.select("a.maxbutton").amap {
                     val res = app.get(it.attr("href")).document
                     val link = res.select("h3 > a").attr("href")
-                    getHindMoviezLinks(link, callback)
+                    getHindMoviezLinks(source, link, callback)
                 }
             }
             else {
@@ -69,7 +71,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if(text.contains("Season $season")) {
                         val res = app.get(it.attr("href")).document
                         res.select("h3 > a").getOrNull(episode-1)?.let { link ->
-                            getHindMoviezLinks(link.attr("href"), callback)
+                            getHindMoviezLinks(source, link.attr("href"), callback)
                         }
                     }
                 }
@@ -670,7 +672,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeBollyflix(
-        id: String,
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -1428,7 +1430,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeMoviesmod(
-        id: String,
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -1445,7 +1447,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeModflix(
-        id: String,
+        id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -1714,7 +1716,7 @@ object CineStreamExtractors : CineStreamProvider() {
         title: String? = null,
         season: Int? = null,
         episode: Int? = null,
-        year: String? = null,
+        year: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
         val fixTitle = title?.createPlayerSlug().orEmpty()
