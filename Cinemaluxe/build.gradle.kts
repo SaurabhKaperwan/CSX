@@ -31,5 +31,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://luxecinema.in/wp-content/uploads/2025/03/Logo_ergerg1.png"
+    iconUrl = "https://luxecinema.in/wp-content/uploads/2025/03/icons8-film-reel-48.png"
 }

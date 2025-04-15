@@ -89,7 +89,7 @@ open class CineStreamProvider : MainAPI() {
         const val bollyflixAPI = "https://bollyflix.kiwi"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
-        const val netflixAPI = "https://netfree.cc"
+        const val netflixAPI = "https://netfree2.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
         const val skymoviesAPI = "https://skymovieshd.beer"
         const val hindMoviezAPI = "https://hindmoviez.co.in"

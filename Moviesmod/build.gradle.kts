@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://moviesmod.email/wp-content/uploads/2022/12/moviesmodnew-Custom.png"
+    iconUrl = "https://moviesmod.email/wp-content/uploads/2022/10/moviesmod.png"
 }
