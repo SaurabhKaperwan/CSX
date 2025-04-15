@@ -45,7 +45,10 @@ import com.megix.CineStreamExtractors.invokeMoviesflix
 import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
 import com.megix.CineStreamExtractors.invokeMostraguarda
+import com.megix.CineStreamExtractors.invokePlayer4U
+import com.megix.CineStreamExtractors.invokePrimeWire
 import com.megix.CineStreamExtractors.invokeProtonmovies
+import com.megix.CineStreamExtractors.invokeThepiratebay
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -99,6 +102,9 @@ open class CineStreamProvider : MainAPI() {
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
+        const val Player4uApi="https://player4u.xyz"
+        const val Primewire="https://www.primewire.tf"
+        const val ThePirateBayApi="https://thepiratebay-plus.strem.fun"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -900,7 +906,35 @@ open class CineStreamProvider : MainAPI() {
                             callback
                         )
                     }
-                }
+                },
+                {
+                    invokePrimeWire(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokePlayer4U(
+                        res.title,
+                        res.season,
+                        res.episode,
+                        res.year,
+                        callback
+                    )
+                },
+                {
+                    invokeThepiratebay(
+                        res.id,
+                        res.season,
+                        res.episode,
+                        callback
+                    )
+
+                },
+
             )
         }
         return true
