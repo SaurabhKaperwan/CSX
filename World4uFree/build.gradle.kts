@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://world4ufree.capetown/wp-content/uploads/2021/01/world4ufree-Logo-1.png"
+    iconUrl = "https://world4ufree.rodeo/favicon-32x32.png"
 }

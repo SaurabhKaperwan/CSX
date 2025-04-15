@@ -7,7 +7,7 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 
 class TopmoviesProvider : MoviesmodProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://topmovies.loan"
+    override var mainUrl = "https://topmovies.tips"
     override var name = "TopMovies"
     override val hasMainPage = true
     override var lang = "hi"
