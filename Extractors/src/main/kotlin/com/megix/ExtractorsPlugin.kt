@@ -26,6 +26,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(fastdlserver())
         registerExtractorAPI(Driveleech())
         registerExtractorAPI(Driveseed())
+        registerExtractorAPI(DriveleechPro())
         registerExtractorAPI(WLinkFast())
         registerExtractorAPI(FastLinks())
         registerExtractorAPI(Sendcm())

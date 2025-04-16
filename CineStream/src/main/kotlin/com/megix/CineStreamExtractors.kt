@@ -56,11 +56,11 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        app.get("$api/?s=$id").document.select("h2.entry-title > a").amap {
-            val doc = app.get(it.attr("href")).document
+        app.get("$api/?s=$id", timeout = 50L).document.select("h2.entry-title > a").amap {
+            val doc = app.get(it.attr("href"), timeout = 50L).document
             if(episode == null) {
                 doc.select("a.maxbutton").amap {
-                    val res = app.get(it.attr("href")).document
+                    val res = app.get(it.attr("href"), timeout = 50L).document
                     val link = res.select("h3 > a").attr("href")
                     getHindMoviezLinks(source, link, callback)
                 }
@@ -69,7 +69,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 doc.select("a.maxbutton").amap {
                     val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
                     if(text.contains("Season $season")) {
-                        val res = app.get(it.attr("href")).document
+                        val res = app.get(it.attr("href"), timeout = 50L).document
                         res.select("h3 > a").getOrNull(episode-1)?.let { link ->
                             getHindMoviezLinks(source, link.attr("href"), callback)
                         }
@@ -690,7 +690,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val href = it.nextElementSibling()?.select("a")?.attr("href")
             val token = href?.substringAfter("id=")
             val encodedurl =
-                app.get("https://blog.finzoox.com/?id=$token").text.substringAfter("link\":\"")
+                app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
                     .substringBefore("\"};")
             val decodedurl = base64Decode(encodedurl)
 
