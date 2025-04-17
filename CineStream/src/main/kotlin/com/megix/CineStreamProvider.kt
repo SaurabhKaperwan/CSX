@@ -21,10 +21,8 @@ import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeAnizone
 import com.megix.CineStreamExtractors.invokeMultiAutoembed
-import com.megix.CineStreamExtractors.invokeNonoAutoembed
 // import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
-// import com.megix.CineStreamExtractors.invoke2embed
 // import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeMultimovies
@@ -41,7 +39,6 @@ import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
-// import com.megix.CineStreamExtractors.invokeEmbed123
 import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
 import com.megix.CineStreamExtractors.invokeMostraguarda
@@ -49,6 +46,8 @@ import com.megix.CineStreamExtractors.invokePlayer4U
 import com.megix.CineStreamExtractors.invokePrimeWire
 import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
+import com.megix.CineStreamExtractors.invokeTom
+import com.megix.CineStreamExtractors.invokeAllmovieland
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -78,16 +77,15 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val MultiembedAPI = "https://hin.autoembed.cc"
         const val MostraguardaAPI = "https://mostraguarda.stream"
-        const val NonoembedAPI = "https://nono.autoembed.cc"
         const val WHVXAPI = "https://api.whvx.net"
+        const val TomAPI = "https://tom.autoembed.cc"
         const val uhdmoviesAPI = "https://uhdmovies.tips"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
-        // const val TwoEmbedAPI = "https://2embed.wafflehacker.io"
-        // const val embed123API = "https://play2.123embed.net/server/3?path="
         // const val RarAPI = "https://nepu.to"
         const val multimoviesAPI = "https://multimovies.guru"
         const val animepaheAPI = "https://animepahe.ru"
+        const val allmovielandAPI = "https://allmovieland.fun"
         const val cinemaluxeAPI = "https://luxecinema.in"
         const val bollyflixAPI = "https://bollyflix.yoga"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -514,12 +512,29 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
-                    invokeBollyflix(
+                    invokeTom(
+                        tmdbId,
+                        res.imdbSeason,
+                        res.imdbEpisode,
+                        callback,
+                        subtitleCallback
+                    )
+                },
+                // {
+                //     invokeBollyflix(
+                //         res.imdb_id,
+                //         res.imdbSeason,
+                //         res.imdbEpisode,
+                //         subtitleCallback,
+                //         callback,
+                //     )
+                // },
+                {
+                    invokeAllmovieland(
                         res.imdb_id,
                         res.imdbSeason,
                         res.imdbEpisode,
-                        subtitleCallback,
-                        callback,
+                        callback
                     )
                 },
                 {
@@ -747,15 +762,15 @@ open class CineStreamProvider : MainAPI() {
                         callback,
                     )
                 },
-                {
-                    invokeBollyflix(
-                        res.id,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback,
-                    )
-                },
+                // {
+                //     invokeBollyflix(
+                //         res.id,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback,
+                //     )
+                // },
                 {
                     invokeTorrentio(
                         res.id,
@@ -784,16 +799,16 @@ open class CineStreamProvider : MainAPI() {
                 //         callback,
                 //     )
                 // },
-                {
-                    invokeMultimovies(
-                        multimoviesAPI,
-                        res.title,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
+                // {
+                //     invokeMultimovies(
+                //         multimoviesAPI,
+                //         res.title,
+                //         res.season,
+                //         res.episode,
+                //         subtitleCallback,
+                //         callback
+                //     )
+                // },
                 {
                     if(!res.isAnime) invokeW4U(
                         res.title,
@@ -845,21 +860,20 @@ open class CineStreamProvider : MainAPI() {
                         subtitleCallback
                     )
                 },
-                // {
-                //     invoke2embed(
-                //         res.id,
-                //         res.season,
-                //         res.episode,
-                //         callback,
-                //         subtitleCallback
-                //     )
-                // },
                 {
                     invokeProtonmovies(
                         res.id,
                         res.season,
                         res.episode,
                         subtitleCallback,
+                        callback
+                    )
+                },
+                {
+                    invokeAllmovieland(
+                        res.id,
+                        res.season,
+                        res.episode,
                         callback
                     )
                 },
@@ -881,23 +895,6 @@ open class CineStreamProvider : MainAPI() {
                         callback
                     )
                 },
-                {
-                    invokeNonoAutoembed(
-                        res.id,
-                        res.season,
-                        res.episode,
-                        subtitleCallback,
-                        callback
-                    )
-                },
-                // {
-                //     invokeEmbed123(
-                //         res.id,
-                //         res.season,
-                //         res.episode,
-                //         callback
-                //     )
-                // },
                 {
                     if(!res.isBollywood || !res.isAnime) invokeMoviesflix(
                         "Moviesflix",
@@ -947,6 +944,15 @@ open class CineStreamProvider : MainAPI() {
                         res.episode,
                         subtitleCallback,
                         callback
+                    )
+                },
+                {
+                    invokeTom(
+                        res.tmdbId,
+                        res.season,
+                        res.episode,
+                        callback,
+                        subtitleCallback
                     )
                 },
                 {

@@ -3,6 +3,45 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Allmovieland
+ data class AllMovielandPlaylist(
+    @JsonProperty("file") val file: String? = null,
+    @JsonProperty("key") val key: String? = null,
+    @JsonProperty("href") val href: String? = null,
+)
+
+data class AllMovielandServer(
+    @JsonProperty("title") val title: String? = null,
+    @JsonProperty("id") val id: String? = null,
+    @JsonProperty("file") val file: String? = null,
+    @JsonProperty("folder")
+    val folder: ArrayList<AllMovielandSeasonFolder>? = arrayListOf(),
+) {
+    data class AllMovielandSeasonFolder(
+        @JsonProperty("episode") val episode: String? = null,
+        @JsonProperty("id") val id: String? = null,
+        @JsonProperty("folder")
+        val folder: ArrayList<AllMovielandEpisodeFolder>? = arrayListOf(),
+    ) {
+        data class AllMovielandEpisodeFolder(
+            @JsonProperty("title") val title: String? = null,
+            @JsonProperty("id") val id: String? = null,
+            @JsonProperty("file") val file: String? = null,
+        )
+    }
+}
+
+//Tom
+data class TomResponse (
+  var videoSource    : String,
+  var subtitles      : ArrayList<TomSubtitles> = arrayListOf(),
+)
+
+data class TomSubtitles (
+  var file    : String,
+  var label   : String
+)
+
 //TMDB to mal
 data class AniMedia(
     @JsonProperty("id") var id: Int? = null,
@@ -17,17 +56,6 @@ data class AniSearch(@JsonProperty("data") var data: AniData? = AniData())
 
 data class AniIds(var id: Int? = null, var idMal: Int? = null)
 
-//Nonoautoembed
-data class NonoAutoembedResponse (
-  var videoSource : String,
-  var subtitles   : ArrayList<NonoAutoembedSubtitles> = arrayListOf()
-)
-
-data class NonoAutoembedSubtitles (
-  var file    : String,
-  var label   : String,
-)
-
 //Multiautoembed
 data class MultiAutoembedResponse (
   var audioTracks : ArrayList<MultiembedAudioTracks> = arrayListOf()
@@ -37,16 +65,8 @@ data class MultiembedAudioTracks (
   var label : String,
   var file  : String
 )
-//Embed123
-data class Embed123 (
-    var playlist : ArrayList<Embed123Playlist> = arrayListOf()
-)
 
-data class Embed123Playlist (
-    var file : String,
-    var type : String
-)
-
+//Cinemaluxe
 data class CinemaluxeRedirectUrl(
     val redirectUrl: String
 )
@@ -323,27 +343,18 @@ data class MALSyncResponses(
     @JsonProperty("Sites") val sites: MALSyncSites? = null,
 )
 
-data class RarResponseData(
-    val data: List<RarItem>?
-)
+// data class RarResponseData(
+//     val data: List<RarItem>?
+// )
 
-data class RarItem(
-    val id: Int,
-    val name: String,
-    val second_name: String,
-    val image: String,
-    val url: String,
-    val type: String
-)
-
-data class TwoEmbedQuery(
-    val stream: List<TwoEmbedStream>
-)
-data class TwoEmbedStream(
-    val id: String,
-    val type: String,
-    val playlist: String,
-)
+// data class RarItem(
+//     val id: Int,
+//     val name: String,
+//     val second_name: String,
+//     val image: String,
+//     val url: String,
+//     val type: String
+// )
 
 data class WHVXToken(
     val token : String,

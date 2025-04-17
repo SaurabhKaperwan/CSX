@@ -13,8 +13,8 @@ import okhttp3.FormBody
 import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.json.JSONArray
 import org.json.JSONObject
+import org.json.JSONArray
 import com.lagradost.cloudstream3.argamap
 import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.mvvm.safeApiCall
@@ -45,6 +45,54 @@ object CineStreamExtractors : CineStreamProvider() {
                     this.headers = it.behaviorHints.proxyHeaders.request ?: mapOf()
                 }
             )
+        }
+    }
+
+    suspend fun invokeAllmovieland(
+        id : String? = null,
+        season : Int? = null,
+        episode : Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val host = "https://zativertz295huk.com"
+        val referer = "$allmovielandAPI/"
+        val res =
+                app.get("$host/play/$id", referer = referer)
+                        .document
+                        .selectFirst("script:containsData(playlist)")
+                        ?.data()
+                        ?.substringAfter("{")
+                        ?.substringBefore(";")
+                        ?.substringBefore(")")
+        val json = tryParseJson<AllMovielandPlaylist>("{${res ?: return}")
+        val headers = mapOf("X-CSRF-TOKEN" to "${json?.key}")
+
+        val serverRes =
+                app.get(fixUrl(json?.file ?: return, host), headers = headers, referer = referer)
+                        .text
+                        .replace(Regex(""",\s*\[]"""), "")
+        val servers =
+                tryParseJson<ArrayList<AllMovielandServer>>(serverRes).let { server ->
+                    if (season == null) {
+                        server?.map { it.file to it.title }
+                    } else {
+                        server
+                                ?.find { it.id.equals("$season") }
+                                ?.folder
+                                ?.find { it.episode.equals("$episode") }
+                                ?.folder
+                                ?.map { it.file to it.title }
+                    }
+                }
+
+        servers?.amap { (server, lang) ->
+            val path =
+                    app.post(
+                        "${host}/playlist/${server ?: return@amap}.txt",
+                        headers = headers,
+                        referer = referer
+                    ).text
+            M3u8Helper.generateM3u8("Allmovieland [$lang]", path, referer).forEach(callback)
         }
     }
 
@@ -285,31 +333,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // suspend fun invokeEmbed123(
-    //     id: String? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    // ) {
-    //     val type = if(season == null) "movie" else "tv"
-    //     val url = if(season == null) "$embed123API/$type/$id" else "$embed123API/$type/$id/$season/$episode"
-    //     val json = app.get(url).text
-    //     val data = tryParseJson<Embed123>(json) ?: return
-
-    //     data.playlist.map {
-    //         callback.invoke(
-    //             newExtractorLink(
-    //                 "Embed123",
-    //                 "Embed123",
-    //                 it.file,
-    //                 type = if(it.type == "hls") ExtractorLinkType.M3U8 else INFER_TYPE,
-    //             ) {
-    //                 this.headers = mapOf("Origin" to "https://play2.123embed.net")
-    //             }
-    //         )
-    //     }
-    // }
-
     suspend fun invokeHdmovie2(
         title: String? = null,
         year: Int? = null,
@@ -397,40 +420,38 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    fun decodeHtml(encodedArray: Array<String>): String {
-        val joined = encodedArray.joinToString("")
+    suspend fun invokeTom(
+        id: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit
+    ) {
+        val url = if(season == null) "$TomAPI/api/getVideoSource?type=movie&id=$id" else "$TomAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
+            "Referer" to "https://autoembed.cc"
+        )
+        val json = app.get(url, headers = headers).text
+        val data = tryParseJson<TomResponse>(json) ?: return
 
-        val unescaped = joined
-            .replace("\\\"", "\"")
-            .replace("\\'", "'")
+        callback.invoke(
+            newExtractorLink(
+                "Tom",
+                "Tom",
+                data.videoSource,
+                ExtractorLinkType.M3U8
+            )
+        )
 
-        val cleaned = unescaped
-            .replace("\\n", "\n")
-            .replace("\\t", "\t")
-            .replace("\\r", "\r")
-
-        val decoded = cleaned
-            .replace("&quot;", "\"")
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&amp;", "&")
-
-        return decoded
-    }
-
-    fun decodeMeta(document: Document): Document? {
-        val scriptContent = document.selectFirst("script:containsData(decodeURIComponent)")?.data().toString()
-        val splitByEqual = scriptContent.split(" = ")
-        if (splitByEqual.size > 1) {
-            val partAfterEqual = splitByEqual[1]
-            val trimmed = partAfterEqual.split("protomovies")[0].trim()
-            val sliced = if (trimmed.isNotEmpty()) trimmed.dropLast(1) else ""
-            val jsonArray = JSONArray(sliced)
-            val htmlString = decodeHtml(Array(jsonArray.length()) { i -> jsonArray.getString(i) })
-            val decodedDoc = Jsoup.parse(htmlString)
-            return decodedDoc
+        data.subtitles.map {
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    it.label,
+                    it.file,
+                )
+            )
         }
-        return null
     }
 
     suspend fun invokeProtonmovies(
@@ -457,7 +478,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val decodedDoc = decodeMeta(document)
             if (decodedDoc != null) {
                 if(episode == null) {
-                    getProtonStream(decodedDoc, subtitleCallback, callback)
+                    getProtonStream(decodedDoc, protonmoviesAPI,subtitleCallback, callback)
                 } else{
                     val episodeDiv = decodedDoc.select("div.episode-block:has(div.episode-number:matchesOwn(S${season}E${episode}))").firstOrNull()
                     episodeDiv?.selectFirst("a")?.attr("href")?.let {
@@ -466,56 +487,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
                         val decodedDoc = decodeMeta(doc2)
                         if(decodedDoc != null) {
-                            getProtonStream(decodedDoc, subtitleCallback, callback)
+                            getProtonStream(decodedDoc, protonmoviesAPI, subtitleCallback, callback)
                         }
                     }
-                }
-            }
-        }
-    }
-
-    suspend fun getProtonStream(
-        doc: Document,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        doc.select("tr").toList()
-            .filterIndexed { _, element ->
-            element.text().contains("1080p") ||
-                    element.text().contains("720p") ||
-                    element.text().contains("480p")
-        }
-            .amap { tr ->
-            val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
-
-            if(id != null) {
-                val requestBody = FormBody.Builder()
-                    .add("downloadid", id)
-                    .add("token", "ok")
-                    .build()
-                val postHeaders = mapOf(
-                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
-                    "Referer" to protonmoviesAPI,
-                    "Content-Type" to "multipart/form-data",
-                )
-                val idData = app.post(
-                    "$protonmoviesAPI/ppd.php",
-                    headers = postHeaders,
-                    requestBody = requestBody
-                ).text
-
-                val headers = mapOf(
-                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
-                    "Referer" to protonmoviesAPI
-                )
-
-                val idRes = app.post(
-                    "$protonmoviesAPI/tmp/$idData",
-                    headers = headers
-                ).text
-
-                JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
-                    gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
                 }
             }
         }
@@ -616,7 +590,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     "Torrentio",
                     stream.title ?: stream.name ?: "",
                     magnet,
-                    type = ExtractorLinkType.MAGNET,
+                    ExtractorLinkType.MAGNET,
                 ) {
                     this.quality = getIndexQuality(stream.name)
                 }
@@ -950,32 +924,6 @@ object CineStreamExtractors : CineStreamProvider() {
     //     )
     // }
 
-    // suspend fun invoke2embed(
-    //     id:  String,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val url = if(season != null && episode != null) "${TwoEmbedAPI}/scrape?id=${id}&s=${season}&e=${episode}" else "${TwoEmbedAPI}/scrape?id=${id}"
-    //     val json = app.get(url).text
-    //     val data = parseJson<TwoEmbedQuery>(json)
-    //     data.stream.forEach {
-    //         callback.invoke(
-    //             newExtractorLink(
-    //                 "2embed[${it.type}]",
-    //                 "2embed[${it.type}]",
-    //                 it.playlist,
-    //                 ExtractorLinkType.M3U8
-    //             ) {
-    //                 this.headers = mapOf(
-    //                     "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    //                 )
-    //             }
-    //         )
-    //     }
-    // }
-
     // suspend fun invokeVidbinge(
     //     title: String,
     //     imdb_id: String,
@@ -1116,7 +1064,12 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         val url = if(season == null) "$MostraguardaAPI/movie/$id" else "$MostraguardaAPI/serie/$id/$season/$episode"
-        val doc = app.get(url).document
+        val doc = app.get(
+            url,
+            headers = mapOf(
+                "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            )
+        ).document
         doc.select("ul > li").amap {
             if(it.text().contains("supervideo")) {
                 val source = "https:" + it.attr("data-link")
@@ -1127,43 +1080,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback
                 )
             }
-        }
-    }
-
-    suspend fun invokeNonoAutoembed(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url =  if(season != null) "$NonoembedAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
-        else "$NonoembedAPI/api/getVideoSource?type=movie&id=$id"
-        val jsonBody = app.get(url, headers = mapOf("Referer" to NonoembedAPI)).text.toJson()
-            .toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
-        val headers = mapOf(
-            "Content-Type" to "application/json",
-            "Referer" to "$NonoembedAPI/",
-        )
-        val json = app.post("$NonoembedAPI/api/decryptVideoSource",
-            requestBody = jsonBody, headers = headers
-        ).text
-
-        val data = tryParseJson<NonoAutoembedResponse>(json) ?: return
-        callback.invoke(
-            newExtractorLink(
-                "NonoAutoembed",
-                "NonoAutoembed",
-                data.videoSource,
-            )
-        )
-        data.subtitles.forEach {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.label,
-                    it.file
-                )
-            )
         }
     }
 
@@ -1835,8 +1751,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     newExtractorLink(
                         "ThePirateBay",
                         "ThePirateBay [${stream.title}]",
-                        url = magnetLink,
-                        INFER_TYPE
+                        magnetLink,
+                        ExtractorLinkType.MAGNET
                     ) {
                         this.quality = getIndexQuality(stream.title)
                     }

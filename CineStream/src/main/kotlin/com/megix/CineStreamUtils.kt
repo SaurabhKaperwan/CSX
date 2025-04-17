@@ -20,6 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import org.json.JSONArray
+import org.jsoup.Jsoup
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
@@ -631,4 +633,88 @@ suspend fun generateMagnetLink(url: String, hash: String?): String {
             }
         }
     }
+}
+
+suspend fun getProtonStream(
+    doc: Document,
+    protonmoviesAPI: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+) {
+    doc.select("tr").toList()
+        .filterIndexed { _, element ->
+            element.text().contains("1080p") ||
+            element.text().contains("720p") ||
+            element.text().contains("480p")
+    }
+    .amap { tr ->
+        val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
+
+        if(id != null) {
+            val requestBody = FormBody.Builder()
+                .add("downloadid", id)
+                .add("token", "ok")
+                .build()
+            val postHeaders = mapOf(
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "Referer" to protonmoviesAPI,
+                "Content-Type" to "multipart/form-data",
+            )
+            val idData = app.post(
+                "$protonmoviesAPI/ppd.php",
+                headers = postHeaders,
+                requestBody = requestBody
+            ).text
+
+            val headers = mapOf(
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "Referer" to protonmoviesAPI
+            )
+
+            val idRes = app.post(
+                "$protonmoviesAPI/tmp/$idData",
+                headers = headers
+            ).text
+
+            JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+                gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
+            }
+        }
+    }
+}
+
+fun decodeHtml(encodedArray: Array<String>): String {
+    val joined = encodedArray.joinToString("")
+
+    val unescaped = joined
+        .replace("\\\"", "\"")
+        .replace("\\'", "'")
+
+    val cleaned = unescaped
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace("\\r", "\r")
+
+    val decoded = cleaned
+        .replace("&quot;", "\"")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&")
+
+    return decoded
+}
+
+fun decodeMeta(document: Document): Document? {
+    val scriptContent = document.selectFirst("script:containsData(decodeURIComponent)")?.data().toString()
+    val splitByEqual = scriptContent.split(" = ")
+    if (splitByEqual.size > 1) {
+        val partAfterEqual = splitByEqual[1]
+        val trimmed = partAfterEqual.split("protomovies")[0].trim()
+        val sliced = if (trimmed.isNotEmpty()) trimmed.dropLast(1) else ""
+        val jsonArray = JSONArray(sliced)
+        val htmlString = decodeHtml(Array(jsonArray.length()) { i -> jsonArray.getString(i) })
+        val decodedDoc = Jsoup.parse(htmlString)
+        return decodedDoc
+    }
+    return null
 }
