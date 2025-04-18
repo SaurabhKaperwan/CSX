@@ -12,6 +12,32 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import org.json.JSONObject
+import com.lagradost.cloudstream3.utils.M3u8Helper
+import com.lagradost.cloudstream3.utils.getAndUnpack
+
+open class SuperVideo : ExtractorApi() {
+    override val name = "SuperVideo"
+    override val mainUrl = "https://supervideo.cc"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val res = app.get(url.replace("tv","cc"), referer = referer)
+        val script =
+            res.document.selectFirst("script:containsData(function(p,a,c,k,e,d))")?.data()
+        val unpacked = getAndUnpack(script ?: return)
+        val m3u8 = Regex("file:\"(.*?m3u8.*?)").find(unpacked)?.groupValues?.getOrNull(1) ?:""
+        M3u8Helper.generateM3u8(
+            this.name,
+            m3u8,
+            referer = "$mainUrl/",
+        ).forEach(callback)
+    }
+}
 
 class Ryderjet: VidHidePro() {
     override var mainUrl = "https://ryderjet.com"

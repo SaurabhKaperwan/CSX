@@ -1069,7 +1069,7 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.attr("href") ?: return
 
         val doc = app.get("$fourkhdhubAPI$link").document
-        if(season == null) {
+        if(season == null && episode == null) {
             doc.select("div.download-item a").amap {
                val source = it.attr("href")
                loadSourceNameExtractor(
@@ -1081,7 +1081,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         } else {
-            doc.select(".episode-download-item:has(div.episode-file-title:contains(S0${season}E0${episode}))").amap {
+            val seasonText = if(season > 9) "S$season" else "S0$season"
+            val episodeText = if(episode > 9) "E$episode" else "E0$episode"
+            doc.select(".episode-download-item:has(div.episode-file-title:contains(${seasonText}${episodeText}))").amap {
                 val source = it.select("div.episode-links > a").attr("href")
                 loadSourceNameExtractor(
                     "4Khdhub",
@@ -1112,12 +1114,7 @@ object CineStreamExtractors : CineStreamProvider() {
         doc.select("ul > li").amap {
             if(it.text().contains("supervideo")) {
                 val source = "https:" + it.attr("data-link")
-                loadExtractor(
-                    source,
-                    "",
-                    subtitleCallback,
-                    callback
-                )
+                SuperVideo().getUrl(source, "", subtitleCallback, callback)
             }
         }
     }
