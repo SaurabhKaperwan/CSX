@@ -860,28 +860,12 @@ object CineStreamExtractors : CineStreamProvider() {
             animeData?.find { it.episode == episode }?.session ?: return
         }
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
-        doc.select("div.dropup button").amap {
-            var lang=""
-            val dub=it.select("span").text()
-            if (dub.contains("eng")) lang="DUB" else lang="SUB"
-            val quality = it.attr("data-resolution")
-            val href = it.attr("data-src")
-            if (href.contains("kwik.si")) {
-                loadCustomExtractor(
-                    "Animepahe(VLC) [$lang]",
-                    href,
-                    mainUrl,
-                    subtitleCallback,
-                    callback,
-                    getQualityFromName(quality)
-                )
-            }
-        }
+
         doc.select("div#pickDownload > a").amap {
             val href = it.attr("href")
             var type = "SUB"
-            if(it.select("span").text().contains("eng"))
-                type="DUB"
+            if(it.select("span").text().contains("eng")) type = "DUB"
+
             loadCustomExtractor(
                 "Animepahe [$type]",
                 href,
@@ -890,6 +874,23 @@ object CineStreamExtractors : CineStreamProvider() {
                 callback,
                 getIndexQuality(it.text())
             )
+        }
+
+        doc.select("div#resolutionMenu > button").amap {
+            var type = "SUB"
+            if(it.select("span").text().contains("eng")) type = "DUB"
+            val quality = it.attr("data-resolution")
+            val href = it.attr("data-src")
+            if (href.contains("kwik.si")) {
+                loadCustomExtractor(
+                    "Animepahe(VLC) [$type]",
+                    href,
+                    mainUrl,
+                    subtitleCallback,
+                    callback,
+                    getQualityFromName(quality)
+                )
+            }
         }
     }
 
