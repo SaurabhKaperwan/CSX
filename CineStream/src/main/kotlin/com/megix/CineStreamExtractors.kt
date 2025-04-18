@@ -1064,12 +1064,14 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
+        if (title.isNullOrBlank()) return
+
         val link = app.get("$fourkhdhubAPI/?s=$title").document
-            .selectFirst("div.card-grid > a:has(div.movie-card-content:contains($year))")
+            .selectFirst("div.card-grid > a:has(div.movie-card-content:contains(${year ?: ""}))")
             ?.attr("href") ?: return
 
         val doc = app.get("$fourkhdhubAPI$link").document
-        if(season == null && episode == null) {
+        if(season == null) {
             doc.select("div.download-item a").amap {
                val source = it.attr("href")
                loadSourceNameExtractor(
@@ -1081,10 +1083,11 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         } else {
-            val seasonText = if(season > 9) "S$season" else "S0$season"
-            val episodeText = if(episode > 9) "E$episode" else "E0$episode"
+            val seasonText = "S" + season.toString().padStart(2, '0')
+            val episodeText = "E" + episode.toString().padStart(2, '0')
             doc.select(".episode-download-item:has(div.episode-file-title:contains(${seasonText}${episodeText}))").amap {
-                val source = it.select("div.episode-links > a").attr("href")
+                val source = it.selectFirst("div.episode-links > a")
+                    ?.attr("href") ?: return@amap
                 loadSourceNameExtractor(
                     "4Khdhub",
                     source,
