@@ -12,6 +12,9 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.argamap
 import kotlin.math.roundToInt
 import com.lagradost.api.Log
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
@@ -48,6 +51,7 @@ import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
 import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeAllmovieland
+import com.megix.CineStreamExtractors.invoke4khdhub
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -80,6 +84,7 @@ open class CineStreamProvider : MainAPI() {
         const val WHVXAPI = "https://api.whvx.net"
         const val TomAPI = "https://tom.autoembed.cc"
         const val uhdmoviesAPI = "https://uhdmovies.tips"
+        const val fourkhdhubAPI = "https://4khdhub.fans"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val RarAPI = "https://nepu.to"
@@ -123,7 +128,7 @@ open class CineStreamProvider : MainAPI() {
         "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
         "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
         // "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
-        """$animeCatalog/{"anilist_trending-now":"on"}/catalog/anime/anilist_trending-now/skip=###""" to "Trending Anime",
+        """$animeCatalog/{"anisearch_trending":"on"}/catalog/anime/anisearch_trending/skip=###""" to "Trending Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
         "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
@@ -185,84 +190,40 @@ open class CineStreamProvider : MainAPI() {
         )
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
+    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        val movieUrls = listOf(
-            "$cinemeta_url/catalog/movie/top/search=$query.json",
+        suspend fun fetchAndParse(url: String, tvType: TvType): List<SearchResponse> {
+            return try {
+                val json = app.get(url).text
+                val results = tryParseJson<SearchResult>(json)
+                results?.metas?.map {
+                    val title = it.name ?: it.description ?: "Empty"
+                    newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), tvType).apply {
+                        this.posterUrl = it.poster.toString()
+                    }
+                } ?: emptyList()
+            } catch (e: Exception) {
+                emptyList() // Fail-safe in case of network or parse error
+            }
+        }
+
+        val requests = listOf(
+            async { fetchAndParse("$kitsu_url/catalog/anime/kitsu-anime-airing/search=$query.json", TvType.Movie) },
+            async { fetchAndParse("$cinemeta_url/catalog/movie/top/search=$query.json", TvType.Movie) },
+            async { fetchAndParse("$cinemeta_url/catalog/series/top/search=$query.json", TvType.TvSeries) },
+            async { fetchAndParse("$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json", TvType.Movie) },
+            async { fetchAndParse("$streamio_TMDB/catalog/series/tmdb.top/search=$query.json", TvType.TvSeries) },
+            async { fetchAndParse("$mediaFusion/catalog/tv/mediafusion_search_tv/search=$query.json", TvType.Live) }
         )
 
-        val tmdbMovieUrls = listOf(
-            "$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json",
-        )
+        // Gather all results
+        searchResponse += requests.awaitAll().flatten()
 
-        val seriesUrls = listOf(
-            "$cinemeta_url/catalog/series/top/search=$query.json",
-        )
-
-        val tmdbSeriesUrls = listOf(
-            "$streamio_TMDB/catalog/series/tmdb.top/search=$query.json",
-        )
-
-        val animeUrls = listOf(
-            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$query.json",
-            """$animeCatalog"/{"search":"on"}/catalog/anime/anime-catalogs-search/search=$query.json""",
-        )
-
-        val animes = fetchWithRetry(animeUrls)
-        animes?.metas?.forEach {
-            val title = it.name ?: it.description ?: "Empty"
-            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.Movie) {
-                this.posterUrl = it.poster.toString()
-            })
-        }
-
-        val movies = fetchWithRetry(movieUrls)
-        movies?.metas?.forEach {
-            val title = it.name ?: it.description ?: "Empty"
-            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.Movie) {
-                this.posterUrl = it.poster.toString()
-            })
-        }
-
-        val series = fetchWithRetry(seriesUrls)
-        series?.metas?.forEach {
-            val title = it.name ?: it.description ?: "Empty"
-            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
-                this.posterUrl = it.poster.toString()
-            })
-        }
-
-        val tmdbMovies = fetchWithRetry(tmdbMovieUrls)
-        tmdbMovies?.metas?.forEach {
-            val title = it.name ?: it.description ?: "Empty"
-            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.Movie) {
-                this.posterUrl = it.poster.toString()
-            })
-        }
-
-        val tmdbSeries = fetchWithRetry(tmdbSeriesUrls)
-        tmdbSeries?.metas?.forEach {
-            val title = it.name ?: it.description ?: "Empty"
-            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.TvSeries) {
-                this.posterUrl = it.poster.toString()
-            })
-        }
-
-        val tvJson = app.get("$mediaFusion/catalog/tv/mediafusion_search_tv/search=$query.json").text
-        val tv = tryParseJson<SearchResult>(tvJson)
-        tv?.metas?.forEach {
-            val title = it.name ?: it.description ?: "Empty"
-            searchResponse.add(newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), TvType.Live) {
-                this.posterUrl = it.poster.toString()
-            })
-        }
-
-        return searchResponse.sortedByDescending { response ->
+        return@coroutineScope searchResponse.sortedByDescending { response ->
             calculateRelevanceScore(response.name, query)
         }
     }
-
 
     override suspend fun load(url: String): LoadResponse? {
         val movie = parseJson<PassData>(url)
@@ -370,7 +331,7 @@ open class CineStreamProvider : MainAPI() {
                     this.posterUrl = ep.thumbnail
                     this.description = ep.overview
                     this.rating = ep.rating?.toFloat()?.times(10)?.roundToInt()
-                    addDate(ep.firstAired?.substringBefore("T") ?: ep.released?.substringBefore("T"))
+                    addDate(ep.firstAired ?: ep.released)
                 }
             } ?: emptyList()
             if(isAnime) {
@@ -861,6 +822,16 @@ open class CineStreamProvider : MainAPI() {
                     )
                 },
                 {
+                    if(!res.isBollywood) invoke4khdhub(
+                        res.title,
+                        year,
+                        res.season,
+                        res.episode,
+                        subtitleCallback,
+                        callback
+                    )
+                },
+                {
                     invokeProtonmovies(
                         res.id,
                         res.season,
@@ -1107,23 +1078,6 @@ open class CineStreamProvider : MainAPI() {
         }
 
         return score
-    }
-
-    private suspend fun fetchWithRetry(
-        urls: List<String>
-    ) : SearchResult? {
-        for(url in urls) {
-            try {
-                val json = app.get(url).text
-                val movieJson = tryParseJson<SearchResult>(json)
-                if(movieJson != null) {
-                    return movieJson
-                }
-            } catch (e: Exception) {
-                Log.d("CineStream", "Failed to get $url")
-            }
-        }
-        return null
     }
 }
 

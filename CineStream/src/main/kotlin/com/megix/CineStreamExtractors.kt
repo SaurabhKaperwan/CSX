@@ -1056,6 +1056,44 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invoke4khdhub(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val link = app.get("$fourkhdhubAPI/?s=$title").document
+            .selectFirst("div.card-grid > a:has(div.movie-card-content:contains($year))")
+            ?.attr("href") ?: return
+
+        val doc = app.get("$fourkhdhubAPI$link").document
+        if(season == null) {
+            doc.select("div.download-item a").amap {
+               val source = it.attr("href")
+               loadSourceNameExtractor(
+                    "4Khdhub",
+                    source,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
+        } else {
+            doc.select(".episode-download-item:has(div.episode-file-title:contains(S0${season}E0${episode}))").amap {
+                val source = it.select("div.episode-links > a").attr("href")
+                loadSourceNameExtractor(
+                    "4Khdhub",
+                    source,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
+        }
+    }
+
     suspend fun invokeMostraguarda(
         id: String? = null,
         season: Int? = null,
@@ -1070,6 +1108,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
             )
         ).document
+
         doc.select("ul > li").amap {
             if(it.text().contains("supervideo")) {
                 val source = "https:" + it.attr("data-link")
