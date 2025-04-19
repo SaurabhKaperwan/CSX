@@ -67,10 +67,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("h2 > a").text().replace("Download ", "")
         val href = this.select("a").attr("href")
-        var posterUrl = this.select("img").attr("data-src")
-        if(posterUrl.isEmpty()) {
-            posterUrl = this.select("img").attr("src")
-        }
+        val posterUrl = this.select("img").attr("src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl

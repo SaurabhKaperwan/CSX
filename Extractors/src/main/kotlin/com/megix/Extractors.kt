@@ -463,7 +463,7 @@ open class HubCloud : ExtractorApi() {
 
 class fastdlserver : ExtractorApi() {
     override val name: String = "fastdlserver"
-    override var mainUrl = "https://fastdlserver.online"
+    override var mainUrl = "https://fastdlserver.lol"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -501,6 +501,10 @@ class GDFlix6 : GDFlix() {
 
 class GDFlix5 : GDFlix() {
     override var mainUrl = "https://new3.gdflix.dad"
+}
+
+class GDFlix7 : GDFlix() {
+    override var mainUrl = "https://gdflix.dad"
 }
 
 open class GDFlix : ExtractorApi() {
