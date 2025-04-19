@@ -671,8 +671,9 @@ object CineStreamExtractors : CineStreamProvider() {
             if (season == null) {
                 loadSourceNameExtractor("Bollyflix", decodedurl , "", subtitleCallback, callback)
             } else {
+                val episodeText = "Episode " + episode.toString().padStart(2, '0')
                 val link =
-                    app.get(decodedurl).document.selectFirst("article h3 a:contains(Episode 0$episode)")!!
+                    app.get(decodedurl).document.selectFirst("article h3 a:contains($episodeText)")!!
                         .attr("href")
                 loadSourceNameExtractor("Bollyflix", link , "", subtitleCallback, callback)
             }
