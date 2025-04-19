@@ -60,7 +60,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             referer = mainUrl,
             headers = headers
         ).document
-        val home = document.select(".post-inner").mapNotNull { it.toSearchResult() }
+        val home = document.select(".post-inner.post-hover").mapNotNull { it.toSearchResult() }
         return newHomePageResponse(request.name, home)
     }
 
@@ -85,7 +85,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 referer = mainUrl,
                 headers = headers
             ).document
-            val results = document.select(".post-inner").mapNotNull { it.toSearchResult() }
+            val results = document.select(".post-inner.post-hover").mapNotNull { it.toSearchResult() }
             if (results.isEmpty()) {
                 break
             }
