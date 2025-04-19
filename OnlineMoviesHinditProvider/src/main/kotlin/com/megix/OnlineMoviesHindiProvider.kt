@@ -73,8 +73,8 @@ class OnlineMoviesHindiProvider : MainAPI() { // all providers must be an instan
                 val season = name.substringAfter("S").substringBefore(' ').toIntOrNull() ?: 1
                 val episode = name.substringAfterLast("Eps").toIntOrNull() ?: 1
                 newEpisode(href) {
-                    this.name = name ?: "",
-                    this.season = season,
+                    this.name = name ?: ""
+                    this.season = season
                     this.episode = episode
                 }
             }
