@@ -70,7 +70,7 @@ open class CineStreamProvider : MainAPI() {
         const val malsyncAPI = "https://api.malsync.moe"
         const val vegaMoviesAPI = "https://vegamovies.bot"
         const val rogMoviesAPI = "https://rogmovies.lol"
-        const val MovieDrive_API = "https://moviesdrive.xyz"
+        const val MovieDrive_API = "https://moviesdrive.solutions"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val topmoviesAPI = "https://topmovies.tips"
         const val MoviesmodAPI = "https://moviesmod.email"

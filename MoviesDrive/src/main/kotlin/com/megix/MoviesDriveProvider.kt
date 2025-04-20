@@ -10,7 +10,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesdrive.xyz"
+    override var mainUrl = "https://moviesdrive.solutions"
     override var name = "MoviesDrive"
     override val hasMainPage = true
     override var lang = "hi"
