@@ -743,7 +743,7 @@ class Gofile : ExtractorApi() {
 
 class FastLinks : ExtractorApi() {
     override val name: String = "FastLinks"
-    override val mainUrl: String = "https://fastilinks.fun"
+    override val mainUrl: String = "https://fastilinks.online"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -756,7 +756,7 @@ class FastLinks : ExtractorApi() {
         val ssid = res.cookies["PHPSESSID"].toString()
         val cookies = mapOf("PHPSESSID" to "$ssid")
         val formBody = FormBody.Builder()
-            .add("_csrf_token_645a83a41868941e4692aa31e7235f2", "8afaabe2fa563a3cd17780e9b832ba4fdc778a9e")
+            .add("_csrf_token_645a83a41868941e4692aa31e7235f2", "3000f5248d9d207e4941e0aa053e1bcfd04dcbab")
             .build()
 
         val doc = app.post(
@@ -772,7 +772,7 @@ class FastLinks : ExtractorApi() {
 
 class Photolinx : ExtractorApi() {
     override val name: String = "Photolinx"
-    override val mainUrl: String = "https://photolinx.shop"
+    override val mainUrl: String = "https://photolinx.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -799,7 +799,7 @@ class Photolinx : ExtractorApi() {
         """.trimIndent()
         val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
         val postRequest = Request.Builder()
-            .url("https://photolinx.shop/action")
+            .url("$mainUrl/action")
             .addHeader("sec-fetch-site", "same-origin")
             .addHeader("x-requested-with", "xmlhttprequest")
             .addHeader("cookie", "PHPSESSID=$cookies")
