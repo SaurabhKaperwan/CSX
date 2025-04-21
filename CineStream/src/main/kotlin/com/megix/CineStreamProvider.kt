@@ -623,7 +623,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokePlayer4U(res.title, res.season, res.episode, seasonYear, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
-            { invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
+            { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.id, res.season, res.episode, callback) },
             { invokeMultiAutoembed(res.id, res.season, res.episode, subtitleCallback, callback) },
