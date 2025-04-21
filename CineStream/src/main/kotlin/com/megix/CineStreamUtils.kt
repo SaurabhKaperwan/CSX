@@ -1,5 +1,7 @@
 package com.megix
 
+import android.util.Base64
+import com.google.gson.JsonParser
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
@@ -22,7 +24,9 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.json.JSONArray
 import org.jsoup.Jsoup
+import java.security.MessageDigest
 import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 val SPEC_OPTIONS = mapOf(
@@ -717,4 +721,48 @@ fun decodeMeta(document: Document): Document? {
         return decodedDoc
     }
     return null
+}
+
+
+fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
+    val totalSize = keySize + ivSize
+    val derived = ByteArray(totalSize)
+    var block: ByteArray? = null
+    var offset = 0
+
+    while (offset < totalSize) {
+        val hasher = MessageDigest.getInstance("MD5")
+        if (block != null) hasher.update(block)
+        hasher.update(password)
+        hasher.update(salt)
+        block = hasher.digest()
+
+        val len = Math.min(block.size, totalSize - offset)
+        System.arraycopy(block, 0, derived, offset, len)
+        offset += len
+    }
+
+    val key = derived.copyOfRange(0, keySize)
+    val iv = derived.copyOfRange(keySize, totalSize)
+    return Pair(key, iv)
+}
+
+fun decryptOpenSSLAES(base64Cipher: String, passphrase: String): String {
+    val cipherData = Base64.decode(base64Cipher, Base64.DEFAULT)
+
+    // OpenSSL prefix: "Salted__" + 8 bytes salt
+    val prefix = cipherData.copyOfRange(0, 8).toString(Charsets.US_ASCII)
+    if (prefix != "Salted__") throw IllegalArgumentException("Invalid OpenSSL format")
+
+    val salt = cipherData.copyOfRange(8, 16)
+    val ciphertext = cipherData.copyOfRange(16, cipherData.size)
+
+    val (key, iv) = evpKDF(passphrase.toByteArray(Charsets.UTF_8), salt, 32, 16)
+
+    val secretKey = SecretKeySpec(key, "AES")
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+    val decrypted = cipher.doFinal(ciphertext)
+    return String(decrypted, Charsets.UTF_8)
 }

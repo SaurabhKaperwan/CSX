@@ -1710,7 +1710,6 @@ object CineStreamExtractors : CineStreamProvider() {
             val url = if(page == 0) {"$Player4uApi/embed?key=$fixQuery"} else {"$Player4uApi/embed?key=$fixQuery&page=$page"}
             try {
                 var document = app.get(url, timeout = 20).document
-                android.util.Log.d("salman731 html",document.html())
                 allLinks.addAll(
                     document.select(".playbtnx").map {
                         Player4uLinkData(name = it.text(), url = it.attr("onclick"))
@@ -1747,10 +1746,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 val selectedQuality = getPlayer4UQuality(qualityFromName)
 
                 val subLink = "go\\('(.*)'\\)".toRegex().find(link.url)?.groups?.get(1)?.value ?: return@forEach
-                android.util.Log.d("salman731 subLink",subLink)
                 val iframeSource = app.get("$Player4uApi$subLink", timeout = 10, referer = Player4uApi)
                     .document.select("iframe").attr("src")
-                android.util.Log.d("salman731 iframeSource",iframeSource)
                 getPlayer4uUrl(
                     nameFormatted,
                     selectedQuality,
@@ -1777,9 +1774,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
         val doc = app.get(url, timeout = 10).document
         val userData = doc.select("#user-data")
-        android.util.Log.d("salman731 v",userData.toString())
         var decryptedLinks = decryptLinks(userData.attr("v"))
-        android.util.Log.d("salman731 dl",decryptedLinks.toString())
         for (link in decryptedLinks) {
             val url = "$Primewire/links/go/$link"
             val oUrl = app.get(url,timeout = 10)
@@ -1807,7 +1802,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 "$ThePirateBayApi/stream/series/$imdbId:$season:$episode.json"
             }
             val res = app.get(url, timeout = 10).parsedSafe<TBPResponse>()
-            Log.d("salman731 TBP",res.toString())
             for(stream in res?.streams!!)
             {
                 val magnetLink = generateMagnetLink(TRACKER_LIST_URL,stream.infoHash)
@@ -1822,6 +1816,84 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                 )
             }
+        } catch (_: Exception) { }
+    }
+
+
+    suspend fun invokeVidJoy(
+        imdbId: Int? =null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        try {
+            val listSrc = listOf("Camelot","Atlantis","Babylon","NYC")
+            val link = if(season != null)
+            {
+                "$VidJoyApi/embed/api/fetch2/$imdbId/$season/$episode"
+            }
+            else
+            {
+                "$VidJoyApi/embed/api/fetch2/$imdbId"
+            }
+            listSrc.forEach { src ->
+                if(src == "Camelot")
+                {
+                    (0..4).forEach { i ->
+                        try {
+                            val finalLink = "$link/?srName=Camelot&sr=$i"
+                            val encrptedText = app.get(finalLink).text;
+                            val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
+                            if (decryptedJson != "> - <") {
+                                val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
+                                if (vidjoyResponse != null) {
+                                    for(url in vidjoyResponse.url)
+                                    {
+                                        callback.invoke(
+                                            newExtractorLink(
+                                                "Vidjoy ${url.lang}",
+                                                "Vidjoy ${url.lang}",
+                                                url = url.link,
+                                                type =  if(url.link.contains(".mp4")) ExtractorLinkType.VIDEO else INFER_TYPE
+                                            ) {
+                                                this.quality = getQualityFromName(url.resulation)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) { }
+                    }
+                }
+                else
+                {
+                    try {
+                        val finalLink = "$link/?srName=$src"
+                        val encrptedText = app.get(finalLink).text;
+                        val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
+                        if (decryptedJson != "> - <") {
+                            val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
+                            if (vidjoyResponse != null) {
+                                for(url in vidjoyResponse.url)
+                                {
+
+                                    callback.invoke(
+                                        newExtractorLink(
+                                            "Vidjoy ${url.lang}",
+                                            "Vidjoy ${url.lang}",
+                                            url = url.link,
+                                            type =  if(url.link.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+                                        ) {
+                                            this.quality = getQualityFromName(url.resulation)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } catch (e: Exception) { }
+                }
+            }
+
         } catch (_: Exception) { }
     }
 }
