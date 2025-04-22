@@ -262,6 +262,12 @@ class VCloud : ExtractorApi() {
     override val mainUrl: String = "https://vcloud.lol"
     override val requiresReferer = false
 
+    fun getBaseUrl(url: String): String {
+        return URI(url).let {
+            "${it.scheme}://${it.host}"
+        }
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -309,16 +315,19 @@ class VCloud : ExtractorApi() {
                     )
                 }
                 else if(text.contains("BuzzServer")) {
-                    val dlink = app.get("$link/download", allowRedirects = false).headers["location"] ?: ""
-                    callback.invoke(
-                        newExtractorLink(
-                            "$name[BuzzServer]",
-                            "$name[BuzzServer] $header[$size]",
-                            link.substringBeforeLast("/") + dlink,
-                        ) {
-                            this.quality = getIndexQuality(header)
-                        }
-                    )
+                    val dlink = app.get("$link/download", referer = link, allowRedirects = false).headers["hx-redirect"] ?: ""
+                    val baseUrl = getBaseUrl(link)
+                    if(dlink != "") {
+                        callback.invoke(
+                            newExtractorLink(
+                                "$name[BuzzServer]",
+                                "$name[BuzzServer] $header[$size]",
+                                baseUrl+dlink,
+                            ) {
+                                this.quality = getIndexQuality(header)
+                            }
+                        )
+                    }
                 }
 
                 else if (link.contains("pixeldra")) {
