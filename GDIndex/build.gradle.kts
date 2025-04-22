@@ -21,6 +21,6 @@ cloudstream {
         "TvSeries",
     )
 
-    iconUrl = "https://cdn.jsdelivr.net/npm/@googledrive/index@2.0.20/images/favicon.ico"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/GDIndex/icon.ico"
 
 }

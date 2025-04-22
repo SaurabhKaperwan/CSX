@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://moviesdrive.solutions/wp-content/uploads/2023/08/cropped-My-Brand-New-Logo-%E2%80%94-%E2%80%94-Create-a-logo-Google-Chrome-28-08-2023-23_14_19-180x180.png"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/MoviesDrive/icon.png"
 }
