@@ -53,6 +53,7 @@ import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeAllmovieland
 import com.megix.CineStreamExtractors.invoke4khdhub
 import com.megix.CineStreamExtractors.invokeVidJoy
+import com.megix.CineStreamExtractors.invokeMovies4u
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -111,6 +112,7 @@ open class CineStreamProvider : MainAPI() {
         const val Primewire = "https://www.primewire.tf"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
         const val VidJoyApi ="https://vidjoy.pro"
+        const val movies4uAPI = "https://movies4u.show"
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -571,6 +573,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeWHVXSubs(WYZIESubsAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeMoviesmod(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeTom(tmdbId, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
+            { invokeMovies4u(res.imdb_id, imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeProtonmovies(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -610,6 +613,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
             { if (!isBollywood) invokeHindmoviez("HindMoviez", hindMoviezAPI, res.id, res.season, res.episode, callback) },
             { invokeW4U(res.title, year, res.id, res.season, res.episode, subtitleCallback, callback) },
