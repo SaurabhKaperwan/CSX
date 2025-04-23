@@ -362,6 +362,22 @@ class VCloud : ExtractorApi() {
     }
 }
 
+class Hubdrive : ExtractorApi() {
+    override val name = "Hubdrive"
+    override val mainUrl = "https://hubdrive.fit"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val href = app.get(url).document.select(".btn.btn-primary.btn-user.btn-success1.m-1").attr("href")
+        loadExtractor(href, "", subtitleCallback, callback)
+    }
+}
+
 class HubCloudInk : HubCloud() {
     override val mainUrl: String = "https://hubcloud.ink"
 }

@@ -179,7 +179,7 @@ open class CineStreamProvider : MainAPI() {
                 if(movie.type == "tv" || movie.type == "events") TvType.Live
                 else if(movie.type == "movie") TvType.Movie
                 else TvType.TvSeries
-            val title = movie.name ?: movie.description ?: "Empty"
+            val title = movie.aliases?.firstOrNull() ?: movie.name ?: movie.description ?: "Empty"
 
             newMovieSearchResponse(title, PassData(movie.id, movie.type).toJson(), type) {
                 this.posterUrl = movie.poster.toString()
@@ -195,39 +195,44 @@ open class CineStreamProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
-        val searchResponse = mutableListOf<SearchResponse>()
+        val normalizedQuery = query.trim()
+        val hasTmdb = "tmdb:" in normalizedQuery.lowercase()
 
-        suspend fun fetchAndParse(url: String, tvType: TvType): List<SearchResponse> {
-            return try {
-                val json = app.get(url).text
-                val results = tryParseJson<SearchResult>(json)
-                results?.metas?.map {
-                    val title = it.name ?: it.description ?: "Empty"
-                    newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), tvType).apply {
-                        this.posterUrl = it.poster.toString()
-                    }
-                } ?: emptyList()
-            } catch (e: Exception) {
-                emptyList() // Fail-safe in case of network or parse error
-            }
+        suspend fun fetchResults(url: String, tvType: TvType): List<SearchResponse> = runCatching {
+            val json = app.get(url).text
+            tryParseJson<SearchResult>(json)?.metas?.map {
+                val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: "Empty"
+                newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), tvType).apply {
+                    posterUrl = it.poster.toString()
+                }
+            } ?: emptyList()
+        }.getOrDefault(emptyList())
+
+        val tmdbCleanQuery = normalizedQuery.replace("(?i)tmdb:".toRegex(), "").trim()
+
+        val endpoints = if (hasTmdb) {
+            listOf(
+                "$streamio_TMDB/catalog/movie/tmdb.top/search=$tmdbCleanQuery.json" to TvType.Movie,
+                "$streamio_TMDB/catalog/series/tmdb.top/search=$tmdbCleanQuery.json" to TvType.TvSeries
+            )
+        } else {
+            listOf(
+                "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json" to TvType.Anime,
+                "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json" to TvType.Movie,
+                "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json" to TvType.TvSeries,
+                "$mediaFusion/catalog/tv/mediafusion_search_tv/search=$normalizedQuery.json" to TvType.Live
+            )
         }
 
-        val requests = listOf(
-            async { fetchAndParse("$kitsu_url/catalog/anime/kitsu-anime-airing/search=$query.json", TvType.Movie) },
-            async { fetchAndParse("$cinemeta_url/catalog/movie/top/search=$query.json", TvType.Movie) },
-            async { fetchAndParse("$cinemeta_url/catalog/series/top/search=$query.json", TvType.TvSeries) },
-            async { fetchAndParse("$streamio_TMDB/catalog/movie/tmdb.top/search=$query.json", TvType.Movie) },
-            async { fetchAndParse("$streamio_TMDB/catalog/series/tmdb.top/search=$query.json", TvType.TvSeries) },
-            async { fetchAndParse("$mediaFusion/catalog/tv/mediafusion_search_tv/search=$query.json", TvType.Live) }
-        )
-
-        // Gather all results
-        searchResponse += requests.awaitAll().flatten()
-
-        return@coroutineScope searchResponse.sortedByDescending { response ->
-            calculateRelevanceScore(response.name, query)
+        val allRequests = endpoints.map { (url, type) ->
+            async { fetchResults(url, type) }
         }
+
+        allRequests.awaitAll()
+            .flatten()
+            .sortedByDescending { calculateRelevanceScore(it.name, query) }
     }
+
 
     override suspend fun load(url: String): LoadResponse? {
         val movie = parseJson<PassData>(url)
@@ -251,6 +256,7 @@ open class CineStreamProvider : MainAPI() {
         val json = app.get("$meta_url/meta/$tvtype/$id.json").text
         val movieData = tryParseJson<ResponseData>(json)
         val title = movieData?.meta?.name.toString()
+        val engTitle = movieData?.meta?.aliases?.firstOrNull() ?: title
         val posterUrl = movieData ?.meta?.poster.toString()
         val imdbRating = movieData?.meta?.imdbRating
         val year = movieData?.meta?.year
@@ -290,7 +296,7 @@ open class CineStreamProvider : MainAPI() {
                 anilistId,
                 malId
             ).toJson()
-            return newMovieLoadResponse(title, url, if(isAnime) TvType.AnimeMovie  else type, data) {
+            return newMovieLoadResponse(engTitle, url, if(isAnime) TvType.AnimeMovie  else type, data) {
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
@@ -339,7 +345,7 @@ open class CineStreamProvider : MainAPI() {
                 }
             } ?: emptyList()
             if(isAnime) {
-                return newAnimeLoadResponse(title, url, TvType.Anime) {
+                return newAnimeLoadResponse(engTitle, url, TvType.Anime) {
                     addEpisodes(DubStatus.Subbed, episodes)
                     this.posterUrl = posterUrl
                     this.backgroundPosterUrl = background
@@ -356,7 +362,7 @@ open class CineStreamProvider : MainAPI() {
                 }
             }
 
-            return newTvSeriesLoadResponse(title, url, type, episodes) {
+            return newTvSeriesLoadResponse(engTitle, url, type, episodes) {
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
@@ -429,6 +435,7 @@ open class CineStreamProvider : MainAPI() {
         val id: String?,
         val imdb_id: String?,
         val type: String?,
+        val aliases: ArrayList<String>?,
         val poster: String?,
         val background: String?,
         val moviedb_id: Int?,
@@ -457,6 +464,7 @@ open class CineStreamProvider : MainAPI() {
         val name: String?,
         val poster: String?,
         val description: String?,
+        val aliases: ArrayList<String>?,
     )
 
     data class EpisodeDetails(
@@ -501,29 +509,69 @@ open class CineStreamProvider : MainAPI() {
     }
 
     private fun calculateRelevanceScore(name: String, query: String): Int {
-        val lowerCaseName = name.lowercase()
-        val lowerCaseQuery = query.lowercase()
+        fun normalize(text: String): String {
+            return text.lowercase()
+                .replace(Regex("[^a-z0-9 ]"), "")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+        }
+
+        fun levenshtein(a: String, b: String): Int {
+            val dp = Array(a.length + 1) { IntArray(b.length + 1) }
+            for (i in 0..a.length) dp[i][0] = i
+            for (j in 0..b.length) dp[0][j] = j
+            for (i in 1..a.length) {
+                for (j in 1..b.length) {
+                    dp[i][j] = minOf(
+                        dp[i - 1][j] + 1,        // deletion
+                        dp[i][j - 1] + 1,        // insertion
+                        dp[i - 1][j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1 // substitution
+                    )
+                }
+            }
+            return dp[a.length][b.length]
+        }
+
+        val normalizedName = normalize(name)
+        val normalizedQuery = normalize(query)
         var score = 0
 
-        if (lowerCaseName == lowerCaseQuery) {
+        if (normalizedName == normalizedQuery) {
             score += 100
         }
 
-        if (lowerCaseName.contains(lowerCaseQuery)) {
+        if (normalizedName.contains(normalizedQuery)) {
             score += 50
-
-            val index = lowerCaseName.indexOf(lowerCaseQuery)
-            if (index == 0) {
-                score += 20
-            } else if (index > 0 && index < 5) {
-                score += 10
+            val index = normalizedName.indexOf(normalizedQuery)
+            score += when {
+                index == 0 -> 20
+                index in 1..4 -> 10
+                else -> 0
             }
 
-            lowerCaseQuery.split(" ").forEach { word ->
-                if (lowerCaseName.contains(word)) {
+            val queryWords = normalizedQuery.split(" ")
+            queryWords.forEach { word ->
+                if (normalizedName.contains(word)) {
                     score += 5
                 }
             }
+
+            if (queryWords.all { normalizedName.contains(it) }) {
+                score += 15
+            }
+        }
+
+        // Fuzzy matching bonus (if not already matched well)
+        if (score < 50) {
+            val distance = levenshtein(normalizedName, normalizedQuery)
+            if (distance in 1..3) {
+                score += 30 - (distance * 5) // closer = higher score
+            }
+        }
+
+        // Slight penalty for long irrelevant names
+        if (score < 50 && normalizedName.length > 30) {
+            score -= 10
         }
 
         return score

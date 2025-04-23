@@ -20,6 +20,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(GDFlix7())
         registerExtractorAPI(GDFlix2())
         registerExtractorAPI(GDLink())
+        registerExtractorAPI(Hubdrive())
         registerExtractorAPI(HubCloud())
         registerExtractorAPI(HubCloudInk())
         registerExtractorAPI(HubCloudArt())
