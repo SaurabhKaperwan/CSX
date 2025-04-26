@@ -8,6 +8,8 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import kotlinx.coroutines.runBlocking
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesdrive.solutions"
@@ -23,13 +25,37 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         TvType.Anime
     )
 
+    companion object {
+        val basemainUrl: String? by lazy {
+            runBlocking {
+                try {
+                     val firstRedirectUrl = app.get(MovieDriveAPI)
+                        .document
+                        .selectFirst("meta[http-equiv=refresh]")
+                        ?.attr("content")
+                        ?.substringAfter("url=")
+                        ?.takeIf { it.startsWith("http") }
+
+                    firstRedirectUrl?.let { redirect ->
+                        app.get(redirect, allowRedirects = false)
+                        .document
+                        .selectFirst("a[href]")
+                        ?.attr("href")
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
     override val mainPage = mainPageOf(
-        "$mainUrl/page/" to "Home",
-        "$mainUrl/category/amzn-prime-video/page/" to "Prime Video",
-        "$mainUrl/category/netflix/page/" to "Netflix",
-        "$mainUrl/category/hotstar/page/" to "Hotstar",
-        "$mainUrl/category/anime/page/" to "Anime",
-        "$mainUrl/category/k-drama/page/" to "K Drama",
+        "${basemainUrl ?: mainUrl}/page/" to "Home",
+        "${basemainUrl ?: mainUrl}/category/amzn-prime-video/page/" to "Prime Video",
+        "${basemainUrl ?: mainUrl}/category/netflix/page/" to "Netflix",
+        "${basemainUrl ?: mainUrl}/category/hotstar/page/" to "Hotstar",
+        "${basemainUrl ?: mainUrl}/category/anime/page/" to "Anime",
+        "${basemainUrl ?: mainUrl}/category/k-drama/page/" to "K Drama",
     )
 
     override suspend fun getMainPage(
@@ -44,9 +70,9 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("figure > img")?.attr("title")?.replace("Download ", "").toString()
-        val href = this.selectFirst("figure > a")?.attr("href").toString()
-        val posterUrl = this.selectFirst("figure > img")?.attr("src").toString()
+        val title = this.select("figure > img").attr("title").replace("Download ", "")
+        val href = this.select("figure > a").attr("href")
+        val posterUrl = this.select("figure > img").attr("src")
         val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
             SearchQuality.CamRip
         }
@@ -63,7 +89,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
+            val document = app.get("${basemainUrl ?: mainUrl}/page/$i/?s=$query").document
 
             val results = document.select("ul.recent-movies > li").mapNotNull { it.toSearchResult() }
 
@@ -78,7 +104,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         val ogTitle = title
         val plotElement = document.select(
             "h2:contains(Storyline), h3:contains(Storyline), h5:contains(Storyline), h4:contains(Storyline), h4:contains(STORYLINE)"
@@ -86,9 +112,9 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
         var description = plotElement ?. text() ?: document.select(".ipc-html-content-inner-div").firstOrNull() ?. text().toString()
 
-        var posterUrl = document.selectFirst("img[decoding=\"async\"]")?.attr("src").toString()
+        var posterUrl = document.select("img[decoding=\"async\"]").attr("src")
         val seasonRegex = """(?i)season\s*\d+""".toRegex()
-        val imdbUrl = document.selectFirst("a:contains(IMDb)") ?. attr("href")
+        val imdbUrl = document.select("a:contains(IMDb)").attr("href")
 
         val tvtype = if (
             title.contains("Episode", ignoreCase = true) == true ||
@@ -100,19 +126,9 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
             "movie"
         }
 
-        val responseData = if (!imdbUrl.isNullOrEmpty()) {
-            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
-            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
-            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
-                val gson = Gson()
-                gson.fromJson(jsonResponse, ResponseData::class.java)
-            }
-            else {
-                null
-            }
-        } else {
-            null
-        }
+        val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+        val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+        val responseData = tryParseJson<ResponseData>(jsonResponse)
 
         var cast: List<String> = emptyList()
         var genre: List<String> = emptyList()
@@ -121,14 +137,14 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         var background: String = posterUrl
 
         if(responseData != null) {
-            description = responseData.meta?.description ?: description
-            cast = responseData.meta?.cast ?: emptyList()
-            title = responseData.meta?.name ?: title
-            genre = responseData.meta?.genre ?: emptyList()
-            imdbRating = responseData.meta?.imdbRating ?: ""
-            year = responseData.meta?.year ?: ""
-            posterUrl = responseData.meta?.poster ?: posterUrl
-            background = responseData.meta?.background ?: background
+            description = responseData.meta.description ?: description
+            cast = responseData.meta.cast ?: emptyList()
+            title = responseData.meta.name ?: title
+            genre = responseData.meta.genre ?: emptyList()
+            imdbRating = responseData.meta.imdbRating ?: ""
+            year = responseData.meta.year ?: ""
+            posterUrl = responseData.meta.poster ?: posterUrl
+            background = responseData.meta.background ?: background
         }
 
         if(tvtype == "series") {
@@ -312,7 +328,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     )
 
     data class ResponseData(
-        val meta: Meta?
+        val meta: Meta
     )
 
     data class EpisodeLink(
