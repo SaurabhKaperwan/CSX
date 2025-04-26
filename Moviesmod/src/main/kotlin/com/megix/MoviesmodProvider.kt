@@ -7,11 +7,12 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
-import com.google.gson.Gson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import kotlinx.coroutines.runBlocking
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.email"
+    override var mainUrl = "https://modflix.xyz/?type=hollywood"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
@@ -24,11 +25,26 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         TvType.Anime
     )
 
+    companion object {
+        val basemainUrl: String? by lazy {
+            runBlocking {
+                try {
+                    val mainUrl = "https://modflix.xyz/?type=hollywood"
+                    app.get(mainUrl).document
+                        .selectFirst("meta[http-equiv=refresh]")?.attr("content")
+                        ?.substringAfter("url=")
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
     override val mainPage = mainPageOf(
-        "$mainUrl/page/" to "Home",
-        "$mainUrl/web-series/on-going/page/" to "Latest Web Series",
-        "$mainUrl/movies/page/" to "Latest Movies",
-        "$mainUrl/animated-web-series/page/" to "Anime",
+        "$basemainUrl/page/" to "Home",
+        "$basemainUrl/web-series/on-going/page/" to "Latest Web Series",
+        "$basemainUrl/movies/page/" to "Latest Movies",
+        "$basemainUrl/animated-web-series/page/" to "Anime",
     )
 
     override suspend fun getMainPage(
@@ -43,9 +59,9 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     }
 
     fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a")?.attr("title")?.replace("Download ", "").toString()
-        val href = this.selectFirst("a")?.attr("href").toString()
-        val posterUrl = this.selectFirst("a > div > img")?.attr("src").toString()
+        val title = this.select("a").attr("title").replace("Download ", "")
+        val href = this.select("a").attr("href")
+        val posterUrl = this.select("a > div > img").attr("src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -56,7 +72,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("$mainUrl/search/$query/page/$i").document
+            val document = app.get("$basemainUrl/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 
@@ -72,27 +88,16 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        var title = document.selectFirst("meta[property=og:title]")?.attr("content")?.replace("Download ", "").toString()
+        var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         val ogTitle = title
-        var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
-        var description = document.selectFirst("div.imdbwp__teaser")?.text()
-        val div = document.selectFirst("div.thecontent")?.text().toString()
+        var posterUrl = document.select("meta[property=og:image]").attr("content")
+        var description = document.select("div.imdbwp__teaser").text()
+        val div = document.select("div.thecontent").text()
         val tvtype = if (div.contains("season", ignoreCase = true) == true) "series" else "movie"
-        val imdbUrl = document.selectFirst("a.imdbwp__link")?.attr("href")
-
-        val responseData = if (!imdbUrl.isNullOrEmpty()) {
-            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
-            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
-            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
-                val gson = Gson()
-                gson.fromJson(jsonResponse, ResponseData::class.java)
-            }
-            else {
-                null
-            }
-        } else {
-            null
-        }
+        val imdbUrl = document.select("a.imdbwp__link").attr("href")
+        val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+        val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+        val responseData = tryParseJson<ResponseData>(jsonResponse)
 
         var cast: List<String> = emptyList()
         var genre: List<String> = emptyList()
@@ -101,18 +106,17 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         var background: String = posterUrl
 
         if(responseData != null) {
-            description = responseData.meta?.description ?: description
-            cast = responseData.meta?.cast ?: emptyList()
-            title = responseData.meta?.name ?: title
-            genre = responseData.meta?.genre ?: emptyList()
+            description = responseData.meta.description ?: description
+            cast = responseData.meta.cast ?: emptyList()
+            title = responseData.meta.name ?: title
+            genre = responseData.meta.genre ?: emptyList()
             imdbRating = responseData.meta?.imdbRating ?: ""
-            year = responseData.meta?.year ?: ""
-            posterUrl = responseData.meta?.poster ?: posterUrl
-            background = responseData.meta?.background ?: background
+            year = responseData.meta.year ?: ""
+            posterUrl = responseData.meta.poster ?: posterUrl
+            background = responseData.meta.background ?: background
         }
 
         if(tvtype == "series") {
-
             if(title != ogTitle) {
                 val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
                 if (checkSeason == null) {
@@ -136,13 +140,13 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                     val base64Value = link.substringAfter("url=")
                     link = base64Decode(base64Value)
                 }
-                val doc = app.get(fixUrl(link)).document
+                val doc = app.get(link).document
                 val hTags = doc.select("h3,h4")
                 var e = 1
                 hTags.mapNotNull {
-                    val epUrl = it.selectFirst("a")?.attr("href")
+                    val epUrl = it.select("a").attr("href")
                     val key = Pair(realSeason, e)
-                    if(epUrl != null) {
+                    if(!epUrl.isEmpty()) {
                         if (episodesMap.containsKey(key)) {
                             val currentList = episodesMap[key] ?: emptyList()
                             val newList = currentList.toMutableList()
@@ -194,8 +198,8 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
                     link = base64Decode(base64Value)
                 }
 
-                val doc = app.get(fixUrl(link)).document
-                val source = doc.selectFirst("a.maxbutton-1, a.maxbutton-5")?.attr("href").toString()
+                val doc = app.get(link).document
+                val source = doc.select("a.maxbutton-1, a.maxbutton-5").attr("href")
                 EpisodeLink(
                     source
                 )
@@ -266,7 +270,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     )
 
     data class ResponseData(
-        val meta: Meta?
+        val meta: Meta
     )
 
     data class EpisodeLink(
