@@ -11,6 +11,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.roundToInt
+import org.json.JSONObject
 import com.lagradost.api.Log
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -70,49 +71,73 @@ open class CineStreamProvider : MainAPI() {
     val animeCatalog = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
-        const val vegaMoviesAPI = "https://vegamovies.bot"
-        const val rogMoviesAPI = "https://rogmovies.lol"
-        const val MovieDrive_API = "https://moviesdrive.solutions"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-        const val topmoviesAPI = "https://topmovies.tips"
-        const val MoviesmodAPI = "https://moviesmod.email"
-        const val protonmoviesAPI = "https://m2.protonmovies.top"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
-        const val W4UAPI = "https://world4ufree.rodeo"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
         const val MultiembedAPI = "https://hin.autoembed.cc"
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val WHVXAPI = "https://api.whvx.net"
         const val TomAPI = "https://tom.autoembed.cc"
-        const val uhdmoviesAPI = "https://uhdmovies.tips"
-        const val fourkhdhubAPI = "https://4khdhub.fans"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val RarAPI = "https://nepu.to"
-        const val multimoviesAPI = "https://multimovies.guru"
         const val animepaheAPI = "https://animepahe.ru"
         const val allmovielandAPI = "https://allmovieland.fun"
-        const val cinemaluxeAPI = "https://cinemaluxe.foo"
-        const val bollyflixAPI = "https://bollyflix.yoga"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val netflixAPI = "https://netfree2.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
-        const val skymoviesAPI = "https://skymovieshd.pink"
-        const val hindMoviezAPI = "https://hindmoviez.email"
-        const val jaduMoviesAPI = "https://jadumovies.com"
-        const val moviesflixAPI = "https://themoviesflix.at"
-        const val hdmoviesflixAPI = "https://hdmoviesflix.center"
-        const val hdmovie2API = "https://hdmovie2.science"
         const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
         const val Player4uApi = "https://player4u.xyz"
         const val Primewire = "https://www.primewire.tf"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
-        const val VidJoyApi ="https://vidjoy.pro"
-        const val movies4uAPI = "https://movies4u.show"
+        const val VidJoyApi = "https://vidjoy.pro"
+        const val modflixAPI = "https://modflix.xyz"
+        const val MovieDriveAPI = "https://moviesdrives.com"
+        const val Vglist = "https://vglist.nl"
+
+        var protonmoviesAPI = ""
+        var W4UAPI = ""
+        var fourkhdhubAPI = ""
+        var multimoviesAPI = ""
+        var cinemaluxeAPI = ""
+        var bollyflixAPI = ""
+        var movies4uAPI = ""
+        var skymoviesAPI = ""
+        var hindMoviezAPI = ""
+        var moviesflixAPI = ""
+        var hdmoviesflixAPI = ""
+        var hdmovie2API = ""
+
+        private var loaded = false
+
+        suspend fun loadApiUrls() {
+            if (loaded) return // already loaded
+            try {
+                val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                val json = response.text
+                val jsonObject = JSONObject(json)
+
+                W4UAPI = jsonObject.optString("w4u")
+                protonmoviesAPI = jsonObject.optString("protonmovies")
+                cinemaluxeAPI = jsonObject.optString("cinemaluxe")
+                bollyflixAPI = jsonObject.optString("bollyflix")
+                skymoviesAPI = jsonObject.optString("skymovies")
+                hindMoviezAPI = jsonObject.optString("hindmoviez")
+                moviesflixAPI = jsonObject.optString("moviesflix")
+                hdmoviesflixAPI = jsonObject.optString("hdmoviesflix")
+                movies4uAPI = jsonObject.optString("hdmovie2")
+                fourkhdhubAPI = jsonObject.optString("4khdhub")
+                multimoviesAPI = jsonObject.optString("multimovies")
+
+                loaded = true
+            } catch (e: Exception) {
+                Log.e("Error:", "Error during getting base urls: $e")
+            }
+        }
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -228,11 +253,20 @@ open class CineStreamProvider : MainAPI() {
             async { fetchResults(url, type) }
         }
 
-        allRequests.awaitAll()
-            .flatten()
-            .sortedByDescending { calculateRelevanceScore(it.name, query) }
-    }
+        val resultsLists = allRequests.awaitAll()
+        val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
+        val mixedResults = mutableListOf<SearchResponse>()
 
+        for (i in 0 until maxSize) {
+            for (list in resultsLists) {
+                if (i < list.size) {
+                    mixedResults.add(list[i])
+                }
+            }
+        }
+
+        mixedResults
+    }
 
     override suspend fun load(url: String): LoadResponse? {
         val movie = parseJson<PassData>(url)
@@ -378,14 +412,15 @@ open class CineStreamProvider : MainAPI() {
     }
 
     override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
         val res = parseJson<LoadLinksData>(data)
         val year = getYear(res)
         val seasonYear = getSeasonYear(res)
+        if (!loaded) loadApiUrls()
 
         return when {
             res.tvtype in listOf("tv", "events") -> {
@@ -508,75 +543,6 @@ open class CineStreamProvider : MainAPI() {
         return tryParseJson<ExtenalIds>(json) ?: return null
     }
 
-    private fun calculateRelevanceScore(name: String, query: String): Int {
-        fun normalize(text: String): String {
-            return text.lowercase()
-                .replace(Regex("[^a-z0-9 ]"), "")
-                .replace(Regex("\\s+"), " ")
-                .trim()
-        }
-
-        fun levenshtein(a: String, b: String): Int {
-            val dp = Array(a.length + 1) { IntArray(b.length + 1) }
-            for (i in 0..a.length) dp[i][0] = i
-            for (j in 0..b.length) dp[0][j] = j
-            for (i in 1..a.length) {
-                for (j in 1..b.length) {
-                    dp[i][j] = minOf(
-                        dp[i - 1][j] + 1,        // deletion
-                        dp[i][j - 1] + 1,        // insertion
-                        dp[i - 1][j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1 // substitution
-                    )
-                }
-            }
-            return dp[a.length][b.length]
-        }
-
-        val normalizedName = normalize(name)
-        val normalizedQuery = normalize(query)
-        var score = 0
-
-        if (normalizedName == normalizedQuery) {
-            score += 100
-        }
-
-        if (normalizedName.contains(normalizedQuery)) {
-            score += 50
-            val index = normalizedName.indexOf(normalizedQuery)
-            score += when {
-                index == 0 -> 20
-                index in 1..4 -> 10
-                else -> 0
-            }
-
-            val queryWords = normalizedQuery.split(" ")
-            queryWords.forEach { word ->
-                if (normalizedName.contains(word)) {
-                    score += 5
-                }
-            }
-
-            if (queryWords.all { normalizedName.contains(it) }) {
-                score += 15
-            }
-        }
-
-        // Fuzzy matching bonus (if not already matched well)
-        if (score < 50) {
-            val distance = levenshtein(normalizedName, normalizedQuery)
-            if (distance in 1..3) {
-                score += 30 - (distance * 5) // closer = higher score
-            }
-        }
-
-        // Slight penalty for long irrelevant names
-        if (score < 50 && normalizedName.length > 30) {
-            score -= 10
-        }
-
-        return score
-    }
-
     private fun getYear(res: LoadLinksData): Int? {
         return if (res.tvtype == "movie") res.year?.toIntOrNull()
         else res.year?.substringBefore("-")?.toIntOrNull() ?: res.year?.substringBefore("–")?.toIntOrNull()
@@ -626,7 +592,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeAllmovieland(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeProtonmovies(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeHindmoviez("HindMoviez", hindMoviezAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeVegamovies(vegaMoviesAPI, "VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeVegamovies("VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(imdbTitle, res.imdbSeason, res.imdbEpisode, imdbYear, subtitleCallback, callback) },
             { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, seasonYear, callback) },
@@ -647,8 +613,8 @@ open class CineStreamProvider : MainAPI() {
         val isAsian = res.isAsian
 
         runAllAsync(
-            { if (!isBollywood) invokeVegamovies(vegaMoviesAPI, "VegaMovies", res.id, res.season, res.episode, subtitleCallback, callback) },
-            { if (isBollywood) invokeVegamovies(rogMoviesAPI, "RogMovies", res.id, res.season, res.episode, subtitleCallback, callback) },
+            { if (!isBollywood) invokeVegamovies("VegaMovies", res.id, res.season, res.episode, subtitleCallback, callback) },
+            { if (isBollywood) invokeVegamovies("RogMovies", res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeNetflix(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeVideo(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.id, callback) },
