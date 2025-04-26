@@ -8,6 +8,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import kotlinx.coroutines.runBlocking
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://vegamovies.bot"
@@ -23,6 +24,23 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         TvType.AsianDrama,
         TvType.Anime
     )
+
+    companion object {
+        val basemainUrl: String? by lazy {
+            runBlocking {
+                try {
+                     app.get("https://vglist.nl/?re=vegamovies",allowRedirects = false)
+                        .document
+                        .selectFirst("meta[http-equiv=refresh]")
+                        ?.attr("content")
+                        ?.substringAfter("url=")
+                        ?.takeIf { it.startsWith("http") }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
 
     open val headers = mapOf(
         "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -42,13 +60,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/page/%d/" to "Home",
-        "$mainUrl/web-series/netflix/page/%d/" to "Netflix",
-        "$mainUrl/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
-        "$mainUrl/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
-        "$mainUrl/web-series/mx-original/page/%d/" to "MX Original",
-        "$mainUrl/anime-series/page/%d/" to "Anime Series",
-        "$mainUrl/korean-series/page/%d/" to "Korean Series"
+        "${basemainUrl ?: mainUrl}/page/%d/" to "Home",
+        "${basemainUrl ?: mainUrl}/web-series/netflix/page/%d/" to "Netflix",
+        "${basemainUrl ?: mainUrl}/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
+        "${basemainUrl ?: mainUrl}/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
+        "${basemainUrl ?: mainUrl}/web-series/mx-original/page/%d/" to "MX Original",
+        "${basemainUrl ?: mainUrl}/anime-series/page/%d/" to "Anime Series",
+        "${basemainUrl ?: mainUrl}/korean-series/page/%d/" to "Korean Series"
     )
 
     override suspend fun getMainPage(
@@ -80,7 +98,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         for (i in 1..5) {
             try {
                 val document = app.get(
-                    "$mainUrl/page/$i/?s=$query",
+                    "${basemainUrl ?: mainUrl}/page/$i/?s=$query",
                     referer = mainUrl,
                     headers = headers
                 ).document ?: continue

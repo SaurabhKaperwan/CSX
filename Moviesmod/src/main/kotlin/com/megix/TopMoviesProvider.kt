@@ -7,7 +7,7 @@ import org.jsoup.select.Elements
 import kotlinx.coroutines.runBlocking
 
 class TopmoviesProvider : MoviesmodProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://modflix.xyz/?type=bollywood"
+    override var mainUrl = "https://topmovies.tips"
     override var name = "TopMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -29,16 +29,16 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
     }
 
     override val mainPage = mainPageOf(
-        "$basemainUrl/page/" to "Home",
-        "$basemainUrl/web-series/page/" to "Latest Web Series",
-        "$basemainUrl/movies/hindi-movies/page/" to "Latest Hindi Movies",
+        "${basemainUrl ?: mainUrl}/page/" to "Home",
+        "${basemainUrl ?: mainUrl}/web-series/page/" to "Latest Web Series",
+        "${basemainUrl ?: mainUrl}/movies/hindi-movies/page/" to "Latest Hindi Movies",
     )
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("$basemainUrl/search/$query/page/$i").document
+            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 

@@ -12,7 +12,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import kotlinx.coroutines.runBlocking
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://modflix.xyz/?type=hollywood"
+    override var mainUrl = "https://moviesmod.email"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
@@ -41,10 +41,10 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     }
 
     override val mainPage = mainPageOf(
-        "$basemainUrl/page/" to "Home",
-        "$basemainUrl/web-series/on-going/page/" to "Latest Web Series",
-        "$basemainUrl/movies/page/" to "Latest Movies",
-        "$basemainUrl/animated-web-series/page/" to "Anime",
+        "${basemainUrl ?: mainUrl}/page/" to "Home",
+        "${basemainUrl ?: mainUrl}/web-series/on-going/page/" to "Latest Web Series",
+        "${basemainUrl ?: mainUrl}/movies/page/" to "Latest Movies",
+        "${basemainUrl ?: mainUrl}/animated-web-series/page/" to "Anime",
     )
 
     override suspend fun getMainPage(
@@ -72,7 +72,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("$basemainUrl/search/$query/page/$i").document
+            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 
