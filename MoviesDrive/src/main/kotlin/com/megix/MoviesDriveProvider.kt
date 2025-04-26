@@ -29,7 +29,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val basemainUrl: String? by lazy {
             runBlocking {
                 try {
-                     val firstRedirectUrl = app.get(MovieDriveAPI)
+                     val firstRedirectUrl = app.get("https://moviesdrives.com")
                         .document
                         .selectFirst("meta[http-equiv=refresh]")
                         ?.attr("content")
