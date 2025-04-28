@@ -111,6 +111,7 @@ open class CineStreamProvider : MainAPI() {
         var moviesflixAPI = ""
         var hdmoviesflixAPI = ""
         var hdmovie2API = ""
+        var jaduMoviesAPI = ""
 
         private var loaded = false
 
@@ -129,9 +130,11 @@ open class CineStreamProvider : MainAPI() {
                 hindMoviezAPI = jsonObject.optString("hindmoviez")
                 moviesflixAPI = jsonObject.optString("moviesflix")
                 hdmoviesflixAPI = jsonObject.optString("hdmoviesflix")
-                movies4uAPI = jsonObject.optString("hdmovie2")
+                movies4uAPI = jsonObject.optString("movies4u")
                 fourkhdhubAPI = jsonObject.optString("4khdhub")
                 multimoviesAPI = jsonObject.optString("multimovies")
+                hdmovie2API = jsonObject.optString("hdmovie2")
+                jaduMoviesAPI = jsonObject.optString("jadumovies")
 
                 loaded = true
             } catch (e: Exception) {
@@ -242,9 +245,9 @@ open class CineStreamProvider : MainAPI() {
             )
         } else {
             listOf(
-                "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json" to TvType.Anime,
                 "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json" to TvType.Movie,
                 "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json" to TvType.TvSeries,
+                "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json" to TvType.Anime,
                 "$mediaFusion/catalog/tv/mediafusion_search_tv/search=$normalizedQuery.json" to TvType.Live
             )
         }
@@ -630,6 +633,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
             { if (!isBollywood) invokeHindmoviez("HindMoviez", hindMoviezAPI, res.id, res.season, res.episode, callback) },
+            { if (isBollywood) invokeHindmoviez("JaduMovies", jaduMoviesAPI, res.id, res.season, res.episode, callback) },
             { invokeW4U(res.title, year, res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWHVXSubs(WHVXSubsAPI, res.id, res.season, res.episode, subtitleCallback) },
             { invokeWHVXSubs(WYZIESubsAPI, res.id, res.season, res.episode, subtitleCallback) },

@@ -28,6 +28,7 @@ import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import com.lagradost.cloudstream3.runAllAsync
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -257,23 +258,42 @@ suspend fun getHindMoviezLinks(
         timeout = 50L
     )
     val doc = res.document
+    val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ") ?: ""
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ") ?: ""
-    val link = doc.select("a.btn-info").attr("href")
-    val document = app.get(link).document
-    val name = document.select("div.container > h2").text()
     val extracted = extractSpecs(name)
     val extractedSpecs = buildExtractedTitle(extracted)
-    document.select("a.button").map {
-        callback.invoke(
-            newExtractorLink(
-                source,
-                "$source $extractedSpecs[$fileSize]",
-                it.attr("href"),
-            ) {
-                this.quality = getIndexQuality(name)
+
+    runAllAsync(
+        {
+            val link = doc.select("a.btn-info").attr("href")
+            val document = app.get(link).document
+            document.select("a.button").map {
+                callback.invoke(
+                    newExtractorLink(
+                        source,
+                        "$source $extractedSpecs[$fileSize]",
+                        it.attr("href"),
+                        ExtractorLinkType.VIDEO,
+                    ) {
+                        this.quality = getIndexQuality(name)
+                    }
+                )
             }
-        )
-    }
+        },
+        {
+            val link = doc.select("a.btn-dark").attr("href")
+            callback.invoke(
+                newExtractorLink(
+                    "$source[HCloud]",
+                    "$source[HCloud] $extractedSpecs[$fileSize]",
+                    link,
+                    ExtractorLinkType.VIDEO,
+                ) {
+                    this.quality = getIndexQuality(name)
+                }
+            )
+        },
+    )
 }
 
 suspend fun loadSourceNameExtractor(
