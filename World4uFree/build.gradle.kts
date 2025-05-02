@@ -20,5 +20,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://world4ufree.rodeo/favicon-32x32.png"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/World4uFree/icon.png"
 }

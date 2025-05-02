@@ -4,7 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
+import kotlinx.coroutines.runBlocking
 
 class TopmoviesProvider : MoviesmodProvider() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://topmovies.tips"
@@ -17,9 +17,37 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
         TvType.TvSeries
     )
 
+    val basemainUrl: String? = runBlocking {
+        try {
+            val mainUrl = "https://modflix.xyz/?type=bollywood"
+            app.get(mainUrl).document
+                .selectFirst("meta[http-equiv=refresh]")?.attr("content")
+                ?.substringAfter("url=")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     override val mainPage = mainPageOf(
-        "$mainUrl/page/" to "Home",
-        "$mainUrl/web-series/page/" to "Latest Web Series",
-        "$mainUrl/movies/hindi-movies/page/" to "Latest Hindi Movies",
+        "${basemainUrl ?: mainUrl}/page/" to "Home",
+        "${basemainUrl ?: mainUrl}/web-series/page/" to "Latest Web Series",
+        "${basemainUrl ?: mainUrl}/movies/hindi-movies/page/" to "Latest Hindi Movies",
     )
+
+    override suspend fun search(query: String): List<SearchResponse> {
+        val searchResponse = mutableListOf<SearchResponse>()
+
+        for (i in 1..7) {
+            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i").document
+
+            val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
+
+            if (results.isEmpty()) {
+                break
+            }
+            searchResponse.addAll(results)
+        }
+
+        return searchResponse
+    }
 }

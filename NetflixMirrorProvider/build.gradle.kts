@@ -21,5 +21,5 @@ cloudstream {
         "TvSeries"
     )
 
-    iconUrl = "https://netfree2.cc/mobile/img/nf2/icon_x192.png"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/NetflixMirrorProvider/icon.png"
 }

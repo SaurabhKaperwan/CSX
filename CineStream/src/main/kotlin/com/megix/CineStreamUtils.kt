@@ -1,5 +1,7 @@
 package com.megix
 
+import android.util.Base64
+import com.google.gson.JsonParser
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
@@ -20,8 +22,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import org.json.JSONArray
+import org.jsoup.Jsoup
+import java.security.MessageDigest
 import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import com.lagradost.cloudstream3.runAllAsync
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -242,27 +249,51 @@ fun getIndexQuality(str: String?): Int {
 }
 
 suspend fun getHindMoviezLinks(
+    source: String,
     url: String,
     callback: (ExtractorLink) -> Unit
 ) {
-    val doc = app.get(url).document
+    val res = app.get(url,
+        allowRedirects = true,
+        timeout = 50L
+    )
+    val doc = res.document
+    val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ") ?: ""
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ") ?: ""
-    val link = doc.select("a.btn-info").attr("href")
-    val document = app.get(link).document
-    val name = document.select("div.container > h2").text()
     val extracted = extractSpecs(name)
     val extractedSpecs = buildExtractedTitle(extracted)
-    document.select("a.button").map {
-        callback.invoke(
-            newExtractorLink(
-                "HindMoviez",
-                "HindMoviez $extractedSpecs[$fileSize]",
-                it.attr("href"),
-            ) {
-                this.quality = getIndexQuality(name)
+
+    runAllAsync(
+        {
+            val link = doc.select("a.btn-info").attr("href")
+            val document = app.get(link).document
+            document.select("a.button").map {
+                callback.invoke(
+                    newExtractorLink(
+                        source,
+                        "$source $extractedSpecs[$fileSize]",
+                        it.attr("href"),
+                        ExtractorLinkType.VIDEO,
+                    ) {
+                        this.quality = getIndexQuality(name)
+                    }
+                )
             }
-        )
-    }
+        },
+        {
+            val link = doc.select("a.btn-dark").attr("href")
+            callback.invoke(
+                newExtractorLink(
+                    "$source[HCloud]",
+                    "$source[HCloud] $extractedSpecs[$fileSize]",
+                    link,
+                    ExtractorLinkType.VIDEO,
+                ) {
+                    this.quality = getIndexQuality(name)
+                }
+            )
+        },
+    )
 }
 
 suspend fun loadSourceNameExtractor(
@@ -487,7 +518,7 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    //val res = app.get(url)
+    //val res = app.get(url).document
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
     val genAccountRes = app.post("$mainApi/accounts").text
     val jsonResp = JSONObject(genAccountRes)
@@ -508,13 +539,22 @@ suspend fun gofileExtractor(
     val oId = children.keys().next()
     val link = children.getJSONObject(oId).getString("link")
     val fileName = children.getJSONObject(oId).getString("name")
-    if(link != null && fileName != null) {
+    val size = children.getJSONObject(oId).getLong("size")
+    val formattedSize = if (size < 1024L * 1024 * 1024) {
+        val sizeInMB = size.toDouble() / (1024 * 1024)
+        "%.2f MB".format(sizeInMB)
+    } else {
+        val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
+        "%.2f GB".format(sizeInGB)
+    }
+
+    if(link != null) {
         val extracted = extractSpecs(fileName)
         val extractedSpecs = buildExtractedTitle(extracted)
         callback.invoke(
             newExtractorLink(
                 "$source[Gofile]",
-                "$source[Gofile] $extractedSpecs",
+                "$source[Gofile] $extractedSpecs[$formattedSize]",
                 link,
             ) {
                 this.quality = getIndexQuality(fileName)
@@ -570,7 +610,7 @@ suspend fun getPlayer4uUrl(
     val m3u8 = Regex("\"hls2\":\\s*\"(.*?m3u8.*?)\"").find(script)?.groupValues?.getOrNull(1).orEmpty()
     callback.invoke(
         newExtractorLink(
-            name,
+            "Player4U",
             name,
             m3u8,
             type = ExtractorLinkType.M3U8
@@ -617,4 +657,132 @@ suspend fun generateMagnetLink(url: String, hash: String?): String {
             }
         }
     }
+}
+
+suspend fun getProtonStream(
+    doc: Document,
+    protonmoviesAPI: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+) {
+    doc.select("tr").toList()
+        .filterIndexed { _, element ->
+            element.text().contains("1080p") ||
+            element.text().contains("720p") ||
+            element.text().contains("480p")
+    }
+    .amap { tr ->
+        val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
+
+        if(id != null) {
+            val requestBody = FormBody.Builder()
+                .add("downloadid", id)
+                .add("token", "ok")
+                .build()
+            val postHeaders = mapOf(
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "Referer" to protonmoviesAPI,
+                "Content-Type" to "multipart/form-data",
+            )
+            val idData = app.post(
+                "$protonmoviesAPI/ppd.php",
+                headers = postHeaders,
+                requestBody = requestBody
+            ).text
+
+            val headers = mapOf(
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "Referer" to protonmoviesAPI
+            )
+
+            val idRes = app.post(
+                "$protonmoviesAPI/tmp/$idData",
+                headers = headers
+            ).text
+
+            JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+                gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
+            }
+        }
+    }
+}
+
+fun decodeHtml(encodedArray: Array<String>): String {
+    val joined = encodedArray.joinToString("")
+
+    val unescaped = joined
+        .replace("\\\"", "\"")
+        .replace("\\'", "'")
+
+    val cleaned = unescaped
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace("\\r", "\r")
+
+    val decoded = cleaned
+        .replace("&quot;", "\"")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&")
+
+    return decoded
+}
+
+fun decodeMeta(document: Document): Document? {
+    val scriptContent = document.selectFirst("script:containsData(decodeURIComponent)")?.data().toString()
+    val splitByEqual = scriptContent.split(" = ")
+    if (splitByEqual.size > 1) {
+        val partAfterEqual = splitByEqual[1]
+        val trimmed = partAfterEqual.split("protomovies")[0].trim()
+        val sliced = if (trimmed.isNotEmpty()) trimmed.dropLast(1) else ""
+        val jsonArray = JSONArray(sliced)
+        val htmlString = decodeHtml(Array(jsonArray.length()) { i -> jsonArray.getString(i) })
+        val decodedDoc = Jsoup.parse(htmlString)
+        return decodedDoc
+    }
+    return null
+}
+
+
+fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
+    val totalSize = keySize + ivSize
+    val derived = ByteArray(totalSize)
+    var block: ByteArray? = null
+    var offset = 0
+
+    while (offset < totalSize) {
+        val hasher = MessageDigest.getInstance("MD5")
+        if (block != null) hasher.update(block)
+        hasher.update(password)
+        hasher.update(salt)
+        block = hasher.digest()
+
+        val len = Math.min(block.size, totalSize - offset)
+        System.arraycopy(block, 0, derived, offset, len)
+        offset += len
+    }
+
+    val key = derived.copyOfRange(0, keySize)
+    val iv = derived.copyOfRange(keySize, totalSize)
+    return Pair(key, iv)
+}
+
+fun decryptOpenSSLAES(base64Cipher: String, passphrase: String): String {
+    val cipherData = Base64.decode(base64Cipher, Base64.DEFAULT)
+
+    // OpenSSL prefix: "Salted__" + 8 bytes salt
+    val prefix = cipherData.copyOfRange(0, 8).toString(Charsets.US_ASCII)
+    if (prefix != "Salted__") throw IllegalArgumentException("Invalid OpenSSL format")
+
+    val salt = cipherData.copyOfRange(8, 16)
+    val ciphertext = cipherData.copyOfRange(16, cipherData.size)
+
+    val (key, iv) = evpKDF(passphrase.toByteArray(Charsets.UTF_8), salt, 32, 16)
+
+    val secretKey = SecretKeySpec(key, "AES")
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+    val decrypted = cipher.doFinal(ciphertext)
+    return String(decrypted, Charsets.UTF_8)
 }

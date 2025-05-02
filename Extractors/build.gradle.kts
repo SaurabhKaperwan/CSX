@@ -1,4 +1,4 @@
-version = 43
+version = 49
 
 cloudstream {
     //language = "hi"
@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://cdn-icons-png.flaticon.com/512/4961/4961639.png"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/Extractors/icon.png"
 }
