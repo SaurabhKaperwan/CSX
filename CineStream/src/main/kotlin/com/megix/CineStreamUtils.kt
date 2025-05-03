@@ -311,8 +311,9 @@ suspend fun loadSourceNameExtractor(
             scope.launch {
                 val extracted = extractSpecs(link.name)
                 val extractedSpecs = buildExtractedTitle(extracted)
+                val combined = if(source.contains("(Combined)")) " (Combined)" else ""
                 val newLink = newExtractorLink(
-                    link.source,
+                    "${link.source}$combined",
                     "$source[${link.source}] $extractedSpecs",
                     link.url,
                     type = link.type
