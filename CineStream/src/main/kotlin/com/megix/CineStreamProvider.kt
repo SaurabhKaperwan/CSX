@@ -37,7 +37,7 @@ import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeTokyoInsider
 import com.megix.CineStreamExtractors.invokeTvStream
 import com.megix.CineStreamExtractors.invokeAllanime
-import com.megix.CineStreamExtractors.invokeDramacool
+import com.megix.CineStreamExtractors.invokeStreamAsia
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeFlixhq
@@ -83,12 +83,13 @@ open class CineStreamProvider : MainAPI() {
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
+        const val AnimeOwlAPI = "https://animeowl.me"
         const val allmovielandAPI = "https://allmovieland.fun"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val netflixAPI = "https://netfree2.cc"
         const val AllanimeAPI = "https://api.allanime.day/api"
-        const val stremio_Dramacool = "https://stremio-dramacool-addon.xyz"
+        const val StreamAsiaAPI = "https://stremio-dramacool-addon.xyz"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
         const val Player4uApi = "https://player4u.xyz"
@@ -597,6 +598,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeHindmoviez("HindMoviez", hindMoviezAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVegamovies("VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(imdbTitle, res.imdbSeason, res.imdbEpisode, imdbYear, subtitleCallback, callback) },
+            { invokeMultimovies(multimoviesAPI, imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, seasonYear, callback) },
             { invokeCinemaluxe(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
@@ -621,9 +623,10 @@ open class CineStreamProvider : MainAPI() {
             { invokeNetflix(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeVideo(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.id, callback) },
+            { invokeMultimovies(multimoviesAPI, res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (isBollywood) invokeTopMovies(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { if (!isBollywood) invokeMoviesmod(res.id, res.season, res.episode, subtitleCallback, callback) },
-            { if (isAsian && res.season != null) invokeDramacool(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
+            { if (isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.season, res.episode, year, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },

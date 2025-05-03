@@ -127,7 +127,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeDramacool(
+    suspend fun invokeStreamAsia(
         title: String,
         provider: String,
         season: Int? = null,
@@ -137,9 +137,9 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val titleSlug = title.replace(" ", "-")
         val s = if(season != 1) "-season-$season" else ""
-        val url = "$stremio_Dramacool/stream/series/$provider-${titleSlug}${s}::$titleSlug${s}-ep-$episode.json"
+        val url = "$StreamAsiaAPI/stream/series/$provider-${titleSlug}${s}::$titleSlug${s}-ep-$episode.json"
         val json = app.get(url).text
-        val data = tryParseJson<Dramacool>(json) ?: return
+        val data = tryParseJson<StreamAsia>(json) ?: return
         data.streams.forEach {
 
             callback.invoke(
@@ -342,7 +342,9 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
         val document = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
+
         document.select("div.wp-content p a").amap {
+
             if(episode != null && it.text().contains("EP")) {
                 if(
                     it.text().contains("EP$episode")||
@@ -357,8 +359,6 @@ object CineStreamExtractors : CineStreamProvider() {
                             callback,
                         )
                     }
-                } else {
-                    return@amap;
                 }
             }
             else {
@@ -838,11 +838,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
             {
-                malsync?.Gogoanime?.forEach { (_, entry) ->
-                    entry["url"]?.let { url ->
-                        invokeAnitaku(url, episode, subtitleCallback, callback)
-                    }
-                }
+                invokeAnimeOwl(zorotitle, episode, subtitleCallback, callback)
             },
             {
                 if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
@@ -872,45 +868,6 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeAnitaku(
-        url: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-            val subDub = if (url!!.contains("-dub")) "Dub" else "Sub"
-            val epUrl = url.replace("category/", "").plus("-episode-${episode}")
-            val epRes = app.get(epUrl).document
-            epRes.select("div.anime_muti_link > ul > li").forEach {
-                val sourcename = it.selectFirst("a")?.ownText() ?: return@forEach
-                val iframe = it.selectFirst("a")?.attr("data-video") ?: return@forEach
-                if(iframe.contains("s3taku"))
-                {
-                    val iv = "3134003223491201"
-                    val secretKey = "37911490979715163134003223491201"
-                    val secretDecryptKey = "54674138327930866480207815084989"
-                    GogoHelper.extractVidstream(
-                        iframe,
-                        "Anitaku Vidstreaming [$subDub]",
-                        callback,
-                        iv,
-                        secretKey,
-                        secretDecryptKey,
-                        isUsingAdaptiveKeys = false,
-                        isUsingAdaptiveData = true
-                    )
-                }
-                else
-                loadCustomExtractor(
-                    "Anitaku $sourcename [$subDub]",
-                    iframe,
-                    "",
-                    subtitleCallback,
-                    callback
-                )
-            }
-    }
-
     private suspend fun invokeAnimepahe(
         url: String? = null,
         episode: Int? = null,
@@ -930,37 +887,42 @@ object CineStreamExtractors : CineStreamProvider() {
         }
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
 
-        doc.select("div#pickDownload > a").amap {
-            val href = it.attr("href")
-            var type = "SUB"
-            if(it.select("span").text().contains("eng")) type = "DUB"
+        runAllAsync(
+            {
+                doc.select("div#pickDownload > a").amap {
+                    val href = it.attr("href")
+                    var type = "SUB"
+                    if(it.select("span").text().contains("eng")) type = "DUB"
 
-            loadCustomExtractor(
-                "Animepahe [$type]",
-                href,
-                "",
-                subtitleCallback,
-                callback,
-                getIndexQuality(it.text())
-            )
-        }
-
-        doc.select("div#resolutionMenu > button").amap {
-            var type = "SUB"
-            if(it.select("span").text().contains("eng")) type = "DUB"
-            val quality = it.attr("data-resolution")
-            val href = it.attr("data-src")
-            if (href.contains("kwik.si")) {
-                loadCustomExtractor(
-                    "Animepahe(VLC) [$type]",
-                    href,
-                    mainUrl,
-                    subtitleCallback,
-                    callback,
-                    getQualityFromName(quality)
-                )
-            }
-        }
+                    loadCustomExtractor(
+                        "Animepahe [$type]",
+                        href,
+                        "",
+                        subtitleCallback,
+                        callback,
+                        getIndexQuality(it.text())
+                    )
+                }
+            },
+            {
+                doc.select("div#resolutionMenu > button").amap {
+                    var type = "SUB"
+                    if(it.select("span").text().contains("eng")) type = "DUB"
+                    val quality = it.attr("data-resolution")
+                    val href = it.attr("data-src")
+                    if (href.contains("kwik.si")) {
+                        loadCustomExtractor(
+                            "Animepahe(VLC) [$type]",
+                            href,
+                            mainUrl,
+                            subtitleCallback,
+                            callback,
+                            getQualityFromName(quality)
+                        )
+                    }
+                }
+            },
+        )
     }
 
     // suspend fun invokeRar(
@@ -1806,6 +1768,30 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                 }
             }
+        }
+    }
+
+    suspend fun invokeAnimeOwl(
+        name: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val fixtitle = name.createSlug()
+        val url = "$AnimeOwlAPI/anime/$fixtitle"
+        app.get(url).document.select("#anime-cover-sub-content, #anime-cover-dub-content").amap {
+            val subtype = if (it.id() == "anime-cover-sub-content") "SUB" else "DUB"
+            val href = it.select(".episode-node")
+                .firstOrNull { element -> element.text().contains("$episode") }?.select("a")
+                ?.attr("href")
+            if (href != null)
+                loadCustomExtractor(
+                    "AnimeOwl [$subtype]",
+                    href,
+                    AnimeOwlAPI,
+                    subtitleCallback,
+                    callback,
+                )
         }
     }
 
