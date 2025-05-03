@@ -113,18 +113,18 @@ data class NetflixResponse(
     @JsonProperty("nextPageShow") val nextPageShow: Int? = null,
 )
 
-//Dramacool
-data class Dramacool (
-  var streams : ArrayList<DramacoolStreams> = arrayListOf()
+//StreamAsia
+data class StreamAsia (
+  var streams : ArrayList<StreamAsiaStreams> = arrayListOf()
 )
 
-data class DramacoolSubtitles (
+data class StreamAsiaSubtitles (
   var lang : String,
   var url  : String
 )
 
-data class DramacoolStreams (
-  var subtitles : ArrayList<DramacoolSubtitles> = arrayListOf(),
+data class StreamAsiaStreams (
+  var subtitles : ArrayList<StreamAsiaSubtitles> = arrayListOf(),
   var title     : String,
   var url       : String
 )

@@ -207,7 +207,7 @@ suspend fun extractMdrive(url: String): List<String> {
     val doc = app.get(url).document
     return doc.select("a")
         .mapNotNull { it.attr("href").takeIf { href ->
-            href.contains(Regex("hubcloud|gdflix", RegexOption.IGNORE_CASE))
+            href.contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
         }}
 }
 
@@ -312,7 +312,7 @@ suspend fun loadSourceNameExtractor(
                 val extracted = extractSpecs(link.name)
                 val extractedSpecs = buildExtractedTitle(extracted)
                 val newLink = newExtractorLink(
-                    "$source[${link.source}]",
+                    link.source,
                     "$source[${link.source}] $extractedSpecs",
                     link.url,
                     type = link.type
@@ -553,7 +553,7 @@ suspend fun gofileExtractor(
         val extractedSpecs = buildExtractedTitle(extracted)
         callback.invoke(
             newExtractorLink(
-                "$source[Gofile]",
+                "Gofile",
                 "$source[Gofile] $extractedSpecs[$formattedSize]",
                 link,
             ) {
