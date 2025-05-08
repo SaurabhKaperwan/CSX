@@ -22,6 +22,7 @@ import com.lagradost.nicehttp.RequestBodyTypes
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import java.net.URI
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -838,9 +839,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
             {
-                invokeAnimeOwl(zorotitle, episode, subtitleCallback, callback)
-            },
-            {
                 if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
                     zorotitle,
                     episode,
@@ -1056,38 +1054,6 @@ object CineStreamExtractors : CineStreamProvider() {
     //     }
     // }
 
-    suspend fun invokeMultiAutoembed(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url =  if(season != null) "$MultiembedAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
-        else "$MultiembedAPI/api/getVideoSource?type=movie&id=$id"
-        val jsonBody = app.get(url, headers = mapOf("Referer" to MultiembedAPI)).text.toJson()
-            .toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
-        val headers = mapOf(
-            "Content-Type" to "application/json",
-            "Referer" to "$MultiembedAPI/",
-        )
-        val json = app.post("$MultiembedAPI/api/decryptVideoSource",
-            requestBody = jsonBody, headers = headers
-        ).text
-
-        val data = tryParseJson<MultiAutoembedResponse>(json) ?: return
-        data.audioTracks.forEach {
-            callback.invoke(
-                newExtractorLink(
-                    "MultiAutoembed[${it.label}]",
-                    "MultiAutoembed[${it.label}]",
-                    it.file,
-                    type = ExtractorLinkType.M3U8,
-                )
-            )
-        }
-    }
-
     suspend fun invoke4khdhub(
         title: String? = null,
         year: Int? = null,
@@ -1098,9 +1064,14 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         if (title.isNullOrBlank()) return
 
-        val link = app.get("$fourkhdhubAPI/?s=$title").document
-            .selectFirst("div.card-grid > a:has(div.movie-card-content:contains(${year ?: ""}))")
-            ?.attr("href") ?: return
+        val elements = app.get("$fourkhdhubAPI/?s=$title").document
+            .select("div.card-grid > a:has(div.movie-card-content)")
+
+        val link = elements.firstOrNull { element ->
+            val content = element.selectFirst("div.movie-card-content")?.text()?.lowercase() ?: ""
+            content.contains(title.lowercase()) &&
+            content.contains((year?.toString() ?: "").lowercase())
+        }?.attr("href") ?: return
 
         val doc = app.get("$fourkhdhubAPI$link").document
         if(season == null) {
@@ -1134,12 +1105,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeMostraguarda(
         id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val url = if(season == null) "$MostraguardaAPI/movie/$id" else "$MostraguardaAPI/serie/$id/$season/$episode"
+        val url = "$MostraguardaAPI/movie/$id"
         val doc = app.get(
             url,
             headers = mapOf(
@@ -1558,8 +1527,9 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = "$anizoneAPI/anime?search=$title"
         val link = app.get(url).document.select("div.truncate > a").firstOrNull {
-            it.text() == title
-        } ?.attr("href") ?: return
+            it.text().contains(title, ignoreCase = true)
+        }?.attr("href") ?: return
+
         val document = app.get("$link/$episode").document
 
         val subtitles = document.select("track").map {
@@ -1714,84 +1684,83 @@ object CineStreamExtractors : CineStreamProvider() {
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
                 eplinks?.amap { source ->
                     safeApiCall {
+                        val headers =
+                            mapOf(
+                                "app-version" to "android_c-247",
+                                "platformstr" to "android_c",
+                                "Referer" to "https://allmanga.to"
+                            )
                         val sourceUrl = source.sourceUrl
-                        val downloadUrl = source.downloads?.downloadUrl ?: ""
-                        if (downloadUrl.contains("blog.allanime.day")) {
-                            if (downloadUrl.isNotEmpty()) {
-                                val downloadid = downloadUrl.substringAfter("id=")
-                                val sourcename = downloadUrl.getHost()
-                                app.get("https://allanime.day/apivtwo/clock.json?id=$downloadid")
-                                    .parsedSafe<AnichiDownload>()?.links?.amap {
-                                    val href = it.link
-                                    loadNameExtractor(
-                                        "Allanime [${i.uppercase()}] [$sourcename]",
-                                        href,
-                                        "",
-                                        subtitleCallback,
-                                        callback,
-                                        Qualities.P1080.value
-                                    )
-                                }
-                            } else {
-                                Log.d("Error:", "Not Found")
+                        if (sourceUrl.startsWith("http")) {
+                            val sourcename = sourceUrl.getHost()
+                            loadCustomExtractor(
+                                "Allanime [${i.uppercase()}] [$sourcename]",
+                                sourceUrl ?: "",
+                                "",
+                                subtitleCallback,
+                                callback,
+                            )
+                        }
+                        else {
+                            val decodedlink = if (sourceUrl.startsWith("--"))
+                            {
+                                decrypthex(sourceUrl)
                             }
-                        } else {
-                            if (sourceUrl.startsWith("http")) {
-                                if (sourceUrl.contains("embtaku.pro")) {
-                                    val iv = "3134003223491201"
-                                    val secretKey = "37911490979715163134003223491201"
-                                    val secretDecryptKey = "54674138327930866480207815084989"
-                                    GogoHelper.extractVidstream(
-                                        sourceUrl,
-                                        "Allanime [${i.uppercase()}] [Vidstreaming]",
-                                        callback,
-                                        iv,
-                                        secretKey,
-                                        secretDecryptKey,
-                                        isUsingAdaptiveKeys = false,
-                                        isUsingAdaptiveData = true
-                                    )
+                            else sourceUrl
+                            val fixedLink = decodedlink.fixUrlPath()
+                            val links = try {
+                                app.get(fixedLink, headers = headers).parsedSafe<AnichiVideoApiResponse>()?.links ?: emptyList()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                return@safeApiCall
+                            }
+                            links.forEach { server ->
+                                val host = server.link.getHost()
+                                when {
+                                    source.sourceName.contains("Default") && (server.resolutionStr == "SUB" || server.resolutionStr == "Alt vo_SUB") -> {
+                                        getM3u8Qualities(
+                                            server.link,
+                                            "https://static.crunchyroll.com/",
+                                            host
+                                        ).forEach(callback)
+                                    }
+
+                                    server.hls == null -> {
+                                        callback.invoke(
+                                            newExtractorLink(
+                                                "Allanime ${host.capitalize()}",
+                                                "Allanime ${host.capitalize()}",
+                                                server.link,
+                                                INFER_TYPE
+                                            )
+                                            {
+                                                this.quality = Qualities.P1080.value
+                                            }
+                                        )
+                                    }
+
+                                    server.hls == true -> {
+                                        val endpoint = "https://allanime.day/player?uri=" +
+                                                (if (URI(server.link).host.isNotEmpty())
+                                                    server.link
+                                                else "https://allanime.day" + URI(server.link).path)
+
+                                        getM3u8Qualities(server.link, server.headers?.referer ?: endpoint, host).forEach(callback)
+                                    }
+
+                                    else -> {
+                                        server.subtitles?.forEach { sub ->
+                                            val lang = SubtitleHelper.fromTwoLettersToLanguage(sub.lang ?: "") ?: sub.lang.orEmpty()
+                                            val src = sub.src ?: return@forEach
+                                            subtitleCallback(SubtitleFile(lang, httpsify(src)))
+                                        }
+                                    }
                                 }
-                                val sourcename = sourceUrl.getHost()
-                                loadCustomExtractor(
-                                    "Allanime [${i.uppercase()}] [$sourcename]",
-                                    sourceUrl
-                                        ?: "",
-                                    "",
-                                    subtitleCallback,
-                                    callback,
-                                )
-                            } else {
-                                Log.d("Error:", "Not Found")
                             }
                         }
                     }
                 }
             }
-        }
-    }
-
-    suspend fun invokeAnimeOwl(
-        name: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val fixtitle = name.createSlug()
-        val url = "$AnimeOwlAPI/anime/$fixtitle"
-        app.get(url).document.select("#anime-cover-sub-content, #anime-cover-dub-content").amap {
-            val subtype = if (it.id() == "anime-cover-sub-content") "SUB" else "DUB"
-            val href = it.select(".episode-node")
-                .firstOrNull { element -> element.text().contains("$episode") }?.select("a")
-                ?.attr("href")
-            if (href != null)
-                loadCustomExtractor(
-                    "AnimeOwl [$subtype]",
-                    href,
-                    AnimeOwlAPI,
-                    subtitleCallback,
-                    callback,
-                )
         }
     }
 

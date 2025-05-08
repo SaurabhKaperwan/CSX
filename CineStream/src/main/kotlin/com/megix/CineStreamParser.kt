@@ -56,16 +56,6 @@ data class AniSearch(@JsonProperty("data") var data: AniData? = AniData())
 
 data class AniIds(var id: Int? = null, var idMal: Int? = null)
 
-//Multiautoembed
-data class MultiAutoembedResponse (
-  var audioTracks : ArrayList<MultiembedAudioTracks> = arrayListOf()
-)
-
-data class MultiembedAudioTracks (
-  var label : String,
-  var file  : String
-)
-
 //Cinemaluxe
 data class CinemaluxeRedirectUrl(
     val redirectUrl: String
@@ -130,6 +120,46 @@ data class StreamAsiaStreams (
 )
 
 //Anichi
+
+data class AkIframe(
+    @JsonProperty("idUrl") val idUrl: String? = null,
+)
+
+data class AnichiVideoApiResponse(@JsonProperty("links") val links: List<AnichiLinks>)
+
+data class AnichiStream(
+    @JsonProperty("format") val format: String? = null,
+    @JsonProperty("audio_lang") val audio_lang: String? = null,
+    @JsonProperty("hardsub_lang") val hardsub_lang: String? = null,
+    @JsonProperty("url") val url: String? = null,
+)
+
+data class PortData(
+    @JsonProperty("streams") val streams: ArrayList<AnichiStream>? = arrayListOf(),
+)
+
+data class AnichiSubtitles(
+    @JsonProperty("lang") val lang: String?,
+    @JsonProperty("label") val label: String?,
+    @JsonProperty("src") val src: String?,
+)
+
+data class AnichiLinks(
+    @JsonProperty("link") val link: String,
+    @JsonProperty("hls") val hls: Boolean? = null,
+    @JsonProperty("resolutionStr") val resolutionStr: String,
+    @JsonProperty("src") val src: String? = null,
+    @JsonProperty("headers") val headers: Headers? = null,
+    @JsonProperty("portData") val portData: PortData? = null,
+    @JsonProperty("subtitles") val subtitles: ArrayList<AnichiSubtitles>? = arrayListOf(),
+)
+
+data class Headers(
+    @JsonProperty("Referer") val referer: String? = null,
+    @JsonProperty("Origin") val origin: String? = null,
+    @JsonProperty("user-agent") val userAgent: String? = null,
+)
+
 
 data class Anichi(
     val data: AnichiData,
@@ -491,7 +521,7 @@ data class TBPStream(
 )
 
 data class VidjoyResponse(
-    val headers: Headers,
+    val headers: VidjoyHeaders,
     val proxy: Boolean,
     val servers: List<Any?>,
     val tracks: List<Track>,
@@ -500,7 +530,7 @@ data class VidjoyResponse(
     val url: List<Url>,
 )
 
-data class Headers(
+data class VidjoyHeaders(
     @JsonProperty("Referer")
     val referer: String,
 )

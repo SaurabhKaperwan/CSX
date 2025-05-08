@@ -24,7 +24,6 @@ import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWHVXSubs
 import com.megix.CineStreamExtractors.invokeAnizone
-import com.megix.CineStreamExtractors.invokeMultiAutoembed
 // import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
 // import com.megix.CineStreamExtractors.invokeRar
@@ -75,7 +74,6 @@ open class CineStreamProvider : MainAPI() {
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val WHVXSubsAPI = "https://subs.whvx.net"
         const val WYZIESubsAPI = "https://subs.wyzie.ru"
-        const val MultiembedAPI = "https://hin.autoembed.cc"
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val WHVXAPI = "https://api.whvx.net"
         const val TomAPI = "https://tom.autoembed.cc"
@@ -83,7 +81,6 @@ open class CineStreamProvider : MainAPI() {
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
-        const val AnimeOwlAPI = "https://animeowl.me"
         const val allmovielandAPI = "https://allmovieland.fun"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
@@ -651,8 +648,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.id, res.season, res.episode, callback) },
-            { invokeMultiAutoembed(res.id, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMostraguarda(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { if(res.season == null) invokeMostraguarda(res.id, subtitleCallback, callback) },
             { if (!isBollywood || !isAnime) invokeMoviesflix("Moviesflix", moviesflixAPI, res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (isBollywood) invokeMoviesflix("Hdmoviesflix", hdmoviesflixAPI, res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (!isBollywood) invokeUhdmovies(res.title, year, res.season, res.episode, callback, subtitleCallback) },

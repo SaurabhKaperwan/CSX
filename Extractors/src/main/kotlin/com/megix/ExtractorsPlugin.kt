@@ -31,7 +31,6 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(DriveleechPro())
         registerExtractorAPI(WLinkFast())
         registerExtractorAPI(FastLinks())
-        registerExtractorAPI(Sendcm())
         registerExtractorAPI(Photolinx())
         registerExtractorAPI(Watchadsontape())
         registerExtractorAPI(Howblogs())

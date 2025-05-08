@@ -9,7 +9,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemaluxe.foo"
+    override var mainUrl = "https://cinemalux.mov"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
