@@ -703,6 +703,13 @@ suspend fun getProtonStream(
             ).text
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+                callback.invoke(
+                    newExtractorLink(
+                        "Protonmovies",
+                        "Protonmovies",
+                        it,
+                    )
+                )
                 gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
             }
         }
