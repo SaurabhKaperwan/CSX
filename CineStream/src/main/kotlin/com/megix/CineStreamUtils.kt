@@ -254,11 +254,8 @@ suspend fun getHindMoviezLinks(
     url: String,
     callback: (ExtractorLink) -> Unit
 ) {
-    val res = app.get(url,
-        allowRedirects = true,
-        timeout = 50L
-    )
-    val doc = res.document
+    val response = app.get(url)
+    val doc = response.document
     val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ") ?: ""
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ") ?: ""
     val extracted = extractSpecs(name)
@@ -267,7 +264,8 @@ suspend fun getHindMoviezLinks(
     runAllAsync(
         {
             val link = doc.select("a.btn-info").attr("href")
-            val document = app.get(link).document
+            val referer = response.url
+            val document = app.get(link, referer = referer).document
             document.select("a.button").map {
                 callback.invoke(
                     newExtractorLink(
@@ -520,7 +518,7 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    //val res = app.get(url).document
+    val res = app.get(url)
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
     val genAccountRes = app.post("$mainApi/accounts").text
     val jsonResp = JSONObject(genAccountRes)
@@ -703,13 +701,6 @@ suspend fun getProtonStream(
             ).text
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
-                callback.invoke(
-                    newExtractorLink(
-                        "Protonmovies",
-                        "Protonmovies",
-                        it,
-                    )
-                )
                 gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
             }
         }
