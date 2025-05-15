@@ -269,3 +269,9 @@ class GDMirrorbot : ExtractorApi() {
         }
     }
 }
+
+class Dhcplay: VidHidePro() {
+    override var name = "DHC Play"
+    override var mainUrl = "https://dhcplay.com"
+    override var requiresReferer = true
+}

@@ -54,6 +54,7 @@ import com.megix.CineStreamExtractors.invokeAllmovieland
 import com.megix.CineStreamExtractors.invoke4khdhub
 import com.megix.CineStreamExtractors.invokeVidJoy
 import com.megix.CineStreamExtractors.invokeMovies4u
+import com.megix.CineStreamExtractors.invokeSoaper
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -96,6 +97,7 @@ open class CineStreamProvider : MainAPI() {
         const val modflixAPI = "https://modflix.xyz"
         const val MovieDriveAPI = "https://moviesdrives.com"
         const val Vglist = "https://vglist.nl"
+        const val soaperAPI = "https://soaper.cc"
 
         var protonmoviesAPI = ""
         var W4UAPI = ""
@@ -642,6 +644,7 @@ open class CineStreamProvider : MainAPI() {
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimeWire(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokePlayer4U(res.title, res.season, res.episode, seasonYear, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },

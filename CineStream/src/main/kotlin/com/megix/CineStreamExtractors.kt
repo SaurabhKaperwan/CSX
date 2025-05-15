@@ -1860,6 +1860,38 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeSoaper(
+        imdbId: String? = null,
+        tmdbId: Int? = null,
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Referer" to soaperAPI,
+            "Origin" to soaperAPI
+        )
+        val document = app.get("$soaperAPI/search.html?keyword=$title", headers = headers).document
+        val href = document.selectFirst("div.img-group a:has(img[src*='$tmdbId']), div.img-group a:has(img[src*='$imdbId'])")?.attr("href") ?: return
+
+        if(season == null) {
+            getSoaperLinks(soaperAPI, "$soaperAPI$href", "M", subtitleCallback, callback)
+        } else {
+            val doc = app.get("$soaperAPI$href", headers = headers).document
+            val seasonDiv = doc.select("div.alert-info-ex").firstOrNull { div ->
+                div.selectFirst("h4")?.text()?.contains("Season$season", ignoreCase = true) == true
+            }
+
+            val episodeLink = seasonDiv?.select("a")?.firstOrNull { a ->
+                a.text().trim().startsWith("$episode.")
+            }?.attr("href") ?: return
+
+            getSoaperLinks(soaperAPI ,"$soaperAPI$episodeLink", "E", subtitleCallback, callback)
+        }
+    }
+
     suspend fun invokeThepiratebay(
         imdbId: String? =null,
         season: Int? = null,
