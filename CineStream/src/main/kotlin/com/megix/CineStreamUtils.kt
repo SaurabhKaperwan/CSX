@@ -7,6 +7,7 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import java.net.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.api.Log
@@ -253,11 +254,8 @@ suspend fun getHindMoviezLinks(
     url: String,
     callback: (ExtractorLink) -> Unit
 ) {
-    val res = app.get(url,
-        allowRedirects = true,
-        timeout = 50L
-    )
-    val doc = res.document
+    val response = app.get(url)
+    val doc = response.document
     val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ") ?: ""
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ") ?: ""
     val extracted = extractSpecs(name)
@@ -266,7 +264,8 @@ suspend fun getHindMoviezLinks(
     runAllAsync(
         {
             val link = doc.select("a.btn-info").attr("href")
-            val document = app.get(link).document
+            val referer = response.url
+            val document = app.get(link, referer = referer).document
             document.select("a.button").map {
                 callback.invoke(
                     newExtractorLink(
@@ -519,7 +518,7 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    //val res = app.get(url).document
+    //val res = app.get(url)
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
     val genAccountRes = app.post("$mainApi/accounts").text
     val jsonResp = JSONObject(genAccountRes)
@@ -786,4 +785,100 @@ fun decryptOpenSSLAES(base64Cipher: String, passphrase: String): String {
 
     val decrypted = cipher.doFinal(ciphertext)
     return String(decrypted, Charsets.UTF_8)
+}
+
+//Allanime
+fun decrypthex(inputStr: String): String {
+    val hexString = if (inputStr.startsWith("-")) {
+        inputStr.substringAfterLast("-")
+    } else {
+        inputStr
+    }
+
+    val bytes = ByteArray(hexString.length / 2) { i ->
+        val hexByte = hexString.substring(i * 2, i * 2 + 2)
+        (hexByte.toInt(16) and 0xFF).toByte()
+    }
+
+    return bytes.joinToString("") { (it.toInt() xor 56).toChar().toString() }
+}
+
+suspend fun getM3u8Qualities(
+    m3u8Link: String,
+    referer: String,
+    qualityName: String,
+): List<ExtractorLink> {
+    return M3u8Helper.generateM3u8(
+        qualityName,
+        m3u8Link,
+        referer
+    )
+}
+
+fun String.fixUrlPath(): String {
+    return if (this.contains(".json?")) "https://allanime.day" + this
+    else "https://allanime.day" + URI(this).path + ".json?" + URI(this).query
+}
+
+fun fixSourceUrls(url: String, source: String?): String? {
+    return if (source == "Ak" || url.contains("/player/vitemb")) {
+        tryParseJson<AkIframe>(base64Decode(url.substringAfter("=")))?.idUrl
+    } else {
+        url.replace(" ", "%20")
+    }
+}
+
+suspend fun getSoaperLinks(
+        soaperAPI: String,
+        url: String,
+        type: String,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+) {
+    val headers = mapOf(
+        "Referer" to soaperAPI,
+        "Origin" to soaperAPI
+    )
+    val document = app.get(url, headers = headers).document
+    val eId = document.select("#hId").attr("value")
+    val hIsW = document.select("#hIsW").attr("value")
+    val data = mapOf(
+        "pass" to eId,
+        "param" to "",
+        "extra" to "1",
+        "e2" to hIsW,
+        "server" to "0",
+    )
+
+    val res = app.post("$soaperAPI/home/index/Get${type}InfoAjax", data = data, headers = headers).text
+    val json = JSONObject(res)
+    val videoPath = json.getString("val").replace("\\/", "/")
+    val videoUrl = soaperAPI + videoPath
+
+    callback.invoke(
+        newExtractorLink(
+            "Soaper",
+            "Soaper",
+            videoUrl,
+            ExtractorLinkType.M3U8
+        ) {
+            this.referer = url
+            this.quality = Qualities.P1080.value
+        }
+    )
+
+    val subs = json.getJSONArray("subs")
+
+    for (i in 0 until subs.length()) {
+        val sub = subs.getJSONObject(i)
+        val name = sub.getString("name")
+        val path = sub.getString("path").replace("\\/", "/")
+        val subUrl = soaperAPI + path
+        subtitleCallback.invoke(
+            SubtitleFile(
+                name,
+                subUrl
+            )
+        )
+    }
 }
