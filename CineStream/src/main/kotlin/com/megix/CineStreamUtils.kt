@@ -665,19 +665,14 @@ suspend fun getProtonStream(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
 ) {
-    doc.select("tr").toList()
-        .filterIndexed { _, element ->
-            element.text().contains("1080p") ||
-            element.text().contains("720p") ||
-            element.text().contains("480p")
-    }
-    .amap { tr ->
+    doc.select("tr.infotr").amap { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
 
         if(id != null) {
             val requestBody = FormBody.Builder()
                 .add("downloadid", id)
                 .add("token", "ok")
+                .add("uid", "uid_1747658983915_4s4tfdikc")
                 .build()
             val postHeaders = mapOf(
                 "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
@@ -839,6 +834,7 @@ suspend fun getSoaperLinks(
         "Referer" to soaperAPI,
         "Origin" to soaperAPI
     )
+
     val document = app.get(url, headers = headers).document
     val eId = document.select("#hId").attr("value")
     val hIsW = document.select("#hIsW").attr("value")

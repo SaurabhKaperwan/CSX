@@ -466,7 +466,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
             "Referer" to protonmoviesAPI
         )
-        val url = "$protonmoviesAPI/search/$id"
+        val url = "$protonmoviesAPI/search/$id/"
         val text = app.get(url, headers = headers).text
         val regex = Regex("""\[(?=.*?\"<div class\")(.*?)\]""")
         val htmlArray = regex.findAll(text).map { it.value }.toList()
@@ -475,6 +475,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val html = decodeHtml(Array(lastJsonArray.length()) { i -> lastJsonArray.getString(i) })
             val doc = Jsoup.parse(html)
             val link = doc.select(".col.mb-4 h5 a").attr("href")
+
             val document = app.get("${protonmoviesAPI}${link}", headers = headers).document
             val decodedDoc = decodeMeta(document)
             if (decodedDoc != null) {
@@ -484,6 +485,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val episodeDiv = decodedDoc.select("div.episode-block:has(div.episode-number:matchesOwn(S${season}E${episode}))").firstOrNull()
                     episodeDiv?.selectFirst("a")?.attr("href")?.let {
                         val source = protonmoviesAPI + it
+
                         val doc2 = app.get(source, headers = headers).document
 
                         val decodedDoc = decodeMeta(doc2)
