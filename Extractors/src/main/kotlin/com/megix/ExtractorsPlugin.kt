@@ -19,6 +19,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(GDFlix6())
         registerExtractorAPI(GDFlix7())
         registerExtractorAPI(GDFlix2())
+        registerExtractorAPI(GDFlix8())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(Hubdrive())
         registerExtractorAPI(HubCloud())

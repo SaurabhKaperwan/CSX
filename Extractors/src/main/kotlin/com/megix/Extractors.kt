@@ -546,9 +546,13 @@ class GDFlix7 : GDFlix() {
     override var mainUrl = "https://gdflix.dad"
 }
 
+class GDFlix8 : GDFlix() {
+    override var mainUrl = "https://new6.gdflix.dad"
+}
+
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://new6.gdflix.dad"
+    override val mainUrl = "https://new7.gdflix.dad"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -557,7 +561,7 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://new6.gdflix.dad")
+        val newUrl = url.replace(mainUrl, "https://new7.gdflix.dad")
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
@@ -577,12 +581,25 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
 
+                text.contains("PixelDrain DL") -> {
+                    val link = anchor.attr("href")
+                    callback.invoke(
+                        newExtractorLink(
+                            "Pixeldrain",
+                            "Pixeldrain $fileName[$fileSize]",
+                            link
+                        ) {
+                            this.quality = getIndexQuality(fileName)
+                        }
+                    )
+                }
+
                 text.contains("Index Links") -> {
                     try {
                         val link = anchor.attr("href")
-                        app.get("https://new6.gdflix.dad$link").document
+                        app.get("https://new7.gdflix.dad$link").document
                             .select("a.btn.btn-outline-info").amap { btn ->
-                                val serverUrl = "https://new6.gdflix.dad" + btn.attr("href")
+                                val serverUrl = "https://new7.gdflix.dad" + btn.attr("href")
                                 app.get(serverUrl).document
                                     .select("div.mb-4 > a").amap { sourceAnchor ->
                                         val source = sourceAnchor.attr("href")

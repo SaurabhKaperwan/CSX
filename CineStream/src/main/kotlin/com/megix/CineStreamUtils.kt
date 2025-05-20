@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.USER_AGENT
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.nicehttp.RequestBodyTypes
 import kotlinx.coroutines.CoroutineScope
@@ -659,6 +660,29 @@ suspend fun generateMagnetLink(url: String, hash: String?): String {
     }
 }
 
+suspend fun getProtonEmbed(
+    text: String,
+    protonmoviesAPI: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+) {
+    val regex = """([^\"]*strm\.json)""".toRegex()
+    val match = regex.find(text)
+
+    if (match != null) {
+        val url = match.groupValues[1]
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to protonmoviesAPI
+        )
+        val json = app.get(protonmoviesAPI + url, headers = headers).text
+        JSONObject(json).getJSONObject("ppd")?.getJSONObject("mixdrop.ag")?.optString("link")?.let {
+            val source = it.replace("/f/", "/e/").replace("mxdrop.to", "mixdrop.ps")
+            loadSourceNameExtractor("Protonmovies", source, "", subtitleCallback, callback)
+        }
+    }
+}
+
 suspend fun getProtonStream(
     doc: Document,
     protonmoviesAPI: String,
@@ -669,13 +693,14 @@ suspend fun getProtonStream(
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
 
         if(id != null) {
+
             val requestBody = FormBody.Builder()
                 .add("downloadid", id)
                 .add("token", "ok")
                 .add("uid", "uid_1747658983915_4s4tfdikc")
                 .build()
             val postHeaders = mapOf(
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI,
                 "Content-Type" to "multipart/form-data",
             )
@@ -686,7 +711,7 @@ suspend fun getProtonStream(
             ).text
 
             val headers = mapOf(
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI
             )
 
