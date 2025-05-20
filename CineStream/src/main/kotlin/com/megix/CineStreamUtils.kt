@@ -31,6 +31,8 @@ import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import com.lagradost.cloudstream3.runAllAsync
+import kotlin.math.pow
+import kotlin.random.Random
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -693,11 +695,17 @@ suspend fun getProtonStream(
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
 
         if(id != null) {
+            val uid = "uid_${System.currentTimeMillis()}_${
+                (Random.nextDouble() * 36.0.pow(9))
+                .toLong()
+                .toString(36)
+                .padStart(9, '0')
+            }"
 
             val requestBody = FormBody.Builder()
                 .add("downloadid", id)
                 .add("token", "ok")
-                .add("uid", "uid_1747658983915_4s4tfdikc")
+                .add("uid", uid)
                 .build()
             val postHeaders = mapOf(
                 "User-Agent" to USER_AGENT,
@@ -721,6 +729,7 @@ suspend fun getProtonStream(
             ).text
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+                val source = it.replace("\\/", "/")
                 gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
             }
         }
