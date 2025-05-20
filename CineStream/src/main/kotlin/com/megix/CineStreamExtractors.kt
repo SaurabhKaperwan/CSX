@@ -884,7 +884,6 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
-            "Referer" to animepaheAPI,
             "Cookie" to "__ddg2_=1234567890"
         )
         val id = app.get(url ?: "", headers).document.selectFirst("meta[property=og:url]")
@@ -1298,20 +1297,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 ?.attr("href")
         }
 
-        val fixTitle = title?.substringBefore("-")?.replace(":", " ")?.replace("&", " ")
-        val searchtitle = title?.substringBefore("-").createSlug()
-        val url = if (season == null) {
-            "$MovieDrive_API/search/$fixTitle $year"
-        } else {
-            "$MovieDrive_API/search/$fixTitle"
-        }
-        val res1 =
-            app.get(url, interceptor = wpRedisInterceptor).document.select("figure")
-                .toString()
-        val hrefpattern =
-            Regex("""(?i)<a\s+href="([^"]*\b$searchtitle\b[^"]*)\"""").find(res1)?.groupValues?.get(1)
-                ?: ""
-        val document = app.get(hrefpattern).document
+        val url = "$MovieDrive_API/search/$title $year"
+        val res = app.get(url, interceptor = wpRedisInterceptor).document
+        val match = res.select("li.thumb > figcaption > a").firstOrNull { a ->
+            val text = a.text()
+            text.contains(title.toString(), ignoreCase = true)
+        }?.attr("href") ?: return
+
+        val document = app.get(match).document
         if (season == null) {
             document.select("h5 > a").amap {
                 val href = it.attr("href")
