@@ -1,0 +1,68 @@
+name: Build
+
+# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#concurrency
+concurrency: 
+  group: "build"
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      # choose your default branch
+      - master
+      - main
+    paths-ignore:
+      - '*.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+        with:
+          path: "src"
+
+      - name: Checkout builds
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: "builds"
+          path: "builds"
+
+      - name: Clean old builds
+        run: rm $GITHUB_WORKSPACE/builds/*.cs3 || true
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4.6.0
+        with:
+          distribution: "adopt"
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3.2.2
+
+      - name: Access Secrets
+        env:
+          CONSUMET_API: ${{ secrets.CONSUMET_API }}
+          WHVX_TOKEN: ${{ secrets.WHVX_TOKEN }}
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          echo CONSUMET_API=$CONSUMET_API >> local.properties
+          echo WHVX_TOKEN=$WHVX_TOKEN >> local.properties
+
+      - name: Build Plugins
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          chmod +x gradlew
+          ./gradlew make makePluginsJson
+          cp **/build/*.cs3 $GITHUB_WORKSPACE/builds
+          cp build/plugins.json $GITHUB_WORKSPACE/builds
+
+      - name: Push builds
+        run: |
+          cd $GITHUB_WORKSPACE/builds
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit --amend -m "Build $GITHUB_SHA" || exit 0   # do not error if nothing to commit
+          git push --force
