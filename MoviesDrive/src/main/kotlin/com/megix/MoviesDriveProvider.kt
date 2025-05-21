@@ -29,7 +29,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val basemainUrl: String? by lazy {
             runBlocking {
                 try {
-                     val firstRedirectUrl = app.get("https://moviesdrives.com")
+                    val firstRedirectUrl = app.get("https://moviesdrives.com")
                         .document
                         .selectFirst("meta[http-equiv=refresh]")
                         ?.attr("content")
@@ -38,9 +38,9 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
                     firstRedirectUrl?.let { redirect ->
                         app.get(redirect, allowRedirects = false)
-                        .document
-                        .selectFirst("a[href]")
-                        ?.attr("href")
+                            .document
+                            .selectFirst("a[href]")
+                            ?.attr("href")
                     }
                 } catch (e: Exception) {
                     null
@@ -50,12 +50,14 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/" to "Home",
+        "${basemainUrl ?: mainUrl}/page/" to "Latest Release",
+        "${basemainUrl ?: mainUrl}/category/hollywood/page/" to "Hollywood Movies",
+        "${basemainUrl ?: mainUrl}/hindi-dubbed/page/" to "Hindi Dubbed Movies",
+        "${basemainUrl ?: mainUrl}/category/south/page/" to "South Movies",
+        "${basemainUrl ?: mainUrl}/category/bollywood/page/" to "Bollywood Movies",
         "${basemainUrl ?: mainUrl}/category/amzn-prime-video/page/" to "Prime Video",
         "${basemainUrl ?: mainUrl}/category/netflix/page/" to "Netflix",
         "${basemainUrl ?: mainUrl}/category/hotstar/page/" to "Hotstar",
-        "${basemainUrl ?: mainUrl}/category/anime/page/" to "Anime",
-        "${basemainUrl ?: mainUrl}/category/k-drama/page/" to "K Drama",
     )
 
     override suspend fun getMainPage(
@@ -69,7 +71,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse {
         val title = this.select("figure > img").attr("title").replace("Download ", "")
         val href = this.select("figure > a").attr("href")
         val posterUrl = this.select("figure > img").attr("src")
@@ -102,7 +104,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         return searchResponse
     }
 
-    override suspend fun load(url: String): LoadResponse? {
+    override suspend fun load(url: String): LoadResponse {
         val document = app.get(url).document
         var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         val ogTitle = title
@@ -153,13 +155,13 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 if (checkSeason == null) {
                     val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
                     if(seasonText != null) {
-                        title = title + " " + seasonText.toString()
+                        title = "$title $seasonText"
                     }
                 }
             }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
-            var buttons = document.select("h5 > a")
+            val buttons = document.select("h5 > a")
                 .filter { element -> !element.text().contains("Zip", true) }
 
 
@@ -168,7 +170,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 val mainTitle = titleElement ?. text() ?: ""
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(mainTitle.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
-                val episodeLink = button.attr("href") ?: ""
+                val episodeLink = button.attr("href")
 
                 val doc = app.get(episodeLink).document
                 var elements = doc.select("span:matches((?i)(Ep))")
@@ -185,10 +187,10 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                         while (
                             hTag != null &&
                             (
-                                hTag.text().contains("HubCloud", ignoreCase = true) ||
-                                hTag.text().contains("gdflix", ignoreCase = true) ||
-                                hTag.text().contains("gdlink", ignoreCase = true)
-                            )
+                                    hTag.text().contains("HubCloud", ignoreCase = true) ||
+                                            hTag.text().contains("gdflix", ignoreCase = true) ||
+                                            hTag.text().contains("gdlink", ignoreCase = true)
+                                    )
                         ) {
                             val aTag = hTag.selectFirst("a")
                             val epUrl = aTag?.attr("href").toString()
@@ -258,7 +260,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 val innerButtons = doc.select("a").filter { element ->
                     element.attr("href").contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
                 }
-                innerButtons.mapNotNull { innerButton ->
+                innerButtons.map { innerButton ->
                     val source = innerButton.attr("href")
                     EpisodeLink(
                         source
@@ -289,7 +291,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
             val source = it.source
             loadExtractor(source, subtitleCallback, callback)
         }
-        return true   
+        return true
     }
 
     data class Meta(
@@ -335,4 +337,3 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val source: String
     )
 }
-

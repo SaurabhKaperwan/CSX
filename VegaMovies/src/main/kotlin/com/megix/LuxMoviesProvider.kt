@@ -34,14 +34,16 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     }
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/%d/" to "Home",
+        "${basemainUrl ?: mainUrl}/page/%d/" to "Latest",
+        "${basemainUrl ?: mainUrl}/category/hindi-dubbed-movies/page/%d/" to "South Movies",
+        "${basemainUrl ?: mainUrl}/category/bollywood/page/%d/" to "Bollywood",
         "${basemainUrl ?: mainUrl}/category/web-series/netflix/page/%d/" to "Netflix",
         "${basemainUrl ?: mainUrl}/category/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
         "${basemainUrl ?: mainUrl}/category/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
-        "${basemainUrl ?: mainUrl}/category/web-series/mx-original/page/%d/" to "MX Original",
         "${basemainUrl ?: mainUrl}/category/web-series/jio-studios/page/%d/" to "Jio Cinema",
         "${basemainUrl ?: mainUrl}/category/web-series/sonyliv/page/%d/" to "Sony Liv",
         "${basemainUrl ?: mainUrl}/category/web-series/zee5-originals/page/%d/" to "Zee5",
+        "${basemainUrl ?: mainUrl}/category/web-series/mx-original/page/%d/" to "MX Original",
         "${basemainUrl ?: mainUrl}/category/web-series/alt-balaji-web-series/page/%d/" to "ALT Balaji",
     )
 

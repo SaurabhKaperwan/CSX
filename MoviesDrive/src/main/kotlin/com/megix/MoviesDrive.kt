@@ -9,5 +9,13 @@ class MoviesDrive: Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerMainAPI(MoviesDriveProvider())
+//        registerExtractorAPI(GDFlix())
+        registerExtractorAPI(PixelDra())
+        registerExtractorAPI(HubCloud())
+//        registerExtractorAPI(GoogleVideo())
+        registerExtractorAPI(HubCloudInk())
+        registerExtractorAPI(HubCloudArt())
+        registerExtractorAPI(HubCloudDad())
+//        registerExtractorAPI(VCloud())
     }
 }

@@ -60,13 +60,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     )
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/%d/" to "Home",
+        "${basemainUrl ?: mainUrl}/page/%d/" to "Latest Movies",
+        "${basemainUrl ?: mainUrl}/category/hindi-dubbed-movies/page/%d/" to "South Movies",
+        "${basemainUrl ?: mainUrl}/category/bollywood/page/%d/" to "Bollywood",
+        "${basemainUrl ?: mainUrl}/web-series/netflix/page/%d/" to "Netflix",
         "${basemainUrl ?: mainUrl}/web-series/netflix/page/%d/" to "Netflix",
         "${basemainUrl ?: mainUrl}/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
         "${basemainUrl ?: mainUrl}/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
         "${basemainUrl ?: mainUrl}/web-series/mx-original/page/%d/" to "MX Original",
-        "${basemainUrl ?: mainUrl}/anime-series/page/%d/" to "Anime Series",
-        "${basemainUrl ?: mainUrl}/korean-series/page/%d/" to "Korean Series"
     )
 
     override suspend fun getMainPage(
@@ -82,7 +83,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    private fun Element.toSearchResult(): SearchResponse {
         val title = this.select("h2 > a").text().replace("Download ", "")
         val href = this.select("a").attr("href")
         val posterUrl = this.select("img").attr("src")
@@ -101,7 +102,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                     "${basemainUrl ?: mainUrl}/page/$i/?s=$query",
                     referer = mainUrl,
                     headers = headers
-                ).document ?: continue
+                ).document
 
                 val results = document.select(".post-inner.post-hover")
                     .mapNotNull { it.toSearchResult() }
@@ -180,20 +181,20 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val realSeason = realSeasonRegex.find(tag.toString())?.groupValues?.get(1)?.toIntOrNull() ?: 0
 
                 val pTag = tag.nextElementSibling()
-                val aTags: List<Element>? = if (pTag != null && pTag.tagName() == "p") {
+                val aTags: List<Element> = if (pTag != null && pTag.tagName() == "p") {
                     pTag.select("a")
                 } else {
                     tag.select("a")
                 }
 
-                var unilink = aTags ?. find {
+                var unilink = aTags.find {
                     it.text().contains("V-Cloud", ignoreCase = true) ||
-                    it.text().contains("Episode", ignoreCase = true) ||
-                    it.text().contains("Download", ignoreCase = true)
+                            it.text().contains("Episode", ignoreCase = true) ||
+                            it.text().contains("Download", ignoreCase = true)
                 }
 
                 if (unilink == null) {
-                    unilink = aTags ?. find {
+                    unilink = aTags.find {
                         it.text().contains("G-Direct", ignoreCase = true)
                     }
                 }
@@ -201,15 +202,15 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val Eurl = unilink?.attr("href")
                 Eurl?.let { eurl ->
                     val document2 = app.get(eurl).document
-                    val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                    var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    val vcloudRegex = Regex("""https://vcloud\.lol/[^\s"]+""")
+                    var vcloudLinks = vcloudRegex.findAll(document2.html()).map { it.value }.toList()
 
                     if (vcloudLinks.isEmpty()) {
-                        val fastDlRegex = Regex("""https:\/\/fastdl.icu\/embed\?download=[a-zA-Z0-9]+""")
-                        vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                        val fastDlRegex = Regex("""https://fastdl.icu/embed\?download=[a-zA-Z0-9]+""")
+                        vcloudLinks = fastDlRegex.findAll(document2.html()).map { it.value }.toList()
                     }
 
-                    vcloudLinks.mapNotNull { vcloudlink ->
+                    vcloudLinks.map { vcloudlink ->
                         val key = Pair(realSeason, vcloudLinks.indexOf(vcloudlink) + 1)
                         if (episodesMap.containsKey(key)) {
                             val currentList = episodesMap[key] ?: emptyList()
