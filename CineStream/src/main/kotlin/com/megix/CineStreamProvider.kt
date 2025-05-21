@@ -55,6 +55,7 @@ import com.megix.CineStreamExtractors.invoke4khdhub
 import com.megix.CineStreamExtractors.invokeVidJoy
 import com.megix.CineStreamExtractors.invokeMovies4u
 import com.megix.CineStreamExtractors.invokeSoaper
+import com.megix.CineStreamExtractors.invokeAsiaflix
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -98,6 +99,7 @@ open class CineStreamProvider : MainAPI() {
         const val MovieDriveAPI = "https://moviesdrives.com"
         const val Vglist = "https://vglist.nl"
         const val soaperAPI = "https://soaper.cc"
+        const val asiaflixAPI = "https://asiaflix.net"
 
         var protonmoviesAPI = ""
         var W4UAPI = ""
@@ -627,6 +629,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isBollywood) invokeMoviesmod(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
+            { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },

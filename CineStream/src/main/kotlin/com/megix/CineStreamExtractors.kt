@@ -27,6 +27,55 @@ import com.lagradost.cloudstream3.USER_AGENT
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeAsiaflix(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        year: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val searchUrl = """https://api.asiaflix.net/v1/drama/search?q=$title&page=1&projections=["releaseYear","status","casts"]"""
+        val headers = mapOf(
+            "Referer" to asiaflixAPI,
+            "X-Access-Control" to "web"
+        )
+        val jsonString = app.get(searchUrl, headers = headers).text
+        val jsonObject = JSONObject(jsonString)
+        val bodyArray = jsonObject.getJSONArray("body")
+
+        var matchedId: String? = null
+        var matchedName: String? = null
+
+        for (i in 0 until bodyArray.length()) {
+            val item = bodyArray.getJSONObject(i)
+            val name = item.getString("name")
+            val releaseYear = item.getString("releaseYear")
+
+            if ("$title" in name && releaseYear == "$year") {
+                matchedId = item.getString("_id")
+                matchedName = name
+                break
+            }
+        }
+
+        if(matchedId != null && matchedName != null) {
+            val titleSlug = matchedName.replace(" ", "-")
+            val episodeUrl = "$asiaflixAPI/play/$titleSlug-${episode ?: 1}/$matchedId/${episode ?: 1}"
+            val scriptText = app.get(episodeUrl).document.selectFirst("script#ng-state")?.data().toString()
+            val regex = Regex("""\"streamUrls\"\s*:\s*\[\s*(.*?)\s*](?=\s*[,}])""", RegexOption.DOT_MATCHES_ALL)
+            val urlRegex = Regex("""\"url\"\s*:\s*\"(.*?)\"""")
+
+            regex.findAll(scriptText).forEach { match ->
+                val streamSection = match.groupValues[1]
+                urlRegex.findAll(streamSection).forEach { urlMatch ->
+                    val source = httpsify(urlMatch.groupValues[1])
+                    loadSourceNameExtractor("Asiaflix", source, episodeUrl, subtitleCallback, callback)
+                }
+            }
+        }
+    }
+
     suspend fun invokeTvStream(
         id: String? = null,
         api: String,
