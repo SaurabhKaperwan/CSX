@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.USER_AGENT
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.nicehttp.RequestBodyTypes
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,8 @@ import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import com.lagradost.cloudstream3.runAllAsync
+import kotlin.math.pow
+import kotlin.random.Random
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -206,7 +209,7 @@ fun String?.createSlug(): String? {
 
 suspend fun extractMdrive(url: String): List<String> {
     val doc = app.get(url).document
-    return doc.select("a")
+    return doc.select("h5 > a")
         .mapNotNull { it.attr("href").takeIf { href ->
             href.contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
         }}
@@ -644,9 +647,8 @@ fun decryptLinks(data: String): List<String> {
 }
 
 suspend fun generateMagnetLink(url: String, hash: String?): String {
-    // Fetch the content of the file from the provided URL
     val response = app.get(url)
-    val trackerList = response.text.trim().split("\n") // Assuming each tracker is on a new line
+    val trackerList = response.text.trim().split("\n")
 
     // Build the magnet link
     return buildString {
@@ -659,28 +661,53 @@ suspend fun generateMagnetLink(url: String, hash: String?): String {
     }
 }
 
+suspend fun getProtonEmbed(
+    text: String,
+    protonmoviesAPI: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+) {
+    val regex = """([^\"]*strm\.json)""".toRegex()
+    val match = regex.find(text)
+
+    if (match != null) {
+        val url = match.groupValues[1]
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to protonmoviesAPI
+        )
+        val json = app.get(protonmoviesAPI + url, headers = headers).text
+        JSONObject(json).getJSONObject("ppd")?.getJSONObject("mixdrop.ag")?.optString("link")?.let {
+            val source = it.replace("/f/", "/e/").replace("mxdrop.to", "mixdrop.ps")
+            loadSourceNameExtractor("Protonmovies", source, "", subtitleCallback, callback)
+        }
+    }
+}
+
 suspend fun getProtonStream(
     doc: Document,
     protonmoviesAPI: String,
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
 ) {
-    doc.select("tr").toList()
-        .filterIndexed { _, element ->
-            element.text().contains("1080p") ||
-            element.text().contains("720p") ||
-            element.text().contains("480p")
-    }
-    .amap { tr ->
+    doc.select("tr.infotr").amap { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
 
         if(id != null) {
+            val uid = "uid_${System.currentTimeMillis()}_${
+                (Random.nextDouble() * 36.0.pow(9))
+                .toLong()
+                .toString(36)
+                .padStart(9, '0')
+            }"
+
             val requestBody = FormBody.Builder()
                 .add("downloadid", id)
                 .add("token", "ok")
+                .add("uid", uid)
                 .build()
             val postHeaders = mapOf(
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI,
                 "Content-Type" to "multipart/form-data",
             )
@@ -691,7 +718,7 @@ suspend fun getProtonStream(
             ).text
 
             val headers = mapOf(
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI
             )
 
@@ -701,6 +728,7 @@ suspend fun getProtonStream(
             ).text
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+                val source = it.replace("\\/", "/")
                 gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
             }
         }
@@ -839,6 +867,7 @@ suspend fun getSoaperLinks(
         "Referer" to soaperAPI,
         "Origin" to soaperAPI
     )
+
     val document = app.get(url, headers = headers).document
     val eId = document.select("#hId").attr("value")
     val hIsW = document.select("#hIsW").attr("value")

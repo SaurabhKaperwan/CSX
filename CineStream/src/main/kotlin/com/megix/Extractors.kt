@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.network.WebViewResolver
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.MixDrop
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
@@ -274,4 +275,8 @@ class Dhcplay: VidHidePro() {
     override var name = "DHC Play"
     override var mainUrl = "https://dhcplay.com"
     override var requiresReferer = true
+}
+
+class MixDropPs : MixDrop() {
+    override var mainUrl = "https://mixdrop.ps"
 }

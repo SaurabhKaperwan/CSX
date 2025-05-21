@@ -23,8 +23,58 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
+import com.lagradost.cloudstream3.USER_AGENT
 
 object CineStreamExtractors : CineStreamProvider() {
+
+    suspend fun invokeAsiaflix(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        year: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val searchUrl = """https://api.asiaflix.net/v1/drama/search?q=$title&page=1&projections=["releaseYear","status","casts"]"""
+        val headers = mapOf(
+            "Referer" to asiaflixAPI,
+            "X-Access-Control" to "web"
+        )
+        val jsonString = app.get(searchUrl, headers = headers).text
+        val jsonObject = JSONObject(jsonString)
+        val bodyArray = jsonObject.getJSONArray("body")
+
+        var matchedId: String? = null
+        var matchedName: String? = null
+
+        for (i in 0 until bodyArray.length()) {
+            val item = bodyArray.getJSONObject(i)
+            val name = item.getString("name")
+            val releaseYear = item.getString("releaseYear")
+
+            if ("$title" in name && releaseYear == "$year") {
+                matchedId = item.getString("_id")
+                matchedName = name
+                break
+            }
+        }
+
+        if(matchedId != null && matchedName != null) {
+            val titleSlug = matchedName.replace(" ", "-")
+            val episodeUrl = "$asiaflixAPI/play/$titleSlug-${episode ?: 1}/$matchedId/${episode ?: 1}"
+            val scriptText = app.get(episodeUrl).document.selectFirst("script#ng-state")?.data().toString()
+            val regex = Regex("""\"streamUrls\"\s*:\s*\[\s*(.*?)\s*](?=\s*[,}])""", RegexOption.DOT_MATCHES_ALL)
+            val urlRegex = Regex("""\"url\"\s*:\s*\"(.*?)\"""")
+
+            regex.findAll(scriptText).forEach { match ->
+                val streamSection = match.groupValues[1]
+                urlRegex.findAll(streamSection).forEach { urlMatch ->
+                    val source = httpsify(urlMatch.groupValues[1])
+                    loadSourceNameExtractor("Asiaflix", source, episodeUrl, subtitleCallback, callback)
+                }
+            }
+        }
+    }
 
     suspend fun invokeTvStream(
         id: String? = null,
@@ -463,10 +513,10 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+            "User-Agent" to USER_AGENT,
             "Referer" to protonmoviesAPI
         )
-        val url = "$protonmoviesAPI/search/$id"
+        val url = "$protonmoviesAPI/search/$id/"
         val text = app.get(url, headers = headers).text
         val regex = Regex("""\[(?=.*?\"<div class\")(.*?)\]""")
         val htmlArray = regex.findAll(text).map { it.value }.toList()
@@ -475,6 +525,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val html = decodeHtml(Array(lastJsonArray.length()) { i -> lastJsonArray.getString(i) })
             val doc = Jsoup.parse(html)
             val link = doc.select(".col.mb-4 h5 a").attr("href")
+
             val document = app.get("${protonmoviesAPI}${link}", headers = headers).document
             val decodedDoc = decodeMeta(document)
             if (decodedDoc != null) {
@@ -484,12 +535,20 @@ object CineStreamExtractors : CineStreamProvider() {
                     val episodeDiv = decodedDoc.select("div.episode-block:has(div.episode-number:matchesOwn(S${season}E${episode}))").firstOrNull()
                     episodeDiv?.selectFirst("a")?.attr("href")?.let {
                         val source = protonmoviesAPI + it
-                        val doc2 = app.get(source, headers = headers).document
 
-                        val decodedDoc = decodeMeta(doc2)
-                        if(decodedDoc != null) {
-                            getProtonStream(decodedDoc, protonmoviesAPI, subtitleCallback, callback)
-                        }
+                        val doc2 = app.get(source, headers = headers).document
+                        runAllAsync(
+                            {
+                                val scriptText = doc2.selectFirst("script:containsData(strm.json)")?.data().toString()
+                                getProtonEmbed(scriptText, protonmoviesAPI, subtitleCallback, callback)
+                            },
+                            {
+                                val decodedDoc = decodeMeta(doc2)
+                                if(decodedDoc != null) {
+                                    getProtonStream(decodedDoc, protonmoviesAPI, subtitleCallback, callback)
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -872,7 +931,10 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val headers = mapOf("Cookie" to "__ddg2_=1234567890")
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Cookie" to "__ddg2_=1234567890"
+        )
         val id = app.get(url ?: "", headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
         val animeData =
@@ -1284,20 +1346,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 ?.attr("href")
         }
 
-        val fixTitle = title?.substringBefore("-")?.replace(":", " ")?.replace("&", " ")
-        val searchtitle = title?.substringBefore("-").createSlug()
-        val url = if (season == null) {
-            "$MovieDrive_API/search/$fixTitle $year"
-        } else {
-            "$MovieDrive_API/search/$fixTitle"
-        }
-        val res1 =
-            app.get(url, interceptor = wpRedisInterceptor).document.select("figure")
-                .toString()
-        val hrefpattern =
-            Regex("""(?i)<a\s+href="([^"]*\b$searchtitle\b[^"]*)\"""").find(res1)?.groupValues?.get(1)
-                ?: ""
-        val document = app.get(hrefpattern).document
+        val url = "$MovieDrive_API/search/$title $year"
+        val res = app.get(url, interceptor = wpRedisInterceptor).document
+        val match = res.select("li.thumb > figcaption > a").firstOrNull { a ->
+            val text = a.text()
+            text.contains(title.toString(), ignoreCase = true)
+        }?.attr("href") ?: return
+
+        val document = app.get(match).document
         if (season == null) {
             document.select("h5 > a").amap {
                 val href = it.attr("href")
@@ -1721,15 +1777,15 @@ object CineStreamExtractors : CineStreamProvider() {
                                         getM3u8Qualities(
                                             server.link,
                                             "https://static.crunchyroll.com/",
-                                            host
+                                            "Allanime [SUB] $host"
                                         ).forEach(callback)
                                     }
 
                                     server.hls == null -> {
                                         callback.invoke(
                                             newExtractorLink(
-                                                "Allanime ${host.capitalize()}",
-                                                "Allanime ${host.capitalize()}",
+                                                "Allanime [${i.uppercase()}] ${host.capitalize()}",
+                                                "Allanime [${i.uppercase()}] ${host.capitalize()}",
                                                 server.link,
                                                 INFER_TYPE
                                             )
@@ -1745,7 +1801,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                                     server.link
                                                 else "https://allanime.day" + URI(server.link).path)
 
-                                        getM3u8Qualities(server.link, server.headers?.referer ?: endpoint, host).forEach(callback)
+                                        getM3u8Qualities(server.link, server.headers?.referer ?: endpoint, "Allanime [SUB] $host").forEach(callback)
                                     }
 
                                     else -> {
