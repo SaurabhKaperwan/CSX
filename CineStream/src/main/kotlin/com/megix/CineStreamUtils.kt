@@ -647,9 +647,8 @@ fun decryptLinks(data: String): List<String> {
 }
 
 suspend fun generateMagnetLink(url: String, hash: String?): String {
-    // Fetch the content of the file from the provided URL
     val response = app.get(url)
-    val trackerList = response.text.trim().split("\n") // Assuming each tracker is on a new line
+    val trackerList = response.text.trim().split("\n")
 
     // Build the magnet link
     return buildString {

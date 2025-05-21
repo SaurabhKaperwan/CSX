@@ -1801,7 +1801,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                                     server.link
                                                 else "https://allanime.day" + URI(server.link).path)
 
-                                        getM3u8Qualities(server.link, server.headers?.referer ?: endpoint, host).forEach(callback)
+                                        getM3u8Qualities(server.link, server.headers?.referer ?: endpoint, "Allanime [SUB] $host").forEach(callback)
                                     }
 
                                     else -> {
