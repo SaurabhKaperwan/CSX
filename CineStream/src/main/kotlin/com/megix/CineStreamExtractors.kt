@@ -1777,15 +1777,15 @@ object CineStreamExtractors : CineStreamProvider() {
                                         getM3u8Qualities(
                                             server.link,
                                             "https://static.crunchyroll.com/",
-                                            host
+                                            "Allanime [SUB] $host"
                                         ).forEach(callback)
                                     }
 
                                     server.hls == null -> {
                                         callback.invoke(
                                             newExtractorLink(
-                                                "Allanime ${host.capitalize()}",
-                                                "Allanime ${host.capitalize()}",
+                                                "Allanime [${i.uppercase()}] ${host.capitalize()}",
+                                                "Allanime [${i.uppercase()}] ${host.capitalize()}",
                                                 server.link,
                                                 INFER_TYPE
                                             )
