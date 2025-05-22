@@ -47,6 +47,7 @@ class Ziddiflix: Vifix() {
     override val mainUrl: String = "https://ziddiflix.com"
     override val requiresReferer = false
 }
+
 open class Vifix: ExtractorApi() {
     override val name: String = "Vifix"
     override val mainUrl: String = "https://vifix.site"
@@ -66,9 +67,28 @@ open class Vifix: ExtractorApi() {
     }
 }
 
+class Linkstore : ExtractorApi() {
+    override val name: String = "Linkstore"
+    override val mainUrl: String = "https://drive.linkstore.rest"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val redirectUrl = app.get(url).document
+            .select("meta[http-equiv=refresh]")
+            .attr("content")
+            .substringAfter("url=")
+        loadExtractor(redirectUrl, "", subtitleCallback, callback)
+    }
+}
+
 open class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://new.luxedrive.space"
+    override val mainUrl: String = "https://new2.luxedrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -84,7 +104,6 @@ open class Luxdrive : ExtractorApi() {
         }
     }
 }
-
 
 class Driveseed : Driveleech() {
     override val name: String = "Driveseed"
@@ -681,15 +700,6 @@ open class GDFlix : ExtractorApi() {
                         Log.d("Instant DL", e.toString())
                     }
                 }
-
-                text.contains("CLOUD DOWNLOAD") -> {
-                    callback.invoke(
-                        newExtractorLink("GDFlix[CLOUD]", "GDFlix[CLOUD] $fileName[$fileSize]", anchor.attr("href")) {
-                            this.quality = getIndexQuality(fileName)
-                        }
-                    )
-                }
-
                 text.contains("GoFile") -> {
                     try {
                         app.get(anchor.attr("href")).document
@@ -745,7 +755,7 @@ class Gofile : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
 
-        val res = app.get(url)
+        //val res = app.get(url)
         val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
         val genAccountRes = app.post("$mainApi/accounts").text
         val jsonResp = JSONObject(genAccountRes)

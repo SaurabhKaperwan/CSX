@@ -173,16 +173,9 @@ suspend fun NFBypass(mainUrl : String): String {
 }
 
 suspend fun cinemaluxeBypass(url: String): String {
-    val jsonBody = """{"url":"$url"}"""
-    val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
-    val json = app.post(
-        "${BuildConfig.BYPASS_API}/cinemaluxe",
-        headers = mapOf(
-            "Content-Type" to "application/json",
-        ),
-        requestBody = requestBody
-    ).text
-    return parseJson<CinemaluxeRedirectUrl>(json).redirectUrl
+    val text = app.get(url).text
+    val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
+    return base64Decode(encodeUrl)
 }
 
 fun getFirstCharacterOrZero(input: String): String {

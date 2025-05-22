@@ -739,15 +739,15 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val newTitle = title?.replace(" ", "+")?.replace("’s", "") ?: return
-        val url = "$cinemaluxeAPI/?s=$newTitle+$year"
-        val link = app.get(url).document.selectFirst("div.title > a:matches((?i)($title $year))")?.attr("href") ?: return
+        val titleSlug = "$title $year"?.replace(" ", "-") ?: ""
+        val link = if(season == null) "$cinemaluxeAPI/movies/titleSlug/" else "$cinemaluxeAPI/series/titleSlug/"
         val document = app.get(link).document
 
         if(season == null) {
-            document.select("div.ep-button-container > a").amap {
+            document.select("div.wp-content div.ep-button-container > a").amap {
                 var link = it.attr("href")
                 link = cinemaluxeBypass(link)
+
                 val selector = if(link.contains("linkstore")) "div.ep-button-container > a" else "div.mirror-buttons a"
                 app.get(link).document.select(selector).amap {
                     loadSourceNameExtractor(
@@ -761,18 +761,23 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
         else {
-            val season = document.select("div.ep-button-container > a:matches((?i)(Season 0?$season))")
+            val season = document.select("div.wp-content div.ep-button-container")
             season.amap { div ->
-                var link = div.select("a").attr("href")
-                link = cinemaluxeBypass(link)
-                 app.get(link).document.select("""div.ep-button-container > a:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
-                    loadSourceNameExtractor(
-                        "Cinemaluxe",
-                        it.attr("href"),
-                        "",
-                        subtitleCallback,
-                        callback,
-                    )
+                val text = div.previousElementSibling()?.text() ?: ""
+                if(text.contains("Season $season", ignoreCase = true) ||
+                    text.contains("Season 0$season", ignoreCase = true)
+                ) {
+                    var link = div.select("a").attr("href")
+                    link = cinemaluxeBypass(link)
+                    app.get(link).document.select("""div.ep-button-container > a:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
+                        loadSourceNameExtractor(
+                            "Cinemaluxe",
+                            it.attr("href"),
+                            "",
+                            subtitleCallback,
+                            callback,
+                        )
+                    }
                 }
             }
         }

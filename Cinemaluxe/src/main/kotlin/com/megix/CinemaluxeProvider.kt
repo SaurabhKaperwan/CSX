@@ -5,11 +5,10 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
+import com.lagradost.cloudstream3.base64Decode
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemalux.mov"
+    override var mainUrl = "https://cinemalux.sbs"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -39,21 +38,10 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         return newHomePageResponse(request.name, home)
     }
 
-    data class RedirectUrl(
-        val redirectUrl: String
-    )
-
     private suspend fun bypass(url: String): String {
-        val jsonBody = """{"url":"$url"}"""
-        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
-        val json = app.post(
-            "${BuildConfig.BYPASS_API}/cinemaluxe",
-            headers = mapOf(
-                "Content-Type" to "application/json",
-            ),
-            requestBody = requestBody
-        ).text
-        return parseJson<RedirectUrl>(json).redirectUrl
+        val text = app.get(url).text
+        val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
+        return base64Decode(encodeUrl)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
@@ -89,7 +77,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         val posterUrl = document.select("div.poster > img").attr("data-src")
         val description = document.selectFirst("div.wp-content")?.ownText() ?: ""
 
-        val tvType = if (url.contains("tvshow")) {
+        val tvType = if (url.contains("series")) {
             "series"
         } else {
             "movie"
@@ -97,7 +85,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
 
         if(tvType == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            val aTags = document.select("div.ep-button-container > a")
+            val aTags = document.select("div.wp-content div.ep-button-container > a")
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
 
             aTags.mapNotNull{ aTag ->
@@ -144,7 +132,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
             }
         }
         else {
-            val buttons = document.select("div.ep-button-container > a")
+            val buttons = document.select("div.wp-content div.ep-button-container > a")
             val data = buttons.flatMap { button ->
                 var link = button.attr("href")
                 link = bypass(link)

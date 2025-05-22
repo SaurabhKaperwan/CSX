@@ -56,10 +56,6 @@ data class AniSearch(@JsonProperty("data") var data: AniData? = AniData())
 
 data class AniIds(var id: Int? = null, var idMal: Int? = null)
 
-//Cinemaluxe
-data class CinemaluxeRedirectUrl(
-    val redirectUrl: String
-)
 
 //NF
 data class NFVerifyUrl(
