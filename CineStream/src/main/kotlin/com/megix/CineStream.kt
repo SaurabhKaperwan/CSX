@@ -22,5 +22,8 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Ryderjet())
         registerExtractorAPI(SuperVideo())
         registerExtractorAPI(MixDropPs())
+        registerExtractorAPI(Dlions())
+        registerExtractorAPI(Watchadsontape())
+        registerExtractorAPI(MixDropSi())
     }
 }

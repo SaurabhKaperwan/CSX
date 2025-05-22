@@ -3,10 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.network.WebViewResolver
-import com.lagradost.cloudstream3.extractors.StreamWishExtractor
-import com.lagradost.cloudstream3.extractors.VidhideExtractor
-import com.lagradost.cloudstream3.extractors.VidHidePro
-import com.lagradost.cloudstream3.extractors.MixDrop
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
@@ -19,6 +15,14 @@ import com.lagradost.cloudstream3.utils.M3u8Helper
 import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.MixDrop
+import com.lagradost.cloudstream3.extractors.StreamTape
+
+class Watchadsontape : StreamTape() {
+    override var mainUrl = "https://watchadsontape.com"
+}
 
 open class SuperVideo : ExtractorApi() {
     override val name = "SuperVideo"
@@ -64,16 +68,20 @@ class Multimovies: StreamWishExtractor() {
     override var requiresReferer = true
 }
 
-class Animezia : VidhideExtractor() {
+class Animezia : VidHidePro() {
     override var name = "Animezia"
     override var mainUrl = "https://animezia.cloud"
     override var requiresReferer = true
 }
 
-class server2 : VidhideExtractor() {
+class server2 : VidHidePro() {
     override var name = "Multimovies Vidhide"
     override var mainUrl = "https://server2.shop"
     override var requiresReferer = true
+}
+
+class Dlions : VidHidePro() {
+    override var mainUrl = "https://dlions.pro"
 }
 
 class Asnwish : StreamWishExtractor() {
@@ -279,4 +287,8 @@ class Dhcplay: VidHidePro() {
 
 class MixDropPs : MixDrop() {
     override var mainUrl = "https://mixdrop.ps"
+}
+
+class MixDropSi : MixDrop() {
+    override var mainUrl = "https://mixdrop.si"
 }
