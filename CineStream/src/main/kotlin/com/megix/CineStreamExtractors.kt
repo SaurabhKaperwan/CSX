@@ -804,7 +804,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val encodedurl =
                 app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
                     .substringBefore("\"};")
-            val decodedurl = base64Decode(encodedurl)
+            val decodedurl = base64Decode(encodedurl.replace("\\/", "/"))
 
             if (season == null) {
                 loadSourceNameExtractor("Bollyflix", decodedurl , "", subtitleCallback, callback)

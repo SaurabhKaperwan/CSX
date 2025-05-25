@@ -11,7 +11,7 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://bollyflix.yoga"
+    override var mainUrl = "https://bollyflix.promo"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
@@ -25,11 +25,11 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/" to "Home",
-        "$mainUrl/movies/bollywood/" to "Bollywood Movies",
-        "$mainUrl/movies/hollywood/" to "Hollywood Movies",
-        "$mainUrl/web-series/ongoing-series/" to "Ongoing Series",
-        "$mainUrl/anime/" to "Anime"
+        "" to "Home",
+        "/movies/bollywood/" to "Bollywood Movies",
+        "/movies/hollywood/" to "Hollywood Movies",
+        "/web-series/ongoing-series/" to "Ongoing Series",
+        "/anime/" to "Anime"
     )
 
     override suspend fun getMainPage(
@@ -37,7 +37,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         request: MainPageRequest
     ): HomePageResponse {
         val document = if(page == 1) {
-            app.get(request.data).document
+            app.get(mainUrl + request.data).document
         }
         else {
             app.get(request.data + "page/" + page).document
@@ -52,7 +52,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         val url = "https://web.sidexfee.com/?id=$id"
         val document = app.get(url).text
         val encodeUrl = Regex("""link":"([^"]+)""").find(document) ?. groupValues ?. get(1) ?: ""
-        return base64Decode(encodeUrl)
+        return base64Decode(encodeUrl.replace("\\/", "/"))
     }
 
     private fun Element.toSearchResult(): SearchResponse? {

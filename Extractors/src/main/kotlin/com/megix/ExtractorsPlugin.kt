@@ -28,6 +28,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(HubCloudArt())
         registerExtractorAPI(HubCloudDad())
         registerExtractorAPI(fastdlserver())
+        registerExtractorAPI(fastdlserver2())
         registerExtractorAPI(Driveleech())
         registerExtractorAPI(Driveseed())
         registerExtractorAPI(DriveleechPro())

@@ -519,7 +519,11 @@ open class HubCloud : ExtractorApi() {
     }
 }
 
-class fastdlserver : ExtractorApi() {
+class fastdlserver2 : fastdlserver() {
+    override var mainUrl = "https://fastdlserver.life"
+}
+
+open class fastdlserver : ExtractorApi() {
     override val name: String = "fastdlserver"
     override var mainUrl = "https://fastdlserver.lol"
     override val requiresReferer = false
