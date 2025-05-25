@@ -739,37 +739,33 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val titleSlug = "$title $year"?.replace(" ", "-") ?: ""
-        val link = if(season == null) "$cinemaluxeAPI/movies/titleSlug/" else "$cinemaluxeAPI/series/titleSlug/"
-        val document = app.get(link).document
+        val query = "$title $year"
+        val url = app.get("$cinemaluxeAPI/?s=$query").document
+            .select("div.title > a:contains($query)").attr("href")
+        val document = app.get(url).document
 
         if(season == null) {
             document.select("div.wp-content div.ep-button-container > a").amap {
-                var link = it.attr("href")
-                link = cinemaluxeBypass(link)
-
-                val selector = if(link.contains("linkstore")) "div.ep-button-container > a" else "div.mirror-buttons a"
-                app.get(link).document.select(selector).amap {
-                    loadSourceNameExtractor(
-                        "Cinemaluxe",
-                        it.attr("href"),
-                        "",
-                        subtitleCallback,
-                        callback,
-                    )
-                }
+                loadSourceNameExtractor(
+                    "Cinemaluxe",
+                    it.attr("href"),
+                    "",
+                    subtitleCallback,
+                    callback,
+                )
             }
         }
         else {
             val season = document.select("div.wp-content div.ep-button-container")
             season.amap { div ->
-                val text = div.previousElementSibling()?.text() ?: ""
+                val text = div.toString()
                 if(text.contains("Season $season", ignoreCase = true) ||
                     text.contains("Season 0$season", ignoreCase = true)
                 ) {
-                    var link = div.select("a").attr("href")
-                    link = cinemaluxeBypass(link)
+                    val link = div.select("a").attr("href")
+
                     app.get(link).document.select("""div.ep-button-container > a:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
+
                         loadSourceNameExtractor(
                             "Cinemaluxe",
                             it.attr("href"),
