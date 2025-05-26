@@ -758,18 +758,25 @@ class Gofile : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Origin" to mainUrl,
+            "Referer" to mainUrl,
+        )
         //val res = app.get(url)
         val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
-        val genAccountRes = app.post("$mainApi/accounts").text
+        val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
         val jsonResp = JSONObject(genAccountRes)
         val token = jsonResp.getJSONObject("data").getString("token") ?: return
 
-        val globalRes = app.get("$mainUrl/dist/js/global.js").text
+        val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
         val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
         val response = app.get("$mainApi/contents/$id?wt=$wt",
             headers = mapOf(
+                "User-Agent" to USER_AGENT,
+                "Origin" to mainUrl,
+                "Referer" to mainUrl,
                 "Authorization" to "Bearer $token",
             )
         ).text
