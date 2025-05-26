@@ -254,7 +254,10 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
+        if(netflixAPI.isEmpty()) return
+
         NfCookie = NFBypass(netflixAPI)
+
         val cookies = mapOf(
             "t_hash_t" to NfCookie,
             "ott" to "pv",
@@ -327,7 +330,10 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
+        if(netflixAPI.isEmpty()) return
+
         NfCookie = NFBypass(netflixAPI)
+
         val cookies = mapOf(
             "t_hash_t" to NfCookie,
             "hd" to "on"
