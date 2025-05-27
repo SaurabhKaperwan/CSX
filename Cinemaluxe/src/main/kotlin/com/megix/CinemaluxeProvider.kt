@@ -38,11 +38,11 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         return newHomePageResponse(request.name, home)
     }
 
-    // private suspend fun bypass(url: String): String {
-    //     val text = app.get(url).text
-    //     val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
-    //     return base64Decode(encodeUrl)
-    // }
+    private suspend fun bypass(url: String): String {
+        val text = app.get(url).text
+        val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
+        return base64Decode(encodeUrl.replace("\\/", "/"))
+    }
 
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("img").attr("alt")
@@ -93,7 +93,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val matchResult = realSeasonRegex.find(seasonText)
                 val realSeason = matchResult?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                val seasonLink = aTag.attr("href")
+                val seasonLink = bypass(aTag.attr("href"))
                 val doc = app.get(seasonLink).document
                 var innerATags = doc.select("div.ep-button-container > a:matches((?i)(Episode))")
                 
@@ -134,7 +134,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         else {
             val buttons = document.select("div.wp-content div.ep-button-container > a")
             val data = buttons.map { button ->
-                val link = button.attr("href")
+                val link = bypass(button.attr("href"))
                 EpisodeLink(
                     link
                 )

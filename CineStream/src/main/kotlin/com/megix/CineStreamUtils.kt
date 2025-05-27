@@ -172,11 +172,11 @@ suspend fun NFBypass(mainUrl : String): String {
     return verifyResponse.cookies["t_hash_t"].orEmpty()
 }
 
-// suspend fun cinemaluxeBypass(url: String): String {
-//     val text = app.get(url).text
-//     val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
-//     return base64Decode(encodeUrl)
-// }
+suspend fun cinemaluxeBypass(url: String): String {
+    val text = app.get(url).text
+    val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
+    return base64Decode(encodeUrl.replace("\\/", "/"))
+}
 
 fun getFirstCharacterOrZero(input: String): String {
     val firstChar = input[0]
