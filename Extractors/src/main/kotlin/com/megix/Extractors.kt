@@ -385,7 +385,11 @@ class VCloud : ExtractorApi() {
     }
 }
 
-class Hubdrive : ExtractorApi() {
+class Hubdrivelive : Hubdrive() {
+    override val mainUrl = "https://hubdrive.live"
+}
+
+open class Hubdrive : ExtractorApi() {
     override val name = "Hubdrive"
     override val mainUrl = "https://hubdrive.fit"
     override val requiresReferer = false

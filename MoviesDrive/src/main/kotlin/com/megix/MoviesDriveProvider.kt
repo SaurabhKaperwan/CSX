@@ -114,7 +114,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
         var posterUrl = document.select("img[decoding=\"async\"]").attr("src")
         val seasonRegex = """(?i)season\s*\d+""".toRegex()
-        val imdbUrl = document.select("a:contains(IMDb)").attr("href")
+        val imdbUrl = document.select("a[href*=\"imdb\"]").attr("href")
 
         val tvtype = if (
             title.contains("Episode", ignoreCase = true) == true ||

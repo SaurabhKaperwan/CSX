@@ -56,6 +56,7 @@ import com.megix.CineStreamExtractors.invokeVidJoy
 import com.megix.CineStreamExtractors.invokeMovies4u
 import com.megix.CineStreamExtractors.invokeSoaper
 import com.megix.CineStreamExtractors.invokeAsiaflix
+import com.megix.CineStreamExtractors.invoke2embed
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -99,6 +100,7 @@ open class CineStreamProvider : MainAPI() {
         const val Vglist = "https://vglist.nl"
         const val soaperAPI = "https://soaper.cc"
         const val asiaflixAPI = "https://asiaflix.net"
+        const val twoembedAPI = "https://2embed.cc"
 
         var protonmoviesAPI = ""
         var W4UAPI = ""
@@ -226,51 +228,57 @@ open class CineStreamProvider : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
         val normalizedQuery = query.trim()
-        val hasTmdb = "tmdb:" in normalizedQuery.lowercase()
 
-        suspend fun fetchResults(url: String, tvType: TvType): List<SearchResponse> = runCatching {
-            val json = app.get(url).text
-            tryParseJson<SearchResult>(json)?.metas?.map {
-                val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: "Empty"
-                newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), tvType).apply {
-                    posterUrl = it.poster.toString()
-                }
-            } ?: emptyList()
-        }.getOrDefault(emptyList())
+        suspend fun fetchResults(urls: List<String>, tvType: TvType): List<SearchResponse> {
+            for (url in urls) {
+                val result = runCatching {
+                    val json = app.get(url).text
+                    tryParseJson<SearchResult>(json)?.metas?.map {
+                        val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: "Empty"
+                        newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), tvType).apply {
+                            posterUrl = it.poster.toString()
+                        }
+                    } ?: emptyList()
+                }.getOrDefault(emptyList())
 
-        val tmdbCleanQuery = normalizedQuery.replace("(?i)tmdb:".toRegex(), "").trim()
-
-        val endpoints = if (hasTmdb) {
-            listOf(
-                "$streamio_TMDB/catalog/movie/tmdb.top/search=$tmdbCleanQuery.json" to TvType.Movie,
-                "$streamio_TMDB/catalog/series/tmdb.top/search=$tmdbCleanQuery.json" to TvType.TvSeries
-            )
-        } else {
-            listOf(
-                "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json" to TvType.Movie,
-                "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json" to TvType.TvSeries,
-                "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json" to TvType.Anime,
-                "$mediaFusion/catalog/tv/mediafusion_search_tv/search=$normalizedQuery.json" to TvType.Live
-            )
+                if (result.isNotEmpty()) return result
+            }
+            return emptyList()
         }
 
-        val allRequests = endpoints.map { (url, type) ->
-            async { fetchResults(url, type) }
-        }
+        val endpointsWithFallbacks = listOf(
+            listOf(
+                "$streamio_TMDB/catalog/movie/tmdb.top/search=$normalizedQuery.json",
+                "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json"
+            ) to TvType.Movie,
 
-        val resultsLists = allRequests.awaitAll()
+            listOf(
+                "$streamio_TMDB/catalog/series/tmdb.top/search=$normalizedQuery.json",
+                "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json"
+            ) to TvType.TvSeries,
+
+            listOf(
+                "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json"
+            ) to TvType.Anime,
+
+            listOf(
+                "$mediaFusion/catalog/tv/mediafusion_search_tv/search=$normalizedQuery.json"
+            ) to TvType.Live
+        )
+
+        val resultsLists = endpointsWithFallbacks.map { (urls, type) ->
+            async { fetchResults(urls, type) }
+        }.awaitAll()
+
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
-        val mixedResults = mutableListOf<SearchResponse>()
 
-        for (i in 0 until maxSize) {
-            for (list in resultsLists) {
-                if (i < list.size) {
-                    mixedResults.add(list[i])
+        buildList {
+            for (i in 0 until maxSize) {
+                for (list in resultsLists) {
+                    if (i < list.size) add(list[i])
                 }
             }
         }
-
-        mixedResults
     }
 
     override suspend fun load(url: String): LoadResponse? {
@@ -378,7 +386,7 @@ open class CineStreamProvider : MainAPI() {
                     this.season = ep.season
                     this.episode = ep.episode
                     this.posterUrl = ep.thumbnail
-                    this.description = ep.overview
+                    this.description = ep.overview ?: ""
                     this.rating = ep.rating?.toFloat()?.times(10)?.roundToInt()
                     addDate(ep.firstAired ?: ep.released)
                 }
@@ -598,7 +606,8 @@ open class CineStreamProvider : MainAPI() {
             { invokeProtonmovies(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             // { invokeHindmoviez("HindMoviez", hindMoviezAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVegamovies("VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviesdrive(imdbTitle, res.imdbSeason, res.imdbEpisode, seasonYear, subtitleCallback, callback) },
+            { invoke4khdhub(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMoviesdrive(imdbTitle, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMultimovies(multimoviesAPI, imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, seasonYear, callback) },
@@ -628,7 +637,7 @@ open class CineStreamProvider : MainAPI() {
             { if (isBollywood) invokeTopMovies(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { if (!isBollywood) invokeMoviesmod(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
-            { invokeMoviesdrive(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
+            { invokeMoviesdrive(res.title, res.id ,res.season, res.episode, subtitleCallback, callback) },
             { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
@@ -647,6 +656,7 @@ open class CineStreamProvider : MainAPI() {
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimeWire(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokePlayer4U(res.title, res.season, res.episode, seasonYear, callback) },

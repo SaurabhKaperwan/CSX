@@ -202,7 +202,7 @@ fun String?.createSlug(): String? {
 
 suspend fun extractMdrive(url: String): List<String> {
     val doc = app.get(url).document
-    return doc.select("h5 > a")
+    return doc.select("a")
         .mapNotNull { it.attr("href").takeIf { href ->
             href.contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
         }}
@@ -693,7 +693,6 @@ suspend fun getProtonStream(
 ) {
     doc.select("tr.infotr").amap { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
-
         if(id != null) {
             val uid = "uid_${System.currentTimeMillis()}_${
                 (Random.nextDouble() * 36.0.pow(9))
@@ -707,6 +706,7 @@ suspend fun getProtonStream(
                 .add("token", "ok")
                 .add("uid", uid)
                 .build()
+
             val postHeaders = mapOf(
                 "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI,
@@ -730,7 +730,7 @@ suspend fun getProtonStream(
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
                 val source = it.replace("\\/", "/")
-                gofileExtractor("Protonmovies", it, "", subtitleCallback, callback)
+                gofileExtractor("Protonmovies", source, "", subtitleCallback, callback)
             }
         }
     }
