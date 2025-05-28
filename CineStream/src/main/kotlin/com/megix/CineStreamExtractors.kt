@@ -28,6 +28,65 @@ import com.lagradost.cloudstream3.USER_AGENT
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokePrimebox(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Referer" to xprimeBaseAPI,
+            "Origin" to xprimeBaseAPI,
+        )
+
+        val url = if(season == null) {
+            "$xprimeAPI/primebox?name=$title&fallback_year=$year"
+        } else {
+            "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
+        }
+        val json = app.get(url).text
+        val data = tryParseJson<Primebox>(json) ?: return
+
+        data.streams?.let { streams ->
+            listOf(
+                360 to streams.quality360P,
+                720 to streams.quality720P,
+                1080 to streams.quality1080P
+            ).forEach { (quality, link) ->
+                if (!link.isNullOrBlank()) {
+                    callback.invoke(
+                        newExtractorLink(
+                            "PrimeBox",
+                            "PrimeBox",
+                            link,
+                            type = ExtractorLinkType.VIDEO,
+                        ) {
+                            this.quality = quality
+                            this.headers = headers
+                        }
+                    )
+                }
+            }
+        }
+
+        if (data.hasSubtitles && data.subtitles.isNotEmpty()) {
+            data.subtitles.forEach { sub ->
+                val file = sub.file
+                val label = sub.label
+                if (!file.isNullOrBlank() && !label.isNullOrBlank()) {
+                    subtitleCallback.invoke(
+                        SubtitleFile(
+                            label,
+                            file
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     suspend fun invoke2embed(
         id: String? = null,
         season: Int? = null,
@@ -783,17 +842,23 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         )
         val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
+        val resp = app.get(TRACKER_LIST_URL).text
+        val sourceTrackers = resp
+            .split("\n")
+            .filterIndexed { i, _ -> i % 2 == 0 }
+            .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
+
         res?.streams?.forEach { stream ->
-            val resp = app.get(TRACKER_LIST_URL).text
-            val sourceTrackers = resp
-                    .split("\n")
-                    .filterIndexed { i, _ -> i % 2 == 0 }
-                    .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
+            val title = stream.title ?: stream.name ?: ""
+            val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
+            val match = regex.find(title)
+            val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
+            if (seeders < 10) return@forEach
             val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
             callback.invoke(
                 newExtractorLink(
                     "Torrentio",
-                    stream.title ?: stream.name ?: "",
+                    title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {

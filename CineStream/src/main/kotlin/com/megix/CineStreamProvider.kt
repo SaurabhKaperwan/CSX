@@ -57,6 +57,7 @@ import com.megix.CineStreamExtractors.invokeMovies4u
 import com.megix.CineStreamExtractors.invokeSoaper
 import com.megix.CineStreamExtractors.invokeAsiaflix
 import com.megix.CineStreamExtractors.invoke2embed
+import com.megix.CineStreamExtractors.invokePrimebox
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -101,6 +102,8 @@ open class CineStreamProvider : MainAPI() {
         const val soaperAPI = "https://soaper.cc"
         const val asiaflixAPI = "https://asiaflix.net"
         const val twoembedAPI = "https://2embed.cc"
+        const val xprimeBaseAPI = "https://xprime.tv"
+        const val xprimeAPI = "https://backend.xprime.tv"
 
         var protonmoviesAPI = ""
         var W4UAPI = ""
@@ -139,6 +142,7 @@ open class CineStreamProvider : MainAPI() {
                 multimoviesAPI = jsonObject.optString("multimovies")
                 hdmovie2API = jsonObject.optString("hdmovie2")
                 jaduMoviesAPI = jsonObject.optString("jadumovies")
+                netflixAPI = jsonObject.optString("nfmirror")
 
                 loaded = true
             } catch (e: Exception) {
@@ -163,8 +167,8 @@ open class CineStreamProvider : MainAPI() {
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
         "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
         "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
-        // "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
-        """$animeCatalog/{"anisearch_trending":"on"}/catalog/anime/anisearch_trending/skip=###""" to "Trending Anime",
+        "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
+        // """$animeCatalog/{"anisearch_trending":"on"}/catalog/anime/anisearch_trending/skip=###""" to "Trending Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
         "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
@@ -612,6 +616,7 @@ open class CineStreamProvider : MainAPI() {
             { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, seasonYear, callback) },
             { invokeCinemaluxe(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
+            { invokePrimebox(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
             { invokeUhdmovies(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
     }
@@ -655,6 +660,7 @@ open class CineStreamProvider : MainAPI() {
                 val (aniId, malId) = convertTmdbToAnimeId(res.title, year, res.firstAired, if (res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
             }},
+            { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeWire(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },

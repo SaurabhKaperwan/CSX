@@ -3,6 +3,27 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Primebox
+data class Primebox(
+    @JsonProperty("available_qualities") val availableQualities: List<String> = emptyList(),
+    @JsonProperty("has_subtitles") val hasSubtitles: Boolean = false,
+    @JsonProperty("status") val status: String? = null,
+    @JsonProperty("streams") val streams: PrimeboxStreams? = null,
+    @JsonProperty("subtitles") val subtitles: List<PrimeboxSubtitles> = emptyList(),
+    @JsonProperty("title") val title: String? = null
+)
+
+data class PrimeboxStreams(
+    @JsonProperty("360P") val quality360P: String? = null,
+    @JsonProperty("720P") val quality720P: String? = null,
+    @JsonProperty("1080P") val quality1080P: String? = null
+)
+
+data class PrimeboxSubtitles(
+    @JsonProperty("file") val file: String? = null,
+    @JsonProperty("label") val label: String? = null
+)
+
 //Allmovieland
  data class AllMovielandPlaylist(
     @JsonProperty("file") val file: String? = null,
