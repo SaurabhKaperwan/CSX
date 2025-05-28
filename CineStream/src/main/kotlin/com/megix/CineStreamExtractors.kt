@@ -28,6 +28,37 @@ import com.lagradost.cloudstream3.USER_AGENT
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokePrimenet(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Referer" to xprimeBaseAPI,
+            "Origin" to xprimeBaseAPI,
+        )
+
+        val url = if(season == null) {
+            "$xprimeAPI/primenet?id=$tmdbId"
+        } else {
+            "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode"
+        }
+
+        val json = app.get(url, headers = headers).text
+        val sourceUrl = JSONObject(json).getString("url")
+
+        callback.invoke(
+            newExtractorLink(
+                "PrimeNet",
+                "PrimeNet",
+                sourceUrl,
+            ) {
+                this.headers = headers
+            }
+        )
+    }
+
     suspend fun invokePrimebox(
         title: String? = null,
         year: Int? = null,
@@ -46,7 +77,7 @@ object CineStreamExtractors : CineStreamProvider() {
         } else {
             "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
         }
-        val json = app.get(url).text
+        val json = app.get(url, headers = headers).text
         val data = tryParseJson<Primebox>(json) ?: return
 
         data.streams?.let { streams ->

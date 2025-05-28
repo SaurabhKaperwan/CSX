@@ -58,6 +58,7 @@ import com.megix.CineStreamExtractors.invokeSoaper
 import com.megix.CineStreamExtractors.invokeAsiaflix
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokePrimebox
+import com.megix.CineStreamExtractors.invokePrimenet
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -665,6 +666,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, seasonYear, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
             { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
