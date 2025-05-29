@@ -58,21 +58,25 @@ object CineStreamExtractors : CineStreamProvider() {
                     .getJSONObject("episode")
 
                     val streamUrl = epJson.optString("streamLink")
-                    val backupUrl = epJson.optString("streamLinkBackup")
-                    val streamLinks = listOf(streamUrl, backupUrl).filter { it.isNotEmpty() }
+                    //val backupUrl = epJson.optString("streamLinkBackup")
                     val headers = mapOf(
                         "Referer" to animeparadiseBaseAPI,
                         "Origin" to animeparadiseBaseAPI,
                         "User-Agent" to USER_AGENT
                     )
-                    streamLinks.forEach {
-                        M3u8Helper.generateM3u8(
-                            "Animeparadise",
-                            "https://stream.animeparadise.moe/m3u8?url=" + it,
-                            animeparadiseBaseAPI,
-                            headers = headers
-                        ).forEach(callback)
-                    }
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Animeparadise [SUB]",
+                            "Animeparadise [SUB]",
+                            "https://stream.animeparadise.moe/m3u8?url=" + streamUrl,
+                            type = ExtractorLinkType.M3U8,
+                        ) {
+                            this.referer = animeparadiseBaseAPI
+                            this.quality = 1080
+                            this.headers = headers
+                        }
+                    )
 
                     val subData = epJson.optJSONArray("subData") ?: return
                     for (i in 0 until subData.length()) {
@@ -105,11 +109,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 val type = if(it.text().contains("Dub")) "DUB" else "SUB"
                 val epDoc = app.get(animezAPI + it.attr("href")).document
                 val source = epDoc.select("iframe").attr("src")
-                M3u8Helper.generateM3u8(
-                    "Animez [$type]",
-                    source.replace("/embed/", "/anime/"),
-                    source,
-                ).forEach(callback)
+                callback.invoke(
+                    newExtractorLink(
+                        "Animez [$type]",
+                        "Animez [$type]",
+                        source.replace("/embed/", "/anime/"),
+                    ) {
+                        this.referer = source
+                    }
+                )
             }
         }
     }
