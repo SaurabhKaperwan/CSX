@@ -28,6 +28,92 @@ import com.lagradost.cloudstream3.USER_AGENT
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeAnimeparadise(
+        title: String? = null,
+        malId: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(malId == null || title == null || episode == null) return
+        val searchJson = app.get("$animeparadiseAPI/search?q=$title").text
+        val root = JSONObject(searchJson)
+        val dataArray = root.getJSONArray("data")
+
+        for (i in 0 until dataArray.length()) {
+            val anime = dataArray.getJSONObject(i)
+            val mappings = anime.getJSONObject("mappings")
+
+            if (mappings.optInt("myanimelist") == malId) {
+                val animeId = anime.getString("_id")
+                val episodes = anime.getJSONArray("ep")
+                if (episode in 1..episodes.length()) {
+                    val episodeId = episodes.getString(episode - 1)
+                    val epUrl = "$animeparadiseBaseAPI/watch/$episodeId?origin=$animeId"
+                    val epDoc = app.get(epUrl).document
+                    val epJsonString = epDoc.selectFirst("script#__NEXT_DATA__")?.data() ?: return
+                    val epJson = JSONObject(epJsonString)
+                    .getJSONObject("props")
+                    .getJSONObject("pageProps")
+                    .getJSONObject("episode")
+
+                    val streamUrl = epJson.optString("streamLink")
+                    val backupUrl = epJson.optString("streamLinkBackup")
+                    val streamLinks = listOf(streamUrl, backupUrl).filter { it.isNotEmpty() }
+                    val headers = mapOf(
+                        "Referer" to animeparadiseBaseAPI,
+                        "Origin" to animeparadiseBaseAPI,
+                        "User-Agent" to USER_AGENT
+                    )
+                    streamLinks.forEach {
+                        M3u8Helper.generateM3u8(
+                            "Animeparadise",
+                            "https://stream.animeparadise.moe/m3u8?url=" + it,
+                            animeparadiseBaseAPI,
+                            headers = headers
+                        ).forEach(callback)
+                    }
+
+                    val subData = epJson.optJSONArray("subData") ?: return
+                    for (i in 0 until subData.length()) {
+                        val sub = subData.getJSONObject(i)
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                sub.optString("label"),
+                                sub.optString("src")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun invokeAnimez(
+        title: String? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
+        document.select("article > a").amap {
+            val doc = app.get(animezAPI + it.attr("href")).document
+            val titles = doc.select("ul.InfoList > li").text()
+
+            if(!titles.contains("$title")) return@amap
+
+            doc.select("li.wp-manga-chapter > a:contains(${episode ?: 1})").amap {
+                val type = if(it.text().contains("Dub")) "DUB" else "SUB"
+                val epDoc = app.get(animezAPI + it.attr("href")).document
+                val source = epDoc.select("iframe").attr("src")
+                M3u8Helper.generateM3u8(
+                    "Animez [$type]",
+                    source.replace("/embed/", "/anime/"),
+                    source,
+                ).forEach(callback)
+            }
+        }
+    }
+
     suspend fun invokePrimenet(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -37,6 +123,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val headers = mapOf(
             "Referer" to xprimeBaseAPI,
             "Origin" to xprimeBaseAPI,
+            "User-Agent" to USER_AGENT
         )
 
         val url = if(season == null) {
@@ -48,15 +135,12 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url, headers = headers).text
         val sourceUrl = JSONObject(json).getString("url")
 
-        callback.invoke(
-            newExtractorLink(
-                "PrimeNet",
-                "PrimeNet",
-                sourceUrl,
-            ) {
-                this.headers = headers
-            }
-        )
+        M3u8Helper.generateM3u8(
+            "Primenet",
+            sourceUrl,
+            xprimeAPI,
+            headers = headers
+        ).forEach(callback)
     }
 
     suspend fun invokePrimebox(
@@ -70,6 +154,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val headers = mapOf(
             "Referer" to xprimeBaseAPI,
             "Origin" to xprimeBaseAPI,
+            "User-Agent" to USER_AGENT
         )
 
         val url = if(season == null) {
@@ -1071,6 +1156,13 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
             {
+                if(zorotitle != null) invokeAnimez(
+                    zorotitle,
+                    episode,
+                    callback
+                )
+            },
+            {
                 if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
                     zorotitle,
                     episode,
@@ -1090,6 +1182,15 @@ object CineStreamExtractors : CineStreamProvider() {
             {
                 if(origin == "imdb" && zorotitle != null) invokeAnizone(
                     zorotitle,
+                    episode,
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                if(origin == "imdb" && zorotitle != null) invokeAnimeparadise(
+                    zorotitle,
+                    malId,
                     episode,
                     subtitleCallback,
                     callback
