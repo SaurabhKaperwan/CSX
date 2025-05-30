@@ -8,7 +8,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.base64Decode
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemalux.sbs"
+    override var mainUrl = "https://cinemalux.space"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
