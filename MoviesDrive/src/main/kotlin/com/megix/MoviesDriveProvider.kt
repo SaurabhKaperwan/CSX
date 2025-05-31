@@ -10,9 +10,10 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesdrive.solutions"
+    override var mainUrl = "https://moviesdrive.design"
     override var name = "MoviesDrive"
     override val hasMainPage = true
     override var lang = "hi"
@@ -29,19 +30,10 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val basemainUrl: String? by lazy {
             runBlocking {
                 try {
-                     val firstRedirectUrl = app.get("https://moviesdrives.com")
-                        .document
-                        .selectFirst("meta[http-equiv=refresh]")
-                        ?.attr("content")
-                        ?.substringAfter("url=")
-                        ?.takeIf { it.startsWith("http") }
-
-                    firstRedirectUrl?.let { redirect ->
-                        app.get(redirect, allowRedirects = false)
-                        .document
-                        .selectFirst("a[href]")
-                        ?.attr("href")
-                    }
+                    val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                    val json = response.text
+                    val jsonObject = JSONObject(json)
+                    jsonObject.optString("moviesdrive")
                 } catch (e: Exception) {
                     null
                 }
@@ -50,19 +42,19 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/" to "Home",
-        "${basemainUrl ?: mainUrl}/category/amzn-prime-video/page/" to "Prime Video",
-        "${basemainUrl ?: mainUrl}/category/netflix/page/" to "Netflix",
-        "${basemainUrl ?: mainUrl}/category/hotstar/page/" to "Hotstar",
-        "${basemainUrl ?: mainUrl}/category/anime/page/" to "Anime",
-        "${basemainUrl ?: mainUrl}/category/k-drama/page/" to "K Drama",
+        "/page/" to "Home",
+        "/category/amzn-prime-video/page/" to "Prime Video",
+        "/category/netflix/page/" to "Netflix",
+        "/category/hotstar/page/" to "Hotstar",
+        "/category/anime/page/" to "Anime",
+        "/category/k-drama/page/" to "K Drama",
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data + page).document
+        val document = app.get("${basemainUrl ?: mainUrl}${request.data}${page}").document
         val home = document.select("ul.recent-movies > li").mapNotNull {
             it.toSearchResult()
         }

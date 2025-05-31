@@ -9,6 +9,11 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://bollyflix.promo"
@@ -24,6 +29,21 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         TvType.Anime
     )
 
+    companion object {
+        val basemainUrl: String? by lazy {
+            runBlocking {
+                try {
+                    val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                    val json = response.text
+                    val jsonObject = JSONObject(json)
+                    jsonObject.optString("bollyflix")
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
     override val mainPage = mainPageOf(
         "" to "Home",
         "/movies/bollywood/" to "Bollywood Movies",
@@ -37,7 +57,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         request: MainPageRequest
     ): HomePageResponse {
         val document = if(page == 1) {
-            app.get(mainUrl + request.data).document
+            app.get("${basemainUrl ?: mainUrl}${request.data}").document
         }
         else {
             app.get(request.data + "page/" + page).document
@@ -69,7 +89,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..6) {
-            val document = app.get("$mainUrl/search/$query/page/$i/").document
+            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i/").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 
@@ -125,43 +145,46 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
             background = responseData.meta?.background ?: background
         }
 
-        if(tvtype == "series") {
+        if (tvtype == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
+            val episodesMap: MutableMap<Pair<Int, Int>, MutableList<String>> = mutableMapOf()
             val buttons = document.select("a.maxbutton-download-links, a.dl")
-            buttons.mapNotNull { button ->
-                val id = button.attr("href").substringAfterLast("id=").toString()
-                val seasonText = button.parent()?.previousElementSibling()?.text().toString()
-                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                val decodeUrl = bypass(id)
-                val seasonDoc = app.get(decodeUrl).document
-                val epLinks = seasonDoc.select("h3 > a")
-                    .filter { element -> !element.text().contains("Zip", true) }
-                var e = 1
-                epLinks.mapNotNull {
-                    val epUrl = it.attr("href")
-                    val key = Pair(realSeason, e)
-                    if (episodesMap.containsKey(key)) {
-                        val currentList = episodesMap[key] ?: emptyList()
-                        val newList = currentList.toMutableList()
-                        newList.add(epUrl)
-                        episodesMap[key] = newList
-                    } else {
-                        episodesMap[key] = mutableListOf(epUrl)
+
+            coroutineScope {
+                buttons.map { button ->
+                    async {
+                        val id = button.attr("href").substringAfterLast("id=")
+                        val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
+                        val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                        val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+
+                        val decodeUrl = bypass(id)
+                        val seasonDoc = app.get(decodeUrl).document
+                        val epLinks = seasonDoc.select("h3 > a")
+                            .filter { !it.text().contains("Zip", ignoreCase = true) }
+
+                        synchronized(episodesMap) {
+                            var e = 1
+                            for (epLink in epLinks) {
+                                val epUrl = epLink.attr("href")
+                                val key = Pair(realSeason, e)
+                                episodesMap.getOrPut(key) { mutableListOf() }.add(epUrl)
+                                e++
+                            }
+                        }
                     }
-                    e++
-                }
-                e = 1
+                }.awaitAll()
             }
 
             for ((key, value) in episodesMap) {
-                val episodeInfo = responseData?.meta?.videos?.find { it.season == key.first && it.episode == key.second }
-                val data = value.map { source->
-                    EpisodeLink(
-                        source
-                    )
+                val episodeInfo = responseData?.meta?.videos?.find {
+                    it.season == key.first && it.episode == key.second
                 }
+
+                val data = value.map { source ->
+                    EpisodeLink(source)
+                }
+
                 tvSeriesEpisodes.add(
                     newEpisode(data) {
                         this.name = episodeInfo?.name ?: episodeInfo?.title
@@ -183,15 +206,17 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
                 addActors(cast)
                 addImdbUrl(imdbUrl)
             }
-        }
-        else {
-            val data = document.select("a.dl").map {
-                val id = it.attr("href").substringAfterLast("id=").toString()
-                val decodeUrl = bypass(id)
-                EpisodeLink(
-                    decodeUrl
-                )
+        } else {
+            val data = coroutineScope {
+                document.select("a.dl").map { link ->
+                    async {
+                        val id = link.attr("href").substringAfterLast("id=")
+                        val decodeUrl = bypass(id)
+                        EpisodeLink(decodeUrl)
+                    }
+                }.awaitAll()
             }
+
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
                 this.posterUrl = posterUrl
                 this.plot = description

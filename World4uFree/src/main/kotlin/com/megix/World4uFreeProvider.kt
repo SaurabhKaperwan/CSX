@@ -12,6 +12,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
+
 
 class World4uFreeProvider : MainAPI() {
     override var mainUrl = "https://world4ufree.rodeo"
@@ -26,17 +29,32 @@ class World4uFreeProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/page/" to "Home",
-        "$mainUrl/category/bollywood/page" to "Bollywood",
-        "$mainUrl/category/hollywood/page" to "Hollywood",
-        "$mainUrl/category/web-series/page" to "Web Series",
+        "/page/" to "Home",
+        "/category/bollywood/page" to "Bollywood",
+        "/category/hollywood/page" to "Hollywood",
+        "/category/web-series/page" to "Web Series",
     )
+
+    companion object {
+        val basemainUrl: String? by lazy {
+            runBlocking {
+                try {
+                    val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                    val json = response.text
+                    val jsonObject = JSONObject(json)
+                    jsonObject.optString("w4u")
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data + page).document
+        val document = app.get("${basemainUrl ?: mainUrl}${request.data}${page}").document
         val home = document.select("ul.recent-posts > li").mapNotNull {
             it.toSearchResult()
         }
@@ -66,7 +84,7 @@ class World4uFreeProvider : MainAPI() {
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..25) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
+            val document = app.get("${basemainUrl ?: mainUrl}/page/$i/?s=$query").document
 
             val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
 

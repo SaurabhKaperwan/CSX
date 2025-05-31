@@ -131,6 +131,7 @@ open class CineStreamProvider : MainAPI() {
         var hdmovie2API = ""
         var jaduMoviesAPI = ""
         var netflixAPI = ""
+        var MovieDrive_API = ""
 
         private var loaded = false
 
@@ -144,6 +145,7 @@ open class CineStreamProvider : MainAPI() {
                 W4UAPI = jsonObject.optString("w4u")
                 protonmoviesAPI = jsonObject.optString("protonmovies")
                 cinemaluxeAPI = jsonObject.optString("cinemaluxe")
+                MovieDrive_API = jsonObject.optString("moviesdrive")
                 bollyflixAPI = jsonObject.optString("bollyflix")
                 skymoviesAPI = jsonObject.optString("skymovies")
                 hindMoviezAPI = jsonObject.optString("hindmoviez")

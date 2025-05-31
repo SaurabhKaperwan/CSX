@@ -1723,20 +1723,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val firstRedirectUrl = app.get(MovieDriveAPI)
-            .document
-            .selectFirst("meta[http-equiv=refresh]")
-            ?.attr("content")
-            ?.substringAfter("url=")
-            ?.takeIf { it.startsWith("http") }
-
-        val MovieDrive_API = firstRedirectUrl?.let { redirect ->
-            app.get(redirect, allowRedirects = false)
-                .document
-                .selectFirst("a[href]")
-                ?.attr("href")
-        }
-
         val url = "$MovieDrive_API/search/$title"
         val res = app.get(url, interceptor = wpRedisInterceptor).document
         res.select("li.thumb > figcaption > a").amap {
