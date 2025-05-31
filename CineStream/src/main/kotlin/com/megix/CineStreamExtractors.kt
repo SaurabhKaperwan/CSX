@@ -55,6 +55,21 @@ object CineStreamExtractors : CineStreamProvider() {
                 this.headers = headers
             }
         )
+
+        val subsJson = JSONArray(jsonObject.getString("subtitlesJson"))
+
+        for (i in 0 until subsJson.length()) {
+            val sub = subsJson.getJSONObject(i)
+            val subUrl = sub.getString("url").replace("/ipfs", "").replace("\\", "")
+            val file = "https://sudatchi.com/api/proxy$subUrl"
+            val label = sub.getJSONObject("SubtitlesName").getString("name")
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    label,
+                    file
+                )
+            )
+        }
     }
 
     suspend fun invokeGojo(
@@ -77,12 +92,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 for (i in 0 until sourcesArray.length()) {
                     val source = sourcesArray.getJSONObject(i)
                     val quality = source.getString("quality").replace("p", "").toIntOrNull()
-                    val fullUrl = source.getString("url")
-                    val url = if (fullUrl.startsWith("https://pahe.gojo.live/")) {
-                        fullUrl.removePrefix("https://pahe.gojo.live/")
-                    } else {
-                        fullUrl
-                    }
+                    val fullUrl = source.getString("url").substringAfterLast("https:")
+                    val url = "https:" + fullUrl
                     val videoType = if (source.has("type")) source.getString("type") else "m3u8"
 
                     callback.invoke(
@@ -186,20 +197,26 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val url = if(season == null) {
-            "$xprimeAPI/phoenix?name=$title&year=$year&id=$tmdbId&imdb=imdbId"
+            "$xprimeAPI/phoenix?name=$title&year=$year&id=$tmdbId&imdb=$imdbId"
         } else {
-            "$xprimeAPI/phoenix?name=$title&year=$year&id=$tmdbId&imdb=imdbId&season=$season&episode=$episode"
+            "$xprimeAPI/phoenix?name=$title&year=$year&id=$tmdbId&imdb=$imdbId&season=$season&episode=$episode"
         }
 
         val json = app.get(url, headers = headers).text
+
         val sourceUrl = JSONObject(json).getString("url")
 
-        M3u8Helper.generateM3u8(
-            "Phoenix",
-            sourceUrl,
-            xprimeAPI,
-            headers = headers
-        ).forEach(callback)
+        callback.invoke(
+            newExtractorLink(
+                "Phoenix",
+                "Phoenix",
+                sourceUrl,
+                type = ExtractorLinkType.M3U8
+            ) {
+                this.referer = xprimeBaseAPI
+                this.headers = headers
+            }
+        )
     }
 
     suspend fun invokePrimenet(
@@ -223,12 +240,17 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url, headers = headers).text
         val sourceUrl = JSONObject(json).getString("url")
 
-        M3u8Helper.generateM3u8(
-            "Primenet",
-            sourceUrl,
-            xprimeAPI,
-            headers = headers
-        ).forEach(callback)
+        callback.invoke(
+            newExtractorLink(
+                "Primenet",
+                "Primenet",
+                sourceUrl,
+                type = ExtractorLinkType.M3U8
+            ) {
+                this.referer = xprimeBaseAPI
+                this.headers = headers
+            }
+        )
     }
 
     suspend fun invokePrimebox(
@@ -603,7 +625,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$netflixAPI/mobile/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
-            referer = "$netflixAPI/"
+            referer = "$netflixAPI/",
         ).parsedSafe<NetflixResponse>().let { media ->
             if (season == null && year.toString() == media?.year.toString()) {
                 media?.title to netflixId
@@ -617,7 +639,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         "$netflixAPI/mobile/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
-                        referer = "$netflixAPI/"
+                        referer = "$netflixAPI/",
                     ).parsedSafe<NetflixResponse>()
                     episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
                     if(data?.nextPageShow != 1) { break }
@@ -635,7 +657,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$netflixAPI/mobile/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
-            referer = "$netflixAPI/"
+            referer = "$netflixAPI/",
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
@@ -678,7 +700,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$netflixAPI/mobile/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
-            referer = "$netflixAPI/"
+            referer = "$netflixAPI/",
         ).parsedSafe<NetflixResponse>().let { media ->
             if (season == null && year.toString() == media?.year.toString()) {
                 media?.title to netflixId
@@ -691,7 +713,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         "$netflixAPI/mobile/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
-                        referer = "$netflixAPI/"
+                        referer = "$netflixAPI/",
                     ).parsedSafe<NetflixResponse>()
                     episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
                     if(data?.nextPageShow != 1) { break }
@@ -708,7 +730,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$netflixAPI/mobile/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
-            referer = "$netflixAPI/"
+            referer = "$netflixAPI/",
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {

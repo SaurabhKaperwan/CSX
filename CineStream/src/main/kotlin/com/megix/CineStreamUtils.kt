@@ -162,12 +162,12 @@ suspend fun NFBypass(mainUrl : String): String {
     var tries = 0
 
     do {
-        delay(1000)
+        delay(3000)
         tries++
         val requestBody = FormBody.Builder().add("verify", addHash).build()
         verifyResponse  = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
         verifyCheck     = verifyResponse.text
-    } while (!verifyCheck.contains("\"statusup\":\"All Done\"") || tries < 7)
+    } while (!verifyCheck.contains("\"statusup\":\"All Done\"") || tries < 12)
 
     return verifyResponse.cookies["t_hash_t"].orEmpty()
 }

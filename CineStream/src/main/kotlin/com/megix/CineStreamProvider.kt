@@ -327,7 +327,26 @@ open class CineStreamProvider : MainAPI() {
         val tmdbId = if(!isKitsu && isTMDB) id.replace("tmdb:", "").toIntOrNull() else movieData?.meta?.moviedb_id
         id = if(!isKitsu && isTMDB) movieData?.meta?.imdb_id.toString() else id
         var description = movieData?.meta?.description.toString()
-        val cast : List<String> = movieData?.meta?.cast ?: emptyList()
+
+        val actors = if (!movieData?.meta?.cast.isNullOrEmpty()) {
+            movieData?.meta?.cast?.mapNotNull { name ->
+                ActorData(
+                    actor = Actor(name, null),
+                    roleString = null
+                )
+            } ?: emptyList()
+        } else {
+            movieData?.meta?.app_extras?.cast?.mapNotNull { cast ->
+                val name = cast.name ?: return@mapNotNull null
+                val image = cast.photo
+                val role = cast.character
+                ActorData(
+                    actor = Actor(name, image),
+                    roleString = role
+                )
+            } ?: emptyList()
+        }
+
         val genre : List<String> = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
         val background = movieData?.meta?.background.toString()
         val isCartoon = genre.any { it.contains("Animation", true) }
@@ -368,7 +387,7 @@ open class CineStreamProvider : MainAPI() {
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
-                addActors(cast)
+                this.actors = actors
                 addAniListId(anilistId)
                 addMalId(malId)
                 addImdbId(id)
@@ -418,7 +437,7 @@ open class CineStreamProvider : MainAPI() {
                     this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                     this.rating = imdbRating.toRatingInt()
                     this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
-                    addActors(cast)
+                    this.actors = actors
                     addAniListId(anilistId)
                     addMalId(malId)
                     addImdbId(id)
@@ -434,7 +453,7 @@ open class CineStreamProvider : MainAPI() {
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else if(meta_url == mediaFusion) "Mediafusion" else "IMDB"
-                addActors(cast)
+                this.actors = actors
                 addImdbId(id)
             }
         }
@@ -511,11 +530,22 @@ open class CineStreamProvider : MainAPI() {
         val status: String?,
         val runtime: String?,
         val cast: List<String>?,
+        val app_extras: AppExtras? = null,
         val language: String?,
         val country: String?,
         val imdbRating: String?,
         val year: String?,
         val videos: List<EpisodeDetails>?,
+    )
+
+    data class AppExtras (
+        val cast: List<Cast> = emptyList()
+    )
+
+    data class Cast (
+        val name      : String? = null,
+        val character : String? = null,
+        val photo     : String? = null
     )
 
     data class SearchResult(
