@@ -33,6 +33,7 @@ import javax.crypto.spec.SecretKeySpec
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
 import kotlin.random.Random
+import android.content.Context
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -140,36 +141,49 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-var NfCookie = ""
+suspend fun NFBypass(mainUrl: String): String {
+    // Check persistent storage first
+    val (savedCookie, savedTimestamp) = CineStreamStorage.getCookie()
 
-suspend fun NFBypass(mainUrl : String): String {
-    if(NfCookie != "") {
-        return NfCookie
+    // Return cached cookie if valid (≤15 hours old)
+    if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
+        return savedCookie
     }
-    val homePageDocument = app.get("${mainUrl}/mobile/home").document
-    val addHash          = homePageDocument.select("body").attr("data-addhash")
-    val time             = homePageDocument.select("body").attr("data-time")
 
-    var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
-    verificationUrl      = app.get(verificationUrl).parsed<NFVerifyUrl>().url.replace("###", addHash)
-    // val hashDigits       = addHash.filter { it.isDigit() }
-    // val first16Digits    = hashDigits.take(16)
-    // app.get("${verificationUrl}&t=0.${first16Digits}")
-    app.get(verificationUrl + "&t=${time}")
+    // Fetch new cookie if expired/missing
+    val newCookie = try {
+        val homePageDocument = app.get("${mainUrl}/mobile/home").document
+        val addHash = homePageDocument.select("body").attr("data-addhash")
+        val time = homePageDocument.select("body").attr("data-time")
 
-    var verifyCheck: String
-    var verifyResponse: NiceResponse
-    var tries = 0
+        var verificationUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
+        verificationUrl = app.get(verificationUrl).parsed<NFVerifyUrl>().url.replace("###", addHash)
+        app.get("$verificationUrl&t=$time")
 
-    do {
-        delay(3000)
-        tries++
-        val requestBody = FormBody.Builder().add("verify", addHash).build()
-        verifyResponse  = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
-        verifyCheck     = verifyResponse.text
-    } while (!verifyCheck.contains("\"statusup\":\"All Done\"") || tries < 12)
+        var verifyCheck: String
+        var verifyResponse: NiceResponse
+        var tries = 0
 
-    return verifyResponse.cookies["t_hash_t"].orEmpty()
+        do {
+            delay(3000)
+            tries++
+            val requestBody = FormBody.Builder().add("verify", addHash).build()
+            verifyResponse = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
+            verifyCheck = verifyResponse.text
+        } while (!verifyCheck.contains("\"statusup\":\"All Done\"") && tries < 12)
+
+        verifyResponse.cookies["t_hash_t"].orEmpty()
+    } catch (e: Exception) {
+        // Clear invalid cookie on failure
+        CineStreamStorage.clearCookie()
+        throw e
+    }
+
+    // Persist the new cookie
+    if (newCookie.isNotEmpty()) {
+        CineStreamStorage.saveCookie(newCookie)
+    }
+    return newCookie
 }
 
 suspend fun cinemaluxeBypass(url: String): String {

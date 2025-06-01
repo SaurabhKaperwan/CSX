@@ -7,6 +7,7 @@ import android.content.Context
 @CloudstreamPlugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
+        CineStreamStorage.init(context.applicationContext)
         registerMainAPI(CineStreamProvider())
         registerExtractorAPI(Kwik())
         registerExtractorAPI(Animezia())

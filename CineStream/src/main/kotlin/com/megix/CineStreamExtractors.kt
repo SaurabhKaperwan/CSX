@@ -518,7 +518,7 @@ object CineStreamExtractors : CineStreamProvider() {
             if(episode == null) {
                 doc.select("a.maxbutton").amap {
                     val res = app.get(it.attr("href"), timeout = 50L).document
-                    val link = res.select("h3 > a").attr("href")
+                    val link = res.select("a.get-link-btn").attr("href")
                     getHindMoviezLinks(source, link, callback)
                 }
             }
@@ -608,9 +608,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         if(netflixAPI.isEmpty()) return
-
-        NfCookie = NFBypass(netflixAPI)
-
+        val NfCookie = NFBypass(netflixAPI)
         val cookies = mapOf(
             "t_hash_t" to NfCookie,
             "ott" to "pv",
@@ -685,7 +683,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         if(netflixAPI.isEmpty()) return
 
-        NfCookie = NFBypass(netflixAPI)
+        val NfCookie = NFBypass(netflixAPI)
 
         val cookies = mapOf(
             "t_hash_t" to NfCookie,
@@ -2163,8 +2161,8 @@ object CineStreamExtractors : CineStreamProvider() {
                                     server.hls == null -> {
                                         callback.invoke(
                                             newExtractorLink(
-                                                "Allanime [${i.uppercase()}] ${host.capitalize()}",
-                                                "Allanime [${i.uppercase()}] ${host.capitalize()}",
+                                                "Allanime [${i.uppercase()}] ${host.replaceFirstChar { it.uppercase() }}",
+                                                "Allanime [${i.uppercase()}] ${host.replaceFirstChar { it.uppercase() }}",
                                                 server.link,
                                                 INFER_TYPE
                                             )
