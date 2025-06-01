@@ -80,7 +80,7 @@ data class AniIds(var id: Int? = null, var idMal: Int? = null)
 
 //NF
 data class NFVerifyUrl(
-    val url: String
+    val nfverifyurl: String
 )
 
 data class NfSearchData(

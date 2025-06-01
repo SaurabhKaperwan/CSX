@@ -78,7 +78,7 @@ fun convertRuntimeToMinutes(runtime: String): Int {
 }
 
 data class VerifyUrl(
-    val url: String
+    val nfverifyurl: String
 )
 
 suspend fun bypass(mainUrl: String): String {
@@ -96,8 +96,8 @@ suspend fun bypass(mainUrl: String): String {
         val addHash = homePageDocument.select("body").attr("data-addhash")
         val time = homePageDocument.select("body").attr("data-time")
 
-        var verificationUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
-        verificationUrl = app.get(verificationUrl).parsed<VerifyUrl>().url.replace("###", addHash)
+        var verificationUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json"
+        verificationUrl = app.get(verificationUrl).parsed<VerifyUrl>().nfverifyurl.replace("###", addHash)
         app.get("$verificationUrl&t=$time")
 
         var verifyCheck: String

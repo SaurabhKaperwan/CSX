@@ -16,6 +16,8 @@ import com.lagradost.api.Log
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
@@ -117,52 +119,32 @@ open class CineStreamProvider : MainAPI() {
         const val sudatchiAPI = "https://sudatchi.com"
         // const val animezAPI = "https://animez.org"
 
-        var protonmoviesAPI = ""
-        var W4UAPI = ""
-        var fourkhdhubAPI = ""
-        var multimoviesAPI = ""
-        var cinemaluxeAPI = ""
-        var bollyflixAPI = ""
-        var movies4uAPI = ""
-        var skymoviesAPI = ""
-        var hindMoviezAPI = ""
-        var moviesflixAPI = ""
-        var hdmoviesflixAPI = ""
-        var hdmovie2API = ""
-        var jaduMoviesAPI = ""
-        var netflixAPI = ""
-        var MovieDrive_API = ""
-
-        private var loaded = false
-
-        suspend fun loadApiUrls() {
-            if (loaded) return // already loaded
-            try {
-                val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
-                val json = response.text
-                val jsonObject = JSONObject(json)
-
-                W4UAPI = jsonObject.optString("w4u")
-                protonmoviesAPI = jsonObject.optString("protonmovies")
-                cinemaluxeAPI = jsonObject.optString("cinemaluxe")
-                MovieDrive_API = jsonObject.optString("moviesdrive")
-                bollyflixAPI = jsonObject.optString("bollyflix")
-                skymoviesAPI = jsonObject.optString("skymovies")
-                hindMoviezAPI = jsonObject.optString("hindmoviez")
-                moviesflixAPI = jsonObject.optString("moviesflix")
-                hdmoviesflixAPI = jsonObject.optString("hdmoviesflix")
-                movies4uAPI = jsonObject.optString("movies4u")
-                fourkhdhubAPI = jsonObject.optString("4khdhub")
-                multimoviesAPI = jsonObject.optString("multimovies")
-                hdmovie2API = jsonObject.optString("hdmovie2")
-                jaduMoviesAPI = jsonObject.optString("jadumovies")
-                netflixAPI = jsonObject.optString("nfmirror")
-
-                loaded = true
-            } catch (e: Exception) {
-                Log.e("Error:", "Error during getting base urls: $e")
+        private val apiConfig by lazy {
+            runBlocking(Dispatchers.IO) {
+                runCatching {
+                    JSONObject(app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text)
+                }.getOrElse {
+                    Log.e("CineStream", "Error loading API URLs")
+                    JSONObject()
+                }
             }
         }
+
+        val protonmoviesAPI: String get() = apiConfig.optString("protonmovies")
+        val W4UAPI: String get() = apiConfig.optString("w4u")
+        val fourkhdhubAPI: String get() = apiConfig.optString("4khdhub")
+        val multimoviesAPI: String get() = apiConfig.optString("multimovies")
+        val cinemaluxeAPI: String get() = apiConfig.optString("cinemaluxe")
+        val bollyflixAPI: String get() = apiConfig.optString("bollyflix")
+        val movies4uAPI: String get() = apiConfig.optString("movies4u")
+        val skymoviesAPI: String get() = apiConfig.optString("skymovies")
+        val hindMoviezAPI: String get() = apiConfig.optString("hindmoviez")
+        val moviesflixAPI: String get() = apiConfig.optString("moviesflix")
+        val hdmoviesflixAPI: String get() = apiConfig.optString("hdmoviesflix")
+        val hdmovie2API: String get() = apiConfig.optString("hdmovie2")
+        val jaduMoviesAPI: String get() = apiConfig.optString("jadumovies")
+        val netflixAPI: String get() = apiConfig.optString("nfmirror")
+        val MovieDrive_API: String get() = apiConfig.optString("moviesdrive")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -470,7 +452,6 @@ open class CineStreamProvider : MainAPI() {
         val res = parseJson<LoadLinksData>(data)
         val year = getYear(res)
         val seasonYear = getSeasonYear(res)
-        if (!loaded) loadApiUrls()
 
         return when {
             res.tvtype in listOf("tv", "events") -> {
