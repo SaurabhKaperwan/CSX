@@ -1527,7 +1527,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val doc = app.get("$fourkhdhubAPI$link").document
         if(season == null) {
             doc.select("div.download-item a").amap {
-               val source = it.attr("href")
+               val source = getRedirectLinks(it.attr("href"))
                loadSourceNameExtractor(
                     "4Khdhub",
                     source,
@@ -1541,7 +1541,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val episodeText = "E" + episode.toString().padStart(2, '0')
             doc.select("div.episode-download-item:has(div.episode-file-title:contains(${seasonText}${episodeText}))").amap {
                 it.select("div.episode-links > a").amap {
-                    val source = it.attr("href")
+                    val source = getRedirectLinks(it.attr("href"))
                     loadSourceNameExtractor(
                         "4Khdhub",
                         source,

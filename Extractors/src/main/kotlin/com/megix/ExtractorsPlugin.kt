@@ -11,6 +11,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(Luxdrive())
         registerExtractorAPI(Ziddiflix())
         registerExtractorAPI(Linkstore())
+        registerExtractorAPI(LinkstoreDrive())
         registerExtractorAPI(Vifix())
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())

@@ -69,6 +69,23 @@ open class Vifix: ExtractorApi() {
 
 class Linkstore : ExtractorApi() {
     override val name: String = "Linkstore"
+    override val mainUrl: String = "https://linkstore.rest"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        app.get(url).document.select("a.ep-simple-button").amap {
+            loadExtractor(it.attr("href"), "", subtitleCallback, callback)
+        }
+    }
+}
+
+class LinkstoreDrive : ExtractorApi() {
+    override val name: String = "Linkstore Drive"
     override val mainUrl: String = "https://drive.linkstore.rest"
     override val requiresReferer = false
 
