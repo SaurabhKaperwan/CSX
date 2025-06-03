@@ -403,78 +403,14 @@ data class MALSyncResponses(
 //     val type: String
 // )
 
-data class WHVXToken(
-    val token : String,
-)
-
-data class OrionStreamData(
-    val stream: List<OrionStream>
-)
-
-data class OrionStream(
-    val id: String,
-    val type: String,
-    val playlist: String,
-    val flags: List<String>,
-    val captions: List<OrionCaption>
-)
-
-data class OrionCaption(
-    val id: String,
-    val url: String,
-    val type: String,
-    val hasCorsRestrictions: Boolean,
-    val language: String
-)
-
-data class AstraQuery(
-    val stream: List<AstraStream>
-)
-
-data class AstraStream(
-    val id: String,
-    val type: String,
-    val playlist: String,
-)
-
-data class NovaStream(
-    val id: String,
-    val qualities: Map<String, NovaQuality>,
-    val captions: List<NovaCaption>
-)
-
-data class NovaQuality(
-    val type: String,
-    val url: String
-)
-
-data class NovaCaption(
-    val id: String,
-    val url: String,
-    val type: String,
-    val hasCorsRestrictions: Boolean,
-    val language: String
-)
-
-data class NovaVideoData(
-    val stream: List<NovaStream>
-)
-
-data class WHVX(
-    val embedId: String,
-    val url: String,
-)
-
-
 //Subtitles
-data class WHVXSubtitle(
+data class WYZIESubtitle(
     val url: String,
-    val languageName: String?,
+    val language: String?,
     val display: String?,
 )
 
 //Consumet
-
 data class ConsumetSearch (
     var results     : ArrayList<ConsumetResults> = arrayListOf()
 )

@@ -91,10 +91,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
                 for (i in 0 until sourcesArray.length()) {
                     val source = sourcesArray.getJSONObject(i)
-                    val quality = source.getString("quality").replace("p", "").toIntOrNull()
                     val fullUrl = source.getString("url").substringAfterLast("https:")
                     val url = "https:" + fullUrl
                     val videoType = if (source.has("type")) source.getString("type") else "m3u8"
+                    val quality = source.getString("quality").replace("p", "").toIntOrNull()
 
                     callback.invoke(
                         newExtractorLink(
@@ -103,7 +103,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             url,
                             type = if(videoType == "m3u8") ExtractorLinkType.M3U8 else INFER_TYPE
                         ) {
-                            this.quality = quality ?: Qualities.Unknown.value
+                            this.quality = quality ?: Qualities.P1080.value
                         }
                     )
                 }
@@ -1263,13 +1263,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 if (animepahe!=null)
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
             },
-            // {
-            //     if(zorotitle != null) invokeAnimez(
-            //         zorotitle,
-            //         episode,
-            //         callback
-            //     )
-            // },
             {
                 if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
                     zorotitle,
@@ -1413,106 +1406,6 @@ object CineStreamExtractors : CineStreamProvider() {
     //     )
     // }
 
-    // suspend fun invokeVidbinge(
-    //     title: String,
-    //     imdb_id: String,
-    //     tmdb_id: Int? = null,
-    //     year: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val providers = mutableListOf("orion", "astra", "nova")
-    //     val type = if (season == null) "movie" else "tv"
-    //     val s = season ?: ""
-    //     val e = episode ?: ""
-    //     val query = """{"title":"$title","imdbId":"$imdb_id","tmdbId":"$tmdb_id","type":"$type","season":"$s","episode":"$e","releaseYear":"$year"}"""
-    //     val headers = mapOf(
-    //         "accept" to "*/*",
-    //         "origin" to "https://www.vidbinge.app",
-    //         "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-    //     )
-
-    //     val tokenJson = app.get("$BYPASS_API/whvxToken", timeout = 500L).text
-    //     val token = parseJson<WHVXToken>(tokenJson).token
-    //     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString())
-    //     val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
-    //     providers.amap { provider ->
-    //         val json = app.get("${WHVXAPI}/search?query=${encodedQuery}&provider=${provider}&token=${encodedToken}", headers = headers, timeout = 500L).text
-    //         val data = tryParseJson<WHVX>(json) ?: return@amap
-    //         val encodedUrl = URLEncoder.encode(data.url, StandardCharsets.UTF_8.toString())
-    //         val json2 = app.get("${WHVXAPI}/source?resourceId=${encodedUrl}&provider=${provider}", headers = headers, timeout = 500L).text
-    //         if(provider == "astra") {
-    //             val data2 = tryParseJson<AstraQuery>(json2) ?: return@amap
-    //             data2.stream.forEach {
-    //                 callback.invoke(
-    //                     ExtractorLink(
-    //                         "Astra",
-    //                         "Astra",
-    //                         it.playlist,
-    //                         "",
-    //                         Qualities.Unknown.value,
-    //                         INFER_TYPE
-    //                     )
-    //                 )
-    //             }
-    //         }
-    //         else if(provider == "nova") {
-    //             val data2 = tryParseJson<NovaVideoData>(json2) ?: return@amap
-    //             for (stream in data2.stream) {
-    //                 for ((quality, details) in stream.qualities) {
-    //                     callback.invoke(
-    //                         ExtractorLink(
-    //                             "Nova",
-    //                             "Nova",
-    //                             details.url,
-    //                             "",
-    //                             getQualityFromName(quality),
-    //                             INFER_TYPE,
-    //                         )
-    //                     )
-    //                 }
-    //             }
-
-    //             for (stream in data2.stream) {
-    //                 for (caption in stream.captions) {
-    //                     subtitleCallback.invoke(
-    //                         SubtitleFile(
-    //                             caption.language,
-    //                             caption.url
-    //                         )
-    //                     )
-    //                 }
-    //             }
-    //         }
-    //         else {
-    //             val data2 = tryParseJson<OrionStreamData>(json2) ?: return@amap
-    //             for(stream in data2.stream) {
-    //                 callback.invoke(
-    //                     ExtractorLink(
-    //                         "Orion",
-    //                         "Orion",
-    //                         stream.playlist,
-    //                         "",
-    //                         Qualities.Unknown.value,
-    //                         INFER_TYPE
-    //                     )
-    //                 )
-
-    //                 for (caption in stream.captions) {
-    //                     subtitleCallback.invoke(
-    //                         SubtitleFile(
-    //                             caption.language,
-    //                             caption.url
-    //                         )
-    //                     )
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
     suspend fun invoke4khdhub(
         title: String? = null,
         year: Int? = null,
@@ -1575,7 +1468,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeWHVXSubs(
+    suspend fun invokeWYZIESubs(
         api: String,
         id: String? = null,
         season: Int? = null,
@@ -1584,11 +1477,12 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = if(season != null) "$api/search?id=$id&season=$season&episode=$episode" else "$api/search?id=$id"
         val json = app.get(url).text
-        val data = parseJson<ArrayList<WHVXSubtitle>>(json)
+        val data = parseJson<ArrayList<WYZIESubtitle>>(json)
+
         data.forEach {
             subtitleCallback.invoke(
                 SubtitleFile(
-                    it.languageName ?: it.display ?: "Unknown",
+                    it.display ?: it.language ?: "Unknown",
                     it.url
                 )
             )
@@ -2325,35 +2219,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // suspend fun invokeAnimez(
-    //     title: String? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
-    //     document.select("article > a").amap {
-    //         val doc = app.get(animezAPI + it.attr("href")).document
-    //         val titles = doc.select("ul.InfoList > li").text()
-
-    //         if(!titles.contains("$title")) return@amap
-
-    //         doc.select("li.wp-manga-chapter > a:contains(${episode ?: 1})").amap {
-    //             val type = if(it.text().contains("Dub")) "DUB" else "SUB"
-    //             val epDoc = app.get(animezAPI + it.attr("href")).document
-    //             val source = epDoc.select("iframe").attr("src")
-    //             callback.invoke(
-    //                 newExtractorLink(
-    //                     "Animez [$type]",
-    //                     "Animez [$type]",
-    //                     source.replace("/embed/", "/anime/"),
-    //                 ) {
-    //                     this.referer = source
-    //                 }
-    //             )
-    //         }
-    //     }
-    // }
-
     suspend fun invokeThepiratebay(
         imdbId: String? =null,
         season: Int? = null,
@@ -2386,80 +2251,80 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
 
-    suspend fun invokeVidJoy(
-        imdbId: Int? =null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        try {
-            val listSrc = listOf("Camelot","Atlantis","Babylon","NYC")
-            val link = if(season != null)
-            {
-                "$VidJoyApi/embed/api/fetch2/$imdbId/$season/$episode"
-            }
-            else
-            {
-                "$VidJoyApi/embed/api/fetch2/$imdbId"
-            }
-            listSrc.forEach { src ->
-                if(src == "Camelot")
-                {
-                    (0..4).forEach { i ->
-                        try {
-                            val finalLink = "$link/?srName=Camelot&sr=$i"
-                            val encrptedText = app.get(finalLink).text;
-                            val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
-                            if (decryptedJson != "> - <") {
-                                val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
-                                if (vidjoyResponse != null) {
-                                    for(url in vidjoyResponse.url)
-                                    {
-                                        callback.invoke(
-                                            newExtractorLink(
-                                                "Vidjoy ${url.lang}",
-                                                "Vidjoy ${url.lang}",
-                                                url = url.link,
-                                                type =  if(url.link.contains(".mp4")) ExtractorLinkType.VIDEO else INFER_TYPE
-                                            ) {
-                                                this.quality = getQualityFromName(url.resulation)
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        } catch (e: Exception) { }
-                    }
-                }
-                else
-                {
-                    try {
-                        val finalLink = "$link/?srName=$src"
-                        val encrptedText = app.get(finalLink).text;
-                        val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
-                        if (decryptedJson != "> - <") {
-                            val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
-                            if (vidjoyResponse != null) {
-                                for(url in vidjoyResponse.url)
-                                {
+    // suspend fun invokeVidJoy(
+    //     imdbId: Int? =null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     try {
+    //         val listSrc = listOf("Camelot","Atlantis","Babylon","NYC")
+    //         val link = if(season != null)
+    //         {
+    //             "$VidJoyApi/embed/api/fetch2/$imdbId/$season/$episode"
+    //         }
+    //         else
+    //         {
+    //             "$VidJoyApi/embed/api/fetch2/$imdbId"
+    //         }
+    //         listSrc.forEach { src ->
+    //             if(src == "Camelot")
+    //             {
+    //                 (0..4).forEach { i ->
+    //                     try {
+    //                         val finalLink = "$link/?srName=Camelot&sr=$i"
+    //                         val encrptedText = app.get(finalLink).text;
+    //                         val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
+    //                         if (decryptedJson != "> - <") {
+    //                             val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
+    //                             if (vidjoyResponse != null) {
+    //                                 for(url in vidjoyResponse.url)
+    //                                 {
+    //                                     callback.invoke(
+    //                                         newExtractorLink(
+    //                                             "Vidjoy ${url.lang}",
+    //                                             "Vidjoy ${url.lang}",
+    //                                             url = url.link,
+    //                                             type =  if(url.link.contains(".mp4")) ExtractorLinkType.VIDEO else INFER_TYPE
+    //                                         ) {
+    //                                             this.quality = getQualityFromName(url.resulation)
+    //                                         }
+    //                                     )
+    //                                 }
+    //                             }
+    //                         }
+    //                     } catch (e: Exception) { }
+    //                 }
+    //             }
+    //             else
+    //             {
+    //                 try {
+    //                     val finalLink = "$link/?srName=$src"
+    //                     val encrptedText = app.get(finalLink).text;
+    //                     val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
+    //                     if (decryptedJson != "> - <") {
+    //                         val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
+    //                         if (vidjoyResponse != null) {
+    //                             for(url in vidjoyResponse.url)
+    //                             {
 
-                                    callback.invoke(
-                                        newExtractorLink(
-                                            "Vidjoy ${url.lang}",
-                                            "Vidjoy ${url.lang}",
-                                            url = url.link,
-                                            type =  if(url.link.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
-                                        ) {
-                                            this.quality = getQualityFromName(url.resulation)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    } catch (e: Exception) { }
-                }
-            }
+    //                                 callback.invoke(
+    //                                     newExtractorLink(
+    //                                         "Vidjoy ${url.lang}",
+    //                                         "Vidjoy ${url.lang}",
+    //                                         url = url.link,
+    //                                         type =  if(url.link.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+    //                                     ) {
+    //                                         this.quality = getQualityFromName(url.resulation)
+    //                                     }
+    //                                 )
+    //                             }
+    //                         }
+    //                     }
+    //                 } catch (e: Exception) { }
+    //             }
+    //         }
 
-        } catch (_: Exception) { }
-    }
+    //     } catch (_: Exception) { }
+    // }
 }
