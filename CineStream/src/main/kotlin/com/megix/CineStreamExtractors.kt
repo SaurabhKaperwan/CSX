@@ -1924,7 +1924,7 @@ object CineStreamExtractors : CineStreamProvider() {
             epData.subtitles.map {
                 subtitleCallback.invoke(
                     SubtitleFile(
-                        it.lang,
+                        it.lang.split(" - ").firstOrNull()?.trim() ?: it.lang,
                         it.url
                     )
                 )
