@@ -2233,8 +2233,13 @@ object CineStreamExtractors : CineStreamProvider() {
                 "$ThePirateBayApi/stream/series/$imdbId:$season:$episode.json"
             }
             val res = app.get(url, timeout = 10).parsedSafe<TBPResponse>()
+
             for(stream in res?.streams!!)
             {
+                val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
+                val match = regex.find(stream.title)
+                val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
+                if (seeders < 10) continue
                 val magnetLink = generateMagnetLink(TRACKER_LIST_URL,stream.infoHash)
                 callback.invoke(
                     newExtractorLink(
