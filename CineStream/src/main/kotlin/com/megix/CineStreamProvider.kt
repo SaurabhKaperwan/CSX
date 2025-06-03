@@ -24,7 +24,7 @@ import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
 import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeW4U
-import com.megix.CineStreamExtractors.invokeWHVXSubs
+import com.megix.CineStreamExtractors.invokeWYZIESubs
 import com.megix.CineStreamExtractors.invokeAnizone
 // import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
@@ -54,14 +54,13 @@ import com.megix.CineStreamExtractors.invokeThepiratebay
 import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeAllmovieland
 import com.megix.CineStreamExtractors.invoke4khdhub
-import com.megix.CineStreamExtractors.invokeVidJoy
+// import com.megix.CineStreamExtractors.invokeVidJoy
 import com.megix.CineStreamExtractors.invokeMovies4u
 import com.megix.CineStreamExtractors.invokeSoaper
 import com.megix.CineStreamExtractors.invokeAsiaflix
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokePrimebox
 import com.megix.CineStreamExtractors.invokePrimenet
-// import com.megix.CineStreamExtractors.invokeAnimez
 import com.megix.CineStreamExtractors.invokeAnimeparadise
 import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
@@ -84,10 +83,8 @@ open class CineStreamProvider : MainAPI() {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
-        const val WHVXSubsAPI = "https://subs.whvx.net"
-        const val WYZIESubsAPI = "https://subs.wyzie.ru"
+        const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
-        const val WHVXAPI = "https://api.whvx.net"
         const val TomAPI = "https://tom.autoembed.cc"
         const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
@@ -103,9 +100,8 @@ open class CineStreamProvider : MainAPI() {
         const val Player4uApi = "https://player4u.xyz"
         const val Primewire = "https://www.primewire.tf"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
-        const val VidJoyApi = "https://vidjoy.pro"
+        //const val VidJoyApi = "https://vidjoy.pro"
         const val modflixAPI = "https://modflix.xyz"
-        const val MovieDriveAPI = "https://moviesdrives.com"
         const val Vglist = "https://vglist.nl"
         const val soaperAPI = "https://soaper.cc"
         const val asiaflixAPI = "https://asiaflix.net"
@@ -114,10 +110,7 @@ open class CineStreamProvider : MainAPI() {
         const val xprimeAPI = "https://backend.xprime.tv"
         const val animeparadiseBaseAPI = "https://www.animeparadise.moe"
         const val animeparadiseAPI = "https://api.animeparadise.moe"
-        const val gojoBaseAPI = "https://gojo.live"
-        const val gojoAPI = "https://backend.gojo.live"
         const val sudatchiAPI = "https://sudatchi.com"
-        // const val animezAPI = "https://animez.org"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -145,6 +138,8 @@ open class CineStreamProvider : MainAPI() {
         val jaduMoviesAPI: String get() = apiConfig.optString("jadumovies")
         val netflixAPI: String get() = apiConfig.optString("nfmirror")
         val MovieDrive_API: String get() = apiConfig.optString("moviesdrive")
+        val gojoAPI: String get() = apiConfig.optString("gojo")
+        val gojoBaseAPI: String get() = apiConfig.optString("gojo_base")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -628,8 +623,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeAllanime(res.title, year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeWHVXSubs(WHVXSubsAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeWHVXSubs(WYZIESubsAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeWYZIESubs(WYZIESubsAPI, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeNetflix(imdbTitle.toString(), year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(imdbTitle.toString(), year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -685,8 +679,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isBollywood) invokeHindmoviez("HindMoviez", hindMoviezAPI, res.id, res.season, res.episode, callback) },
             // { if (isBollywood) invokeHindmoviez("JaduMovies", jaduMoviesAPI, res.id, res.season, res.episode, callback) },
             { invokeW4U(res.title, year, res.id, res.season, res.episode, subtitleCallback, callback) },
-            { invokeWHVXSubs(WHVXSubsAPI, res.id, res.season, res.episode, subtitleCallback) },
-            { invokeWHVXSubs(WYZIESubsAPI, res.id, res.season, res.episode, subtitleCallback) },
+            { invokeWYZIESubs(WYZIESubsAPI, res.id, res.season, res.episode, subtitleCallback) },
             { if (isAnime) {
                 val (aniId, malId) = convertTmdbToAnimeId(res.title, year, res.firstAired, if (res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
@@ -700,7 +693,7 @@ open class CineStreamProvider : MainAPI() {
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, seasonYear, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
-            { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
+            // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.id, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.id, subtitleCallback, callback) },
