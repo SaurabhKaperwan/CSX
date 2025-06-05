@@ -9,6 +9,7 @@ open class CineStream: Plugin() {
     override fun load(context: Context) {
         CineStreamStorage.init(context.applicationContext)
         registerMainAPI(CineStreamProvider())
+        registerMainAPI(CineSimklProvider())
         registerExtractorAPI(Kwik())
         registerExtractorAPI(Animezia())
         registerExtractorAPI(server2())

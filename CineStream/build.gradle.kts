@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 157
+version = 158
 
 android {
     defaultConfig {
@@ -9,6 +9,7 @@ android {
         android.buildFeatures.buildConfig=true
         buildConfigField("String", "BYPASS_API", "\"${properties.getProperty("BYPASS_API")}\"")
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
+        buildConfigField("String", "SIMKL_API", "\"${properties.getProperty("SIMKL_API")}\"")
     }
 }
 

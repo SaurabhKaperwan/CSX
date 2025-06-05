@@ -45,10 +45,12 @@ jobs:
         env:
           CONSUMET_API: ${{ secrets.CONSUMET_API }}
           BYPASS_API: ${{ secrets.BYPASS_API }}
+          SIMKL_API: ${{ secrets.SIMKL_API }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
           echo BYPASS_API=$BYPASS_API >> local.properties
+          echo SIMKL_API=$SIMKL_API >> local.properties
 
       - name: Build Plugins
         run: |
