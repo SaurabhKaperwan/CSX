@@ -10,9 +10,10 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.email"
+    override var mainUrl = "https://moviesmod.chat"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
@@ -29,10 +30,10 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         val basemainUrl: String? by lazy {
             runBlocking {
                 try {
-                    val mainUrl = "https://modflix.xyz/?type=hollywood"
-                    app.get(mainUrl).document
-                        .selectFirst("meta[http-equiv=refresh]")?.attr("content")
-                        ?.substringAfter("url=")
+                    val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                    val json = response.text
+                    val jsonObject = JSONObject(json)
+                    jsonObject.optString("moviesmod")
                 } catch (e: Exception) {
                     null
                 }

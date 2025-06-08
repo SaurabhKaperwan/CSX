@@ -5,9 +5,10 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 class TopmoviesProvider : MoviesmodProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://topmovies.tips"
+    override var mainUrl = "https://topmovies.rodeo"
     override var name = "TopMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -17,14 +18,18 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
         TvType.TvSeries
     )
 
-    val basemainUrl: String? = runBlocking {
-        try {
-            val mainUrl = "https://modflix.xyz/?type=bollywood"
-            app.get(mainUrl).document
-                .selectFirst("meta[http-equiv=refresh]")?.attr("content")
-                ?.substringAfter("url=")
-        } catch (e: Exception) {
-            null
+    companion object {
+        val basemainUrl: String? by lazy {
+            runBlocking {
+                try {
+                    val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                    val json = response.text
+                    val jsonObject = JSONObject(json)
+                    jsonObject.optString("topmovies")
+                } catch (e: Exception) {
+                    null
+                }
+            }
         }
     }
 

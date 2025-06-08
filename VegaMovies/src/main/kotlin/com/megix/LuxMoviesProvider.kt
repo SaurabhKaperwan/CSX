@@ -4,9 +4,10 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://luxmovies.diy"
+    override var mainUrl = "https://luxmovies.tattoo"
     override var name = "LuxMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -20,12 +21,10 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         val basemainUrl: String? by lazy {
             runBlocking {
                 try {
-                     app.get("https://vglist.nl/?re=luxmovies",allowRedirects = false)
-                        .document
-                        .selectFirst("meta[http-equiv=refresh]")
-                        ?.attr("content")
-                        ?.substringAfter("url=")
-                        ?.takeIf { it.startsWith("http") }
+                    val response = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+                    val json = response.text
+                    val jsonObject = JSONObject(json)
+                    jsonObject.optString("luxmovies")
                 } catch (e: Exception) {
                     null
                 }

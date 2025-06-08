@@ -83,12 +83,15 @@ class CineSimklProvider: MainAPI() {
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
 
     override val mainPage = mainPageOf(
-        "Personal" to "Personal",
         "/movies/trending/today?extended=overview&limit=$mediaLimit&page=" to "Trending Movies Today",
         "/tv/trending/today?type=series&extended=overview&limit=$mediaLimit&page=" to "Trending TV Shows Today",
-        "/movies/trending/month?extended=overview&limit=$mediaLimit&page=" to "Trending Movies",
-        "/tv/trending/month?type=series&extended=overview&limit=$mediaLimit&page=" to "Trending TV Shows",
+        "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Netflix Shows",
+        "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Disney Shows",
+        "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending HBO Shows",
+        "/anime/airing?date?sort=time&page=" to "Today Airing Anime",
         "/anime/trending?extended=overview&limit=$mediaLimit&page=" to "Trending Anime",
+        "/tv/genres/all/all-types/kr/all-networks/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Korean Shows",
+        "Personal" to "Personal",
     )
 
     private fun getSimklId(url: String): String {
@@ -118,7 +121,7 @@ class CineSimklProvider: MainAPI() {
         url: String? = null,
         type: String,
      ): String? {
-        val baseUrl = "https://simkl.in"
+        val baseUrl = "https://wsrv.nl/?url=https://simkl.in"
         if(url == null) {
             return null
         } else if(type == "episode") {
@@ -211,6 +214,11 @@ class CineSimklProvider: MainAPI() {
         val isBollywood = if(country == "IN") true else false
         val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
         val en_title = json.en_title ?: json.title
+        val recommendations = json.users_recommendations?.map {
+            newMovieSearchResponse("${it.title}", "$mainUrl/${it.type}/${it.ids?.simkl_id}/${it.ids?.slug}") {
+                this.posterUrl = getPosterUrl(it.poster, "poster")
+            }
+        }
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
@@ -239,6 +247,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.rating = json.ratings?.simkl?.rating.toString().toRatingInt()
                 this.year = json.year
+                this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(json.ids?.anilist?.toIntOrNull())
@@ -270,7 +279,7 @@ class CineSimklProvider: MainAPI() {
                     this.name = it.title
                     this.season = it.season
                     this.episode = it.episode
-                    this.posterUrl = getPosterUrl(it.img, "episode")
+                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://wsrv.nl/?url=https://simkl.in/update_m_alert.jpg"
                     addDate(it.date)
                 }
             }
@@ -283,6 +292,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.rating = json.ratings?.simkl?.rating.toString().toRatingInt()
                 this.year = json.year
+                this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(json.ids?.anilist?.toIntOrNull())

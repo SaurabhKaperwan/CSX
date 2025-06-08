@@ -77,6 +77,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
+        val gojoAPI = gojoBaseAPI.replace("https://", "https://backend.")
         val headers = mapOf(
             "Referer" to gojoBaseAPI,
             "Origin" to gojoBaseAPI,
@@ -1562,18 +1563,8 @@ object CineStreamExtractors : CineStreamProvider() {
             "Upgrade-Insecure-Requests" to "1",
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0"
         )
-        val type = if(sourceName == "VegaMovies") "vegamovies" else "rogmovies"
-        val api = try {
-            app.get("$Vglist/?re=$type",allowRedirects = false)
-                .document
-                .selectFirst("meta[http-equiv=refresh]")
-                ?.attr("content")
-                ?.substringAfter("url=")
-                ?.takeIf { it.startsWith("http") }
-        } catch (e: Exception) {
-            Log.e("VegaMovies", "Failed to fetch VegaMovies redirect: ${e.localizedMessage}")
-            null
-        }
+        val api = if(sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
+
         val url = "$api/?s=$id"
         app.get(
             url,
@@ -1674,13 +1665,6 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val uhdmoviesAPI = runCatching {
-            app.get("$modflixAPI/?type=uhdmovies", allowRedirects = false)
-                .document
-                .selectFirst("meta[http-equiv=refresh]")
-                ?.attr("content")
-                ?.substringAfter("url=")
-        }.getOrNull() ?: return
         val url = app.get("$uhdmoviesAPI/search/$title $year").document
             .select("article div.entry-image a").attr("href")
         val doc = app.get(url).document
@@ -1723,14 +1707,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val topmoviesAPI = runCatching {
-            app.get("$modflixAPI/?type=bollywood", allowRedirects = false)
-                .document
-                .selectFirst("meta[http-equiv=refresh]")
-                ?.attr("content")
-                ?.substringAfter("url=")
-        }.getOrNull() ?: return
-
         val fixTitle = title?.replace("-", " ")?.substringBefore(":")
         var url = ""
         val searchtitle = title?.replace("-", " ")?.substringBefore(":").createSlug()
@@ -1788,14 +1764,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val MoviesmodAPI = runCatching {
-            app.get("$modflixAPI/?type=hollywood", allowRedirects = false)
-                .document
-                .selectFirst("meta[http-equiv=refresh]")
-                ?.attr("content")
-                ?.substringAfter("url=")
-        }.getOrNull() ?: return
-
         invokeModflix(
             id,
             season,
