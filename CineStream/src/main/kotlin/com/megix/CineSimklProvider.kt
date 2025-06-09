@@ -10,6 +10,7 @@ import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.runAllAsync
+import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -74,6 +75,7 @@ class CineSimklProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = false
+    override val supportedSyncNames = setOf(SyncIdName.Simkl, SyncIdName.Anilist)
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 20
     private val auth = BuildConfig.SIMKL_API
@@ -88,7 +90,7 @@ class CineSimklProvider: MainAPI() {
         "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Netflix Shows",
         "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Disney Shows",
         "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending HBO Shows",
-        "/anime/airing?date?sort=time&page=" to "Today Airing Anime",
+        "/anime/airing?date?sort=time" to "Today Airing Anime",
         "/anime/trending?extended=overview&limit=$mediaLimit&page=" to "Trending Anime",
         "/tv/genres/all/all-types/kr/all-networks/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Korean Shows",
         "Personal" to "Personal",
@@ -198,7 +200,7 @@ class CineSimklProvider: MainAPI() {
                     name = request.name,
                     list = data,
                 ),
-                hasNext = true
+                hasNext = if(request.data.contains("page=")) true else false
             )
         }
     }
@@ -215,7 +217,7 @@ class CineSimklProvider: MainAPI() {
         val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
         val en_title = json.en_title ?: json.title
         val recommendations = json.users_recommendations?.map {
-            newMovieSearchResponse("${it.title}", "$mainUrl/${it.type}/${it.ids?.simkl_id}/${it.ids?.slug}") {
+            newMovieSearchResponse("${it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
                 this.posterUrl = getPosterUrl(it.poster, "poster")
             }
         }
@@ -241,7 +243,7 @@ class CineSimklProvider: MainAPI() {
             ).toJson()
             return newMovieLoadResponse("${en_title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
-                this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(json.poster, "poster")
+                this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
                 this.plot = json.overview
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
@@ -253,7 +255,7 @@ class CineSimklProvider: MainAPI() {
                 this.addAniListId(json.ids?.anilist?.toIntOrNull())
             }
         } else {
-            val epsJson = app.get("$apiUrl/tv/episodes/$simklId", headers = headers).text
+            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
@@ -279,6 +281,7 @@ class CineSimklProvider: MainAPI() {
                     this.name = it.title
                     this.season = it.season
                     this.episode = it.episode
+                    this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://wsrv.nl/?url=https://simkl.in/update_m_alert.jpg"
                     addDate(it.date)
                 }
@@ -286,7 +289,7 @@ class CineSimklProvider: MainAPI() {
 
             return newTvSeriesLoadResponse("${en_title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
-                this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(json.poster, "poster")
+                this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
                 this.plot = json.overview
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
@@ -403,28 +406,28 @@ class CineSimklProvider: MainAPI() {
     }
 
     data class SimklResponse (
-        var title          : String?  = null,
-        var en_title       : String?  = null,
-        var title_en       : String?  = null,
-        var year           : Int?     = null,
-        var type           : String?  = null,
-        var url            : String?  = null,
-        var poster         : String?  = null,
-        var fanart         : String?  = null,
-        var ids            : Ids?     = Ids(),
-        var release_date   : String?  = null,
-        var ratings        : Ratings = Ratings(),
-        var country        : String?  = null,
-        var certification  : String?  = null,
-        var runtime        : String?  = null,
-        var status         : String?  = null,
-        var total_episodes : Int?     = null,
-        var network        : String?  = null,
-        var overview       : String?  = null,
-        var anime_type     : String?  = null,
-        var season         : String?  = null,
-        var endpoint_type  : String?  = null,
-        var genres         : ArrayList<String> = arrayListOf(),
+        var title                 : String?                         = null,
+        var en_title              : String?                         = null,
+        var title_en              : String?                         = null,
+        var year                  : Int?                            = null,
+        var type                  : String?                         = null,
+        var url                   : String?                         = null,
+        var poster                : String?                         = null,
+        var fanart                : String?                         = null,
+        var ids                   : Ids?                            = Ids(),
+        var release_date          : String?                         = null,
+        var ratings               : Ratings                         = Ratings(),
+        var country               : String?                         = null,
+        var certification         : String?                         = null,
+        var runtime               : String?                         = null,
+        var status                : String?                         = null,
+        var total_episodes        : Int?                            = null,
+        var network               : String?                         = null,
+        var overview              : String?                         = null,
+        var anime_type            : String?                         = null,
+        var season                : String?                         = null,
+        var endpoint_type         : String?                         = null,
+        var genres                : ArrayList<String>               = arrayListOf(),
         var users_recommendations : ArrayList<UsersRecommendations> = arrayListOf()
     )
 
@@ -436,7 +439,8 @@ class CineSimklProvider: MainAPI() {
         var mal      : String? = null,
         var anilist  : String? = null,
         var kitsu    : String? = null,
-        var anidb    : String? = null
+        var anidb    : String? = null,
+        var simkl    : Int?    = null
     )
 
     data class Ratings (
@@ -453,35 +457,35 @@ class CineSimklProvider: MainAPI() {
         var year   : Int?    = null,
         var poster : String? = null,
         var type   : String? = null,
-        var ids    : Ids   = Ids()
+        var ids    : Ids     = Ids()
     )
 
     data class Episodes (
-        var title   : String?  = null,
-        var season  : Int?     = null,
-        var episode : Int?     = null,
-        var type    : String?  = null,
-        var description : String? = null,
-        var aired   : Boolean? = null,
-        var img     : String?  = null,
-        var date    : String?  = null,
+        var title       : String?  = null,
+        var season      : Int?     = null,
+        var episode     : Int?     = null,
+        var type        : String?  = null,
+        var description : String?  = null,
+        var aired       : Boolean? = null,
+        var img         : String?  = null,
+        var date        : String?  = null,
     )
     data class LoadLinksData(
-        val title: String? = null,
-        val en_title : String? = null,
-        val tvtype: String? = null,
-        val simklId: Int? = null,
-        val imdbId: String? = null,
-        val tmdbId: Int? = null,
-        val year: Int? = null,
-        val anilistId: Int? = null,
-        val malId: Int? = null,
-        val kitsuId: Int? = null,
-        val season: Int? = null,
-        val episode: Int? = null,
-        val airedYear: Int? = null,
-        val isAnime: Boolean = false,
-        val isBollywood: Boolean = false,
-        val isAsian: Boolean = false
+        val title       : String? = null,
+        val en_title    : String? = null,
+        val tvtype      : String? = null,
+        val simklId     : Int?    = null,
+        val imdbId      : String? = null,
+        val tmdbId      : Int?    = null,
+        val year        : Int?    = null,
+        val anilistId   : Int?    = null,
+        val malId       : Int?    = null,
+        val kitsuId     : Int?    = null,
+        val season      : Int?    = null,
+        val episode     : Int?    = null,
+        val airedYear   : Int?    = null,
+        val isAnime     : Boolean = false,
+        val isBollywood : Boolean = false,
+        val isAsian     : Boolean = false
     )
 }
