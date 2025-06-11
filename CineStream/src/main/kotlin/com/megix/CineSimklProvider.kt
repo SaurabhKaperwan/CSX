@@ -90,33 +90,56 @@ class CineSimklProvider: MainAPI() {
         "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Netflix Shows",
         "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Disney Shows",
         "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending HBO Shows",
-        "/anime/airing?date?sort=time" to "Today Airing Anime",
+        "/anime/airing?date?sort=popularity" to "Airing Anime Today",
         "/anime/trending?extended=overview&limit=$mediaLimit&page=" to "Trending Anime",
         "/tv/genres/all/all-types/kr/all-networks/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Korean Shows",
         "Personal" to "Personal",
     )
 
     private fun getSimklId(url: String): String {
-        val regex = Regex("""simkl\.com\/(?:anime|movies|tv|movie|shows|show)\/(\d+)""")
-        return regex.find(url)?.groupValues?.get(1) ?: ""
+        return url.split('/')
+            .filter { part -> part.toIntOrNull() != null } // Keep only numeric parts
+            .firstOrNull() ?: "" // Take the first numeric ID found
     }
 
     private suspend fun extractImdbId(kitsuId: Int? = null): String? {
-        val jsonString = app.get("$kitsuAPI/meta/series/kitsu:$kitsuId.json").text
-        val rootObject = JSONObject(jsonString)
-        val metaObject = rootObject.optJSONObject("meta")
-        return metaObject?.optString("imdb_id")?.takeIf { it.isNotBlank() }
+        return try {
+            if (kitsuId == null) return null
+
+            val response = app.get("$kitsuAPI/meta/series/kitsu:$kitsuId.json")
+            if (!response.isSuccessful) {
+                return null
+            }
+
+            val jsonString = response.text
+            val rootObject = JSONObject(jsonString)
+            val metaObject = rootObject.optJSONObject("meta")
+            metaObject?.optString("imdb_id")?.takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private suspend fun extractNameAndTMDBId(imdbId: String? = null): Pair<String?, Int?> {
-        val jsonString = app.get("$cinemetaAPI/meta/series/$imdbId.json").text
-        val rootObject = JSONObject(jsonString)
-        val metaObject = rootObject.optJSONObject("meta")
+        return try {
+            if (imdbId.isNullOrBlank()) return Pair(null, null)
 
-        val name = metaObject?.optString("name")?.takeIf { it.isNotBlank() }
-        val moviedbId = metaObject?.optInt("moviedb_id", -1)?.takeIf { it != -1 }
+            val response = app.get("$cinemetaAPI/meta/series/$imdbId.json")
+            if (!response.isSuccessful) {
+                return Pair(null, null)
+            }
 
-        return Pair(name, moviedbId)
+            val jsonString = response.text
+            val rootObject = JSONObject(jsonString)
+            val metaObject = rootObject.optJSONObject("meta")
+
+            val name = metaObject?.optString("name")?.takeIf { it.isNotBlank() }
+            val moviedbId = metaObject?.optInt("moviedb_id", -1)?.takeIf { it != -1 }
+
+            Pair(name, moviedbId)
+        } catch (e: Exception) {
+            Pair(null, null)
+        }
     }
 
     private fun getPosterUrl(
@@ -370,8 +393,17 @@ class CineSimklProvider: MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val imdbId = if(res.imdbId == null) extractImdbId(res.kitsuId) else res.imdbId
-        val (imdbTitle, tmdbId) = if(res.imdbId == null) extractNameAndTMDBId(imdbId) else Pair(res.en_title, res.tmdbId)
+        val imdbId = try {
+            res.imdbId ?: extractImdbId(res.kitsuId)
+        } catch (e: Exception) {
+            null
+        }
+
+        val (imdbTitle, tmdbId) = try {
+            extractNameAndTMDBId(imdbId) ?: Pair(res.en_title, res.tmdbId)
+        } catch (e: Exception) {
+            Pair(res.en_title, res.tmdbId)
+        }
 
         runAllAsync(
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
