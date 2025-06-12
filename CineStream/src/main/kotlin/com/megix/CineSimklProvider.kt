@@ -165,7 +165,7 @@ class CineSimklProvider: MainAPI() {
             val result = runCatching {
                 val json = app.get("$apiUrl/search/$type?q=$query&page=1&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
                 parseJson<Array<SimklResponse>>(json).map {
-                    newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
+                    newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                     }
                 }
@@ -264,7 +264,7 @@ class CineSimklProvider: MainAPI() {
                 isBollywood,
                 isAsian
             ).toJson()
-            return newMovieLoadResponse("${json.title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
+            return newMovieLoadResponse("${en_title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
                 this.plot = json.overview
@@ -310,7 +310,7 @@ class CineSimklProvider: MainAPI() {
                 }
             }
 
-            return newTvSeriesLoadResponse("${json.title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
+            return newTvSeriesLoadResponse("${en_title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
                 this.plot = json.overview
