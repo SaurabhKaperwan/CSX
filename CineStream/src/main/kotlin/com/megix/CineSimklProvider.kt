@@ -85,14 +85,14 @@ class CineSimklProvider: MainAPI() {
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
 
     override val mainPage = mainPageOf(
-        "/movies/trending/today?extended=overview&limit=$mediaLimit&page=" to "Trending Movies Today",
-        "/tv/trending/today?type=series&extended=overview&limit=$mediaLimit&page=" to "Trending TV Shows Today",
-        "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Netflix Shows",
-        "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending Disney Shows",
-        "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?extended=overview&limit=$mediaLimit&page=" to "Trending HBO Shows",
+        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
+        "/tv/all/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
+        "/tv/genres/all/all-types/all-countries/netflix/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
+        "/tv/genres/all/all-types/all-countries/disney/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
+        "/tv/genres/all/all-types/all-countries/hbo/this-year/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
         "/anime/airing?date?sort=popularity" to "Airing Anime Today",
-        "/anime/trending?extended=overview&limit=$mediaLimit&page=" to "Trending Anime",
-        "/tv/genres/all/all-types/kr/all-networks/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Korean Shows",
+        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Anime Today",
+        "/tv/genres/all/all-types/kr/all-networks/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
         "Personal" to "Personal",
     )
 
@@ -165,7 +165,7 @@ class CineSimklProvider: MainAPI() {
             val result = runCatching {
                 val json = app.get("$apiUrl/search/$type?q=$query&page=1&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
                 parseJson<Array<SimklResponse>>(json).map {
-                    newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl${it.url}") {
+                    newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                     }
                 }
@@ -264,7 +264,7 @@ class CineSimklProvider: MainAPI() {
                 isBollywood,
                 isAsian
             ).toJson()
-            return newMovieLoadResponse("${en_title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
+            return newMovieLoadResponse("${json.title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
                 this.plot = json.overview
@@ -310,7 +310,7 @@ class CineSimklProvider: MainAPI() {
                 }
             }
 
-            return newTvSeriesLoadResponse("${en_title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
+            return newTvSeriesLoadResponse("${json.title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
                 this.plot = json.overview
