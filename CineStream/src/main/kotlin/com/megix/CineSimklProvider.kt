@@ -86,7 +86,7 @@ class CineSimklProvider: MainAPI() {
 
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
-        "/tv/all/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
+        "/tv/genres/all/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
         "/tv/genres/all/all-types/all-countries/netflix/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
         "/tv/genres/all/all-types/all-countries/disney/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
         "/tv/genres/all/all-types/all-countries/hbo/this-year/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
