@@ -587,7 +587,7 @@ open class GDFlix : ExtractorApi() {
     override val mainUrl = "https://new8.gdflix.dad"
     override val requiresReferer = false
 
-    private fun getLatestUrl(): String {
+    private suspend fun getLatestUrl(): String {
         val url = JSONObject(
             app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
         ).optString("gdflix")
