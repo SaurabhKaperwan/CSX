@@ -434,9 +434,13 @@ class HubCloudDad : HubCloud() {
     override val mainUrl: String = "https://hubcloud.dad"
 }
 
+class HubCloudBz : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.bz"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.bz"
+    override val mainUrl: String = "https://hubcloud.one"
     override val requiresReferer = false
 
     fun getBaseUrl(url: String): String {
@@ -570,34 +574,28 @@ class GDFlix3 : GDFlix() {
     override var mainUrl = "https://new4.gdflix.dad"
 }
 
-class GDFlix4 : GDFlix() {
-    override var mainUrl = "https://new2.gdflix.dad"
-}
-
 class GDFlix2 : GDFlix() {
     override var mainUrl = "https://new.gdflix.dad"
-}
-
-class GDFlix6 : GDFlix() {
-    override var mainUrl = "https://new5.gdflix.dad"
-}
-
-class GDFlix5 : GDFlix() {
-    override var mainUrl = "https://new3.gdflix.dad"
 }
 
 class GDFlix7 : GDFlix() {
     override var mainUrl = "https://gdflix.dad"
 }
 
-class GDFlix8 : GDFlix() {
-    override var mainUrl = "https://new6.gdflix.dad"
-}
-
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://new7.gdflix.dad"
+    override val mainUrl = "https://new8.gdflix.dad"
     override val requiresReferer = false
+
+    private fun getLatestUrl(): String {
+        val url = JSONObject(
+            app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+        ).optString("gdflix")
+        if(url.isNullOrEmpty()) {
+            return mainUrl
+        }
+        return url
+    }
 
     override suspend fun getUrl(
         url: String,
@@ -605,7 +603,8 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://new7.gdflix.dad")
+        val latestUrl = getLatestUrl()
+        val newUrl = url.replace(mainUrl, latestUrl)
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
@@ -641,9 +640,9 @@ open class GDFlix : ExtractorApi() {
                 text.contains("Index Links") -> {
                     try {
                         val link = anchor.attr("href")
-                        app.get("https://new7.gdflix.dad$link").document
+                        app.get("$latestUrl$link").document
                             .select("a.btn.btn-outline-info").amap { btn ->
-                                val serverUrl = "https://new7.gdflix.dad" + btn.attr("href")
+                                val serverUrl = latestUrl + btn.attr("href")
                                 app.get(serverUrl).document
                                     .select("div.mb-4 > a").amap { sourceAnchor ->
                                         val source = sourceAnchor.attr("href")
