@@ -84,16 +84,15 @@ class CineSimklProvider: MainAPI() {
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
 
     override val mainPage = mainPageOf(
-        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
-        "/tv/genres/all/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
+        "/movies/genres/all/all-types/all-countries/all-years/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
+        "/tv/genres/all/all-types/all-countries/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
         "/anime/airing?date?sort=popularity" to "Airing Anime Today",
-        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Anime Today",
-        "/tv/genres/all/all-types/kr/all-networks/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
-        "/tv/genres/all/all-types/all-countries/netflix/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
-        "/tv/genres/all/all-types/all-countries/disney/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
-        "/tv/genres/all/all-types/all-countries/hbo/this-year/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
+        "/anime/genres/all/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Anime Today",
+        "/tv/genres/all/all-types/kr/all-networks/all-years/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
+        "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
+        "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
+        "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
         "/anime/premieres/soon?type=all&limit=$mediaLimit&page=" to "Upcoming Anime",
-        "/tv/premieres/soon?type=all&limit=$mediaLimit&page=" to "Upcoming Shows",
         "Personal" to "Personal",
     )
 
@@ -158,6 +157,20 @@ class CineSimklProvider: MainAPI() {
         else {
             return "$baseUrl/fanart/${url}_medium.webp"
         }
+    }
+
+    private fun normalizeSeasonString(input: String?): String? {
+        if(input == null) return null
+        val seasonRegex = """(?i)(season\s+\d+)""".toRegex()
+        val matches = seasonRegex.findAll(input).toList()
+        if (matches.isEmpty()) return input
+
+        val firstSeason = matches.first().value
+        val seasonNumber = """\d+""".toRegex().find(firstSeason)?.value ?: return input
+        val normalizedSeason = "Season $seasonNumber"
+
+        return input.replace(seasonRegex, normalizedSeason)
+            .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
     }
 
     override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
@@ -239,7 +252,11 @@ class CineSimklProvider: MainAPI() {
         val isAnime = if(tvType == "anime") true else false
         val isBollywood = if(country == "IN") true else false
         val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
-        val en_title = json.en_title ?: json.title
+        val en_title = if (isAnime) {
+            normalizeSeasonString(json.en_title ?: json.title)
+        } else {
+            json.en_title ?: json.title
+        }
         val allratings = json.ratings
         val rating = allratings?.mal?.rating ?: allratings?.imdb?.rating
         val recommendations = json.users_recommendations?.map {
