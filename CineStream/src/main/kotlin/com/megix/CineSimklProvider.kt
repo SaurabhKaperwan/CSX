@@ -92,6 +92,8 @@ class CineSimklProvider: MainAPI() {
         "/tv/genres/all/all-types/all-countries/netflix/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
         "/tv/genres/all/all-types/all-countries/disney/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
         "/tv/genres/all/all-types/all-countries/hbo/this-year/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
+        "/anime/premieres/soon?type=all&limit=$mediaLimit&page=" to "Upcoming Anime",
+        "/tv/premieres/soon?type=all&limit=$mediaLimit&page=" to "Upcoming Shows",
         "Personal" to "Personal",
     )
 
