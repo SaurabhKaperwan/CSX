@@ -36,7 +36,6 @@ import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeTokyoInsider
-import com.megix.CineStreamExtractors.invokeTvStream
 import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeStreamAsia
 import com.megix.CineStreamExtractors.invokeNetflix
@@ -77,7 +76,7 @@ open class CineStreamProvider : MainAPI() {
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val streamio_TMDB = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
-    val mediaFusion = "https://mediafusion.elfhosted.com"
+    // val mediaFusion = "https://mediafusion.elfhosted.com"
     val animeCatalog = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
@@ -150,22 +149,16 @@ open class CineStreamProvider : MainAPI() {
         TvType.AsianDrama,
         TvType.Anime,
         TvType.Torrent,
-        TvType.Live,
     )
 
     override val mainPage = mainPageOf(
-        "$streamio_TMDB/catalog/movie/tmdb.trending/skip=###&genre=Day" to "Trending Movies Today",
-        "$streamio_TMDB/catalog/series/tmdb.trending/skip=###&genre=Day" to "Trending Series Today",
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
-        "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
-        "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
+        // "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
+        // "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         // """$animeCatalog/{"anisearch_trending":"on"}/catalog/anime/anisearch_trending/skip=###""" to "Trending Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
-        "$streamio_TMDB/catalog/series/tmdb.language/skip=###&genre=Korean" to "Trending Korean Series",
-        "$mediaFusion/catalog/tv/live_tv/skip=###" to "Live TV",
-        "$mediaFusion/catalog/events/live_sport_events/skip=###" to "Live Sports Events",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Comedy" to "Top Comedy Movies",
@@ -226,45 +219,29 @@ open class CineStreamProvider : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
         val normalizedQuery = query.trim()
 
-        suspend fun fetchResults(urls: List<String>, tvType: TvType): List<SearchResponse> {
-            for (url in urls) {
-                val result = runCatching {
-                    val json = app.get(url).text
-                    tryParseJson<SearchResult>(json)?.metas?.map {
-                        val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: "Empty"
-                        newMovieSearchResponse(title, PassData(it.id, it.type).toJson(), tvType).apply {
-                            posterUrl = it.poster.toString()
-                        }
-                    } ?: emptyList()
-                }.getOrDefault(emptyList())
+        suspend fun fetchResults(url: String): List<SearchResponse> {
+            val result = runCatching {
+                val json = app.get(url).text
+                tryParseJson<SearchResult>(json)?.metas?.map {
+                    val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: "Empty"
+                    newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
+                        posterUrl = it.poster.toString()
+                    }
+                } ?: emptyList()
+            }.getOrDefault(emptyList())
 
-                if (result.isNotEmpty()) return result
-            }
+            if (result.isNotEmpty()) return result
             return emptyList()
         }
 
-        val endpointsWithFallbacks = listOf(
-            listOf(
-                "$streamio_TMDB/catalog/movie/tmdb.top/search=$normalizedQuery.json",
-                "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json"
-            ) to TvType.Movie,
-
-            listOf(
-                "$streamio_TMDB/catalog/series/tmdb.top/search=$normalizedQuery.json",
-                "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json"
-            ) to TvType.TvSeries,
-
-            listOf(
-                "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json"
-            ) to TvType.Anime,
-
-            listOf(
-                "$mediaFusion/catalog/tv/mediafusion_search_tv/search=$normalizedQuery.json"
-            ) to TvType.Live
+        val endpoints = listOf(
+            "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json",
+            "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json",
+            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json"
         )
 
-        val resultsLists = endpointsWithFallbacks.map { (urls, type) ->
-            async { fetchResults(urls, type) }
+        val resultsLists = endpoints.map {
+            async { fetchResults(it) }
         }.awaitAll()
 
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
@@ -282,14 +259,10 @@ open class CineStreamProvider : MainAPI() {
         val movie = parseJson<PassData>(url)
         val tvtype = movie.type
         var id = movie.id
-        val type =
-                if(movie.type == "tv" || movie.type == "events") TvType.Live
-                else if(movie.type == "movie") TvType.Movie
-                else TvType.TvSeries
+        val type = if(movie.type == "movie") TvType.Movie else TvType.TvSeries
         val meta_url =
             if(id.contains("kitsu")) kitsu_url
             else if(id.contains("tmdb")) streamio_TMDB
-            else if(id.contains("mf")) mediaFusion
             else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
         val isTMDB = if(meta_url == streamio_TMDB) true else false
@@ -451,10 +424,6 @@ open class CineStreamProvider : MainAPI() {
         val seasonYear = getSeasonYear(res)
 
         return when {
-            res.tvtype in listOf("tv", "events") -> {
-                invokeTvStream(res.id, mediaFusion, res.tvtype, subtitleCallback, callback)
-                true
-            }
 
             res.isKitsu -> {
                 runKitsuInvokers(res, year, seasonYear, subtitleCallback, callback)

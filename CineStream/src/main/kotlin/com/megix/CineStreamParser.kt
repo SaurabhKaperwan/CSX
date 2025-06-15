@@ -243,28 +243,6 @@ data class AnichiDownloadLink(
     val src: String?,
 )
 
-
-
-data class TvStreamsResponse(
-    val streams: List<TvStream>
-)
-
-data class TvStream(
-    val title: String?,
-    val name: String?,
-    val description: String?,
-    val url: String,
-    val behaviorHints: TvBehaviorHints
-)
-
-data class TvBehaviorHints(
-    val proxyHeaders: TvProxyHeaders
-)
-
-data class TvProxyHeaders(
-    val request: Map<String, String>? = null,
-)
-
 data class AnimiaResponse(
     val server1embedLink: String? = null,
     val server2embedLink: String? = null,

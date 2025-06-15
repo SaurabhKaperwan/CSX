@@ -436,29 +436,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeTvStream(
-        id: String? = null,
-        api: String,
-        tvtype: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = "$api/stream/$tvtype/$id.json"
-        val json = app.get(url).text
-        val data = parseJson<TvStreamsResponse>(json)
-        data.streams.forEach {
-            callback.invoke(
-                newExtractorLink(
-                    it.name ?: it.title ?: "TV",
-                    it.description ?: it.title ?: "TV",
-                    it.url,
-                ) {
-                    this.headers = it.behaviorHints.proxyHeaders.request ?: mapOf()
-                }
-            )
-        }
-    }
-
     suspend fun invokeAllmovieland(
         id : String? = null,
         season : Int? = null,
