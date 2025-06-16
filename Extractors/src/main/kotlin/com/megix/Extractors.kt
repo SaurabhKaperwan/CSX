@@ -402,13 +402,9 @@ class VCloud : ExtractorApi() {
     }
 }
 
-class Hubdrivelive : Hubdrive() {
-    override val mainUrl = "https://hubdrive.live"
-}
-
 open class Hubdrive : ExtractorApi() {
     override val name = "Hubdrive"
-    override val mainUrl = "https://hubdrive.fit"
+    override val mainUrl = "https://hubdrive.icu"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -455,7 +451,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://hubcloud.bz")
+        val newUrl = url.replace(mainUrl, "https://hubcloud.one")
         val doc = app.get(newUrl).document
         val link = if(newUrl.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
