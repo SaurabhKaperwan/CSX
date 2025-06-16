@@ -64,6 +64,7 @@ import com.megix.CineStreamExtractors.invokeAnimeparadise
 import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
 import com.megix.CineStreamExtractors.invokePhoenix
+import com.megix.CineStreamExtractors.invokeKatMovieHd
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -141,6 +142,8 @@ open class CineStreamProvider : MainAPI() {
         val uhdmoviesAPI: String get() = apiConfig.optString("uhdmovies")
         val MoviesmodAPI: String get() = apiConfig.optString("moviesmod")
         val topmoviesAPI: String get() = apiConfig.optString("topmovies")
+        val katmoviehdAPI: String get() = apiConfig.optString("katmoviehd")
+        val moviesBabaAPI: String get() = apiConfig.optString("moviesbaba")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
@@ -648,7 +651,9 @@ open class CineStreamProvider : MainAPI() {
             { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
             { if (!isBollywood) invokeHindmoviez("HindMoviez", res.id, res.season, res.episode, callback) },
-            // { if (isBollywood) invokeHindmoviez("JaduMovies", res.id, res.season, res.episode, callback) },
+        //  { if (isBollywood) invokeHindmoviez("JaduMovies", res.id, res.season, res.episode, callback) },
+            { if (!isBollywood && !isAnime) invokeKatMovieHd("KatMovieHd", res.id, res.season, res.episode, subtitleCallback ,callback) },
+            { if (isBollywood) invokeKatMovieHd("Moviesbaba", res.id, res.season, res.episode, subtitleCallback ,callback) },
             { invokeW4U(res.title, year, res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.id, res.season, res.episode, subtitleCallback) },
             { if (isAnime) {

@@ -19,6 +19,7 @@ import com.lagradost.cloudstream3.extractors.StreamWishExtractor
 import com.lagradost.cloudstream3.extractors.VidHidePro
 import com.lagradost.cloudstream3.extractors.MixDrop
 import com.lagradost.cloudstream3.extractors.StreamTape
+import com.lagradost.cloudstream3.extractors.Vidguardto
 
 class Watchadsontape : StreamTape() {
     override var mainUrl = "https://watchadsontape.com"
@@ -291,4 +292,8 @@ class MixDropPs : MixDrop() {
 
 class MixDropSi : MixDrop() {
     override var mainUrl = "https://mixdrop.si"
+}
+
+class Vembed : Vidguardto() {
+    override var mainUrl = "https://vembed.net"
 }

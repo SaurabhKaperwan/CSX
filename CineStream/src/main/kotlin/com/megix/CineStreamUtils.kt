@@ -871,6 +871,62 @@ fun fixSourceUrls(url: String, source: String?): String? {
     }
 }
 
+fun extractKatStreamingLinks(html: String, episode: Int? = null): Map<String, String> {
+    val result = mutableMapOf<String, String>()
+
+    fun getMatch(pattern: String): String? {
+        val matches = pattern.toRegex().findAll(html).toList()
+        return when {
+            episode != null && matches.size >= episode -> matches[episode - 1].groupValues[1]
+            matches.isNotEmpty() -> matches[0].groupValues[1]
+            else -> null
+        }
+    }
+
+    val streamtapeId = getMatch("""streamtape_res:"([^"]+)\"""")
+    val streamwishId = getMatch("""streamwish_res:"([^"]+)\"""")
+    val vgembedId = getMatch("""vgembedstream_res:"([^"]+)\"""")
+
+    val streamtapeBase = """streamtape_res:\{link:"([^"]+)\"""".toRegex().find(html)?.groupValues?.get(1)
+    val streamwishBase = """streamwish_res:\{link:"([^"]+)\"""".toRegex().find(html)?.groupValues?.get(1)
+    val vgembedBase = """vgembedstream_res:\{link:"([^"]+)\"""".toRegex().find(html)?.groupValues?.get(1)
+
+    if (streamtapeId != null && streamtapeBase != null) {
+        result["streamtape"] = streamtapeBase + streamtapeId
+    }
+    if (streamwishId != null && streamwishBase != null) {
+        result["streamwish"] = streamwishBase + streamwishId
+    }
+    if (vgembedId != null && vgembedBase != null) {
+        result["vgembedstream"] = vgembedBase + vgembedId
+    }
+
+    return result
+}
+
+fun getGojoEpisodeIds(jsonString: String, episodeNumber: Int): Map<String, String> {
+    val episodeIds = mutableMapOf<String, String>()
+    val jsonArray = JSONArray(jsonString)
+
+    for (i in 0 until jsonArray.length()) {
+        val provider = jsonArray.getJSONObject(i)
+        val providerId = provider.getString("providerId")
+        val episodes = provider.getJSONArray("episodes")
+
+        for (j in 0 until episodes.length()) {
+            val episode = episodes.getJSONObject(j)
+            if (episode.getInt("number") == episodeNumber) {
+                when (val idValue = episode["id"]) {
+                    is Int -> episodeIds[providerId] = idValue.toString()
+                    is String -> episodeIds[providerId] = idValue
+                }
+                break
+            }
+        }
+    }
+    return episodeIds
+}
+
 suspend fun getSoaperLinks(
         soaperAPI: String,
         url: String,

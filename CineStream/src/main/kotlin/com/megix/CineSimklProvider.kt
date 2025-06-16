@@ -60,6 +60,7 @@ import com.megix.CineStreamExtractors.invokeAnimeparadise
 import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
 import com.megix.CineStreamExtractors.invokePhoenix
+import com.megix.CineStreamExtractors.invokeKatMovieHd
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -84,11 +85,11 @@ class CineSimklProvider: MainAPI() {
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
 
     override val mainPage = mainPageOf(
-        "/movies/genres/all/all-types/all-countries/all-years/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
-        "/tv/genres/all/all-types/all-countries/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
+        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
+        "/tv/genres/all/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
         "/anime/airing?date?sort=popularity" to "Airing Anime Today",
-        "/anime/genres/all/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Anime Today",
-        "/tv/genres/all/all-types/kr/all-networks/all-years/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
+        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Anime",
+        "/tv/genres/all/all-types/kr/all-networks/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
         "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
         "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
         "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
@@ -408,6 +409,8 @@ class CineSimklProvider: MainAPI() {
             { invokeMovies4u(res.imdbId, res.en_title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.season, res.episode, callback) },
             // { if (res.isBollywood) invokeHindmoviez("JaduMovies", res.imdbId, res.season, res.episode, callback) },
+            { if (!res.isBollywood) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
+            { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { invokeW4U(res.en_title, res.year, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokePrimebox(res.en_title, res.year, res.season, res.episode, subtitleCallback, callback) },
