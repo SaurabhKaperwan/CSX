@@ -14,6 +14,7 @@ import okhttp3.FormBody
 import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
 import android.content.Context
+import com.lagradost.api.Log
 
 val JSONParser = object : ResponseParser {
     val mapper: ObjectMapper = jacksonObjectMapper().configure(
@@ -77,10 +78,6 @@ fun convertRuntimeToMinutes(runtime: String): Int {
     return totalMinutes
 }
 
-data class VerifyUrl(
-    val nfverifyurl: String
-)
-
 suspend fun bypass(mainUrl: String): String {
     // Check persistent storage first
     val (savedCookie, savedTimestamp) = NetflixMirrorStorage.getCookie()
@@ -90,26 +87,13 @@ suspend fun bypass(mainUrl: String): String {
         return savedCookie
     }
 
-    // Fetch new cookie if expired/missing
     val newCookie = try {
-        val homePageDocument = app.get("${mainUrl}/mobile/home").document
-        val addHash = homePageDocument.select("body").attr("data-addhash")
-        val time = homePageDocument.select("body").attr("data-time")
-
-        var verificationUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json"
-        verificationUrl = app.get(verificationUrl).parsed<VerifyUrl>().nfverifyurl.replace("###", addHash)
-        app.get("$verificationUrl&t=$time")
-
         var verifyCheck: String
         var verifyResponse: NiceResponse
-
         do {
-            delay(1000)
-            val requestBody = FormBody.Builder().add("verify", addHash).build()
-            verifyResponse = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
+            verifyResponse = app.post("$mainUrl/tv/p.php")
             verifyCheck = verifyResponse.text
-        } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
-
+        } while (!verifyCheck.contains("\"r\":\"n\""))
         verifyResponse.cookies["t_hash_t"].orEmpty()
     } catch (e: Exception) {
         // Clear invalid cookie on failure

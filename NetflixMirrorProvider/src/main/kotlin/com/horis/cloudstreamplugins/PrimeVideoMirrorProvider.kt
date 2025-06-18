@@ -4,6 +4,8 @@ import com.horis.cloudstreamplugins.entities.EpisodesData
 import com.horis.cloudstreamplugins.entities.PlayList
 import com.horis.cloudstreamplugins.entities.PostData
 import com.horis.cloudstreamplugins.entities.SearchData
+import com.horis.cloudstreamplugins.entities.MainPage
+import com.horis.cloudstreamplugins.entities.PostCategory
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
@@ -41,17 +43,23 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "ott" to "pv",
             "hd" to "on"
         )
-        val document = app.get("$mainUrl/mobile/home", cookies = cookies).document
-        val items = document.select(".tray-container, #top10").map {
+        val data = app.get(
+            "$mainUrl/tv/pv/homepage.php",
+            cookies = cookies,
+            referer = "$mainUrl/tv/home",
+        ).parsed<MainPage>()
+
+        val items = data.post.map {
             it.toHomePageList()
         }
+
         return newHomePageResponse(items, false)
     }
 
-    private fun Element.toHomePageList(): HomePageList {
-        val name = select("h2, span").text()
-        val items = select("article, .top10-post").mapNotNull {
-            it.toSearchResult()
+    private fun PostCategory.toHomePageList(): HomePageList {
+        val name = cate
+        val items = ids.split(",").mapNotNull {
+            toSearchResult(it)
         }
         return HomePageList(
             name,
@@ -60,13 +68,10 @@ class PrimeVideoMirrorProvider : MainAPI() {
         )
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
-        val id = selectFirst("a")?.attr("data-post") ?: attr("data-post") ?: return null
-        val posterUrl = fixUrlNull(selectFirst(".card-img-container img, img.top10-img-1")?.attr("data-src"))
-
+    private fun toSearchResult(id: String): SearchResponse? {
         return newAnimeSearchResponse("", Id(id).toJson()) {
-            this.posterUrl = posterUrl
-            posterHeaders = mapOf("Referer" to "$mainUrl/")
+            this.posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
+            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
         }
     }
 
@@ -77,13 +82,13 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "ott" to "pv",
             "hd" to "on"
         )
-        val url = "$mainUrl/mobile/pv/search.php?s=$query&t=${APIHolder.unixTime}"
-        val data = app.get(url, referer = "$mainUrl/", cookies = cookies).parsed<SearchData>()
+        val url = "$mainUrl/pv/search.php?s=$query&t=${APIHolder.unixTime}"
+        val data = app.get(url, referer = "$mainUrl/tv/home", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
                 posterUrl = "https://img.nfmirrorcdn.top/pv/900/${it.id}.jpg"
-                posterHeaders = mapOf("Referer" to "$mainUrl/")
+                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             }
         }
     }
@@ -97,7 +102,10 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val data = app.get(
-            "$mainUrl/mobile/pv/post.php?id=$id&t=${APIHolder.unixTime}", headers, referer = "$mainUrl/", cookies = cookies
+            "$mainUrl/pv/post.php?id=$id&t=${APIHolder.unixTime}",
+            headers,
+            referer = "$mainUrl/tv/home",
+            cookies = cookies
         ).parsed<PostData>()
 
         val episodes = arrayListOf<Episode>()
@@ -144,7 +152,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
             posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
-            posterHeaders = mapOf("Referer" to "$mainUrl/")
+            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             plot = data.desc
             year = data.year.toIntOrNull()
             tags = genre
@@ -166,9 +174,9 @@ class PrimeVideoMirrorProvider : MainAPI() {
         var pg = page
         while (true) {
             val data = app.get(
-                "$mainUrl/mobile/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
+                "$mainUrl/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
                 headers,
-                referer = "$mainUrl/",
+                referer = "$mainUrl/tv/home",
                 cookies = cookies
             ).parsed<EpisodesData>()
             data.episodes?.mapTo(episodes) {
@@ -199,9 +207,9 @@ class PrimeVideoMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$mainUrl/mobile/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/tv/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/",
+            referer = "$mainUrl/tv/home",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -214,7 +222,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
                         fixUrl(it.file),
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/"
+                        this.referer = "$mainUrl/tv/home"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
                     }
                 )
