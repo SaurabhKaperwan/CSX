@@ -33,6 +33,7 @@ class DisneyMirrorProvider : MainAPI() {
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
+    private val newUrl = "https://a.netfree2.cc"
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
@@ -42,7 +43,7 @@ class DisneyMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val document = app.get(
-            "$mainUrl/mobile/home",
+            "$newUrl/mobile/home",
             cookies = cookies,
             referer = "$mainUrl/tv/home",
         ).document
