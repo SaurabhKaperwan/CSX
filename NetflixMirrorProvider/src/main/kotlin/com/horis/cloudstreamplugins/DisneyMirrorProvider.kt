@@ -84,7 +84,7 @@ class DisneyMirrorProvider : MainAPI() {
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://imgcdn.media/hs/v/166/${it.id}.jpg"
+                posterUrl = "https://imgcdn.media/hs/v/1000/${it.id}.jpg"
                 posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             }
         }
@@ -148,8 +148,8 @@ class DisneyMirrorProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://imgcdn.media/hs/v/166/$id.jpg"
-            backgroundPosterUrl ="https://imgcdn.media/hs/h/166/$id.jpg"
+            posterUrl = "https://imgcdn.media/hs/v/1000/$id.jpg"
+            backgroundPosterUrl ="https://imgcdn.media/hs/h/1000/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             plot = data.desc
             year = data.year.toIntOrNull()
