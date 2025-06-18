@@ -58,7 +58,7 @@ class DisneyMirrorProvider : MainAPI() {
         val items = select("article, .top10-post").mapNotNull {
             it.toSearchResult()
         }
-        return HomePageList(name, items, isHorizontalImages = true)
+        return HomePageList(name, items, isHorizontalImages = false)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
