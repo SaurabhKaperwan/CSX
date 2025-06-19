@@ -25,8 +25,51 @@ import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
+import com.google.gson.Gson
 
 object CineStreamExtractors : CineStreamProvider() {
+
+    suspend fun invokeStremioSubtitles(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val gson = Gson()
+        val subsUrls = listOf(
+            "https://3b4bbf5252c4-aio-streaming.baby-beamup.club/stremio/languages=english,hindi,spanish,arabic,mandarin,bengali,portuguese,russian,japanese,lahnda,thai,turkish,french,german,korean,telugu,marathi,tamil,urdu,italian",
+            "https://subsource.strem.bar/ZW5nbGlzaCxoaW5kaSxzcGFuaXNoLGFyYWJpYyxtYW5kYXJpbixiZW5nYWxpLHBvcnR1Z3Vlc2UscnVzc2lhbixqYXBhbmVzZSxsYWhuZGEsdGhhaSx0dXJraXNoLGZyZW5jaCxnZXJtYW4sa29yZWFuLHRlbHVndSxtYXJhdGhpLHRhbWlsLHVyZHUsaXRhbGlhbi9oaUluY2x1ZGUv",
+            "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true"
+        )
+
+        subsUrls.amap { subUrl ->
+            try {
+                val url = if(season != null) {
+                    subUrl + "/subtitles/series/$imdbId:$season:$episode.json"
+                } else {
+                    subUrl + "/subtitles/movie/$imdbId.json"
+                }
+
+                val json = app.get(url).text
+                val subtitleResponse = gson.fromJson(json, StremioSubtitleResponse::class.java)
+
+                subtitleResponse.subtitles.forEach {
+                    val lang = it.lang_code ?: it.lang
+                    val fileUrl = it.url
+                    if(lang != null && fileUrl != null) {
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                lang,
+                                fileUrl,
+                            )
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                println("Error fetching/parsing subtitle from: $subUrl - ${e.message}")
+            }
+        }
+    }
 
     suspend fun invokeKatMovieHd(
         sourceName: String,
@@ -58,7 +101,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val watchUrl = match?.groupValues?.get(1) ?: return
         val watchDoc = app.get(watchUrl, headers).toString()
         val linksmap = extractKatStreamingLinks(watchDoc, episode)
-        linksmap.forEach { (key, value) ->
+        linksmap.amap { (key, value) ->
             loadSourceNameExtractor(
                 sourceName,
                 value,
@@ -83,7 +126,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val jsonString = app.get("https://raw.githubusercontent.com/kunwarxshashank/rogplay_addons/refs/heads/main/cinema/hindi.json").text
         val serverInfoList = parseMadplayServerInfo(jsonString)
 
-        serverInfoList.forEach { info ->
+        serverInfoList.amap { info ->
             val url = if(season != null) {
                 info.tvurl
                 .replace("\${tmdb}", tmdbId.toString())
@@ -170,8 +213,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val epDetailsJson = app.get("$gojoAPI/api/anime/episodes/$aniId", headers = headers).text
         val epDetails = getGojoEpisodeIds(epDetailsJson, episode ?: 1)
         val types = listOf("sub", "dub")
-        epDetails.forEach { (provider, watchId) ->
-            types.forEach { lang ->
+        epDetails.amap{ (provider, watchId) ->
+            types.amap { lang ->
                 val json = app.get("$gojoAPI/api/anime/tiddies?provider=$provider&id=$aniId&num=${episode ?: 1}&subType=$lang&watchId=$watchId&dub_id=null", headers = headers).text
                 val jsonObject = JSONObject(json)
                 val sourcesArray = jsonObject.getJSONArray("sources")

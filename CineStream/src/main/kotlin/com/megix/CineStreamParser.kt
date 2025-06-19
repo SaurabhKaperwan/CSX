@@ -3,6 +3,19 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Stremio Subtitles
+
+data class StremioSubtitleResponse(
+    val subtitles: List<StremioSubtitle> = emptyList()
+)
+
+data class StremioSubtitle(
+    val lang_code: String? = null,
+    val lang: String? = null,
+    val title: String? = null,
+    val url: String? = null,
+)
+
 //Madplay
 data class MadplayServerInfo(
     val tvurl: String,

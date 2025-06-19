@@ -67,6 +67,7 @@ import com.megix.CineStreamExtractors.invokeSudatchi
 import com.megix.CineStreamExtractors.invokePhoenix
 import com.megix.CineStreamExtractors.invokeKatMovieHd
 import com.megix.CineStreamExtractors.invokeMadplay
+import com.megix.CineStreamExtractors.invokeStremioSubtitles
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -203,8 +204,7 @@ open class CineStreamProvider : MainAPI() {
         skipMap[request.name] = skip + movieCount
         val home = movies.metas.mapNotNull { movie ->
             val type =
-                if(movie.type == "tv" || movie.type == "events") TvType.Live
-                else if(movie.type == "movie") TvType.Movie
+                if(movie.type == "movie") TvType.Movie
                 else TvType.TvSeries
             val title = movie.aliases?.firstOrNull() ?: movie.name ?: movie.description ?: "Empty"
 
@@ -316,7 +316,7 @@ open class CineStreamProvider : MainAPI() {
         val isAsian = (movieData?.meta?.country.toString().contains("Korea", true) ||
                 movieData?.meta?.country.toString().contains("China", true)) && !isAnime
 
-        if(tvtype == "movie" || tvtype == "tv" || tvtype == "events") {
+        if(tvtype == "movie") {
             val data = LoadLinksData(
                 title,
                 id,
@@ -600,6 +600,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeStremioSubtitles(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeNetflix(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -659,6 +660,7 @@ open class CineStreamProvider : MainAPI() {
             { if (isBollywood) invokeKatMovieHd("Moviesbaba", res.id, res.season, res.episode, subtitleCallback ,callback) },
             { invokeW4U(res.title, year, res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.id, res.season, res.episode, subtitleCallback) },
+            { invokeStremioSubtitles(res.id, res.season, res.episode, subtitleCallback) },
             { if (isAnime) {
                 val (aniId, malId) = convertTmdbToAnimeId(res.title, year, res.firstAired, if (res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
