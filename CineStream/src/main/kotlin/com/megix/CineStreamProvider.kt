@@ -40,6 +40,7 @@ import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeStreamAsia
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
+import com.megix.CineStreamExtractors.invokeDisney
 import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
@@ -65,6 +66,7 @@ import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
 import com.megix.CineStreamExtractors.invokePhoenix
 import com.megix.CineStreamExtractors.invokeKatMovieHd
+import com.megix.CineStreamExtractors.invokeMadplay
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -598,8 +600,8 @@ open class CineStreamProvider : MainAPI() {
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeNetflix(imdbTitle.toString(), year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeVideo(imdbTitle.toString(), year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeNetflix(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokePrimeVideo(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeTom(tmdbId, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             { invokeMovies4u(res.imdb_id, imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -636,6 +638,7 @@ open class CineStreamProvider : MainAPI() {
             { if (isBollywood) invokeVegamovies("RogMovies", res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeNetflix(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeVideo(res.title, year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeDisney(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.id, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (isBollywood) invokeTopMovies(res.title, year, res.season, res.episode, subtitleCallback, callback) },
@@ -666,6 +669,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { if(!isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, seasonYear, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },

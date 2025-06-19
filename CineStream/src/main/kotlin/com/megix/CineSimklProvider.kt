@@ -10,7 +10,6 @@ import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.runAllAsync
-import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -36,6 +35,7 @@ import com.megix.CineStreamExtractors.invokeAllanime
 import com.megix.CineStreamExtractors.invokeStreamAsia
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
+import com.megix.CineStreamExtractors.invokeDisney
 import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
@@ -61,6 +61,7 @@ import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
 import com.megix.CineStreamExtractors.invokePhoenix
 import com.megix.CineStreamExtractors.invokeKatMovieHd
+import com.megix.CineStreamExtractors.invokeMadplay
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -75,7 +76,6 @@ class CineSimklProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = false
-    override val supportedSyncNames = setOf(SyncIdName.Simkl, SyncIdName.Anilist)
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 20
     private val auth = BuildConfig.SIMKL_API
@@ -394,6 +394,7 @@ class CineSimklProvider: MainAPI() {
             { if(res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if(res.season == null) invokeStreamify(res.imdbId, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -416,6 +417,7 @@ class CineSimklProvider: MainAPI() {
             { invokePrimebox(res.en_title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeWire(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invoke2embed(res.imdbId, res.season, res.episode, callback) },
+            { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.en_title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.en_title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },

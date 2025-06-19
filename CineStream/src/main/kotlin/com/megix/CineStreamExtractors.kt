@@ -69,6 +69,50 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeMadplay(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Referer" to "https://uembed.site",
+            "Origin" to "https://uembed.site",
+            "User-Agent" to USER_AGENT
+        )
+        val jsonString = app.get("https://raw.githubusercontent.com/kunwarxshashank/rogplay_addons/refs/heads/main/cinema/hindi.json").text
+        val serverInfoList = parseMadplayServerInfo(jsonString)
+
+        serverInfoList.forEach { info ->
+            val url = if(season != null) {
+                info.tvurl
+                .replace("\${tmdb}", tmdbId.toString())
+                .replace("\${season}", season.toString())
+                .replace("\${episode}", episode.toString())
+            } else {
+                info.movieurl.replace("\${tmdb}", tmdbId.toString())
+            }
+
+            val fileUrl = try {
+                val text = app.get(url, headers = headers).text
+                JSONArray(text).getJSONObject(0).getString("file")
+            } catch (e: Exception) { null }
+
+            if(fileUrl != null) {
+                callback.invoke(
+                    newExtractorLink(
+                        "Madplay [${info.server}]",
+                        "Madplay [${info.server}]",
+                        fileUrl,
+                        type = if(fileUrl.contains("mp4")) ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
+                    ) {
+                        this.headers = headers
+                    }
+                )
+            }
+        }
+    }
+
     suspend fun invokeSudatchi(
         aniId: Int? = null,
         episode: Int? = null,
@@ -615,6 +659,80 @@ object CineStreamExtractors : CineStreamProvider() {
                     url,
                 ) {
                     this.quality = getIndexQuality(name)
+                }
+            )
+        }
+    }
+
+    suspend fun invokeDisney(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        if(netflixAPI.isEmpty()) return
+        val NfCookie = NFBypass(netflixAPI)
+        val cookies = mapOf(
+            "t_hash_t" to NfCookie,
+            "ott" to "dp",
+            "hd" to "on"
+        )
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val url = "$netflixAPI/mobile/hs/search.php?s=$title&t=${APIHolder.unixTime}"
+        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals("${title?.trim()}", ignoreCase = true) }?.id
+
+        val (nfTitle, id) = app.get(
+            "$netflixAPI/mobile/hs/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/",
+        ).parsedSafe<NetflixResponse>().let { media ->
+            if (season == null && year.toString() == media?.year.toString()) {
+                media?.title to netflixId
+            } else if(year.toString() == media?.year.toString()) {
+                val seasonId = media?.season?.find { it.s == "$season" }?.id
+                var episodeId : String? = null
+                var page = 1
+
+                while(episodeId == null && page < 10) {
+                    val data = app.get(
+                        "$netflixAPI/mobile/hs/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
+                        headers = headers,
+                        cookies = cookies,
+                        referer = "$netflixAPI/",
+                    ).parsedSafe<NetflixResponse>()
+                    episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
+                    if(data?.nextPageShow != 1) { break }
+                    page++
+                }
+
+                media?.title to episodeId
+            }
+            else {
+                null to null
+            }
+        }
+
+        app.get(
+            "$netflixAPI/mobile/hs/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            headers = headers,
+            cookies = cookies,
+            referer = "$netflixAPI/",
+        ).text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map {
+            callback.invoke(
+                newExtractorLink(
+                    "Disney",
+                    "Disney",
+                    "$netflixAPI/${it.file}",
+                ) {
+                    this.referer = "$netflixAPI/"
+                    this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
+                    this.headers = mapOf("Cookie" to "hd=on")
                 }
             )
         }

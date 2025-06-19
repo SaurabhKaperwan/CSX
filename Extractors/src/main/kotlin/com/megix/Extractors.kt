@@ -741,23 +741,23 @@ open class GDFlix : ExtractorApi() {
         }
 
         // Cloudflare backup links
-        try {
-            val types = listOf("type=1", "type=2")
-            types.map { type ->
-                val source = app.get("${newUrl.replace("file", "wfile")}?$type")
-                    .document.select("a.btn-success").attr("href")
+        // try {
+        //     val types = listOf("type=1", "type=2")
+        //     types.map { type ->
+        //         val source = app.get("${newUrl.replace("file", "wfile")}?$type")
+        //             .document.select("a.btn-success").attr("href")
 
-                if (source.isNotEmpty()) {
-                    callback.invoke(
-                        newExtractorLink("GDFlix[CF]", "GDFlix[CF] $fileName[$fileSize]", source) {
-                            this.quality = getIndexQuality(fileName)
-                        }
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Log.d("CF", e.toString())
-        }
+        //         if (source.isNotEmpty()) {
+        //             callback.invoke(
+        //                 newExtractorLink("GDFlix[CF]", "GDFlix[CF] $fileName[$fileSize]", source) {
+        //                     this.quality = getIndexQuality(fileName)
+        //                 }
+        //             )
+        //         }
+        //     }
+        // } catch (e: Exception) {
+        //     Log.d("CF", e.toString())
+        // }
     }
 }
 

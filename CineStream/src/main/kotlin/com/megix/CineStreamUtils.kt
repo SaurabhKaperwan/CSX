@@ -34,6 +34,8 @@ import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
 import kotlin.random.Random
 import android.content.Context
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -152,32 +154,19 @@ suspend fun NFBypass(mainUrl: String): String {
 
     // Fetch new cookie if expired/missing
     val newCookie = try {
-        val homePageDocument = app.get("${mainUrl}/mobile/home").document
-        val addHash = homePageDocument.select("body").attr("data-addhash")
-        val time = homePageDocument.select("body").attr("data-time")
-
-        var verificationUrl = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json"
-        verificationUrl = app.get(verificationUrl).parsed<NFVerifyUrl>().nfverifyurl.replace("###", addHash)
-        app.get("$verificationUrl&t=$time")
-
         var verifyCheck: String
         var verifyResponse: NiceResponse
-        var tries = 0
-
         do {
-            delay(3000)
-            tries++
-            val requestBody = FormBody.Builder().add("verify", addHash).build()
-            verifyResponse = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
+            verifyResponse = app.post("$mainUrl/tv/p.php")
             verifyCheck = verifyResponse.text
-        } while (!verifyCheck.contains("\"statusup\":\"All Done\"") && tries < 12)
-
+        } while (!verifyCheck.contains("\"r\":\"n\""))
         verifyResponse.cookies["t_hash_t"].orEmpty()
     } catch (e: Exception) {
         // Clear invalid cookie on failure
         CineStreamStorage.clearCookie()
         throw e
     }
+
 
     // Persist the new cookie
     if (newCookie.isNotEmpty()) {
@@ -786,6 +775,20 @@ fun decodeMeta(document: Document): Document? {
     return null
 }
 
+//Madplay
+fun parseMadplayServerInfo(jsonString: String): List<MadplayServerInfo> {
+    val gson = Gson()
+    val listType = object : TypeToken<List<Map<String, Any>>>() {}.type
+    val jsonList: List<Map<String, Any>> = gson.fromJson(jsonString, listType)
+
+    return jsonList.map { item ->
+        MadplayServerInfo(
+            tvurl = item["tvurl"] as String,
+            movieurl = item["movieurl"] as String,
+            server = item["server"] as String
+        )
+    }
+}
 
 fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
     val totalSize = keySize + ivSize

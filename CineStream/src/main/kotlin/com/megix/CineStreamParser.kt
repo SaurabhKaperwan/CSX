@@ -3,6 +3,13 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Madplay
+data class MadplayServerInfo(
+    val tvurl: String,
+    val movieurl: String,
+    val server: String
+)
+
 //Primebox
 data class Primebox(
     @JsonProperty("available_qualities") val availableQualities: List<String> = emptyList(),
