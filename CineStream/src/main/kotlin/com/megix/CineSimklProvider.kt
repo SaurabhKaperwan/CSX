@@ -283,11 +283,22 @@ class CineSimklProvider: MainAPI() {
         }
         val allratings = json.ratings
         val rating = allratings?.mal?.rating ?: allratings?.imdb?.rating
-        val recommendations = json.users_recommendations?.map {
-            newMovieSearchResponse("${it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
+        val kitsuId = json.ids?.kitsu?.toIntOrNull()
+        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+
+        val users_recommendations = json.users_recommendations?.map {
+            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
                 this.posterUrl = getPosterUrl(it.poster, "poster")
             }
-        }
+        } ?: emptyList()
+
+        val relations = json.relations?.map {
+            newMovieSearchResponse("${it.en_title ?: it.title} (${it.relation_type})", "$mainUrl/${it.anime_type}/${it.ids?.simkl}/${it.ids?.slug}") {
+                this.posterUrl = getPosterUrl(it.poster, "poster")
+            }
+        } ?: emptyList()
+
+        val recommendations = users_recommendations + relations
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
@@ -300,7 +311,7 @@ class CineSimklProvider: MainAPI() {
                 json.year,
                 json.ids?.anilist?.toIntOrNull(),
                 json.ids?.mal?.toIntOrNull(),
-                json.ids?.kitsu?.toIntOrNull(),
+                kitsuId,
                 null,
                 null,
                 null,
@@ -310,7 +321,7 @@ class CineSimklProvider: MainAPI() {
             ).toJson()
             return newMovieLoadResponse("${en_title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
-                this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+                this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = json.overview
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
@@ -336,7 +347,7 @@ class CineSimklProvider: MainAPI() {
                         json.year,
                         json.ids?.anilist?.toIntOrNull(),
                         json.ids?.mal?.toIntOrNull(),
-                        json.ids?.kitsu?.toIntOrNull(),
+                        kitsuId,
                         json.season?.toIntOrNull() ?: it.season,
                         it.episode,
                         it.date.toString().substringBefore("-").toIntOrNull(),
@@ -356,7 +367,7 @@ class CineSimklProvider: MainAPI() {
 
             return newTvSeriesLoadResponse("${en_title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
-                this.backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+                this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = json.overview
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
@@ -514,7 +525,8 @@ class CineSimklProvider: MainAPI() {
         var season                : String?                         = null,
         var endpoint_type         : String?                         = null,
         var genres                : ArrayList<String>               = arrayListOf(),
-        var users_recommendations : ArrayList<UsersRecommendations> = arrayListOf()
+        var users_recommendations : ArrayList<UsersRecommendations> = arrayListOf(),
+        var relations             : ArrayList<Relations>            = arrayListOf()
     )
 
     data class Ids (
@@ -552,10 +564,20 @@ class CineSimklProvider: MainAPI() {
 
     data class UsersRecommendations (
         var title  : String? = null,
+        var en_title     : String?  = null,
         var year   : Int?    = null,
         var poster : String? = null,
         var type   : String? = null,
         var ids    : Ids     = Ids()
+    )
+
+    data class Relations (
+        var title         : String?  = null,
+        var en_title      : String?  = null,
+        var poster        : String?  = null,
+        var anime_type    : String?  = null,
+        var relation_type : String?  = null,
+        var ids           : Ids     = Ids()
     )
 
     data class Episodes (

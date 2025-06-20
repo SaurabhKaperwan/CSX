@@ -112,6 +112,7 @@ open class CineStreamProvider : MainAPI() {
         const val animeparadiseBaseAPI = "https://www.animeparadise.moe"
         const val animeparadiseAPI = "https://api.animeparadise.moe"
         const val sudatchiAPI = "https://sudatchi.com"
+        const val animezAPI = "https://animeyy.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

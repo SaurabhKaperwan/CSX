@@ -29,6 +29,36 @@ import com.google.gson.Gson
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeAnimez(
+        title: String? = null,
+        episode: Int?  = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
+        document.select("article > a").amap {
+            val doc = app.get(animezAPI + it.attr("href")).document
+            val titles = doc.select("ul.InfoList > li").text()
+
+            if(!titles.contains("$title")) return@amap
+
+            val ep = episode ?: 1
+            val links  = doc.select("li.wp-manga-chapter > a")
+            val link = if (links.size >= ep) links[links.size - ep] else return@amap
+            val type = if(it.text().contains("Dub")) "DUB" else "SUB"
+            val epDoc = app.get(animezAPI + link).document
+            val source = epDoc.select("iframe").attr("src")
+            callback.invoke(
+                newExtractorLink(
+                    "Animez [$type]",
+                    "Animez [$type]",
+                    source.replace("/embed/", "/anime/"),
+                ) {
+                    this.referer = source
+                }
+            )
+        }
+    }
+
     suspend fun invokeStremioSubtitles(
         imdbId: String? = null,
         season: Int? = null,
@@ -279,18 +309,21 @@ object CineStreamExtractors : CineStreamProvider() {
                         "User-Agent" to USER_AGENT
                     )
 
-                    callback.invoke(
-                        newExtractorLink(
-                            "Animeparadise [SUB]",
-                            "Animeparadise [SUB]",
-                            "https://stream.animeparadise.moe/m3u8?url=" + streamUrl,
-                            type = ExtractorLinkType.M3U8,
-                        ) {
-                            this.referer = animeparadiseBaseAPI
-                            this.quality = 1080
-                            this.headers = headers
-                        }
-                    )
+                    if(!streamUrl.isEmpty()) {
+                        callback.invoke(
+                            newExtractorLink(
+                                "Animeparadise [SUB]",
+                                "Animeparadise [SUB]",
+                                "https://stream.animeparadise.moe/m3u8?url=" + streamUrl,
+                                type = ExtractorLinkType.M3U8,
+                            ) {
+                                this.referer = animeparadiseBaseAPI
+                                this.quality = 1080
+                                this.headers = headers
+                            }
+                        )
+                    }
+
 
                     val subData = epJson.optJSONArray("subData") ?: return
                     for (i in 0 until subData.length()) {
@@ -1444,6 +1477,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 val animepahe = malsync?.animepahe?.firstNotNullOfOrNull { it.value["url"] }
                 if (animepahe!=null)
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
+            },
+            {
+                invokeAnimez(zorotitle, episode, callback)
             },
             {
                 if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
