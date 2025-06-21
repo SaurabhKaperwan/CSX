@@ -175,10 +175,52 @@ suspend fun NFBypass(mainUrl: String): String {
     return newCookie
 }
 
+suspend fun makePostRequestCinemaluxe(jsonString: String, url: String, action: String): String {
+    val gson = Gson()
+    val item = gson.fromJson(jsonString, CineamluxePostResponse::class.java)
+
+    val requestBody = FormBody.Builder()
+        .addEncoded("token", item.token.toString())
+        .addEncoded("id", item.id.toString())
+        .addEncoded("time", item.time.toString())
+        .addEncoded("post", item.post.toString())
+        .addEncoded("redirect", item.redirect.toString())
+        .addEncoded("cacha", item.cacha.toString())
+        .addEncoded("new", item.new.toString())
+        .addEncoded("link", item.link ?: "")
+        .addEncoded("action", action)
+        .build()
+
+    val headers = mapOf(
+        "Content-Type" to "application/x-www-form-urlencoded",
+        "Referer" to "https://hdmovie.website",
+        "Origin" to "https://hdmovie.website",
+        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+    )
+
+    val response = app.post(url, requestBody = requestBody, headers = headers, allowRedirects = false).headers["Location"] ?: ""
+    return response
+}
+
 suspend fun cinemaluxeBypass(url: String): String {
     val text = app.get(url).text
     val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
-    return base64Decode(encodeUrl.replace("\\/", "/"))
+    if(encodeUrl.isNotEmpty()) {
+        return base64Decode(encodeUrl.replace("\\/", "/"))
+    }
+    val regex = """var\s+item\s*=\s*(\{.*?\});""".toRegex(RegexOption.DOT_MATCHES_ALL)
+    val ajaxUrlRegex = """\"soralink_ajaxurl\"\s*:\s*\"(https?:\\\/\\\/[^\"]+)\"""".toRegex()
+    val soralinkZRegex = """\"soralink_z\"\s*:\s*\"([^\"]+)\"""".toRegex()
+    val matchResult = regex.find(text)
+    val ajaxUrlMatch = ajaxUrlRegex.find(text)
+    val soralinkZMatch = soralinkZRegex.find(text)
+    if(matchResult != null && ajaxUrlMatch != null && soralinkZMatch != null) {
+        val escapedUrl = ajaxUrlMatch.groupValues[1]
+        val cleanUrl = escapedUrl.replace("\\/", "/")
+        val soralinkZ = soralinkZMatch.groupValues[1]
+        return makePostRequestCinemaluxe(matchResult.groupValues[1], cleanUrl, soralinkZ)
+    }
+    return url
 }
 
 fun getFirstCharacterOrZero(input: String): String {

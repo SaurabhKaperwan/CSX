@@ -3,6 +3,18 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Cinemaluxe
+data class CineamluxePostResponse(
+    var token    : String?  = null,
+    var id       : Int?     = null,
+    var time     : Int?     = null,
+    var post     : String?  = null,
+    var redirect : String?  = null,
+    var cacha    : String?  = null,
+    var new      : Boolean? = null,
+    var link     : String?  = null
+)
+
 //Stremio Subtitles
 
 data class StremioSubtitleResponse(

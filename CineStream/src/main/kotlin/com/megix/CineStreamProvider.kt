@@ -68,6 +68,7 @@ import com.megix.CineStreamExtractors.invokePhoenix
 import com.megix.CineStreamExtractors.invokeKatMovieHd
 import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
+import com.megix.CineStreamExtractors.invokeToonstream
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -113,6 +114,7 @@ open class CineStreamProvider : MainAPI() {
         const val animeparadiseAPI = "https://api.animeparadise.moe"
         const val sudatchiAPI = "https://sudatchi.com"
         const val animezAPI = "https://animeyy.com"
+        const val toonStreamAPI = "https://toonstream.love"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -150,6 +152,7 @@ open class CineStreamProvider : MainAPI() {
         val moviesBabaAPI: String get() = apiConfig.optString("moviesbaba")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
+
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -614,6 +617,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeVegamovies("VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(imdbTitle, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeToonstream(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMultimovies(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, seasonYear, callback) },
@@ -634,6 +638,7 @@ open class CineStreamProvider : MainAPI() {
         val isBollywood = res.isBollywood
         val isAnime = res.isAnime
         val isAsian = res.isAsian
+        val isCartoon = res.isCartoon
 
         runAllAsync(
             { if (!isBollywood) invokeVegamovies("VegaMovies", res.id, res.season, res.episode, subtitleCallback, callback) },
@@ -647,6 +652,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isBollywood) invokeMoviesmod(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.id ,res.season, res.episode, subtitleCallback, callback) },
+            { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },

@@ -29,6 +29,33 @@ import com.google.gson.Gson
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeToonstream(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int?  = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$toonStreamAPI/movies/${title.createSlug()}/"
+        } else {
+            "$toonStreamAPI/episode/${title.createSlug()}-${season}x${episode}/"
+        }
+
+        app.get(url, referer = toonStreamAPI).document.select("#aa-options > div > iframe").amap {
+            val doc = app.get(it.attr("data-src")).document
+            doc.select("div.Video > iframe").amap { iframe ->
+                loadSourceNameExtractor(
+                    "ToonStream",
+                    iframe.attr("src"),
+                    "",
+                    subtitleCallback,
+                    callback
+                )
+            }
+        }
+    }
+
     suspend fun invokeAnimez(
         title: String? = null,
         episode: Int?  = null,
@@ -44,16 +71,18 @@ object CineStreamExtractors : CineStreamProvider() {
             val ep = episode ?: 1
             val links  = doc.select("li.wp-manga-chapter > a")
             val link = if (links.size >= ep) links[links.size - ep] else return@amap
-            val type = if(it.text().contains("Dub")) "DUB" else "SUB"
-            val epDoc = app.get(animezAPI + link).document
+            val type = if(link.text().contains("Dub")) "DUB" else "SUB"
+            val epDoc = app.get(animezAPI + link.attr("href")).document
             val source = epDoc.select("iframe").attr("src")
             callback.invoke(
                 newExtractorLink(
                     "Animez [$type]",
                     "Animez [$type]",
                     source.replace("/embed/", "/anime/"),
+                    ExtractorLinkType.M3U8
                 ) {
-                    this.referer = source
+                    this.referer = "$animezAPI/"
+                    this.quality = 1080
                 }
             )
         }

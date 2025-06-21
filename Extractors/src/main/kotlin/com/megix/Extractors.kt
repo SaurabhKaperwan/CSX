@@ -95,7 +95,10 @@ class LinkstoreDrive : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val redirectUrl = app.get(url).document
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        )
+        val redirectUrl = app.get(url, headers = headers).document
             .select("meta[http-equiv=refresh]")
             .attr("content")
             .substringAfter("url=")
@@ -105,7 +108,7 @@ class LinkstoreDrive : ExtractorApi() {
 
 open class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://new2.luxedrive.space"
+    override val mainUrl: String = "https://new3.luxedrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
