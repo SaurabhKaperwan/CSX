@@ -180,16 +180,16 @@ open class Driveleech : ExtractorApi() {
     }
 
     private suspend fun instantLink(finallink: String): String {
-        val url = if(finallink.contains("video-leech")) "video-leech.xyz" else "video-seed.xyz"
+        val baseUrl = finallink.substringBefore("/?url=").substringAfter("https://")
         val token = finallink.substringAfter("url=")
         val downloadlink = app.post(
-            url = "https://$url/api",
+            url = "https://$baseUrl/api",
             data = mapOf(
                 "keys" to token
             ),
             referer = finallink,
             headers = mapOf(
-                "x-token" to url
+                "x-token" to baseUrl
             )
         )
         val link =
@@ -618,6 +618,15 @@ open class GDFlix : ExtractorApi() {
                     val link = anchor.attr("href")
                     callback.invoke(
                         newExtractorLink("GDFlix[Direct]", "GDFlix[Direct] $fileName[$fileSize]", link) {
+                            this.quality = getIndexQuality(fileName)
+                        }
+                    )
+                }
+
+                text.contains("CLOUD DOWNLOAD [R2]") -> {
+                    val link = anchor.attr("href")
+                    callback.invoke(
+                        newExtractorLink("GDFlix[Cloud Download]", "GDFlix[Cloud Download] $fileName[$fileSize]", link) {
                             this.quality = getIndexQuality(fileName)
                         }
                     )
