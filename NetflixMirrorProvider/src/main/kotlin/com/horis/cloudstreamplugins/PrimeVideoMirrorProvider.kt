@@ -25,7 +25,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
         TvType.Movie,
         TvType.TvSeries,
     )
-    override var lang = "en"
+    override var lang = "id"
 
     override var mainUrl = "https://netfree2.cc"
     override var name = "PrimeVideoMirror"
