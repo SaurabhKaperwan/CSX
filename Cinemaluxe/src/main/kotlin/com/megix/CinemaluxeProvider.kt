@@ -12,7 +12,10 @@ import com.google.gson.Gson
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import okhttp3.FormBody
+import java.net.URLEncoder
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaType
+
 
 class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://cinemalux.space"
@@ -61,41 +64,40 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         return newHomePageResponse(request.name, home)
     }
 
-    data class PostResponse (
-        var token    : String?  = null,
-        var id       : Int?     = null,
-        var time     : Int?     = null,
-        var post     : String?  = null,
-        var redirect : String?  = null,
-        var cacha    : String?  = null,
-        var new      : Boolean? = null,
-        var link     : String?  = null
+    data class Item(
+        val token: String,
+        val id: Long,
+        val time: Long,
+        val post: String,
+        val redirect: String,
+        val cacha: String,
+        val new: Boolean,
+        val link: String
     )
 
     private suspend fun makePostRequest(jsonString: String, url: String, action: String): String {
         val gson = Gson()
-        val item = gson.fromJson(jsonString, PostResponse::class.java)
+        val item = gson.fromJson(jsonString, Item::class.java)
 
-        val requestBody = FormBody.Builder()
-            .add("token", item.token.toString())
-            .add("id", item.id.toString())
-            .add("time", item.time.toString())
-            .add("post", item.post.toString())
-            .add("redirect", item.redirect.toString())
-            .add("cacha", item.cacha.toString())
-            .add("new", item.new.toString())
-            .add("link", item.link ?: "")
-            .add("action", action)
-            .build()
+        val requestBody = "token=${
+          URLEncoder.encode(item.token, "UTF-8")
+        }&id=${
+          item.id
+        }&time=${
+          item.time
+        }&post=${
+          URLEncoder.encode(item.post, "UTF-8")
+        }&redirect=${
+          URLEncoder.encode(item.redirect, "UTF-8")
+        }&cacha=${
+          URLEncoder.encode(item.cacha, "UTF-8")
+        }&new=${
+          item.new
+        }&link=${
+          URLEncoder.encode(item.link, "UTF-8")
+        }&action=$action".toRequestBody("application/x-www-form-urlencoded".toMediaType())
 
-        val headers = mapOf(
-            "Content-Type" to "application/x-www-form-urlencoded",
-            "Referer" to "https://hdmovie.website",
-            "Origin" to "https://hdmovie.website",
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-        )
-
-        val response = app.post(url, requestBody = requestBody, headers = headers, allowRedirects = false).headers["Location"] ?: ""
+        val response = app.post(url, requestBody = requestBody, allowRedirects = false).headers["Location"] ?: ""
         return response
     }
 
@@ -105,17 +107,16 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         if(encodeUrl.isNotEmpty()) {
             return base64Decode(encodeUrl.replace("\\/", "/"))
         }
-        val regex = """var\s+item\s*=\s*(\{.*?\});""".toRegex(RegexOption.DOT_MATCHES_ALL)
-        val ajaxUrlRegex = """\"soralink_ajaxurl\"\s*:\s*\"(https?:\\\/\\\/[^\"]+)\"""".toRegex()
-        val soralinkZRegex = """\"soralink_z\"\s*:\s*\"([^\"]+)\"""".toRegex()
-        val matchResult = regex.find(text)
-        val ajaxUrlMatch = ajaxUrlRegex.find(text)
-        val soralinkZMatch = soralinkZRegex.find(text)
-        if(matchResult != null && ajaxUrlMatch != null && soralinkZMatch != null) {
-            val escapedUrl = ajaxUrlMatch.groupValues[1]
-            val cleanUrl = escapedUrl.replace("\\/", "/")
-            val soralinkZ = soralinkZMatch.groupValues[1]
-            return makePostRequest(matchResult.groupValues[1], cleanUrl, soralinkZ)
+        val postUrl =
+          """\"soralink_ajaxurl":"([^"]+)\"""".toRegex().find(text)?.groupValues?.get(1)
+        val jsonData =
+          """var\s+item\s*=\s*(\{.*?\});""".toRegex(RegexOption.DOT_MATCHES_ALL)
+            .find(text)?.groupValues?.get(1)
+        val soraLink =
+          """\"soralink_z"\s*:\s*"([^"]+)\"""".toRegex().find(text)?.groupValues?.get(1)
+
+        if(postUrl != null && jsonData != null && soraLink != null) {
+            return makePostRequest(jsonData, postUrl, soraLink)
         }
         return url
     }
@@ -235,8 +236,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
     ): Boolean {
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
         sources.amap {
-            val source = it.source
-            loadExtractor(source, subtitleCallback, callback)
+            loadExtractor(it.source, subtitleCallback, callback)
         }
         return true   
     }

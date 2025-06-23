@@ -95,13 +95,7 @@ class LinkstoreDrive : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        )
-        val redirectUrl = app.get(url, headers = headers).document
-            .select("meta[http-equiv=refresh]")
-            .attr("content")
-            .substringAfter("url=")
+        val redirectUrl = url.replace("https://drive.linkstore.rest", "https://new3.luxedrive.space")
         loadExtractor(redirectUrl, "", subtitleCallback, callback)
     }
 }

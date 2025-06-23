@@ -177,28 +177,27 @@ suspend fun NFBypass(mainUrl: String): String {
 
 suspend fun makePostRequestCinemaluxe(jsonString: String, url: String, action: String): String {
     val gson = Gson()
-    val item = gson.fromJson(jsonString, CineamluxePostResponse::class.java)
+    val item = gson.fromJson(jsonString, CinemaluxeItem::class.java)
 
-    val requestBody = FormBody.Builder()
-        .addEncoded("token", item.token.toString())
-        .addEncoded("id", item.id.toString())
-        .addEncoded("time", item.time.toString())
-        .addEncoded("post", item.post.toString())
-        .addEncoded("redirect", item.redirect.toString())
-        .addEncoded("cacha", item.cacha.toString())
-        .addEncoded("new", item.new.toString())
-        .addEncoded("link", item.link ?: "")
-        .addEncoded("action", action)
-        .build()
+    val requestBody = "token=${
+        URLEncoder.encode(item.token, "UTF-8")
+    }&id=${
+        item.id
+    }&time=${
+        item.time
+    }&post=${
+        URLEncoder.encode(item.post, "UTF-8")
+    }&redirect=${
+        URLEncoder.encode(item.redirect, "UTF-8")
+    }&cacha=${
+        URLEncoder.encode(item.cacha, "UTF-8")
+    }&new=${
+        item.new
+    }&link=${
+        URLEncoder.encode(item.link, "UTF-8")
+    }&action=$action".toRequestBody("application/x-www-form-urlencoded".toMediaType())
 
-    val headers = mapOf(
-        "Content-Type" to "application/x-www-form-urlencoded",
-        "Referer" to "https://hdmovie.website",
-        "Origin" to "https://hdmovie.website",
-        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-    )
-
-    val response = app.post(url, requestBody = requestBody, headers = headers, allowRedirects = false).headers["Location"] ?: ""
+    val response = app.post(url, requestBody = requestBody, allowRedirects = false).headers["Location"] ?: ""
     return response
 }
 
@@ -208,17 +207,16 @@ suspend fun cinemaluxeBypass(url: String): String {
     if(encodeUrl.isNotEmpty()) {
         return base64Decode(encodeUrl.replace("\\/", "/"))
     }
-    val regex = """var\s+item\s*=\s*(\{.*?\});""".toRegex(RegexOption.DOT_MATCHES_ALL)
-    val ajaxUrlRegex = """\"soralink_ajaxurl\"\s*:\s*\"(https?:\\\/\\\/[^\"]+)\"""".toRegex()
-    val soralinkZRegex = """\"soralink_z\"\s*:\s*\"([^\"]+)\"""".toRegex()
-    val matchResult = regex.find(text)
-    val ajaxUrlMatch = ajaxUrlRegex.find(text)
-    val soralinkZMatch = soralinkZRegex.find(text)
-    if(matchResult != null && ajaxUrlMatch != null && soralinkZMatch != null) {
-        val escapedUrl = ajaxUrlMatch.groupValues[1]
-        val cleanUrl = escapedUrl.replace("\\/", "/")
-        val soralinkZ = soralinkZMatch.groupValues[1]
-        return makePostRequestCinemaluxe(matchResult.groupValues[1], cleanUrl, soralinkZ)
+    val postUrl =
+        """\"soralink_ajaxurl":"([^"]+)\"""".toRegex().find(text)?.groupValues?.get(1)
+    val jsonData =
+        """var\s+item\s*=\s*(\{.*?\});""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        .find(text)?.groupValues?.get(1)
+    val soraLink =
+        """\"soralink_z"\s*:\s*"([^"]+)\"""".toRegex().find(text)?.groupValues?.get(1)
+
+    if(postUrl != null && jsonData != null && soraLink != null) {
+        return makePostRequestCinemaluxe(jsonData, postUrl, soraLink)
     }
     return url
 }
