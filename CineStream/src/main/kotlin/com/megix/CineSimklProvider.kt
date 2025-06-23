@@ -79,7 +79,7 @@ class CineSimklProvider: MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = false
     private val apiUrl = "https://api.simkl.com"
-    private final val mediaLimit = 20
+    private final val mediaLimit = 30
     private val auth = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
     private val api = AccountManager.simklApi
@@ -530,7 +530,7 @@ class CineSimklProvider: MainAPI() {
         var anime_type            : String?                         = null,
         var season                : String?                         = null,
         var endpoint_type         : String?                         = null,
-        var genres                : ArrayList<String>               = arrayListOf(),
+        var genres                : ArrayList<String>?              = null,
         var users_recommendations : ArrayList<UsersRecommendations> = arrayListOf(),
         var relations             : ArrayList<Relations>            = arrayListOf()
     )
