@@ -124,14 +124,9 @@ class Driveseed : Driveleech() {
     override val mainUrl: String = "https://driveseed.org"
 }
 
-class DriveleechPro : Driveleech() {
-    override val name: String = "Driveleech"
-    override val mainUrl: String = "https://driveleech.pro"
-}
-
 open class Driveleech : ExtractorApi() {
     override val name: String = "Driveleech"
-    override val mainUrl: String = "https://driveleech.org"
+    override val mainUrl: String = "https://driveleech.net"
     override val requiresReferer = false
 
     private suspend fun CFType1(url: String): List<String> {
@@ -665,7 +660,7 @@ open class GDFlix : ExtractorApi() {
                         val driveLink = anchor.attr("href")
                         val id = driveLink.substringAfter("id=").substringBefore("&")
                         val doId = driveLink.substringAfter("do=").substringBefore("==")
-                        val baseUrls = listOf("https://drivebot.sbs", "https://drivebot.cfd")
+                        val baseUrls = listOf("https://drivebot.sbs", "https://indexbot.site")
 
                         baseUrls.amap { baseUrl ->
                             val indexbotLink = "$baseUrl/download?id=$id&do=$doId"

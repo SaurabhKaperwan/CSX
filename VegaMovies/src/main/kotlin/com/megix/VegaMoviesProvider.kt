@@ -7,6 +7,7 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -84,7 +85,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("h2 > a").text().replace("Download ", "")
         val href = this.select("a").attr("href")
-        val posterUrl = this.select("img").attr("src")
+        var posterUrl = this.select("img").attr("src")
+
+        if(posterUrl.contains("data:image")) {
+            posterUrl = httpsify(this.select("img").attr("data-lazy-src"))
+        }
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -128,10 +133,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val div = document.selectFirst(".entry-content, .entry-inner")
         var description = div?.selectFirst("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")?.nextElementSibling()?.text()
         val imdbUrl = div?.selectFirst("a:matches((?i)(Rating))")?.attr("href")
-        val heading = div?.selectFirst("h3")
+        val heading = div?.selectFirst("h3 > strong > span")
 
-        val tvtype = if (heading?.nextElementSibling()?.nextElementSibling()?.text()
-            ?.let { it.contains("Series Name") || it.contains("SHOW Name") } == true) {
+        val tvtype = if (heading?.text()
+            ?.let { it.contains("Series") || it.contains("SHOW") } == true) {
                 "series"
         }   else {
             "movie"
