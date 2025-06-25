@@ -1572,17 +1572,17 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT,
             "Cookie" to "__ddg2_=1234567890"
         )
-        val id = app.get(url ?: "", headers).document.selectFirst("meta[property=og:url]")
+        val id = app.get("$proxyAPI/$url" ?: return, headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
         val animeData =
-            app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
+            app.get("$proxyAPI/$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
         val session = if(episode == null) {
             animeData?.firstOrNull()?.session ?: return
         } else {
             animeData?.find { it.episode == episode }?.session ?: return
         }
-        val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
+        val doc = app.get("$proxyAPI/$animepaheAPI/play/$id/$session", headers).document
 
         runAllAsync(
             {

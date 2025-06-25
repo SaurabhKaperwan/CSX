@@ -115,6 +115,7 @@ open class CineStreamProvider : MainAPI() {
         const val sudatchiAPI = "https://sudatchi.com"
         const val animezAPI = "https://animeyy.com"
         const val toonStreamAPI = "https://toonstream.love"
+        const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

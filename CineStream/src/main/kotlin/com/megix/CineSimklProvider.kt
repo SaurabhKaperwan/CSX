@@ -171,15 +171,16 @@ class CineSimklProvider: MainAPI() {
         url: String? = null,
         type: String,
      ): String? {
-        val baseUrl = "https://wsrv.nl/?url=https://simkl.in"
+        val baseUrl = "https://simkl.in"
         if(url == null) {
             return null
         } else if(type == "episode") {
             return "$baseUrl/episodes/${url}_c.webp"
         } else if(type == "poster") {
             return "$baseUrl/posters/${url}_m.webp"
-        }
-        else {
+        } else if(type == "youtube") {
+            return "https://img.youtube.com/vi/${url}/maxresdefault.jpg"
+        } else {
             return "$baseUrl/fanart/${url}_medium.webp"
         }
     }
@@ -286,7 +287,8 @@ class CineSimklProvider: MainAPI() {
         val allratings = json.ratings
         val rating = allratings?.mal?.rating ?: allratings?.imdb?.rating
         val kitsuId = json.ids?.kitsu?.toIntOrNull()
-        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+        val firstTrailerId = json.trailers?.firstOrNull()?.youtube
+        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
             newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
@@ -509,32 +511,37 @@ class CineSimklProvider: MainAPI() {
     }
 
     data class SimklResponse (
-        var title                 : String?                         = null,
-        var en_title              : String?                         = null,
-        var title_en              : String?                         = null,
-        var year                  : Int?                            = null,
-        var type                  : String?                         = null,
-        var url                   : String?                         = null,
-        var poster                : String?                         = null,
-        var fanart                : String?                         = null,
-        var ids                   : Ids?                            = Ids(),
-        var release_date          : String?                         = null,
-        var ratings               : Ratings                         = Ratings(),
-        var country               : String?                         = null,
-        var certification         : String?                         = null,
-        var runtime               : String?                         = null,
-        var status                : String?                         = null,
-        var total_episodes        : Int?                            = null,
-        var network               : String?                         = null,
-        var overview              : String?                         = null,
-        var anime_type            : String?                         = null,
-        var season                : String?                         = null,
-        var endpoint_type         : String?                         = null,
-        var genres                : ArrayList<String>?              = null,
-        var users_recommendations : ArrayList<UsersRecommendations> = arrayListOf(),
-        var relations             : ArrayList<Relations>            = arrayListOf()
+        var title                 : String?                          = null,
+        var en_title              : String?                          = null,
+        var title_en              : String?                          = null,
+        var year                  : Int?                             = null,
+        var type                  : String?                          = null,
+        var url                   : String?                          = null,
+        var poster                : String?                          = null,
+        var fanart                : String?                          = null,
+        var ids                   : Ids?                             = Ids(),
+        var release_date          : String?                          = null,
+        var ratings               : Ratings?                         = Ratings(),
+        var country               : String?                          = null,
+        var certification         : String?                          = null,
+        var runtime               : String?                          = null,
+        var status                : String?                          = null,
+        var total_episodes        : Int?                             = null,
+        var network               : String?                          = null,
+        var overview              : String?                          = null,
+        var anime_type            : String?                          = null,
+        var season                : String?                          = null,
+        var endpoint_type         : String?                          = null,
+        var genres                : ArrayList<String>?               = null,
+        var users_recommendations : ArrayList<UsersRecommendations>? = null,
+        var relations             : ArrayList<Relations>?            = null,
+        var trailers              : ArrayList<Trailers>?             = null
     )
 
+    data class Trailers (
+        var name    : String? = null,
+        var youtube : String? = null,
+    )
     data class Ids (
         var simkl_id : Int?    = null,
         var tmdb     : String? = null,
@@ -569,12 +576,12 @@ class CineSimklProvider: MainAPI() {
     )
 
     data class UsersRecommendations (
-        var title  : String? = null,
+        var title        : String? = null,
         var en_title     : String?  = null,
-        var year   : Int?    = null,
-        var poster : String? = null,
-        var type   : String? = null,
-        var ids    : Ids     = Ids()
+        var year         : Int?    = null,
+        var poster       : String? = null,
+        var type         : String? = null,
+        var ids          : Ids     = Ids()
     )
 
     data class Relations (
