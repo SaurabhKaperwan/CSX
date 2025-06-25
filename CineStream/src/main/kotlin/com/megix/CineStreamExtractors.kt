@@ -1932,7 +1932,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
         links.amap {
             if(!it.isNullOrEmpty()) {
-                val driveLink = bypassHrefli(it) ?: ""
+                val driveLink = if(it.contains("driveleech")) {
+                    val baseUrl = getBaseUrl(it)
+                    val text = app.get(it).text
+                    val regex = Regex("""window\.location\.replace\(["'](.*?)["']\)""")
+                    val fileId = regex.find(text)?.groupValues?.get(1) ?: return@amap
+                    baseUrl + fileId
+                } else {
+                    bypassHrefli(it) ?: return@amap
+                }
                 loadSourceNameExtractor(
                     "UHDMovies",
                     driveLink,
