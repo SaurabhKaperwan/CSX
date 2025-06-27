@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://rogmovies.mom"
+    override var mainUrl = "https://rogmovies.sbs"
     override var name = "Rogmovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -62,7 +62,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.attr("title").replace("Download ", "")
         val href = this.attr("href")
-        val posterUrl = this.select("img").attr("data-src")
+        val posterUrl = this.select("img").attr("src")
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }

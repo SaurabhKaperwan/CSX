@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.yoga"
+    override var mainUrl = "https://vegamovies.frl"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -85,7 +85,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("h2 > a").text().replace("Download ", "")
         val href = this.select("a").attr("href")
-        var posterUrl = this.select("img").attr("src")
+        var posterUrl = httpsify(this.select("img").attr("src"))
 
         if(posterUrl.contains("data:image")) {
             posterUrl = httpsify(this.select("img").attr("data-lazy-src"))
