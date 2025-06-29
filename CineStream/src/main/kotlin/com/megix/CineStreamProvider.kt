@@ -98,7 +98,7 @@ open class CineStreamProvider : MainAPI() {
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val AllanimeAPI = "https://api.allanime.day/api"
-        const val StreamAsiaAPI = "https://stremio-dramacool-addon.xyz"
+        const val StreamAsiaAPI = "https://stremio-dramacool-addon.xyz/eyJraXNza2gtY2F0YWxvZ3MiOlsia2toLXNlYXJjaC1yZXN1bHRzIiwia2toLWtvcmVhbi1kcmFtYSIsImtraC1rb3JlYW4tbW92aWVzIl0sImtkaGQtY2F0YWxvZ3MiOlsia2RoZC1zZWFyY2gtcmVzdWx0cyJdLCJvdHR2LWNhdGFsb2dzIjpbIm90dHYtc2VhcmNoLXJlc3VsdHMiXSwiZGRsLWNhdGFsb2dzIjpbXSwidHJha3RDb2RlIjpudWxsLCJzaG93VE1EQlNlYXNvbiI6dHJ1ZSwiZW5hYmxlT3BlbnN1YnMiOnRydWUsImhpZGVVcGNvbWluZ1Nob3dzIjp0cnVlLCJkZWJ1Z0ZsYWdzIjoiIiwibWVkaWFmbG93UHJveHlDb25maWdzIjpbXSwiZGVicmlkQ29uZmlnIjpbXSwiaGlkZVVuc3VwcG9ydGVkSG9zdGVycyI6ZmFsc2UsInZlcnNpb24iOiIxLjMuMSJ9"
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
         const val Player4uApi = "https://player4u.xyz"

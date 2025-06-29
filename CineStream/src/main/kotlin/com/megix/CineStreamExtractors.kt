@@ -714,26 +714,60 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val titleSlug = title?.replace(" ", "-")
-        val s = if(season != 1) "-season-$season" else ""
-        val url = "$StreamAsiaAPI/stream/series/$provider-${titleSlug}${s}::$titleSlug${s}-ep-$episode.json"
-        val json = app.get(url).text
-        val data = tryParseJson<StreamAsia>(json) ?: return
-        data.streams.forEach {
-
-            callback.invoke(
-                newExtractorLink(
-                    it.title,
-                    it.title,
-                    it.url,
-                )
+        val type = "series"
+        var json = app.get("$StreamAsiaAPI/catalog/kisskh/kkh-search-results/search=$title.json").text
+        val searhData = tryParseJson<StreamAsiaSearch>(json) ?: return
+        val id = searhData.metas.firstOrNull { meta ->
+            meta.type == type && (
+                if(season == null) {
+                    meta.name.equals(title, ignoreCase = true)
+                }
+                else if (season == 1) {
+                    meta.name.equals(title, ignoreCase = true) ||
+                    meta.name.equals("$title Season 1", ignoreCase = true)
+                }
+                else {
+                    meta.name.equals("$title Season $season", ignoreCase = true)
+                }
             )
+        }?.id ?: return
 
-            it.subtitles.forEach {
+        val epJson = app.get("$StreamAsiaAPI/meta/$type/$id.json").text
+        val epData = tryParseJson<StreamAsiaInfo>(epJson) ?: return
+        val epId = epData.meta.videos.firstOrNull { video ->
+            video.episode == episode ?: 1
+        }?.id ?: return
+
+        val streamJson = app.get("$StreamAsiaAPI/stream/$type/$epId.json").text
+        val streamData = tryParseJson<StreamAsiaStreams>(streamJson)
+
+        if(streamData != null) {
+            streamData.streams.forEach {
+                callback.invoke(
+                    newExtractorLink(
+                        "Kisskh",
+                        "Kisskh",
+                        it.url ?: return@forEach,
+                        type = ExtractorLinkType.M3U8
+                    ) {
+                        this.headers = mapOf(
+                            "Referer" to "https://kisskh.co/",
+                            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+                        )
+                    }
+                )
+            }
+        }
+
+        val subtitleJson = app.get("$StreamAsiaAPI/subtitles/$type/$epId.json").text
+        val subtitleData = tryParseJson<StreamAsiaSubtitles>(subtitleJson)
+
+        if(subtitleData != null) {
+            subtitleData.subtitles.forEach {
                 subtitleCallback.invoke(
                     SubtitleFile(
-                        it.lang,
-                        it.url
+                        it.lang ?: "und",
+                        it.url ?: return@forEach,
                     )
                 )
             }
@@ -1481,6 +1515,52 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeAniXL(
+        url: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get(url ?: return).document
+        val baseUrl = getBaseUrl(url)
+        val epLink = document.select("div.flex-wrap > a.btn")
+            .firstOrNull { it?.text()?.trim() == "${episode ?: 1}" }
+            ?.attr("href")
+            ?.takeIf { it.isNotBlank() }
+            ?: return
+        val epText = app.get(baseUrl + epLink).text
+        val types = listOf("dub", "sub", "raw")
+
+        types.forEach {
+            val Regex = """\"${it}\",\"([^\"]+)\"""".toRegex()
+            val epUrl = Regex.find(epText)?.groupValues?.get(1) ?: return@forEach
+            val isDub = if(it == "dub") "[DUB]" else "[SUB]"
+
+            callback.invoke(
+                newExtractorLink(
+                    "AniXL $isDub",
+                    "AniXL $isDub",
+                    epUrl,
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.quality = 1080
+                }
+            )
+        }
+
+        val subtitleRegex = """\"([^\"]+)\",\"[^\"]*\",\"(https?:\/\/[^\"]+\.vtt)\"""".toRegex()
+        val subtitles = subtitleRegex.findAll(epText)
+        .map { match ->
+            val (language, subUrl) = match.destructured
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    language,
+                    subUrl
+                )
+            )
+        }
+    }
+
     suspend fun invokeAnimes(
         malId: Int? = null,
         aniId: Int? = null,
@@ -1496,6 +1576,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":"," ")
         val animepahe = malsync?.animepahe?.firstNotNullOf { it.value["url"] }
         val animepahetitle = malsync?.animepahe?.firstNotNullOf { it.value["title"] }
+        val aniXL = malsync?.AniXL?.values?.firstNotNullOf { it["url"] }
 
         runAllAsync(
             {
@@ -1504,8 +1585,11 @@ object CineStreamExtractors : CineStreamProvider() {
             },
             {
                 val animepahe = malsync?.animepahe?.firstNotNullOfOrNull { it.value["url"] }
-                if (animepahe!=null)
+                if (animepahe != null)
                     invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
+            },
+            {
+                invokeAniXL(aniXL, episode, subtitleCallback, callback)
             },
             {
                 invokeAnimez(zorotitle, episode, callback)

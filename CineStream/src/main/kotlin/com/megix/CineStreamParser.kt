@@ -153,19 +153,46 @@ data class NetflixResponse(
 )
 
 //StreamAsia
-data class StreamAsia (
-  var streams : ArrayList<StreamAsiaStreams> = arrayListOf()
+
+data class StreamAsiaSearch(
+    var metas : ArrayList<StreamAsiaMetas> = arrayListOf()
 )
 
-data class StreamAsiaSubtitles (
-  var lang : String,
-  var url  : String
+data class StreamAsiaMetas (
+  var id          : String? = null,
+  var name        : String? = null,
+  var type        : String? = null,
+)
+
+data class  StreamAsiaInfo(
+  var meta : StreamAsiaMeta = StreamAsiaMeta()
+)
+
+data class StreamAsiaMeta (
+    var videos      : ArrayList<StreamAsiaVideos> = arrayListOf()
+)
+
+data class StreamAsiaVideos (
+  var episode   : Int?    = null,
+  var id        : String? = null,
 )
 
 data class StreamAsiaStreams (
-  var subtitles : ArrayList<StreamAsiaSubtitles> = arrayListOf(),
-  var title     : String,
-  var url       : String
+  var streams : ArrayList<StreamAsiaStream> = arrayListOf()
+)
+
+data class StreamAsiaStream (
+  var title     : String? = null,
+  var url       : String? = null
+)
+
+data class StreamAsiaSubtitles (
+  var subtitles : ArrayList<StreamAsiaSubtitle> = arrayListOf()
+)
+
+data class StreamAsiaSubtitle (
+  var lang : String? = null,
+  var url  : String? = null
 )
 
 //Anichi
@@ -384,6 +411,7 @@ data class Daum(
 )
 
 data class MALSyncSites(
+    @JsonProperty("AniXL") val AniXL: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("Gogoanime") val Gogoanime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("Zoro") val zoro: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("9anime") val nineAnime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
