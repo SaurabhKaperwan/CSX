@@ -36,7 +36,7 @@ import com.megix.CineStreamExtractors.invokeStreamAsia
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeDisney
-import com.megix.CineStreamExtractors.invokeFlixhq
+// import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
 import com.megix.CineStreamExtractors.invokeHdmovie2
@@ -424,7 +424,7 @@ class CineSimklProvider: MainAPI() {
             { invokeCinemaluxe(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
             { invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            { invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.en_title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.season, res.episode, callback) },

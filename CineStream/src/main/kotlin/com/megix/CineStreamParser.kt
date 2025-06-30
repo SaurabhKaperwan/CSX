@@ -3,6 +3,28 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Hianime
+data class HianimeResponses(
+    @JsonProperty("html") val html: String? = null,
+    @JsonProperty("link") val link: String? = null,
+)
+
+data class HianimeStreamResponse(
+    val streams: List<HianimeStream>,
+    val tracks: List<HianimeTrack>,
+)
+
+data class HianimeStream(
+    val url: String,
+    val type: String,
+)
+
+data class HianimeTrack(
+    val file: String,
+    val label: String?,
+    val kind: String,
+)
+
 //Cinemaluxe
 data class CinemaluxeItem(
     val token: String,
@@ -308,31 +330,6 @@ data class AnimiaResponse(
     val server3embedLink: String? = null,
 )
 
-data class HiAnime(
-    val subOrDub: String,
-    val episodes: List<HiAnimeEpisode>
-)
-
-data class HiAnimeEpisode(
-    val id: String,
-    val number: Int,
-    val isDubbed: Boolean,
-)
-data class HiAnimeMedia(
-    val sources: List<HiAnimeSource>,
-    val subtitles: List<HiAnimeSubtitle>
-)
-data class HiAnimeSource(
-    val url: String,
-    val isM3U8: Boolean,
-    val type: String,
-)
-
-data class HiAnimeSubtitle(
-    val url: String,
-    val lang: String
-)
-
 data class TorrentioResponse(val streams: List<TorrentioStream>)
 
 data class TorrentioStream(
@@ -417,12 +414,6 @@ data class MALSyncSites(
     @JsonProperty("9anime") val nineAnime: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @JsonProperty("animepahe") val animepahe: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
 )
-
-data class HianimeResponses(
-    @JsonProperty("html") val html: String? = null,
-    @JsonProperty("link") val link: String? = null,
-)
-
 
 data class MALSyncResponses(
     @JsonProperty("Sites") val sites: MALSyncSites? = null,

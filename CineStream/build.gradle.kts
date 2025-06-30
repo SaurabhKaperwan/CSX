@@ -1,13 +1,12 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 172
+version = 173
 
 android {
     defaultConfig {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
         android.buildFeatures.buildConfig=true
-        buildConfigField("String", "BYPASS_API", "\"${properties.getProperty("BYPASS_API")}\"")
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
         buildConfigField("String", "SIMKL_API", "\"${properties.getProperty("SIMKL_API")}\"")
     }

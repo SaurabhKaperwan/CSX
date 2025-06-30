@@ -2191,56 +2191,56 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeFlixhq(
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val type = if (season == null) "Movie" else "TV Series"
-        val searchJson = app.get("$CONSUMET_API/movies/flixhq/$title").text
-        val searchData = tryParseJson<ConsumetSearch>(searchJson) ?: return
-        val id = searchData.results.firstOrNull {
-            it.title == "$title" && it.type == type
-        }?.id ?: return
-        val infoJson = app.get("$CONSUMET_API/movies/flixhq/info?id=$id").text
-        val infoData = tryParseJson<ConsumetInfo>(infoJson) ?: return
-        val epId = if(season == null) { infoData.episodes.firstOrNull()?.id ?: return }
-        else {
-            infoData.episodes.firstOrNull { it.number  == episode && it.season == season }?.id ?: return
-        }
+    // suspend fun invokeFlixhq(
+    //     title: String? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     val type = if (season == null) "Movie" else "TV Series"
+    //     val searchJson = app.get("$CONSUMET_API/movies/flixhq/$title").text
+    //     val searchData = tryParseJson<ConsumetSearch>(searchJson) ?: return
+    //     val id = searchData.results.firstOrNull {
+    //         it.title == "$title" && it.type == type
+    //     }?.id ?: return
+    //     val infoJson = app.get("$CONSUMET_API/movies/flixhq/info?id=$id").text
+    //     val infoData = tryParseJson<ConsumetInfo>(infoJson) ?: return
+    //     val epId = if(season == null) { infoData.episodes.firstOrNull()?.id ?: return }
+    //     else {
+    //         infoData.episodes.firstOrNull { it.number  == episode && it.season == season }?.id ?: return
+    //     }
 
-        val servers = listOf("upcloud", "vidcloud")
-        servers.amap { server ->
-            val epJson = app.get("$CONSUMET_API/movies/flixhq/watch?episodeId=$epId&mediaId=$id&server=$server").text
-            val epData = tryParseJson<ConsumetWatch>(epJson) ?: return@amap
-            val referer = epData.headers.Referer ?: ""
+    //     val servers = listOf("upcloud", "vidcloud")
+    //     servers.amap { server ->
+    //         val epJson = app.get("$CONSUMET_API/movies/flixhq/watch?episodeId=$epId&mediaId=$id&server=$server").text
+    //         val epData = tryParseJson<ConsumetWatch>(epJson) ?: return@amap
+    //         val referer = epData.headers.Referer ?: ""
 
-            epData.sources.map {
-                callback.invoke(
-                    newExtractorLink(
-                        "Flixhq ${server.uppercase()}",
-                        "Flixhq ${server.uppercase()}",
-                        it.url,
-                        type = if(it.isM3U8) ExtractorLinkType.M3U8 else INFER_TYPE,
-                    ) {
-                        this.referer = referer
-                        this.quality = it.quality.toIntOrNull() ?: Qualities.Unknown.value
-                    }
-                )
-            }
+    //         epData.sources.map {
+    //             callback.invoke(
+    //                 newExtractorLink(
+    //                     "Flixhq ${server.uppercase()}",
+    //                     "Flixhq ${server.uppercase()}",
+    //                     it.url,
+    //                     type = if(it.isM3U8) ExtractorLinkType.M3U8 else INFER_TYPE,
+    //                 ) {
+    //                     this.referer = referer
+    //                     this.quality = it.quality.toIntOrNull() ?: Qualities.Unknown.value
+    //                 }
+    //             )
+    //         }
 
-            epData.subtitles.map {
-                subtitleCallback.invoke(
-                    SubtitleFile(
-                        it.lang.split(" - ").firstOrNull()?.trim() ?: it.lang,
-                        it.url
-                    )
-                )
-            }
-        }
-    }
+    //         epData.subtitles.map {
+    //             subtitleCallback.invoke(
+    //                 SubtitleFile(
+    //                     it.lang.split(" - ").firstOrNull()?.trim() ?: it.lang,
+    //                     it.url
+    //                 )
+    //             )
+    //         }
+    //     }
+    // }
 
     private suspend fun invokeHianime(
         url: String? = null,
@@ -2248,43 +2248,46 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val id = url?.substringAfterLast("/") ?: return
-        val json = app.get("$CONSUMET_API/anime/zoro/info?id=$id").text
-        val data = tryParseJson<HiAnime>(json) ?: return
-        val epId = if(episode == null) { data.episodes.firstOrNull()?.id ?: return }
-        else {
-            data.episodes.find { it.number == episode }?.id ?: return
-        }
-        val isDubbed = if(episode == null) { data.episodes.firstOrNull()?.isDubbed ?: false }
-        else { data.episodes.find { it.number == episode }?.isDubbed ?: false }
-        val types =  mutableListOf("sub")
-        if(isDubbed == true) types.add("dub")
-        val servers = mutableListOf("vidstreaming", "vidcloud")
-        val headers = mapOf(
-            "Referer" to "https://megacloud.club/",
-            "Origin" to "https://megacloud.club/"
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val id = url?.substringAfterLast("/")?.substringAfterLast("-") ?: return
+
+        val epId = app.get(
+            "$hianimeAPI/ajax/v2/episode/list/$id",
+            headers = headers
+        ).parsedSafe<HianimeResponses>()?.html?.let {
+            Jsoup.parse(it)
+        }?.select("div.ss-list a")
+            ?.find { it.attr("data-number") == "${episode ?: 1}" }
+            ?.attr("data-id") ?: return
+
+        val videoHeaders = mapOf(
+            "Referer" to "https://megacloud.blog/",
+            "Origin" to "https://megacloud.blog/"
         )
-        types.map { t ->
-            servers.map { server ->
-                val epJson = app.get("$CONSUMET_API/anime/zoro/watch?episodeId=$epId${'$'}$t&server=$server").text
-                val epData = tryParseJson<HiAnimeMedia>(epJson) ?: return@map
 
-                epData.sources.map {
-                    M3u8Helper.generateM3u8(
-                        "HiAnime ${server.uppercase()} [${t.uppercase()}]",
-                        it.url,
-                        "https://megacloud.club/",
-                        headers = headers
-                    ).forEach(callback)
-                }
+        val types = listOf("sub", "dub")
 
-                epData.subtitles.map {
+        types.forEach { t ->
+            val epData = app.get("$miruroAPI/api/sources?episodeId=$epId&provider=zoro&fetchType=embed&category=$t").parsedSafe<HianimeStreamResponse>() ?: return@forEach
+            val streamUrl = epData.streams.firstOrNull()?.url
+            if(streamUrl != null) {
+                M3u8Helper.generateM3u8(
+                    "HiAnime [${t.uppercase()}]",
+                    streamUrl,
+                    "https://megacloud.blog/",
+                    headers = videoHeaders
+                ).forEach(callback)
+            }
+
+            epData.tracks.forEach { track ->
+                if(track.kind == "captions") {
                     subtitleCallback.invoke(
                         SubtitleFile(
-                            it.lang,
-                            it.url,
+                            track.label ?: "und",
+                            track.file
                         )
                     )
+
                 }
             }
         }

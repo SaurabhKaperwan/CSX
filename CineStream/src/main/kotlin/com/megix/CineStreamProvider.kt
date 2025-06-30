@@ -41,7 +41,7 @@ import com.megix.CineStreamExtractors.invokeStreamAsia
 import com.megix.CineStreamExtractors.invokeNetflix
 import com.megix.CineStreamExtractors.invokePrimeVideo
 import com.megix.CineStreamExtractors.invokeDisney
-import com.megix.CineStreamExtractors.invokeFlixhq
+// import com.megix.CineStreamExtractors.invokeFlixhq
 import com.megix.CineStreamExtractors.invokeSkymovies
 import com.megix.CineStreamExtractors.invokeMoviesflix
 import com.megix.CineStreamExtractors.invokeHdmovie2
@@ -90,7 +90,6 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val TomAPI = "https://tom.autoembed.cc"
-        const val BYPASS_API = BuildConfig.BYPASS_API
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
@@ -113,8 +112,8 @@ open class CineStreamProvider : MainAPI() {
         const val animeparadiseBaseAPI = "https://www.animeparadise.moe"
         const val animeparadiseAPI = "https://api.animeparadise.moe"
         const val sudatchiAPI = "https://sudatchi.com"
+        const val miruroAPI = "https://www.miruro.to"
         const val animezAPI = "https://animeyy.com"
-        const val toonStreamAPI = "https://toonstream.love"
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
 
         private val apiConfig by lazy {
@@ -151,6 +150,8 @@ open class CineStreamProvider : MainAPI() {
         val topmoviesAPI: String get() = apiConfig.optString("topmovies")
         val katmoviehdAPI: String get() = apiConfig.optString("katmoviehd")
         val moviesBabaAPI: String get() = apiConfig.optString("moviesbaba")
+        val toonStreamAPI: String get() = apiConfig.optString("toonstream")
+        val hianimeAPI: String get() = apiConfig.optString("hianime")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
@@ -658,7 +659,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
-            { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
+            // { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
