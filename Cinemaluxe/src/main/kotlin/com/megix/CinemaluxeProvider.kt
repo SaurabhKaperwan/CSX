@@ -17,8 +17,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 
 
-class CinemaluxeProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://cinemalux.space"
+class CinemaluxeProvider : MainAPI() {
+    override var mainUrl = "https://cinemalux.net"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -27,6 +27,14 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         TvType.Movie,
         TvType.TvSeries
     )
+
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
 
     companion object {
         val basemainUrl: String? by lazy {
@@ -57,7 +65,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get("${basemainUrl ?: mainUrl}/${request.data}${page}").document
+        val document = app.get("$mainUrl/${request.data}${page}").document
         val home = document.select("article.item").mapNotNull {
             it.toSearchResult()
         }
@@ -135,7 +143,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..6) {
-            val document = app.get("${basemainUrl ?: mainUrl}/page/$i/?s=$query").document
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("div.result-item").mapNotNull { it.toSearchResult() }
 
@@ -152,7 +160,7 @@ class CinemaluxeProvider : MainAPI() { // all providers must be an instance of M
         val document = app.get(url).document
         val title = document.select("div.data > h1").text()
         val posterUrl = document.select("div.poster > img").attr("data-src")
-        val description = document.selectFirst("div.wp-content")?.ownText() ?: ""
+        val description = document.select("div.wp-content > p").text()
 
         val tvType = if (url.contains("series")) {
             "series"

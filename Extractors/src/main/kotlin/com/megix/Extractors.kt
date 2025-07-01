@@ -95,14 +95,14 @@ class LinkstoreDrive : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val redirectUrl = url.replace("https://drive.linkstore.rest", "https://new4.luxedrive.space")
+        val redirectUrl = url.replace("https://drive.linkstore.rest", "https://new5.luxedrive.space")
         loadExtractor(redirectUrl, "", subtitleCallback, callback)
     }
 }
 
 open class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://new4.luxedrive.space"
+    override val mainUrl: String = "https://new5.luxedrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(

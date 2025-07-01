@@ -18,6 +18,14 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
         TvType.TvSeries
     )
 
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
+
     companion object {
         val basemainUrl: String? by lazy {
             runBlocking {
@@ -34,16 +42,16 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
     }
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/" to "Home",
-        "${basemainUrl ?: mainUrl}/web-series/page/" to "Latest Web Series",
-        "${basemainUrl ?: mainUrl}/movies/hindi-movies/page/" to "Latest Hindi Movies",
+        "/page/" to "Home",
+        "/web-series/page/" to "Latest Web Series",
+        "/movies/hindi-movies/page/" to "Latest Hindi Movies",
     )
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i").document
+            val document = app.get("$mainUrl/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 

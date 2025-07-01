@@ -15,7 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
-class BollyflixProvider : MainAPI() { // all providers must be an instance of MainAPI
+class BollyflixProvider : MainAPI() {
     override var mainUrl = "https://bollyflix.promo"
     override var name = "BollyFlix"
     override val hasMainPage = true
@@ -28,6 +28,14 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         TvType.AsianDrama,
         TvType.Anime
     )
+
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
 
     companion object {
         val basemainUrl: String? by lazy {
@@ -57,7 +65,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         request: MainPageRequest
     ): HomePageResponse {
         val document = if(page == 1) {
-            app.get("${basemainUrl ?: mainUrl}${request.data}").document
+            app.get("${mainUrl}${request.data}").document
         }
         else {
             app.get(request.data + "page/" + page).document
@@ -89,7 +97,7 @@ class BollyflixProvider : MainAPI() { // all providers must be an instance of Ma
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..6) {
-            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i/").document
+            val document = app.get("$mainUrl/search/$query/page/$i/").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 

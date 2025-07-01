@@ -26,6 +26,14 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         TvType.Anime
     )
 
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
+
     companion object {
         val basemainUrl: String? by lazy {
             runBlocking {
@@ -54,7 +62,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get("${basemainUrl ?: mainUrl}${request.data}${page}").document
+        val document = app.get("${mainUrl}${request.data}${page}").document
         val home = document.select("ul.recent-movies > li").mapNotNull {
             it.toSearchResult()
         }
@@ -81,7 +89,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("${basemainUrl ?: mainUrl}/page/$i/?s=$query").document
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("ul.recent-movies > li").mapNotNull { it.toSearchResult() }
 

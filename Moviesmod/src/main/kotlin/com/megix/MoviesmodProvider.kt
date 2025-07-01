@@ -26,6 +26,14 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         TvType.Anime
     )
 
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
+
     companion object {
         val basemainUrl: String? by lazy {
             runBlocking {
@@ -42,17 +50,17 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     }
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/" to "Home",
-        "${basemainUrl ?: mainUrl}/web-series/on-going/page/" to "Latest Web Series",
-        "${basemainUrl ?: mainUrl}/movies/page/" to "Latest Movies",
-        "${basemainUrl ?: mainUrl}/animated-web-series/page/" to "Anime",
+        "/page/" to "Home",
+        "/web-series/on-going/page/" to "Latest Web Series",
+        "/movies/page/" to "Latest Movies",
+        "/animated-web-series/page/" to "Anime",
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data + page).document
+        val document = app.get(mainUrl + request.data + page).document
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
         }
@@ -73,7 +81,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         val searchResponse = mutableListOf<SearchResponse>()
 
         for (i in 1..7) {
-            val document = app.get("${basemainUrl ?: mainUrl}/search/$query/page/$i").document
+            val document = app.get("$mainUrl/search/$query/page/$i").document
 
             val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
 

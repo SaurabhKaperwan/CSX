@@ -27,6 +27,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         TvType.Anime
     )
 
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
+
     companion object {
         val basemainUrl: String? by lazy {
             runBlocking {
@@ -60,13 +68,13 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     )
 
     override val mainPage = mainPageOf(
-        "${basemainUrl ?: mainUrl}/page/%d/" to "Home",
-        "${basemainUrl ?: mainUrl}/web-series/netflix/page/%d/" to "Netflix",
-        "${basemainUrl ?: mainUrl}/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
-        "${basemainUrl ?: mainUrl}/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
-        "${basemainUrl ?: mainUrl}/web-series/mx-original/page/%d/" to "MX Original",
-        "${basemainUrl ?: mainUrl}/anime-series/page/%d/" to "Anime Series",
-        "${basemainUrl ?: mainUrl}/korean-series/page/%d/" to "Korean Series"
+        "$mainUrl/page/%d/" to "Home",
+        "$mainUrl/web-series/netflix/page/%d/" to "Netflix",
+        "$mainUrl/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
+        "$mainUrl/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
+        "$mainUrl/web-series/mx-original/page/%d/" to "MX Original",
+        "$mainUrl/anime-series/page/%d/" to "Anime Series",
+        "$mainUrl/korean-series/page/%d/" to "Korean Series"
     )
 
     override suspend fun getMainPage(
@@ -102,7 +110,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         for (i in 1..5) {
             try {
                 val document = app.get(
-                    "${basemainUrl ?: mainUrl}/page/$i/?s=$query",
+                    "$mainUrl/page/$i/?s=$query",
                     referer = mainUrl,
                     headers = headers
                 ).document ?: continue

@@ -35,6 +35,14 @@ class World4uFreeProvider : MainAPI() {
         "/category/web-series/page" to "Web Series",
     )
 
+    init {
+        runBlocking {
+            basemainUrl?.let {
+                mainUrl = it
+            }
+        }
+    }
+
     companion object {
         val basemainUrl: String? by lazy {
             runBlocking {
@@ -54,7 +62,7 @@ class World4uFreeProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get("${basemainUrl ?: mainUrl}${request.data}${page}").document
+        val document = app.get("${mainUrl}${request.data}${page}").document
         val home = document.select("ul.recent-posts > li").mapNotNull {
             it.toSearchResult()
         }
@@ -83,8 +91,8 @@ class World4uFreeProvider : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..25) {
-            val document = app.get("${basemainUrl ?: mainUrl}/page/$i/?s=$query").document
+        for (i in 1..7) {
+            val document = app.get("$mainUrl/page/$i/?s=$query").document
 
             val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
 
