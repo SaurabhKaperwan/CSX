@@ -29,6 +29,48 @@ import com.google.gson.Gson
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeDramadrip(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val link = app.get("$dramadripAPI/?s=$imdbId").document.selectFirst("article > a")?.attr("href") ?: return
+        val document = app.get(link).document
+        if(season != null && episode != null) {
+            val seasonLink = document.select("div.file-spoiler h2").filter { element ->
+                val text = element.text().trim().lowercase()
+                    "season $season ".lowercase() in text && "zip" !in text
+            }.flatMap { h2 ->
+                val sibling = h2.nextElementSibling()
+                sibling?.select("a")?.mapNotNull { it.attr("href") } ?: emptyList()
+            }
+
+            seasonLink.amap {
+                val doc = app.get(it).document
+                val epLink = doc.select("div.series_btn > a")
+                    .getOrNull(episode-1)?.attr("href")
+                    ?: return@amap
+                loadSourceNameExtractor("Dramadrip", epLink, "", subtitleCallback, callback)
+            }
+        } else {
+            document.select("div.file-spoiler a").amap {
+                val doc = app.get(it.attr("href")).document
+                doc.select("a.wp-element-button").amap { source ->
+                    loadSourceNameExtractor(
+                        "Dramadrip",
+                        source.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback
+                    )
+
+                }
+            }
+        }
+    }
+
     suspend fun invokeToonstream(
         title: String? = null,
         season: Int? = null,

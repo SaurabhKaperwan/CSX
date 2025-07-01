@@ -69,6 +69,7 @@ import com.megix.CineStreamExtractors.invokeKatMovieHd
 import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
+import com.megix.CineStreamExtractors.invokeDramadrip
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -152,6 +153,7 @@ open class CineStreamProvider : MainAPI() {
         val moviesBabaAPI: String get() = apiConfig.optString("moviesbaba")
         val toonStreamAPI: String get() = apiConfig.optString("toonstream")
         val hianimeAPI: String get() = apiConfig.optString("hianime")
+        val dramadripAPI: String get() = apiConfig.optString("dramadrip")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
@@ -652,6 +654,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (isBollywood) invokeTopMovies(res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { if (!isBollywood) invokeMoviesmod(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { if (isAsian) invokeDramadrip(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.id ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },

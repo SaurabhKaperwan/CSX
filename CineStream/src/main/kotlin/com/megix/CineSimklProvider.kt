@@ -64,6 +64,7 @@ import com.megix.CineStreamExtractors.invokeKatMovieHd
 import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
+import com.megix.CineStreamExtractors.invokeDramadrip
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -418,6 +419,7 @@ class CineSimklProvider: MainAPI() {
             { if(res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if(res.isAsian) invokeDramadrip(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
