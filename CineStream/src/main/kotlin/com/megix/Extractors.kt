@@ -118,8 +118,7 @@ class Kwik : ExtractorApi() {
             newExtractorLink(
                 name,
                 name,
-                m3u8,
-                type = ExtractorLinkType.M3U8
+                m3u8
             )
         )
     }

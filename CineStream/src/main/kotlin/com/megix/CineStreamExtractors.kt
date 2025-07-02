@@ -306,40 +306,61 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
+        if (aniId == null) return
+
+        val episodeNumber = episode ?: 1
         val gojoAPI = gojoBaseAPI.replace("https://", "https://backend.")
         val headers = mapOf(
             "Referer" to gojoBaseAPI,
-            "Origin" to gojoBaseAPI,
+            "Origin" to gojoBaseAPI
         )
-        val epDetailsJson = app.get("$gojoAPI/api/anime/episodes/$aniId", headers = headers).text
-        val epDetails = getGojoEpisodeIds(epDetailsJson, episode ?: 1)
-        val types = listOf("sub", "dub")
-        epDetails.amap{ (provider, watchId) ->
-            types.amap { lang ->
-                val json = app.get("$gojoAPI/api/anime/tiddies?provider=$provider&id=$aniId&num=${episode ?: 1}&subType=$lang&watchId=$watchId&dub_id=null", headers = headers).text
-                val jsonObject = JSONObject(json)
-                val sourcesArray = jsonObject.getJSONArray("sources")
 
-                for (i in 0 until sourcesArray.length()) {
-                    val source = sourcesArray.getJSONObject(i)
-                    val fullUrl = source.getString("url").substringAfterLast("https:")
-                    val url = "https:" + fullUrl
-                    val videoType = if (source.has("type")) source.getString("type") else "m3u8"
-                    val quality = source.getString("quality").replace("p", "").toIntOrNull()
+        val epDetailsJson = try {
+            app.get(
+                "$gojoAPI/api/anime/servers?id=$aniId&num=$episodeNumber",
+                headers = headers
+            ).text
+        } catch (e: Exception) {
+            return
+        }
 
-                    callback.invoke(
-                        newExtractorLink(
-                            "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
-                            "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
-                            url,
-                            type = if(videoType == "m3u8") ExtractorLinkType.M3U8 else INFER_TYPE
-                        ) {
-                            this.quality = quality ?: Qualities.P1080.value
-                            this.referer = gojoBaseAPI
+        val servers = try {
+            getGojoServers(epDetailsJson)
+        } catch (e: Exception) {
+            return
+        }
+
+        if (servers.isEmpty()) {
+            return
+        }
+
+        for ((provider, hasDub) in servers) {
+            runAllAsync(
+                {
+                    try {
+                        val json = app.get(
+                            "$gojoAPI/api/anime/tiddies?server=$provider&id=$aniId&num=$episodeNumber&subType=sub",
+                            headers = headers
+                        ).text
+                        getGojoStreams(json, "sub", provider, gojoBaseAPI, callback)
+                    } catch (e: Exception) {
+                        println("Error fetching sub stream for $provider: ${e.message}")
+                    }
+                },
+                {
+                    if (hasDub) {
+                        try {
+                            val json = app.get(
+                                "$gojoAPI/api/anime/tiddies?server=$provider&id=$aniId&num=$episodeNumber&subType=dub",
+                                headers = headers
+                            ).text
+                            getGojoStreams(json, "dub", provider, gojoBaseAPI, callback)
+                        } catch (e: Exception) {
+                            println("Error fetching dub stream for $provider: ${e.message}")
                         }
-                    )
+                    }
                 }
-            }
+            )
         }
     }
 

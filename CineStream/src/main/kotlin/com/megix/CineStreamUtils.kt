@@ -947,28 +947,64 @@ fun extractKatStreamingLinks(html: String, episode: Int? = null): Map<String, St
     return result
 }
 
-fun getGojoEpisodeIds(jsonString: String, episodeNumber: Int): Map<String, String> {
-    val episodeIds = mutableMapOf<String, String>()
-    val jsonArray = JSONArray(jsonString)
+fun getGojoServers(jsonString: String): List<Pair<String, Boolean>> {
+    val result = mutableListOf<Pair<String, Boolean>>()
 
-    for (i in 0 until jsonArray.length()) {
-        val provider = jsonArray.getJSONObject(i)
-        val providerId = provider.getString("providerId")
-        val episodes = provider.getJSONArray("episodes")
-
-        for (j in 0 until episodes.length()) {
-            val episode = episodes.getJSONObject(j)
-            if (episode.getInt("number") == episodeNumber) {
-                when (val idValue = episode["id"]) {
-                    is Int -> episodeIds[providerId] = idValue.toString()
-                    is String -> episodeIds[providerId] = idValue
-                }
-                break
-            }
+    try {
+        val jsonArray = JSONArray(jsonString)
+        for (i in 0 until jsonArray.length()) {
+            val obj = jsonArray.optJSONObject(i) ?: continue
+            val id = obj.optString("id", null) ?: continue
+            val hasDub = obj.optBoolean("hasDub", false)
+            result.add(Pair(id, hasDub))
         }
+    } catch (e: Exception) {
+        println("Error parsing Gojo servers: ${e.message}")
     }
-    return episodeIds
+
+    return result
 }
+
+
+suspend fun getGojoStreams(
+    json: String,
+    lang: String,
+    provider: String,
+    gojoBaseAPI: String,
+    callback: (ExtractorLink) -> Unit
+) {
+    try {
+        val jsonObject = JSONObject(json)
+        val sourcesArray = jsonObject.optJSONArray("sources") ?: return
+
+        for (i in 0 until sourcesArray.length()) {
+            val source = sourcesArray.optJSONObject(i) ?: continue
+            val rawUrl = source.optString("url", null) ?: continue
+
+            val fullUrl = rawUrl.substringAfterLast("https:", "")
+            if (fullUrl.isBlank()) continue
+
+            val url = "https:$fullUrl"
+            val videoType = source.optString("type", "m3u8")
+            val quality = source.optString("quality").replace("p", "").toIntOrNull()
+
+            callback.invoke(
+                newExtractorLink(
+                    "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
+                    "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
+                    url,
+                    type = if (videoType == "mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
+                ) {
+                    this.quality = quality ?: Qualities.P1080.value
+                    this.referer = gojoBaseAPI
+                }
+            )
+        }
+    } catch (e: Exception) {
+        println("Error parsing Gojo streams for $provider [$lang]: ${e.message}")
+    }
+}
+
 
 suspend fun getSoaperLinks(
         soaperAPI: String,
