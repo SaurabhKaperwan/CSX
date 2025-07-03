@@ -863,8 +863,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
         if(subtitleData != null) {
             subtitleData.subtitles.forEach {
+                val lang = it.lang ?: "und"
                 subtitleCallback.invoke(
-                    val lang = it.lang ?: "und"
                     SubtitleFile(
                         lang.replace("(OpenSubs) ", ""),
                         it.url ?: return@forEach,
