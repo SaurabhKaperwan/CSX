@@ -971,6 +971,7 @@ suspend fun getGojoStreams(
     lang: String,
     provider: String,
     gojoBaseAPI: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
 ) {
     try {
@@ -998,6 +999,20 @@ suspend fun getGojoStreams(
                     this.quality = quality ?: Qualities.P1080.value
                     this.referer = gojoBaseAPI
                 }
+            )
+        }
+
+        val subtitles = jsonObject.optJSONArray("subtitles") ?: return
+
+        for (i in 0 until subtitles.length()) {
+            val item = subtitles.optJSONObject(i) ?: continue
+            val url = item.optString("url", null) ?: continue
+            val lang = item.optString("lang", null) ?: continue
+            subtitleCallback.invoke(
+                SubtitleFile(
+                    lang,
+                    url
+                )
             )
         }
     } catch (e: Exception) {

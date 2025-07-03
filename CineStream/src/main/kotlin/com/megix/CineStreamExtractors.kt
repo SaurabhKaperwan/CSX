@@ -167,7 +167,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val subtitleResponse = gson.fromJson(json, StremioSubtitleResponse::class.java)
 
                 subtitleResponse.subtitles.forEach {
-                    val lang = it.lang_code ?: it.lang
+                    val lang = it.lang ?: it.lang_code
                     val fileUrl = it.url
                     if(lang != null && fileUrl != null) {
                         subtitleCallback.invoke(
@@ -316,6 +316,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeGojo(
         aniId: Int? = null,
         episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
         if (aniId == null) return
@@ -354,7 +355,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             "$gojoAPI/api/anime/tiddies?server=$provider&id=$aniId&num=$episodeNumber&subType=sub",
                             headers = headers
                         ).text
-                        getGojoStreams(json, "sub", provider, gojoBaseAPI, callback)
+                        getGojoStreams(json, "sub", provider, gojoBaseAPI, subtitleCallback ,callback)
                     } catch (e: Exception) {
                         println("Error fetching sub stream for $provider: ${e.message}")
                     }
@@ -366,7 +367,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                 "$gojoAPI/api/anime/tiddies?server=$provider&id=$aniId&num=$episodeNumber&subType=dub",
                                 headers = headers
                             ).text
-                            getGojoStreams(json, "dub", provider, gojoBaseAPI, callback)
+                            getGojoStreams(json, "dub", provider, gojoBaseAPI, subtitleCallback ,callback)
                         } catch (e: Exception) {
                             println("Error fetching dub stream for $provider: ${e.message}")
                         }
@@ -863,8 +864,9 @@ object CineStreamExtractors : CineStreamProvider() {
         if(subtitleData != null) {
             subtitleData.subtitles.forEach {
                 subtitleCallback.invoke(
+                    val lang = it.lang ?: "und"
                     SubtitleFile(
-                        it.lang ?: "und",
+                        lang.replace("(OpenSubs) ", ""),
                         it.url ?: return@forEach,
                     )
                 )
@@ -1721,6 +1723,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(origin == "imdb") invokeGojo(
                     aniId,
                     episode,
+                    subtitleCallback,
                     callback
                 )
             },

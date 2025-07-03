@@ -481,7 +481,7 @@ class CineSimklProvider: MainAPI() {
         runAllAsync(
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
-            { invokeGojo(res.anilistId, res.episode, callback) },
+            { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeAnimeparadise(res.title, res.malId, res.episode, subtitleCallback, callback) },
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
