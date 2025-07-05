@@ -176,7 +176,7 @@ class CineSimklProvider: MainAPI() {
         if(url == null) {
             return null
         } else if(type == "episode") {
-            return "$baseUrl/episodes/${url}_c.webp"
+            return "$baseUrl/episodes/${url}_w.webp"
         } else if(type == "poster") {
             return "$baseUrl/posters/${url}_m.webp"
         } else if(type == "youtube") {
@@ -367,23 +367,40 @@ class CineSimklProvider: MainAPI() {
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
-                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://wsrv.nl/?url=https://simkl.in/update_m_alert.jpg"
+                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://simkl.in/update_m_alert.jpg"
                     addDate(it.date)
                 }
             }
 
-            return newTvSeriesLoadResponse("${en_title}", url,if(isAnime) TvType.Anime else TvType.TvSeries, episodes) {
-                this.posterUrl = getPosterUrl(json.poster, "poster")
-                this.backgroundPosterUrl = backgroundPosterUrl
-                this.plot = json.overview
-                this.tags = genres
-                this.duration = json.runtime?.toIntOrNull()
-                this.rating = rating.toString().toRatingInt()
-                this.year = json.year
-                this.recommendations = recommendations
-                this.contentRating = json.certification
-                this.addSimklId(simklId.toInt())
-                this.addAniListId(json.ids?.anilist?.toIntOrNull())
+            if(isAnime) {
+                return newAnimeLoadResponse("${en_title}", url, TvType.Anime) {
+                    addEpisodes(DubStatus.Subbed, episodes)
+                    this.posterUrl = getPosterUrl(json.poster, "poster")
+                    this.backgroundPosterUrl = backgroundPosterUrl
+                    this.plot = json.overview
+                    this.tags = genres
+                    this.duration = json.runtime?.toIntOrNull()
+                    this.rating = rating.toString().toRatingInt()
+                    this.year = json.year
+                    this.recommendations = recommendations
+                    this.contentRating = json.certification
+                    this.addSimklId(simklId.toInt())
+                    this.addAniListId(json.ids?.anilist?.toIntOrNull())
+                }
+            } else {
+                return newTvSeriesLoadResponse("${en_title}", url, TvType.TvSeries, episodes) {
+                    this.posterUrl = getPosterUrl(json.poster, "poster")
+                    this.backgroundPosterUrl = backgroundPosterUrl
+                    this.plot = json.overview
+                    this.tags = genres
+                    this.duration = json.runtime?.toIntOrNull()
+                    this.rating = rating.toString().toRatingInt()
+                    this.year = json.year
+                    this.recommendations = recommendations
+                    this.contentRating = json.certification
+                    this.addSimklId(simklId.toInt())
+                    this.addAniListId(json.ids?.anilist?.toIntOrNull())
+                }
             }
         }
     }

@@ -81,9 +81,6 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
-    val streamio_TMDB = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
-    // val mediaFusion = "https://mediafusion.elfhosted.com"
-    val animeCatalog = "https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -128,32 +125,34 @@ open class CineStreamProvider : MainAPI() {
             }
         }
 
-        val protonmoviesAPI: String get() = apiConfig.optString("protonmovies")
-        val W4UAPI: String get() = apiConfig.optString("w4u")
-        val fourkhdhubAPI: String get() = apiConfig.optString("4khdhub")
-        val multimoviesAPI: String get() = apiConfig.optString("multimovies")
-        val cinemaluxeAPI: String get() = apiConfig.optString("cinemaluxe")
-        val bollyflixAPI: String get() = apiConfig.optString("bollyflix")
-        val movies4uAPI: String get() = apiConfig.optString("movies4u")
-        val skymoviesAPI: String get() = apiConfig.optString("skymovies")
-        val hindMoviezAPI: String get() = apiConfig.optString("hindmoviez")
-        val moviesflixAPI: String get() = apiConfig.optString("moviesflix")
-        val hdmoviesflixAPI: String get() = apiConfig.optString("hdmoviesflix")
-        val hdmovie2API: String get() = apiConfig.optString("hdmovie2")
-        val jaduMoviesAPI: String get() = apiConfig.optString("jadumovies")
-        val netflixAPI: String get() = apiConfig.optString("nfmirror")
-        val MovieDrive_API: String get() = apiConfig.optString("moviesdrive")
-        val gojoBaseAPI: String get() = apiConfig.optString("gojo_base")
-        val vegamoviesAPI: String get() = apiConfig.optString("vegamovies")
-        val rogmoviesAPI: String get() = apiConfig.optString("rogmovies")
-        val uhdmoviesAPI: String get() = apiConfig.optString("uhdmovies")
-        val MoviesmodAPI: String get() = apiConfig.optString("moviesmod")
-        val topmoviesAPI: String get() = apiConfig.optString("topmovies")
-        val katmoviehdAPI: String get() = apiConfig.optString("katmoviehd")
-        val moviesBabaAPI: String get() = apiConfig.optString("moviesbaba")
-        val toonStreamAPI: String get() = apiConfig.optString("toonstream")
-        val hianimeAPI: String get() = apiConfig.optString("hianime")
-        val dramadripAPI: String get() = apiConfig.optString("dramadrip")
+        private fun api(key: String) = apiConfig.optString(key)
+
+        val protonmoviesAPI get() = api("protonmovies")
+        val W4UAPI get() = api("w4u")
+        val fourkhdhubAPI get() = api("4khdhub")
+        val multimoviesAPI get() = api("multimovies")
+        val cinemaluxeAPI get() = api("cinemaluxe")
+        val bollyflixAPI get() = api("bollyflix")
+        val movies4uAPI get() = api("movies4u")
+        val skymoviesAPI get() = api("skymovies")
+        val hindMoviezAPI get() = api("hindmoviez")
+        val moviesflixAPI get() = api("moviesflix")
+        val hdmoviesflixAPI get() = api("hdmoviesflix")
+        val hdmovie2API get() = api("hdmovie2")
+        val jaduMoviesAPI get() = api("jadumovies")
+        val netflixAPI get() = api("nfmirror")
+        val MovieDrive_API get() = api("moviesdrive")
+        val gojoBaseAPI get() = api("gojo_base")
+        val vegamoviesAPI get() = api("vegamovies")
+        val rogmoviesAPI get() = api("rogmovies")
+        val uhdmoviesAPI get() = api("uhdmovies")
+        val MoviesmodAPI get() = api("moviesmod")
+        val topmoviesAPI get() = api("topmovies")
+        val katmoviehdAPI get() = api("katmoviehd")
+        val moviesBabaAPI get() = api("moviesbaba")
+        val toonStreamAPI get() = api("toonstream")
+        val hianimeAPI get() = api("hianime")
+        val dramadripAPI get() = api("dramadrip")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
@@ -168,10 +167,7 @@ open class CineStreamProvider : MainAPI() {
     override val mainPage = mainPageOf(
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
-        // "$mediaFusion/catalog/movie/hindi_hdrip/skip=###" to "Trending Movie in India",
-        // "$mediaFusion/catalog/series/hindi_series/skip=###" to "Trending Series in India",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
-        // """$animeCatalog/{"anisearch_trending":"on"}/catalog/anime/anisearch_trending/skip=###""" to "Trending Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
@@ -214,7 +210,7 @@ open class CineStreamProvider : MainAPI() {
             val type =
                 if(movie.type == "movie") TvType.Movie
                 else TvType.TvSeries
-            val title = movie.aliases?.firstOrNull() ?: movie.name ?: movie.description ?: "Empty"
+            val title = movie.aliases?.firstOrNull() ?: movie.name ?: movie.description ?: ""
 
             newMovieSearchResponse(title, PassData(movie.id, movie.type).toJson(), type) {
                 this.posterUrl = movie.poster.toString()
@@ -275,10 +271,8 @@ open class CineStreamProvider : MainAPI() {
         val type = if(movie.type == "movie") TvType.Movie else TvType.TvSeries
         val meta_url =
             if(id.contains("kitsu")) kitsu_url
-            else if(id.contains("tmdb")) streamio_TMDB
             else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
-        val isTMDB = if(meta_url == streamio_TMDB) true else false
         val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else  null
         val malId = if(externalIds != null) externalIds.myanimelist else null
         val anilistId = if(externalIds != null) externalIds.anilist else null
@@ -291,38 +285,27 @@ open class CineStreamProvider : MainAPI() {
         val imdbRating = movieData?.meta?.imdbRating
         val year = movieData?.meta?.year
         val releaseInfo = movieData?.meta?.releaseInfo
-        val tmdbId = if(!isKitsu && isTMDB) id.replace("tmdb:", "").toIntOrNull() else movieData?.meta?.moviedb_id
-        id = if(!isKitsu && isTMDB) movieData?.meta?.imdb_id.toString() else id
-        var description = movieData?.meta?.description.toString()
+        val tmdbId = movieData?.meta?.moviedb_id
+        id = if(!isKitsu) movieData?.meta?.imdb_id.toString() else id
+        var description = movieData?.meta?.description
 
-        val actors = if (!movieData?.meta?.cast.isNullOrEmpty()) {
-            movieData?.meta?.cast?.mapNotNull { name ->
-                ActorData(
-                    actor = Actor(name, null),
-                    roleString = null
-                )
-            } ?: emptyList()
-        } else {
-            movieData?.meta?.app_extras?.cast?.mapNotNull { cast ->
-                val name = cast.name ?: return@mapNotNull null
-                val image = cast.photo
-                val role = cast.character
-                ActorData(
-                    actor = Actor(name, image),
-                    roleString = role
-                )
-            } ?: emptyList()
-        }
+        val actors = movieData?.meta?.cast?.mapNotNull { name ->
+            ActorData(
+                actor = Actor(name, null),
+                roleString = null
+            )
+        } ?: emptyList()
 
-        val genre : List<String> = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
-        val background = movieData?.meta?.background.toString()
+        val country = movieData?.meta?.country ?: ""
+        val genre = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
+        val background = movieData?.meta?.background
         val isCartoon = genre.any { it.contains("Animation", true) }
-        var isAnime = (movieData?.meta?.country.toString().contains("Japan", true) ||
-            movieData?.meta?.country.toString().contains("China", true)) && isCartoon
+        var isAnime = (country.contains("Japan", true) ||
+            country.contains("China", true)) && isCartoon
         isAnime = if(isKitsu) true else isAnime
-        val isBollywood = movieData?.meta?.country.toString().contains("India", true)
-        val isAsian = (movieData?.meta?.country.toString().contains("Korea", true) ||
-                movieData?.meta?.country.toString().contains("China", true)) && !isAnime
+        val isBollywood = country.contains("India", true)
+        val isAsian = (country.contains("Korea", true) ||
+                country.contains("China", true)) && !isAnime
 
         if(tvtype == "movie") {
             val data = LoadLinksData(
@@ -353,7 +336,7 @@ open class CineStreamProvider : MainAPI() {
                 this.year = year ?.toIntOrNull() ?: releaseInfo?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
-                this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else "IMDB"
+                this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
                 addAniListId(anilistId)
                 addMalId(malId)
@@ -403,7 +386,7 @@ open class CineStreamProvider : MainAPI() {
                     this.tags = genre
                     this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
                     this.rating = imdbRating.toRatingInt()
-                    this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else "IMDB"
+                    this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                     this.actors = actors
                     addAniListId(anilistId)
                     addMalId(malId)
@@ -419,7 +402,7 @@ open class CineStreamProvider : MainAPI() {
                 this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
-                this.contentRating = if(isKitsu) "Kitsu" else if(isTMDB) "TMDB" else "IMDB"
+                this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
                 addImdbId(id)
             }

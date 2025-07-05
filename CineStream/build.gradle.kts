@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 177
+version = 178
 
 android {
     defaultConfig {
@@ -14,7 +14,7 @@ android {
 
 cloudstream {
     // language = "en"
-    description = "One stop solution for Movies, Series, Anime, Livetv, AsianDrama and Torrents"
+    description = "One stop solution for Movies, Series, Anime, AsianDrama and Torrents"
     authors = listOf("megix")
     status = 1
     tvTypes = listOf(
@@ -22,8 +22,7 @@ cloudstream {
         "Movie",
         "AsianDrama",
         "Anime",
-        "Torrent",
-        "Live",
+        "Torrent"
     )
 
     iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/CineStream/icon.jpg"
