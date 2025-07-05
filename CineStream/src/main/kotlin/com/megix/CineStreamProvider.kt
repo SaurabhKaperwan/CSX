@@ -376,34 +376,19 @@ open class CineStreamProvider : MainAPI() {
                     addDate(ep.firstAired ?: ep.released)
                 }
             } ?: emptyList()
-            if(isAnime) {
-                return newAnimeLoadResponse(engTitle, url, TvType.Anime) {
-                    addEpisodes(DubStatus.Subbed, episodes)
-                    this.posterUrl = posterUrl
-                    this.backgroundPosterUrl = background
-                    this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
-                    this.plot = description
-                    this.tags = genre
-                    this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
-                    this.rating = imdbRating.toRatingInt()
-                    this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
-                    this.actors = actors
-                    addAniListId(anilistId)
-                    addMalId(malId)
-                    addImdbId(id)
-                }
-            }
-
-            return newTvSeriesLoadResponse(engTitle, url, type, episodes) {
+            return newAnimeLoadResponse(engTitle, url, if(isAnime) TvType.Anime else TvType.TvSeries) {
+                addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = posterUrl
+                this.backgroundPosterUrl = background
+                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.plot = description
                 this.tags = genre
-                this.rating = imdbRating.toRatingInt()
-                this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
-                this.backgroundPosterUrl = background
                 this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
-                this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
+                this.rating = imdbRating.toRatingInt()
+                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
+                addAniListId(anilistId)
+                addMalId(malId)
                 addImdbId(id)
             }
         }

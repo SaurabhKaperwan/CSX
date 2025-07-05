@@ -372,35 +372,19 @@ class CineSimklProvider: MainAPI() {
                 }
             }
 
-            if(isAnime) {
-                return newAnimeLoadResponse("${en_title}", url, TvType.Anime) {
-                    addEpisodes(DubStatus.Subbed, episodes)
-                    this.posterUrl = getPosterUrl(json.poster, "poster")
-                    this.backgroundPosterUrl = backgroundPosterUrl
-                    this.plot = json.overview
-                    this.tags = genres
-                    this.duration = json.runtime?.toIntOrNull()
-                    this.rating = rating.toString().toRatingInt()
-                    this.year = json.year
-                    this.recommendations = recommendations
-                    this.contentRating = json.certification
-                    this.addSimklId(simklId.toInt())
-                    this.addAniListId(json.ids?.anilist?.toIntOrNull())
-                }
-            } else {
-                return newTvSeriesLoadResponse("${en_title}", url, TvType.TvSeries, episodes) {
-                    this.posterUrl = getPosterUrl(json.poster, "poster")
-                    this.backgroundPosterUrl = backgroundPosterUrl
-                    this.plot = json.overview
-                    this.tags = genres
-                    this.duration = json.runtime?.toIntOrNull()
-                    this.rating = rating.toString().toRatingInt()
-                    this.year = json.year
-                    this.recommendations = recommendations
-                    this.contentRating = json.certification
-                    this.addSimklId(simklId.toInt())
-                    this.addAniListId(json.ids?.anilist?.toIntOrNull())
-                }
+            return newAnimeLoadResponse("${en_title}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
+                addEpisodes(DubStatus.Subbed, episodes)
+                this.posterUrl = getPosterUrl(json.poster, "poster")
+                this.backgroundPosterUrl = backgroundPosterUrl
+                this.plot = json.overview
+                this.tags = genres
+                this.duration = json.runtime?.toIntOrNull()
+                this.rating = rating.toString().toRatingInt()
+                this.year = json.year
+                this.recommendations = recommendations
+                this.contentRating = json.certification
+                this.addSimklId(simklId.toInt())
+                this.addAniListId(json.ids?.anilist?.toIntOrNull())
             }
         }
     }

@@ -1525,7 +1525,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        var res1 = app.get("""$bollyflixAPI/search/$id ${season ?: ""}""", interceptor = wpRedisInterceptor).document
+        var res1 = app.get("""$bollyflixAPI/search/${id ?: return} ${season ?: ""}""", interceptor = wpRedisInterceptor).document
         val url = res1.select("div > article > a").attr("href") ?: return
         val res = app.get(url).document
         val hTag = if (season == null) "h5" else "h4"
@@ -1995,7 +1995,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
         val api = if(sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
 
-        val url = "$api/?s=$id"
+        val url = "$api/?s=${id ?: return}"
         app.get(
             url,
             referer = api,
@@ -2512,7 +2512,8 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        val fixTitle = title?.createPlayerSlug().orEmpty()
+        if (title.isNullOrBlank()) return
+        val fixTitle = title.createPlayerSlug().orEmpty()
         val fixQuery = (season?.let { "$fixTitle S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$fixTitle $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
         val allLinks = HashSet<Player4uLinkData>()
 
