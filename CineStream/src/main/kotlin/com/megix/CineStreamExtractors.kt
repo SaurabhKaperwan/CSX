@@ -1680,7 +1680,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         runAllAsync(
             {
-                val hianimeurl=malsync?.zoro?.firstNotNullOf { it.value["url"] }
+                val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
                 invokeHianime(hianimeurl, episode, subtitleCallback, callback)
             },
             {

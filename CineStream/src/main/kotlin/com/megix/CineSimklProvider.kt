@@ -86,6 +86,7 @@ class CineSimklProvider: MainAPI() {
     private val api = AccountManager.simklApi
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
+    private val haglund_url = "https://arm.haglund.dev/api/v2"
 
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
@@ -104,6 +105,12 @@ class CineSimklProvider: MainAPI() {
         return url.split('/')
             .filter { part -> part.toIntOrNull() != null } // Keep only numeric parts
             .firstOrNull() ?: "" // Take the first numeric ID found
+    }
+
+    private suspend fun getExternalIds(id: Int? = null) : String?{
+        val url = "$haglund_url/ids?source=myanimelist&id=$id"
+        val json = app.get(url).text
+        return tryParseJson<ExtenalIds>(json)?.imdb
     }
 
    private suspend fun extractImdbInfo(
@@ -320,6 +327,7 @@ class CineSimklProvider: MainAPI() {
                 null,
                 null,
                 null,
+                null,
                 isAnime,
                 isBollywood,
                 isAsian,
@@ -354,7 +362,8 @@ class CineSimklProvider: MainAPI() {
                         json.ids?.anilist?.toIntOrNull(),
                         json.ids?.mal?.toIntOrNull(),
                         kitsuId,
-                        json.season?.toIntOrNull() ?: it.season,
+                        json.season?.toIntOrNull(),
+                        it.season,
                         it.episode,
                         it.date.toString().substringBefore("-").toIntOrNull(),
                         isAnime,
@@ -463,7 +472,7 @@ class CineSimklProvider: MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val (imdbId, imdbSeason, imdbEpisode) = try {
+        var (imdbId, imdbSeason, imdbEpisode) = try {
             if (res.imdbId != null) {
                 Triple(res.imdbId, res.season, res.episode)
             } else {
@@ -471,6 +480,12 @@ class CineSimklProvider: MainAPI() {
             }
         } catch (e: Exception) {
             Triple(null, null, null)
+        }
+
+        if(imdbId == null)  {
+            imdbId = getExternalIds(res.malId)
+            imdbSeason = res.imdbSeason
+            imdbEpisode = res.episode
         }
 
         val (imdbTitle, tmdbId) = try {
@@ -617,6 +632,7 @@ class CineSimklProvider: MainAPI() {
         val anilistId   : Int?    = null,
         val malId       : Int?    = null,
         val kitsuId     : Int?    = null,
+        val imdbSeason  : Int?    = null,
         val season      : Int?    = null,
         val episode     : Int?    = null,
         val airedYear   : Int?    = null,
@@ -624,5 +640,9 @@ class CineSimklProvider: MainAPI() {
         val isBollywood : Boolean = false,
         val isAsian     : Boolean = false,
         val isCartoon   : Boolean = false
+    )
+
+    data class ExtenalIds(
+        val imdb     : String? = null,
     )
 }
