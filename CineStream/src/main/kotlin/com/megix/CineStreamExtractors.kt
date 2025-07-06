@@ -1765,7 +1765,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val session = if(episode == null) {
             animeData?.firstOrNull()?.session ?: return
         } else {
-            animeData?.find { it.episode == episode }?.session ?: return
+            animeData?.getOrNull(episode-1)?.session ?: return
         }
         val doc = app.get("$proxyAPI/$animepaheAPI/play/$id/$session", headers).document
 
