@@ -1041,7 +1041,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
-                    "$netflixAPI/${it.file}",
+                    "${it.file}",
                 ) {
                     this.referer = "$netflixAPI/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
@@ -1114,7 +1114,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Netflix",
                     "Netflix",
-                    "$netflixAPI/${it.file}",
+                    "${it.file}",
                 ) {
                     this.referer = "$netflixAPI/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
