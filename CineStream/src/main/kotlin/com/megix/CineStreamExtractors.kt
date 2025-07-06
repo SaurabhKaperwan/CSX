@@ -1672,21 +1672,20 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val malsync = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
             .parsedSafe<MALSyncResponses>()?.sites
-        val zoroIds = malsync?.zoro?.keys?.map { it }
+
+        // val zoroIds = malsync?.zoro?.keys?.map { it }
         val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":"," ")
-        val animepahe = malsync?.animepahe?.firstNotNullOf { it.value["url"] }
-        val animepahetitle = malsync?.animepahe?.firstNotNullOf { it.value["title"] }
-        val aniXL = malsync?.AniXL?.values?.firstNotNullOf { it["url"] }
+        val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
+        val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
+        val aniXL = malsync?.AniXL?.values?.firstNotNullOfOrNull { it["url"] }
 
         runAllAsync(
             {
-                val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
                 invokeHianime(hianimeurl, episode, subtitleCallback, callback)
             },
             {
-                val animepahe = malsync?.animepahe?.firstNotNullOfOrNull { it.value["url"] }
-                if (animepahe != null)
-                    invokeAnimepahe(animepahe, episode, subtitleCallback, callback)
+                if (animepaheUrl != null)
+                    invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback)
             },
             {
                 invokeAniXL(aniXL, episode, subtitleCallback, callback)
