@@ -1759,7 +1759,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val id = app.get("$proxyAPI/$url" ?: return, headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
         val animeData =
-            app.get("$proxyAPI/$animepaheAPI/api?m=release&id=$id&sort=episode_desc&page=1", headers)
+            app.get("$proxyAPI/$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
         val session = if(episode == null) {
             animeData?.firstOrNull()?.session ?: return
