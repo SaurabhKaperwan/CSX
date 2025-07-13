@@ -2512,6 +2512,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         if (title.isNullOrBlank()) return
+        if(season == null && year == null) return
+
         val fixTitle = title.createPlayerSlug().orEmpty()
         val fixQuery = (season?.let { "$fixTitle S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$fixTitle $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
         val allLinks = HashSet<Player4uLinkData>()
@@ -2529,16 +2531,16 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                 )
 
-                if(page == 0 && season == null && allLinks.size == 0)
-                {
-                    document = app.get("$Player4uApi/embed?key=${fixTitle.replace(" ","+")}", timeout = 20).document
-                    allLinks.addAll(
-                        document.select(".playbtnx").map {
-                            Player4uLinkData(name = it.text(), url = it.attr("onclick"))
-                        }
-                    )
-                    break
-                }
+                // if(page == 0 && season == null && allLinks.size == 0)
+                // {
+                //     document = app.get("$Player4uApi/embed?key=${fixTitle.replace(" ","+")}", timeout = 20).document
+                //     allLinks.addAll(
+                //         document.select(".playbtnx").map {
+                //             Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                //         }
+                //     )
+                //     break
+                // }
 
                 nextPageExists = document.select("div a").any { it.text().contains("Next", true) }
             } catch (e: Exception) {}
