@@ -1037,11 +1037,16 @@ object CineStreamExtractors : CineStreamProvider() {
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
+            val source = if(it.file?.contains(netflixAPI) == true) {
+                "${it.file}"
+            } else {
+                "$netflixAPI/${it.file}"
+            }
             callback.invoke(
                 newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
-                    "$netflixAPI/${it.file}",
+                    source,
                 ) {
                     this.referer = "$netflixAPI/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
