@@ -1182,9 +1182,9 @@ object CineStreamExtractors : CineStreamProvider() {
             val regex = Regex("""S\d{2}E\d{2}""", RegexOption.IGNORE_CASE)
             var singleEpEntry = false
 
-            if (season != null && episode != null && regex.containsMatchIn(it.text())) {
+            if (episode != null && regex.containsMatchIn(it.text())) {
                 val currentEpRegex = Regex(
-                    """S0*${season}E0*${episode}""",
+                    """E0*${episode}""",
                     RegexOption.IGNORE_CASE
                 )
 
