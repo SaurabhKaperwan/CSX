@@ -929,9 +929,10 @@ object CineStreamExtractors : CineStreamProvider() {
             cookies = cookies,
             referer = "$netflixAPI/",
         ).parsedSafe<NetflixResponse>().let { media ->
-            if (season == null && year.toString() == media?.year.toString()) {
+            //provides wrong year
+            if (season == null) {
                 media?.title to netflixId
-            } else if(year.toString() == media?.year.toString()) {
+            } else {
                 val seasonId = media?.season?.find { it.s == "$season" }?.id
                 var episodeId : String? = null
                 var page = 1
@@ -949,9 +950,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
 
                 media?.title to episodeId
-            }
-            else {
-                null to null
             }
         }
 
