@@ -850,8 +850,8 @@ object CineStreamExtractors : CineStreamProvider() {
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "https://kisskh.co/",
-                            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+                            "Referer" to "https://kisskh.ovh/",
+                            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
                         )
                     }
                 )

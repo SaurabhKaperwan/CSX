@@ -25,7 +25,7 @@ class NetflixMirrorProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://netfree2.cc"
+    override var mainUrl = "https://net2025.cc"
     override var name = "NetflixMirror"
 
     override val hasMainPage = true
@@ -116,10 +116,9 @@ class NetflixMirrorProvider : MainAPI() {
                 Actor(it),
             )
         }
-        val genre = listOf(data.ua.toString()) + (data.genre?.split(",")
+        val genre = data.genre?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
-            ?: emptyList())
         val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
@@ -159,6 +158,7 @@ class NetflixMirrorProvider : MainAPI() {
             actors = cast
             this.rating = rating
             this.duration = runTime
+            this.contentRating = data.ua
         }
     }
 

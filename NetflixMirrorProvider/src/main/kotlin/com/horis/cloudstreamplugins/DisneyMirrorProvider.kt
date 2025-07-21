@@ -25,7 +25,7 @@ class DisneyMirrorProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://netfree2.cc"
+    override var mainUrl = "https://net2025.cc"
     override var name = "DisneyMirror"
 
     override val hasMainPage = true
@@ -33,7 +33,6 @@ class DisneyMirrorProvider : MainAPI() {
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
-    private val newUrl = "https://a.netfree2.cc"
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
@@ -43,7 +42,7 @@ class DisneyMirrorProvider : MainAPI() {
             "hd" to "on"
         )
         val document = app.get(
-            "$newUrl/mobile/home",
+            "$mainUrl/mobile/home",
             cookies = cookies,
             referer = "$mainUrl/tv/home",
         ).document
@@ -114,10 +113,10 @@ class DisneyMirrorProvider : MainAPI() {
                 Actor(it),
             )
         }
-        val genre = listOf(data.ua.toString()) + (data.genre?.split(",")
+        val genre = data.genre?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
-            ?: emptyList())
+
         val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
@@ -157,6 +156,7 @@ class DisneyMirrorProvider : MainAPI() {
             actors = cast
             this.rating = rating
             this.duration = runTime
+            this.contentRating = data.ua
         }
     }
 
