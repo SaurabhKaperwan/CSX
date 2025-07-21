@@ -915,7 +915,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val NfCookie = NFBypass(netflixAPI)
         val cookies = mapOf(
             "t_hash_t" to NfCookie,
-            "ott" to "dp",
+            "ott" to "hs",
             "hd" to "on"
         )
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
@@ -965,8 +965,8 @@ object CineStreamExtractors : CineStreamProvider() {
         }?.firstOrNull()?.sources?.map {
             callback.invoke(
                 newExtractorLink(
-                    "Disney",
-                    "Disney",
+                    "Hotstar",
+                    "Hotstar",
                     "$netflixAPI/${it.file}",
                 ) {
                     this.referer = "$netflixAPI/"

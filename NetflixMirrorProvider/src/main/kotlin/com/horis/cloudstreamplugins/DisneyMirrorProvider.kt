@@ -38,7 +38,7 @@ class DisneyMirrorProvider : MainAPI() {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
-            "ott" to "dp",
+            "ott" to "hs",
             "hd" to "on"
         )
         val document = app.get(
@@ -62,11 +62,11 @@ class DisneyMirrorProvider : MainAPI() {
 
     private fun Element.toSearchResult(): SearchResponse? {
         val id = selectFirst("a")?.attr("data-post") ?: attr("data-post") ?: return null
-        val posterUrl =
-            fixUrlNull(selectFirst(".card-img-container img, .top10-img img")?.attr("data-src"))
+        // val posterUrl =
+        //     fixUrlNull(selectFirst(".card-img-container img, .top10-img img")?.attr("data-src"))
 
         return newAnimeSearchResponse("", Id(id).toJson()) {
-            this.posterUrl = posterUrl
+            this.posterUrl = "https://imgcdn.media/hs/v/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
         }
     }
@@ -76,14 +76,14 @@ class DisneyMirrorProvider : MainAPI() {
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
-            "ott" to "dp"
+            "ott" to "hs"
         )
         val url = "$mainUrl/mobile/hs/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(url, referer = "$mainUrl/tv/home", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://imgcdn.media/hs/v/1000/${it.id}.jpg"
+                posterUrl = "https://imgcdn.media/hs/v/${it.id}.jpg"
                 posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             }
         }
@@ -95,7 +95,7 @@ class DisneyMirrorProvider : MainAPI() {
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
-            "ott" to "dp"
+            "ott" to "hs"
         )
         val data = app.get(
             "$mainUrl/mobile/hs/post.php?id=$id&t=${APIHolder.unixTime}",
@@ -120,6 +120,13 @@ class DisneyMirrorProvider : MainAPI() {
         val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
+        val suggest = data.suggest?.map {
+            newAnimeSearchResponse("", Id(it.id).toJson()) {
+                this.posterUrl = "https://imgcdn.media/hs/v/${it.id}.jpg"
+                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+            }
+        }
+
         if (data.episodes.first() == null) {
             episodes.add(newEpisode(LoadData(title, id)) {
                 name = data.title
@@ -130,7 +137,7 @@ class DisneyMirrorProvider : MainAPI() {
                     this.name = it.t
                     this.episode = it.ep.replace("E", "").toIntOrNull()
                     this.season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://imgcdn.media/hsepimg/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.media/hsepimg/150/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -147,8 +154,8 @@ class DisneyMirrorProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://imgcdn.media/hs/v/1000/$id.jpg"
-            backgroundPosterUrl ="https://imgcdn.media/hs/h/1000/$id.jpg"
+            posterUrl = "https://imgcdn.media/hs/v/$id.jpg"
+            backgroundPosterUrl = "https://imgcdn.media/hs/h/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             plot = data.desc
             year = data.year.toIntOrNull()
@@ -157,6 +164,7 @@ class DisneyMirrorProvider : MainAPI() {
             this.rating = rating
             this.duration = runTime
             this.contentRating = data.ua
+            this.recommendations = suggest
         }
     }
 
@@ -167,7 +175,7 @@ class DisneyMirrorProvider : MainAPI() {
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
-            "ott" to "dp"
+            "ott" to "hs"
         )
         var pg = page
         while (true) {
@@ -202,7 +210,7 @@ class DisneyMirrorProvider : MainAPI() {
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
-            "ott" to "dp"
+            "ott" to "hs"
         )
         val playlist = app.get(
             "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",

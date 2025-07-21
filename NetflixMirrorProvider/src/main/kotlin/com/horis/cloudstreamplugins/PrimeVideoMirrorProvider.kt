@@ -64,13 +64,13 @@ class PrimeVideoMirrorProvider : MainAPI() {
         return HomePageList(
             name,
             items,
-            isHorizontalImages = true
+            isHorizontalImages = false
         )
     }
 
     private fun toSearchResult(id: String): SearchResponse? {
         return newAnimeSearchResponse("", Id(id).toJson()) {
-            this.posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
+            this.posterUrl = "https://wsrv.nl/?url=https://imgcdn.media/pv/v/$id.jpg&w=500"
             posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
         }
     }
@@ -87,7 +87,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://img.nfmirrorcdn.top/pv/900/${it.id}.jpg"
+                posterUrl = "https://wsrv.nl/?url=https://imgcdn.media/pv/v/${it.id}.jpg&w=500"
                 posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             }
         }
@@ -124,6 +124,13 @@ class PrimeVideoMirrorProvider : MainAPI() {
         val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
+        val suggest = data.suggest?.map {
+            newAnimeSearchResponse("", Id(it.id).toJson()) {
+                this.posterUrl = "https://wsrv.nl/?url=https://imgcdn.media/pv/v/${it.id}.jpg&w=500"
+                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+            }
+        }
+
         if (data.episodes.first() == null) {
             episodes.add(newEpisode(LoadData(title, id)) {
                 name = data.title
@@ -134,7 +141,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
                     name = it.t
                     episode = it.ep.replace("E", "").toIntOrNull()
                     season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://img.nfmirrorcdn.top/pvepimg/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.media/pvepimg/150/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -151,7 +158,8 @@ class PrimeVideoMirrorProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
+            posterUrl = "https://wsrv.nl/?url=https://imgcdn.media/pv/v/$id.jpg&w=500"
+            backgroundPosterUrl = "https://imgcdn.media/pv/c/$id.jpg"
             posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             plot = data.desc
             year = data.year.toIntOrNull()
@@ -160,6 +168,7 @@ class PrimeVideoMirrorProvider : MainAPI() {
             this.rating = rating
             this.duration = runTime
             this.contentRating = data.ua
+            this.recommendations = suggest
         }
     }
 
