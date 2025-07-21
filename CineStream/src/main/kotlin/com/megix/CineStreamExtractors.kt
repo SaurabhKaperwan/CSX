@@ -1179,9 +1179,25 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = "$skymoviesAPI/search.php?search=$title ($year)&cat=All"
         app.get(url).document.select("div.L a").amap {
+            val regex = Regex("""S\d{2}E\d{2}""", RegexOption.IGNORE_CASE)
+            var singleEpEntry = false
+
+            if (season != null && episode != null && regex.containsMatchIn(it.text())) {
+                val currentEpRegex = Regex(
+                    """S0*${season}E0*${episode}""",
+                    RegexOption.IGNORE_CASE
+                )
+
+                if (!currentEpRegex.containsMatchIn(it.text())) {
+                    return@amap
+                } else {
+                    singleEpEntry = true
+                }
+            }
+
             app.get(skymoviesAPI + it.attr("href")).document.select("div.Bolly > a").amap {
                 val text = it.text()
-                if(episode == null) {
+                if(episode == null || singleEpEntry) {
                   loadSourceNameExtractor(
                         "Skymovies",
                         it.attr("href"),
