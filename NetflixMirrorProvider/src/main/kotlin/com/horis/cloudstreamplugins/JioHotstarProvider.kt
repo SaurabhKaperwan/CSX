@@ -18,7 +18,7 @@ import okhttp3.Response
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
 
-class DisneyMirrorProvider : MainAPI() {
+class JioHotstarProvider : MainAPI() {
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -26,7 +26,7 @@ class DisneyMirrorProvider : MainAPI() {
     override var lang = "en"
 
     override var mainUrl = "https://net2025.cc"
-    override var name = "DisneyMirror"
+    override var name = "JioHotstar"
 
     override val hasMainPage = true
     private var cookie_value = ""
