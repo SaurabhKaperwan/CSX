@@ -443,14 +443,19 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = url.replace(mainUrl, "https://hubcloud.one")
+        val newBaseUrl = "https://hubcloud.one"
+        val newUrl = url.replace(mainUrl, newBaseUrl)
         val doc = app.get(newUrl).document
-        val link = if(newUrl.contains("drive")) {
+        var link = if(newUrl.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
             Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
         }
         else {
             doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
+        }
+
+        if(!link.startsWith("https://")) {
+            link = newBaseUrl + link
         }
 
         val document = app.get(link).document

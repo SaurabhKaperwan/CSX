@@ -8,6 +8,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
+import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.runAllAsync
 import kotlinx.coroutines.async
@@ -79,6 +80,7 @@ class CineSimklProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = false
+    override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 30
     private val auth = BuildConfig.SIMKL_API
@@ -91,7 +93,7 @@ class CineSimklProvider: MainAPI() {
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
         "/tv/genres/all/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
-        "/anime/airing?date?sort=popularity" to "Airing Anime Today",
+        "/anime/airing?date?sort=rank" to "Airing Anime Today",
         "/anime/genres/all/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Anime",
         "/tv/genres/all/all-types/kr/all-networks/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
         "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
@@ -176,20 +178,20 @@ class CineSimklProvider: MainAPI() {
     }
 
     private fun getPosterUrl(
-        url: String? = null,
+        id: String? = null,
         type: String,
      ): String? {
         val baseUrl = "https://simkl.in"
-        if(url == null) {
+        if(id == null) {
             return null
         } else if(type == "episode") {
-            return "$baseUrl/episodes/${url}_w.webp"
+            return "$baseUrl/episodes/${id}_w.webp"
         } else if(type == "poster") {
-            return "$baseUrl/posters/${url}_m.webp"
+            return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "youtube") {
-            return "https://img.youtube.com/vi/${url}/maxresdefault.jpg"
+            return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
-            return "$baseUrl/fanart/${url}_medium.webp"
+            return "$baseUrl/fanart/${id}_medium.webp"
         }
     }
 
@@ -213,8 +215,11 @@ class CineSimklProvider: MainAPI() {
             val result = runCatching {
                 val json = app.get("$apiUrl/search/$type?q=$query&page=1&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
                 parseJson<Array<SimklResponse>>(json).map {
+                    val allratings = it.ratings
+                    val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
                     newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
+                        this.score = Score.from10(score)
                     }
                 }
             }.getOrDefault(emptyList())
@@ -261,8 +266,11 @@ class CineSimklProvider: MainAPI() {
             val jsonString = app.get(apiUrl + request.data + page, headers = headers).text
             val json = parseJson<Array<SimklResponse>>(jsonString)
             val data = json.map {
+                val allratings = it.ratings
+                val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
                 newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
                     this.posterUrl = getPosterUrl(it.poster, "poster")
+                    this.score = Score.from10(score)
                 }
             }
 
@@ -339,7 +347,7 @@ class CineSimklProvider: MainAPI() {
                 this.plot = json.overview
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
-                this.rating = rating.toString().toRatingInt()
+                this.score = Score.from10(rating)
                 this.year = json.year
                 this.recommendations = recommendations
                 this.contentRating = json.certification
@@ -388,7 +396,7 @@ class CineSimklProvider: MainAPI() {
                 this.plot = json.overview
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
-                this.rating = rating.toString().toRatingInt()
+                this.score = Score.from10(rating)
                 this.year = json.year
                 this.recommendations = recommendations
                 this.contentRating = json.certification
