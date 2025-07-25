@@ -22,6 +22,8 @@ class JioHotstarProvider : MainAPI() {
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
+        TvType.Anime,
+        TvType.AsianDrama
     )
     override var lang = "en"
 

@@ -20,15 +20,17 @@ import okhttp3.Response
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
 
-class PrimeVideoMirrorProvider : MainAPI() {
+class PrimeVideoProvider : MainAPI() {
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
+        TvType.Anime,
+        TvType.AsianDrama
     )
     override var lang = "en"
 
     override var mainUrl = "https://net2025.cc"
-    override var name = "PrimeVideoMirror"
+    override var name = "PrimeVideo"
 
     override val hasMainPage = true
     private var cookie_value = ""

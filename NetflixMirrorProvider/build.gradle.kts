@@ -1,11 +1,11 @@
 // use an integer for version numbers
-version = 26
+version = 27
 
 cloudstream {
     //language = "en"
     // All of these properties are optional, you can safely remove them
 
-    description = "Netflix, PrimeVideo, Disney Hotstar Content in Multiple Languages"
+    description = "Netflix, PrimeVideo, JioHotstar(Hotstar, Disney, Paramount, HBO, Peacock) Content in Multiple Languages"
     authors = listOf("megix")
 
     /**
@@ -18,7 +18,9 @@ cloudstream {
     status = 1 // will be 3 if unspecified
     tvTypes = listOf(
         "Movie",
-        "TvSeries"
+        "TvSeries",
+        "AsianDrama",
+        "Anime"
     )
 
     iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/NetflixMirrorProvider/icon.png"

@@ -517,6 +517,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 type = ExtractorLinkType.M3U8
             ) {
                 this.referer = xprimeBaseAPI
+                this.quality = 1080
                 this.headers = headers
             }
         )
