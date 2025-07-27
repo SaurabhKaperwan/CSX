@@ -1135,30 +1135,57 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        )
+
         val document = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
+        val ajaxUrl = "$hdmovie2API/wp-admin/admin-ajax.php"
+        val commonHeaders = mapOf(
+            "Accept" to "*/*",
+            "X-Requested-With" to "XMLHttpRequest"
+        )
 
-        document.select("div.wp-content p a").amap {
+        suspend fun String.getIframe(): String = Jsoup.parse(this).select("iframe").attr("src")
 
-            if(episode != null && it.text().contains("EP")) {
-                if(
-                    it.text().contains("EP$episode")||
-                    it.text().contains("EP0$episode")
-                ) {
-                    app.get(it.attr("href")).document.select("div > p > a").amap {
-                        loadSourceNameExtractor(
-                            "Hdmovie2",
-                            it.attr("href"),
-                            "",
-                            subtitleCallback,
-                            callback,
-                        )
-                    }
+        suspend fun fetchSource(post: String, nume: String, type: String): String {
+            val response = app.post(
+                url = ajaxUrl,
+                data = mapOf(
+                "action" to "doo_player_ajax",
+                "post" to post,
+                "nume" to nume,
+                "type" to type
+            ),
+            referer = hdmovie2API,
+            headers = commonHeaders
+            ).parsed<ResponseHash>()
+            return response.embed_url.getIframe()
+        }
+
+        var link = ""
+
+        if (episode != null) {
+            document.select("ul#playeroptionsul > li").getOrNull(1)?.let { ep ->
+                val post = ep.attr("data-post")
+                val nume = (episode + 1).toString()
+                link = fetchSource(post, nume, "movie")
+        }
+        } else {
+            document.select("ul#playeroptionsul > li")
+                .firstOrNull { it.text().contains("v2", ignoreCase = true) }
+                ?.let { mv ->
+                    val post = mv.attr("data-post")
+                    val nume = mv.attr("data-nume")
+                    link = fetchSource(post, nume, "movie")
                 }
-            }
-            else {
-                val type = if(episode != null) "(Combined)" else ""
-                app.get(it.attr("href")).document.select("div > p > a").amap {
+        }
+
+        if (link.isEmpty()) {
+            val type = if (episode != null) "(Combined)" else ""
+            document.select("a[href*=dwo]").forEach { anchor ->
+                val innerDoc = app.get(anchor.attr("href")).document
+                innerDoc.select("div > p > a").forEach {
                     loadSourceNameExtractor(
                         "Hdmovie2$type",
                         it.attr("href"),
@@ -1168,6 +1195,16 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
             }
+        }
+    
+        if (link.isNotEmpty()) {
+            loadSourceNameExtractor(
+                "Hdmovie2",
+                link,
+                hdmovie2API,
+                subtitleCallback,
+                callback,
+            )
         }
     }
 
