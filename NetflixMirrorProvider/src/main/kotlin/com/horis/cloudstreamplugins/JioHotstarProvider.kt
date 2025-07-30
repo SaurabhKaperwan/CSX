@@ -44,7 +44,7 @@ class JioHotstarProvider : MainAPI() {
             "hd" to "on"
         )
         val document = app.get(
-            "https://a.net2025.cc/mobile/home",
+            "$mainUrl/mobile/home",
             cookies = cookies,
             referer = "$mainUrl/tv/home",
         ).document
