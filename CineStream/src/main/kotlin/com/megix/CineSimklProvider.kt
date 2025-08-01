@@ -82,7 +82,7 @@ class CineSimklProvider: MainAPI() {
     override val hasQuickSearch = false
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
-    private final val mediaLimit = 30
+    private final val mediaLimit = 20
     private val auth = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
     private val api = AccountManager.simklApi
@@ -91,23 +91,23 @@ class CineSimklProvider: MainAPI() {
     private val haglund_url = "https://arm.haglund.dev/api/v2"
 
     override val mainPage = mainPageOf(
-        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Movies This Week",
-        "/tv/genres/all-types/all-countries/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Shows Today",
-        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit&page=" to "Trending Anime",
+        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
+        "/tv/genres/all-types/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
+        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit" to "Trending Anime",
         "/anime/airing?date?sort=rank" to "Airing Anime Today",
-        "/tv/genres/all-types/kr/all-networks/this-year/popular-this-week?limit=$mediaLimit&page=" to "Trending Korean Shows This Week",
-        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit&page=" to "Top Rated Movies This Year",
-        "/tv/genres/all-types/all-countries/all-networks/this-year/popular-today?limit=$mediaLimit&page=" to "Top Rated Shows This Year",
-        "/tv/genres/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Netflix Shows",
-        "/tv/genres/all-types/all-countries/disney/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Disney Shows",
-        "/tv/genres/all-types/all-countries/hbo/all-years/popular-today?limit=$mediaLimit&page=" to "Trending HBO Shows",
-        "/tv/genres/all-types/all-countries/appletv/all-years/popular-today?limit=$mediaLimit&page=" to "Trending Apple TV+ Shows",
-        "/movies/genres/all/all-types/all-countries/this-year/revenue?limit=$mediaLimit&page=" to "Box Office Hits This Year",
-        "/movies/genres/all/all-types/all-countries/all-years/rank?limit=$mediaLimit&page=" to "Top Rated Movies",
-        "/tv/genres/all-types/all-countries/all-networks/all-years/rank?limit=$mediaLimit&page=" to "Top Rated Shows",
-        "/anime/genres/all/all-types/all-years?limit=$mediaLimit&page=" to "Top Rated Anime",
-        "/movies/genres/all/all-types/all-countries/all-years/most-anticipated?limit=$mediaLimit&page=" to "Most Anticipated Movies",
-        "/anime/premieres/soon?type=all&limit=$mediaLimit&page=" to "Upcoming Anime",
+        "/tv/genres/all-types/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
+        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
+        "/tv/genres/all-types/all-countries/all-networks/this-year/popular-today?limit=$mediaLimit" to "Top Rated Shows This Year",
+        "/tv/genres/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit" to "Trending Netflix Shows",
+        "/tv/genres/all-types/all-countries/disney/all-years/popular-today?limit=$mediaLimit" to "Trending Disney Shows",
+        "/tv/genres/all-types/all-countries/hbo/all-years/popular-today?limit=$mediaLimit" to "Trending HBO Shows",
+        "/tv/genres/all-types/all-countries/appletv/all-years/popular-today?limit=$mediaLimit" to "Trending Apple TV+ Shows",
+        "/movies/genres/all/all-types/all-countries/this-year/revenue?limit=$mediaLimit" to "Box Office Hits This Year",
+        "/movies/genres/all/all-types/all-countries/all-years/rank?limit=$mediaLimit" to "Top Rated Movies",
+        "/tv/genres/all-types/all-countries/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Shows",
+        "/anime/genres/all/all-types/all-years?limit=$mediaLimit" to "Top Rated Anime",
+        "/movies/genres/all/all-types/all-countries/all-years/most-anticipated?limit=$mediaLimit" to "Most Anticipated Movies",
+        "/anime/premieres/soon?type=all&limit=$mediaLimit" to "Upcoming Anime",
         "Personal" to "Personal",
     )
 
@@ -271,7 +271,7 @@ class CineSimklProvider: MainAPI() {
                             ?: return null
             return newHomePageResponse(homePageList, false)
         } else {
-            val jsonString = app.get(apiUrl + request.data + page, headers = headers).text
+            val jsonString = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers).text
             val json = parseJson<Array<SimklResponse>>(jsonString)
             val data = json.map {
                 val allratings = it.ratings
@@ -294,7 +294,7 @@ class CineSimklProvider: MainAPI() {
 
     override suspend fun load(url: String): LoadResponse {
         val simklId = getSimklId(url)
-        val jsonString = app.get("$apiUrl/tv/$simklId?extended=full", headers = headers).text
+        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth&extended=full", headers = headers).text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it.toString() }
         val tvType = json.type ?: ""
@@ -363,7 +363,7 @@ class CineSimklProvider: MainAPI() {
                 this.addAniListId(json.ids?.anilist?.toIntOrNull())
             }
         } else {
-            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?extended=full", headers = headers).text
+            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
