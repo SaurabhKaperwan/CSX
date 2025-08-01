@@ -287,7 +287,7 @@ class CineSimklProvider: MainAPI() {
                     name = request.name,
                     list = data,
                 ),
-                hasNext = if(request.data.contains("page=")) true else false
+                hasNext = true
             )
         }
     }
