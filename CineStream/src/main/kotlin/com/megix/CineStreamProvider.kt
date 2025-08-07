@@ -91,7 +91,7 @@ open class CineStreamProvider : MainAPI() {
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         // const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
-        const val allmovielandAPI = "https://allmovieland.fun"
+        const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
         const val AllanimeAPI = "https://api.allanime.day/api"
@@ -102,7 +102,7 @@ open class CineStreamProvider : MainAPI() {
         const val Primewire = "https://www.primewire.tf"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
         //const val VidJoyApi = "https://vidjoy.pro"
-        const val soaperAPI = "https://soaper.cc"
+        const val soaperAPI = "https://soaper.live"
         const val asiaflixAPI = "https://asiaflix.net"
         const val twoembedAPI = "https://2embed.cc"
         const val xprimeBaseAPI = "https://xprime.tv"

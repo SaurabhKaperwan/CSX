@@ -150,7 +150,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val gson = Gson()
         val subsUrls = listOf(
-            "https://3b4bbf5252c4-aio-streaming.baby-beamup.club/stremio/languages=english,hindi,spanish,arabic,mandarin,bengali,portuguese,russian,japanese,lahnda,thai,turkish,french,german,korean,telugu,marathi,tamil,urdu,italian",
+            // "https://3b4bbf5252c4-aio-streaming.baby-beamup.club/stremio/languages=english,hindi,spanish,arabic,mandarin,bengali,portuguese,russian,japanese,lahnda,thai,turkish,french,german,korean,telugu,marathi,tamil,urdu,italian",
             "https://subsource.strem.bar/ZW5nbGlzaCxoaW5kaSxzcGFuaXNoLGFyYWJpYyxtYW5kYXJpbixiZW5nYWxpLHBvcnR1Z3Vlc2UscnVzc2lhbixqYXBhbmVzZSxsYWhuZGEsdGhhaSx0dXJraXNoLGZyZW5jaCxnZXJtYW4sa29yZWFuLHRlbHVndSxtYXJhdGhpLHRhbWlsLHVyZHUsaXRhbGlhbi9oaUluY2x1ZGUv",
             "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true"
         )
@@ -710,8 +710,11 @@ object CineStreamExtractors : CineStreamProvider() {
         episode : Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        val host = "https://zativertz295huk.com"
+        val playerScript = app.get("https://allmovieland.link/player.js?v=60%20128").toString()
+        val domainRegex = Regex("const AwsIndStreamDomain.*'(.*)';")
+        val host = domainRegex.find(playerScript)?.groupValues?.getOrNull(1) ?: return
         val referer = "$allmovielandAPI/"
+
         val res =
                 app.get("$host/play/$id", referer = referer)
                         .document
