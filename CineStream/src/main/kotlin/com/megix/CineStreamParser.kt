@@ -138,9 +138,7 @@ data class NFVerifyUrl(
 )
 
 data class NfSearchData(
-    val head: String,
     val searchResult: List<NfSearchResult>,
-    val type: Int
 )
 
 data class NfSearchResult(

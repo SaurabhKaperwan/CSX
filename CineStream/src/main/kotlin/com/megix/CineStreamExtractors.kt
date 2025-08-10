@@ -96,8 +96,9 @@ object CineStreamExtractors : CineStreamProvider() {
             "$toonStreamAPI/episode/${title.createSlug()}-${season}x${episode}/"
         }
 
-        app.get(url, referer = toonStreamAPI).document.select("#aa-options > div > iframe").amap {
-            val doc = app.get(it.attr("data-src")).document
+        app.get(url, referer = toonStreamAPI).document.select("div.video > iframe").amap {
+            val source = it.attr("data-src")
+            val doc = app.get(source).document
             doc.select("div.Video > iframe").amap { iframe ->
                 loadSourceNameExtractor(
                     "ToonStream",
@@ -685,21 +686,13 @@ object CineStreamExtractors : CineStreamProvider() {
         if(matchedId != null && matchedName != null) {
             val titleSlug = matchedName.replace(" ", "-")
             val episodeUrl = "$asiaflixAPI/play/$titleSlug-1/$matchedId/1"
-            val scriptText = app.get(episodeUrl).document.selectFirst("script#ng-state")?.data().toString()
-
-            val regex = Regex("""\"streamUrls\"\s*:\s*\[\s*(.*?)\s*](?=\s*[,}])""", RegexOption.DOT_MATCHES_ALL)
+            val scriptText = app.get(episodeUrl).document.selectFirst("script#ng-state")?.data() ?: return
+            val fullRegex = Regex("""\"number\"\s*:\s*${episode ?: 1}\b[\s\S]*?\"streamUrls\"\s*:\s*(\[[\s\S]*?])""")
+            val epJson = fullRegex.find(scriptText)?.groupValues?.get(1) ?: return
             val urlRegex = Regex("""\"url\"\s*:\s*\"(.*?)\"""")
-
-            val matches = regex.findAll(scriptText).toList()
-
-            val newEp = episode ?: 1
-
-            if (matches.size >= newEp) {
-                val streamSection = matches[newEp-1].groupValues[1]
-                urlRegex.findAll(streamSection).forEach { urlMatch ->
-                    val source = httpsify(urlMatch.groupValues[1])
-                    loadSourceNameExtractor("Asiaflix", source, episodeUrl, subtitleCallback, callback)
-                }
+            urlRegex.findAll(epJson).forEach { match ->
+                val source =  httpsify(match.groupValues[1])
+                loadSourceNameExtractor("Asiaflix", source, episodeUrl, subtitleCallback, callback)
             }
         }
     }
@@ -995,12 +988,12 @@ object CineStreamExtractors : CineStreamProvider() {
             "hd" to "on"
         )
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/mobile/pv/search.php?s=$title&t=${APIHolder.unixTime}"
+        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
         val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
         val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals("${title?.trim()}", ignoreCase = true) }?.id
 
         val (nfTitle, id) = app.get(
-            "$netflixAPI/mobile/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/",
@@ -1014,25 +1007,23 @@ object CineStreamExtractors : CineStreamProvider() {
 
                 while(episodeId == null && page < 10) {
                     val data = app.get(
-                        "$netflixAPI/mobile/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
+                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
                         referer = "$netflixAPI/",
                     ).parsedSafe<NetflixResponse>()
-                    episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
+                    episodeId = data?.episodes?.find { it.ep == "$episode" }?.id
                     if(data?.nextPageShow != 1) { break }
                     page++
                 }
-
                 media?.title to episodeId
-            }
-            else {
+            } else {
                 null to null
             }
         }
 
         app.get(
-            "$netflixAPI/mobile/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflixAPI/tv/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/",
@@ -1072,15 +1063,16 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val cookies = mapOf(
             "t_hash_t" to NfCookie,
-            "hd" to "on"
+            "hd" to "on",
+            "ott" to "nf"
         )
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/mobile/search.php?s=$title&t=${APIHolder.unixTime}"
+        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
         val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
         val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals("${title?.trim()}", ignoreCase = true) }?.id
 
         val (nfTitle, id) = app.get(
-            "$netflixAPI/mobile/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
+            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/",
@@ -1093,12 +1085,12 @@ object CineStreamExtractors : CineStreamProvider() {
                 var page = 1
                 while(episodeId == null && page < 10) {
                     val data = app.get(
-                        "$netflixAPI/mobile/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
+                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
                         headers = headers,
                         cookies = cookies,
                         referer = "$netflixAPI/",
                     ).parsedSafe<NetflixResponse>()
-                    episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
+                    episodeId = data?.episodes?.find { it.ep == "$episode" }?.id
                     if(data?.nextPageShow != 1) { break }
                     page++
                 }
@@ -1110,7 +1102,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflixAPI/mobile/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflixAPI/tv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflixAPI/",
@@ -1199,7 +1191,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
         }
-    
+
         if (link.isNotEmpty()) {
             loadSourceNameExtractor(
                 "Hdmovie2",

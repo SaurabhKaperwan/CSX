@@ -242,6 +242,10 @@ class MixDropPs : MixDrop() {
     override var mainUrl = "https://mixdrop.ps"
 }
 
+class MixDropTo : MixDrop() {
+    override var mainUrl = "https://mxdrop.to"
+}
+
 class MixDropSi : MixDrop() {
     override var mainUrl = "https://mixdrop.si"
 }
