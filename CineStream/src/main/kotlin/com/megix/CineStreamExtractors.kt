@@ -1012,7 +1012,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         cookies = cookies,
                         referer = "$netflixAPI/",
                     ).parsedSafe<NetflixResponse>()
-                    episodeId = data?.episodes?.find { it.ep == "$episode" }?.id
+                    episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
                     if(data?.nextPageShow != 1) { break }
                     page++
                 }
