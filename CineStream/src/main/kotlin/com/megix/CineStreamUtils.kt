@@ -1116,3 +1116,25 @@ suspend fun getRedirectLinks(url: String): String {
     }
 }
 
+suspend fun cinematickitBypass(url: String): String? {
+    return try {
+        val cleanedUrl = url.replace("&#038;", "&")
+        val encodedLink = cleanedUrl.substringAfter("safelink=").substringBefore("-")
+        if (encodedLink.isEmpty()) return null
+        val decodedUrl = base64Decode(encodedLink)
+        val doc = app.get(decodedUrl).document
+        val goValue = doc.select("form#landing input[name=go]").attr("value")
+        if (goValue.isBlank()) return null
+        val decodedGoUrl = base64Decode(goValue).replace("&#038;", "&")
+        val responseDoc = app.get(decodedGoUrl).document
+        val script = responseDoc.select("script").firstOrNull { it.data().contains("window.location.replace") }?.data() ?: return null
+        val regex = Regex("""window\.location\.replace\s*\(\s*["'](.+?)["']\s*\)\s*;?""")
+        val match = regex.find(script) ?: return null
+        val redirectPath = match.groupValues[1]
+        return if (redirectPath.startsWith("http")) redirectPath else URI(decodedGoUrl).let { "${it.scheme}://${it.host}$redirectPath" }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+

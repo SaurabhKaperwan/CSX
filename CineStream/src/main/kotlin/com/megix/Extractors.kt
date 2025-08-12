@@ -16,7 +16,7 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
-import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.VidhideExtractor
 import com.lagradost.cloudstream3.extractors.MixDrop
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.Vidguardto
@@ -54,11 +54,11 @@ open class SuperVideo : ExtractorApi() {
     }
 }
 
-class Ryderjet: VidHidePro() {
+class Ryderjet: VidhideExtractor() {
     override var mainUrl = "https://ryderjet.com"
 }
 
-class Smoothpre: VidHidePro() {
+class Smoothpre: VidhideExtractor() {
     override var mainUrl = "https://smoothpre.com"
 }
 
@@ -74,19 +74,20 @@ class Multimovies: StreamWishExtractor() {
     override var requiresReferer = true
 }
 
-class Animezia : VidHidePro() {
+class Animezia : VidhideExtractor() {
     override var name = "Animezia"
     override var mainUrl = "https://animezia.cloud"
     override var requiresReferer = true
 }
 
-class server2 : VidHidePro() {
+class server2 : VidhideExtractor() {
     override var name = "Multimovies Vidhide"
     override var mainUrl = "https://server2.shop"
     override var requiresReferer = true
 }
 
-class Dlions : VidHidePro() {
+
+class Dlions : VidhideExtractor() {
     override var mainUrl = "https://dlions.pro"
 }
 
@@ -232,7 +233,7 @@ class Pahe : ExtractorApi() {
     }
 }
 
-class Dhcplay: VidHidePro() {
+class Dhcplay: VidhideExtractor() {
     override var name = "DHC Play"
     override var mainUrl = "https://dhcplay.com"
     override var requiresReferer = true
@@ -252,4 +253,32 @@ class MixDropSi : MixDrop() {
 
 class Vembed : Vidguardto() {
     override var mainUrl = "https://vembed.net"
+}
+
+
+class Akamaicdn : ExtractorApi() {
+    override val name = "Akamaicdn"
+    override val mainUrl = "https://molop.art"
+    override val requiresReferer = true
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers= mapOf("user-agent" to "okhttp/4.12.0")
+        val res = app.get(url, referer = referer, headers = headers).document
+        val sniffScript = res.selectFirst("script:containsData(sniff\\()")
+            ?.data()
+            ?.substringAfter("sniff(")
+            ?.substringBefore(");") ?: return
+
+        val cleaned = sniffScript.replace(Regex("\\[.*?\\]"), "")
+        val regex = Regex("\"(.*?)\"")
+        val args = regex.findAll(cleaned).map { it.groupValues[1].trim() }.toList()
+        val token = args.lastOrNull().orEmpty()
+        val m3u8 = "$mainUrl/m3u8/${args[1]}/${args[2]}/master.txt?s=1&cache=1&plt=$token"
+        M3u8Helper.generateM3u8(name, m3u8, mainUrl, headers = headers).forEach(callback)
+    }
 }

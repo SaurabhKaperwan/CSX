@@ -24,10 +24,12 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Ryderjet())
         registerExtractorAPI(SuperVideo())
         registerExtractorAPI(MixDropPs())
+        registerExtractorAPI(MixDropTo())
+        registerExtractorAPI(MixDropSi())
         registerExtractorAPI(Dlions())
         registerExtractorAPI(Watchadsontape())
-        registerExtractorAPI(MixDropSi())
         registerExtractorAPI(Vembed())
         registerExtractorAPI(Multimoviesshg())
+        registerExtractorAPI(Akamaicdn())
     }
 }
