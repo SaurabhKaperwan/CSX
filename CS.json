@@ -1,0 +1,9 @@
+{
+  "name": "Megix Repo(Hindi & English)",
+  "description": "Hindi and English",
+  "iconUrl": "https://avatars.githubusercontent.com/u/91174352?v=4",
+  "manifestVersion": 2,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/plugins.json"
+  ]
+}
