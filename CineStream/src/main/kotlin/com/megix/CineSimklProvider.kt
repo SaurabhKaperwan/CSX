@@ -66,6 +66,7 @@ import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
 import com.megix.CineStreamExtractors.invokeDramadrip
+import com.megix.CineStreamExtractors.invokeWebStreamr
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -474,6 +475,7 @@ class CineSimklProvider: MainAPI() {
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
             // { if (!res.isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if(!res.isBollywood ) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -538,6 +540,7 @@ class CineSimklProvider: MainAPI() {
             { invokePlayer4U(imdbTitle, imdbSeason, imdbEpisode, res.year, callback) },
             { invokeThepiratebay(imdbId, imdbSeason, imdbEpisode, callback) },
             { invokeProtonmovies(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
+            { invokeWebStreamr(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(imdbId, imdbSeason, imdbEpisode, callback) },
             { invokeUhdmovies(imdbTitle, res.year, imdbSeason, imdbEpisode, callback, subtitleCallback) },
             { invoke4khdhub(imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) }

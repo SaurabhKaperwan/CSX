@@ -70,6 +70,7 @@ import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
 import com.megix.CineStreamExtractors.invokeDramadrip
+import com.megix.CineStreamExtractors.invokeWebStreamr
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -113,6 +114,7 @@ open class CineStreamProvider : MainAPI() {
         const val miruroAPI = "https://www.miruro.to"
         const val animezAPI = "https://animeyy.com"
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
+        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":""}"""
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -589,6 +591,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeBollyflix(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeProtonmovies(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeWebStreamr(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(imdbTitle, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -660,6 +663,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.id, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.id, subtitleCallback, callback) },
             { if (!isBollywood && !isAnime) invokeMoviesflix("Moviesflix", res.id, res.season, res.episode, subtitleCallback, callback) },

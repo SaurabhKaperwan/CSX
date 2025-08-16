@@ -338,14 +338,27 @@ data class TorrentioStream(
 )
 
 data class StreamifyResponse(
-    val streams: List<Streamify>
+    var streams: List<Streamify>
 )
 
 data class Streamify(
-    val name: String,
-    val type: String,
-    val url: String,
-    val title: String
+    var name: String? = null,
+    var type: String? = null,
+    var url: String,
+    var title: String? = null,
+    var behaviorHints : StreamifyBehaviorHints? = StreamifyBehaviorHints(),
+)
+
+data class StreamifyBehaviorHints (
+  var proxyHeaders : StreamifyProxyHeaders? = StreamifyProxyHeaders(),
+)
+
+data class StreamifyProxyHeaders (
+  var request : StreamifyRequest? = StreamifyRequest()
+)
+
+data class StreamifyRequest (
+  var Referer : String? = null
 )
 
 data class JikanExternal(
