@@ -44,11 +44,21 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url).text
         val data = tryParseJson<StreamifyResponse>(json) ?: return
         data.streams.forEach {
+            val title = it.title ?: ""
+            val type = if(title.contains("hls") || title.contains("m3u8") || title.contains("DoodStream")) {
+                ExtractorLinkType.M3U8
+            } else if(title.contains("mp4")) {
+                ExtractorLinkType.VIDEO
+            } else {
+                INFER_TYPE
+            }
+
             callback.invoke(
                 newExtractorLink(
                     it.name ?: "WebStreamr",
-                    "[${it.name}] ${it.title}",
+                    "[${it.name}] ${title}",
                     it.url,
+                    type = type
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
                     this.quality = getIndexQuality(it.name ?: "")
@@ -102,6 +112,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     } else {
                         sourceUrl
                     }
+
                     loadSourceNameExtractor(
                         "Dramadrip",
                         sourceUrl,
@@ -2675,11 +2686,15 @@ object CineStreamExtractors : CineStreamProvider() {
         val userData = doc.select("#user-data")
         var decryptedLinks = decryptLinks(userData.attr("v"))
         for (link in decryptedLinks) {
-            val url = "$Primewire/links/go/$link"
-            val oUrl = app.get(url,timeout = 10)
+            val href = "$Primewire/links/gos/$link"
+            // Thanks to @phisher98
+            val token= app.get("https://raw.githubusercontent.com/phisher98/TVVVV/refs/heads/main/Primetoken.txt").text
+            val oUrl = app.get(href, timeout = 10)
+            val iframeurl= app.get("${oUrl.url.replace("/gos/","/go/")}?token=$token").parsedSafe<PrimewireClass>()?.link
+            if(iframeurl == null) continue
             loadSourceNameExtractor(
                 "Primewire",
-                oUrl.url,
+                iframeurl,
                 "",
                 subtitleCallback,
                 callback

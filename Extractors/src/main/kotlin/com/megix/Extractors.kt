@@ -205,11 +205,26 @@ open class Driveleech : ExtractorApi() {
 
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text().substringAfter("Name : ") ?: ""
         val fileSize = document.select("ul > li.list-group-item:contains(Size)").text().substringAfter("Size : ") ?: ""
+        val quality = getIndexQuality(fileName)
 
         document.select("div.text-center > a").amap { element ->
             val text = element.text()
             val href = element.attr("href")
             when {
+                text.contains("Cloud Download") -> {
+                    try{
+                        callback.invoke(
+                            newExtractorLink(
+                                "$name Cloud",
+                                "$name[Cloud] $fileName[$fileSize]",
+                                href,
+                            ) {
+                                this.quality = quality                            }
+                        )
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+                }
                 text.contains("Instant Download") -> {
                     try{
                         val instant = instantLink(href)
@@ -219,7 +234,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name[Instant(Download)] $fileName[$fileSize]",
                                 instant,
                             ) {
-                                this.quality = getIndexQuality(fileName)
+                                this.quality = quality
                             }
                         )
                     } catch (e: Exception) {
@@ -235,7 +250,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name[ResumeBot] $fileName[$fileSize]",
                                 resumeLink,
                             ) {
-                                this.quality = getIndexQuality(fileName)
+                                this.quality = quality
                             }
                         )
                     } catch (e: Exception) {
@@ -253,7 +268,7 @@ open class Driveleech : ExtractorApi() {
                                     "$name[CF Type1] $fileName[$fileSize]",
                                     it,
                                 ) {
-                                    this.quality = getIndexQuality(fileName)
+                                    this.quality = quality
                                 }
                             )
                         }
@@ -270,7 +285,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name[ResumeCloud] $fileName[$fileSize]",
                                 resumeCloud,
                             ) {
-                                this.quality = getIndexQuality(fileName)
+                                this.quality = quality
                             }
                         )
                     } catch (e: Exception) {
@@ -575,9 +590,13 @@ class GDFlix7 : GDFlix() {
     override var mainUrl = "https://gdflix.dad"
 }
 
+class GDFlixXYZ : GDFlix() {
+    override var mainUrl = "https://gdflix.xyz"
+}
+
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://new.gdflix.me"
+    override val mainUrl = "https://new.gdflix.net"
     override val requiresReferer = false
 
     private suspend fun getLatestUrl(): String {
@@ -620,7 +639,7 @@ open class GDFlix : ExtractorApi() {
                 text.contains("CLOUD DOWNLOAD [R2]") -> {
                     val link = anchor.attr("href")
                     callback.invoke(
-                        newExtractorLink("GDFlix[Cloud Download]", "GDFlix[Cloud Download] $fileName[$fileSize]", link) {
+                        newExtractorLink("GDFlix[Cloud]", "GDFlix[Cloud] $fileName[$fileSize]", link) {
                             this.quality = getIndexQuality(fileName)
                         }
                     )

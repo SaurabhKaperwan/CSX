@@ -3,6 +3,14 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Primewire
+data class PrimewireClass(
+    val link: String,
+    @JsonProperty("host_id")
+    val hostId: Long,
+    val host: String,
+)
+
 //Hianime
 data class HianimeResponses(
     @JsonProperty("html") val html: String? = null,
