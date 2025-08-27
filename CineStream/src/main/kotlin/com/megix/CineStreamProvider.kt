@@ -71,6 +71,7 @@ import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
 import com.megix.CineStreamExtractors.invokeDramadrip
 import com.megix.CineStreamExtractors.invokeWebStreamr
+import com.megix.CineStreamExtractors.invokeNuvioStreams
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -115,6 +116,7 @@ open class CineStreamProvider : MainAPI() {
         const val animezAPI = "https://animeyy.com"
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":""}"""
+        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -592,6 +594,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeAllmovieland(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeProtonmovies(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeNuvioStreams(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(imdbTitle, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -664,6 +667,7 @@ open class CineStreamProvider : MainAPI() {
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokeNuvioStreams(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.id, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.id, subtitleCallback, callback) },
             { if (!isBollywood && !isAnime) invokeMoviesflix("Moviesflix", res.id, res.season, res.episode, subtitleCallback, callback) },

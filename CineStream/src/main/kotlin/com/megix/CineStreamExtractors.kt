@@ -29,6 +29,43 @@ import com.google.gson.Gson
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeNuvioStreams(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$nuvioStreamsAPI/stream/movie/$imdbId.json"
+        } else {
+            "$nuvioStreamsAPI/stream/series/$imdbId:$season:$episode.json"
+        }
+
+        val json = app.get(url).text
+        val gson = Gson()
+        val data = gson.fromJson(json, StreamifyResponse::class.java)
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        )
+
+        data.streams.forEach {
+            val title = it.title ?: ""
+            val name = it.name ?: "Nuvio"
+            callback.invoke(
+                newExtractorLink(
+                    name,
+                    name,
+                    it.url,
+                ) {
+                    this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                    this.quality = getIndexQuality(title)
+                    this.headers = headers
+                }
+            )
+        }
+    }
+
     suspend fun invokeWebStreamr(
         imdbId: String? = null,
         season: Int? = null,
@@ -42,10 +79,15 @@ object CineStreamExtractors : CineStreamProvider() {
             "$webStreamrAPI/stream/series/$imdbId:$season:$episode.json"
         }
         val json = app.get(url).text
-        val data = tryParseJson<StreamifyResponse>(json) ?: return
+        val gson = Gson()
+        val data = gson.fromJson(json, StreamifyResponse::class.java)
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        )
         data.streams.forEach {
             val title = it.title ?: ""
-            val type = if(title.contains("hls") || title.contains("m3u8") || title.contains("DoodStream")) {
+            val referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+            val type = if(title.contains("hls") || title.contains("m3u8")) {
                 ExtractorLinkType.M3U8
             } else if(title.contains("mp4")) {
                 ExtractorLinkType.VIDEO
@@ -60,8 +102,9 @@ object CineStreamExtractors : CineStreamProvider() {
                     it.url,
                     type = type
                 ) {
-                    this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                    this.referer = referer
                     this.quality = getIndexQuality(it.name ?: "")
+                    this.headers = headers
                 }
             )
         }
@@ -1654,7 +1697,9 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = "$stremifyAPI/movie/$id.json"
         val json = app.get(url).text
-        val data = tryParseJson<StreamifyResponse>(json) ?: return
+        val gson = Gson()
+        val data = gson.fromJson(json, StreamifyResponse::class.java)
+
         data.streams.forEach {
             callback.invoke(
                 newExtractorLink(

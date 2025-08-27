@@ -354,19 +354,19 @@ data class Streamify(
     var type: String? = null,
     var url: String,
     var title: String? = null,
-    var behaviorHints : StreamifyBehaviorHints? = StreamifyBehaviorHints(),
+    @SerializedName("behaviorHints" ) var behaviorHints: StreamifyBehaviorHints? = StreamifyBehaviorHints()
 )
 
-data class StreamifyBehaviorHints (
-  var proxyHeaders : StreamifyProxyHeaders? = StreamifyProxyHeaders(),
+data class StreamifyBehaviorHints(
+    @SerializedName("proxyHeaders" ) var proxyHeaders: StreamifyProxyHeaders? = StreamifyProxyHeaders()
 )
 
-data class StreamifyProxyHeaders (
-  var request : StreamifyRequest? = StreamifyRequest()
+data class StreamifyProxyHeaders(
+    @SerializedName("request" ) var request: StreamifyRequest? = StreamifyRequest()
 )
 
-data class StreamifyRequest (
-  var Referer : String? = null
+data class StreamifyRequest(
+    @SerializedName("Referer" ) var Referer: String? = null
 )
 
 data class JikanExternal(
