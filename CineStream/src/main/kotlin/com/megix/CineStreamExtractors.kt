@@ -1116,18 +1116,14 @@ object CineStreamExtractors : CineStreamProvider() {
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
-            val source = if(it.file?.contains(netflixAPI) == true) {
-                "${it.file}"
-            } else {
-                "$netflixAPI/${it.file}"
-            }
             callback.invoke(
                 newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
-                    source,
+                    """https://net50.cc${it.file.replace("/tv/", "/")}""",
+                    type = ExtractorLinkType.M3U8
                 ) {
-                    this.referer = "$netflixAPI/"
+                    this.referer = "https://net50.cc/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
                     this.headers = mapOf("Cookie" to "hd=on")
                 }
@@ -1199,9 +1195,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Netflix",
                     "Netflix",
-                    "$netflixAPI/${it.file}",
+                    """https://net50.cc${it.file.replace("/tv/", "/")}""",
+                    type = ExtractorLinkType.M3U8
                 ) {
-                    this.referer = "$netflixAPI/"
+                    this.referer = "https://net50.cc/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
                     this.headers = mapOf("Cookie" to "hd=on")
                 }

@@ -228,10 +228,10 @@ class NetflixProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        fixUrl(it.file),
+                        """https://net50.cc${it.file.replace("/tv/", "/")}""",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/tv/home"
+                        this.referer = "https://net50.cc/"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
                     }
                 )
