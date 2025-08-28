@@ -1120,7 +1120,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
-                    """https://net50.cc${it.file.replace("/tv/", "/")}""",
+                    """https://net50.cc${it.file?.replace("/tv/", "/")}""",
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = "https://net50.cc/"
@@ -1195,7 +1195,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Netflix",
                     "Netflix",
-                    """https://net50.cc${it.file.replace("/tv/", "/")}""",
+                    """https://net50.cc${it.file?.replace("/tv/", "/")}""",
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = "https://net50.cc/"
