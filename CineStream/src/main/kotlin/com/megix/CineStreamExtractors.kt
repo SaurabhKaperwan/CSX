@@ -595,6 +595,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val json = app.get(url, headers = headers).text
         val sourceUrl = JSONObject(json).getString("url")
+        if(sourceUrl == "null") {
+            return
+        }
 
         callback.invoke(
             newExtractorLink(
