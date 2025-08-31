@@ -9,6 +9,8 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.net.URL
+import java.net.URI
 
 class GDIndexProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -114,10 +116,11 @@ class GDIndexProvider : MainAPI() {
             newExtractorLink(
                 name,
                 name,
-                path,
-                INFER_TYPE
+                path.encodeUrl(),
+                ExtractorLinkType.VIDEO,
             ) {
                 this.referer = "$mainUrl/"
+                this.headers = mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
             }
         )
         return true
@@ -148,6 +151,12 @@ class GDIndexProvider : MainAPI() {
 
     private fun error(msg: String = "加载数据失败"): Nothing {
         throw ErrorLoadingException(msg)
+    }
+
+    private fun String.encodeUrl(): String {
+        val url = URL(this)
+        val uri = URI(url.protocol, url.userInfo, url.host, url.port, url.path, url.query, url.ref)
+        return uri.toURL().toString()
     }
 
     data class GDFile(

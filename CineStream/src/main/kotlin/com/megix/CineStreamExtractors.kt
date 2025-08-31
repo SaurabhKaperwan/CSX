@@ -925,12 +925,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
         if(streamData != null) {
             streamData.streams.forEach {
+                val url = it.url ?: return@forEach
+                val type = if(url.contains("m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
                 callback.invoke(
                     newExtractorLink(
                         "Kisskh",
                         "Kisskh",
-                        it.url ?: return@forEach,
-                        type = ExtractorLinkType.M3U8
+                        url,
+                        type
                     ) {
                         this.headers = mapOf(
                             "Referer" to "https://kisskh.ovh/",
