@@ -95,14 +95,14 @@ class LinkstoreDrive : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val redirectUrl = url.replace(mainUrl, "https://new6.luxedrive.space")
+        val redirectUrl = url.replace(mainUrl, "https://new7.luxedrive.space")
         loadExtractor(redirectUrl, "", subtitleCallback, callback)
     }
 }
 
 open class Luxdrive : ExtractorApi() {
     override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://new6.luxedrive.space"
+    override val mainUrl: String = "https://new7.luxedrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -114,7 +114,17 @@ open class Luxdrive : ExtractorApi() {
         val document = app.get(url).document
         document.select("div > div > a").map {
             val href = it.attr("href")
-            loadExtractor(href, "", subtitleCallback, callback)
+            if(href.contains(".mkv")) {
+                callback.invoke(
+                    newExtractorLink(
+                        "Instant(Download)",
+                        "Instant(Download)",
+                        href,
+                    )
+                )
+            } else {
+                loadExtractor(href, "", subtitleCallback, callback)
+            }
         }
     }
 }
@@ -592,6 +602,10 @@ class GDFlix7 : GDFlix() {
 
 class GDFlixXYZ : GDFlix() {
     override var mainUrl = "https://gdflix.xyz"
+}
+
+class GDFlixDev : GDFlix() {
+    override var mainUrl = "https://gdflix.dev"
 }
 
 open class GDFlix : ExtractorApi() {
