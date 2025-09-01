@@ -1150,3 +1150,8 @@ suspend fun cinematickitBypass(url: String): String? {
     }
 }
 
+fun getVideoQuality(string: String?): Int {
+    return Regex("(\\d{3,4})[pP]").find(string ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
+        ?: Qualities.Unknown.value
+}
+

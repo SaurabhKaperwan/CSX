@@ -21,6 +21,7 @@ import com.lagradost.cloudstream3.extractors.MixDrop
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.Vidguardto
 import com.lagradost.cloudstream3.extractors.Filesim
+import com.lagradost.cloudstream3.extractors.VidHidePro
 
 class Multimoviesshg : Filesim() {
     override var mainUrl = "https://multimoviesshg.com"
@@ -254,6 +255,12 @@ class MixDropSi : MixDrop() {
 class Vembed : Vidguardto() {
     override var mainUrl = "https://vembed.net"
 }
+
+class VidHideHub : VidHidePro() {
+    override var mainUrl = "https://vidhidehub.com"
+}
+
+
 
 
 class Akamaicdn : ExtractorApi() {

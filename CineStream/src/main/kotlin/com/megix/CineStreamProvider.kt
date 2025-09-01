@@ -70,6 +70,8 @@ import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
 import com.megix.CineStreamExtractors.invokeDramadrip
+import com.megix.CineStreamExtractors.invokeFilm1k
+import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
 
@@ -117,6 +119,8 @@ open class CineStreamProvider : MainAPI() {
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":""}"""
         const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk"
+        const val mp4MoviezAPI = "https://www.mp4moviez.moe"
+        const val Film1kApi = "https://www.film1k.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -664,6 +668,8 @@ open class CineStreamProvider : MainAPI() {
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, year, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
+            { invokeMp4Moviez(res.title, res.season, res.episode, res.year?.toInt(),callback,subtitleCallback) },
+            { invokeFilm1k(res.title, res.season, res.year?.toInt(), subtitleCallback, callback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },

@@ -31,5 +31,6 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Vembed())
         registerExtractorAPI(Multimoviesshg())
         registerExtractorAPI(Akamaicdn())
+        registerExtractorAPI(VidHideHub())
     }
 }
