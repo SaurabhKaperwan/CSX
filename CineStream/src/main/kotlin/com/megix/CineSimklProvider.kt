@@ -66,6 +66,8 @@ import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
 import com.megix.CineStreamExtractors.invokeToonstream
 import com.megix.CineStreamExtractors.invokeDramadrip
+import com.megix.CineStreamExtractors.invokeFilm1k
+import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
 
@@ -474,6 +476,8 @@ class CineSimklProvider: MainAPI() {
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
+            { invokeMp4Moviez(res.title, res.season, res.episode, res.year,callback,subtitleCallback) },
+            { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             // { if (!res.isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },

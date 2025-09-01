@@ -26,6 +26,7 @@ import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
 import com.google.gson.Gson
+import okhttp3.MediaType.Companion.toMediaType
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -2810,6 +2811,116 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         } catch (_: Exception) { }
+    }
+
+    // only for movies
+    suspend fun invokeMp4Moviez(
+        title: String?,
+        season: Int?,
+        episode: Int?,
+        year: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        if (season == null) {
+            val doc = app.get("$mp4MoviezAPI/search/$title.html", allowRedirects = true, timeout = 30).document
+            val searchResponse = doc.select(".fl")
+            searchResponse.forEach {
+                val url = mp4MoviezAPI + it.select("a").attr("href")
+                val name = it.select("img").attr("alt")
+                val doc = app.get(url, allowRedirects = true, timeout = 30).document
+                val link = mp4MoviezAPI + doc.select("div[style=\"text-align:left;\"] a").attr("href")
+                if(name.contains(title.toString()) == true && name.contains(year.toString()))
+                {
+                    val cleanName =  name.replace("download","",true).replace("full","",true).replace("movie","",true).trim()
+                    val doc = app.get(link).document
+                    val links = doc.select("div[style=\"text-align:left;\"]")
+                    links.forEach { item ->
+                        val link = item.select("a").attr("href")
+                        if (!link.contains("links4mad.online")) {
+                            callback.invoke(
+                                newExtractorLink(
+                                    "Mp4Moviez [${cleanName}]",
+                                    "Mp4Moviez [${cleanName}]",
+                                    url = link,
+                                ) {
+                                    quality = getVideoQuality(link)
+                                }
+                            )
+                        } else if (link.contains("links4mad.online")) {
+                            val shortLinkUrl = item.select("a").attr("href")
+                            val sDoc = app.post(shortLinkUrl).document
+                            val links1 = sDoc.select(".col-sm-8.col-sm-offset-2.well.view-well a")
+                            links1.forEach {
+                                loadExtractor(it.attr("href"), subtitleCallback, callback)
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    // For rare movies
+    suspend fun invokeFilm1k(
+        title: String? = null,
+        season: Int? = null,
+        year: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val proxyUrl = "https://corsproxy.io/?url="
+        val mainUrl = "$proxyUrl$Film1kApi"
+        if (season == null) {
+            try {
+                val fixTitle = title?.replace(":", "")?.replace(" ", "+")
+                val doc = app.get("$mainUrl/?s=$fixTitle", cacheTime = 60, timeout = 30).document
+                val posts = doc.select("header.entry-header").filter { element ->
+                    element.selectFirst(".entry-title")?.text().toString().contains(
+                        "${
+                            title?.replace(
+                                ":",
+                                ""
+                            )
+                        }"
+                    ) && element.selectFirst(".entry-title")?.text().toString()
+                        .contains(year.toString())
+                }.toList()
+                val url = posts.firstOrNull()?.select("a:nth-child(1)")?.attr("href")
+                val postDoc = url?.let { app.get("$proxyUrl$it", cacheTime = 60, timeout = 30).document }
+                val id = postDoc?.select("a.Button.B.on")?.attr("data-ide")
+                repeat(5) { i ->
+                    val mediaType = "application/x-www-form-urlencoded".toMediaType()
+                    val body =
+                        "action=action_change_player_eroz&ide=$id&key=$i".toRequestBody(mediaType)
+                    val ajaxUrl = "$mainUrl/wp-admin/admin-ajax.php"
+                    val doc =
+                        app.post(ajaxUrl, requestBody = body, cacheTime = 60, timeout = 30).document
+                    var url = doc.select("iframe").attr("src").replace("\\", "").replace(
+                        "\"",
+                        ""
+                    ) // It is necessary because it returns link with double qoutes like this ("https://voe.sx/e/edpgpjsilexe")
+                    val film1kRegex = Regex("https://film1k\\.xyz/e/([^/]+)/.*")
+                    if (url.contains("https://film1k.xyz")) {
+                        val matchResult = film1kRegex.find(url)
+                        if (matchResult != null) {
+                            val code = matchResult.groupValues[1]
+                            url = "https://filemoon.sx/e/$code"
+                        }
+                    }
+                    url = url.replace("https://films5k.com", "https://mwish.pro")
+                    loadSourceNameExtractor(
+                        "Film1k",
+                        url,
+                        "",
+                        subtitleCallback,
+                        callback
+                    )
+                }
+            } catch (_: Exception) {
+            }
+        }
     }
 
 
