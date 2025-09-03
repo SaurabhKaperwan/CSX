@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.roundToInt
 import org.json.JSONObject
 import com.lagradost.api.Log
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -62,6 +63,7 @@ import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokePrimebox
 import com.megix.CineStreamExtractors.invokePrimenet
 import com.megix.CineStreamExtractors.invokeAnimeparadise
+import com.megix.CineStreamExtractors.invokeCinemaOS
 import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
 import com.megix.CineStreamExtractors.invokePhoenix
@@ -85,6 +87,7 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
+    val imdb_url = "https://api.themoviedb.org"
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -121,6 +124,7 @@ open class CineStreamProvider : MainAPI() {
         const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk"
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
+        const val cinemaOSApi = "https://cinemaos.live"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -317,6 +321,11 @@ open class CineStreamProvider : MainAPI() {
         val isBollywood = country.contains("India", true)
         val isAsian = (country.contains("Korea", true) ||
                 country.contains("China", true)) && !isAnime
+        val imdbResponse = app.get("$imdb_url/3/find/${movieData?.meta?.imdb_id.toString()}?api_key=fb6e34ebff1505eb93cafca91918b313&external_source=imdb_id").text // please put api key in build config file
+        val jsonObject = JSONObject(imdbResponse)
+        val movieResults = if(movie.type == "movie") jsonObject.getJSONArray("movie_results") else jsonObject.getJSONArray("tv_results")
+        val firstMovie = movieResults.getJSONObject(0)
+        val tmdbID = firstMovie.getInt("id")
 
         if(tvtype == "movie") {
             val data = LoadLinksData(
@@ -337,7 +346,8 @@ open class CineStreamProvider : MainAPI() {
                 null,
                 isKitsu,
                 anilistId,
-                malId
+                malId,
+                tmdbID,
             ).toJson()
             return newMovieLoadResponse(engTitle, url, if(isAnime) TvType.AnimeMovie  else type, data) {
                 this.posterUrl = posterUrl
@@ -375,7 +385,8 @@ open class CineStreamProvider : MainAPI() {
                         ep.imdbEpisode,
                         isKitsu,
                         anilistId,
-                        malId
+                        malId,
+                        tmdbID,
                     ).toJson()
                 ) {
                     this.name = ep.name ?: ep.title
@@ -448,6 +459,7 @@ open class CineStreamProvider : MainAPI() {
         val isKitsu : Boolean = false,
         val anilistId : Int? = null,
         val malId : Int? = null,
+        val tmdbID : Int? = null,
     )
 
     data class PassData(
@@ -670,6 +682,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year?.toInt(),callback,subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year?.toInt(), subtitleCallback, callback) },
+            { invokeCinemaOS(res.id, res.tmdbID, res.title,res.season,res.episode,res.year, callback,subtitleCallback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },
