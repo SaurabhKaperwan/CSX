@@ -2916,7 +2916,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // only for movies
     suspend fun invokeCinemaOS(
         imdbId: String? = null,
         tmdbId: Int? = null,
@@ -2992,8 +2991,8 @@ object CineStreamExtractors : CineStreamProvider() {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else { INFER_TYPE}
             callback.invoke(
                 newExtractorLink(
-                    "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]}",
-                    "CinemaOS [${it["server"]}] ${it["bitrate"]} ${it["speed"]}",
+                    "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]} ${it["quality"]}",
+                    "CinemaOS [${it["server"]}] ${it["bitrate"]} ${it["speed"]} ${it["quality"]}",
                     url = it["url"].toString(),
                     type = extractorLinkType
                 )

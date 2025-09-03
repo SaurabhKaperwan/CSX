@@ -1156,7 +1156,6 @@ fun getVideoQuality(string: String?): Int {
 
 fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest, s: String): String {
     val data = "tmdb:${t.tmdbId}|season:${t.seasonId}|episode:${t.episodeId}"
-    Log.d("salman731 data", data)
     val secretKey = SecretKeySpec(s.toByteArray(Charsets.UTF_8), "HmacSHA256")
     val mac = Mac.getInstance("HmacSHA256")
     mac.init(secretKey)
@@ -1225,15 +1224,37 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
         val key = keys.next()
         val source = sourcesObject.getJSONObject(key)
 
-        val sourceMap = mutableMapOf<String, String>()
-        sourceMap["server"] = source.optString("server", key) // Use key as fallback for server name
-        sourceMap["url"] = source.optString("url", "")
-        sourceMap["type"] = source.optString("type", "")
-        sourceMap["speed"] = source.optString("speed", "")
-        sourceMap["bitrate"] = source.optString("bitrate", "")
-        sourceMap["quality"] = source.optString("quality", "")
+        // Check if source has "qualities" object
+        if (source.has("qualities")) {
+            val qualities = source.getJSONObject("qualities")
+            val qualityKeys = qualities.keys()
 
-        sourcesList.add(sourceMap)
+            while (qualityKeys.hasNext()) {
+                val qualityKey = qualityKeys.next()
+                val qualityObj = qualities.getJSONObject(qualityKey)
+
+                val sourceMap = mutableMapOf<String, String>()
+                sourceMap["server"] = source.optString("server", key)
+                sourceMap["url"] = qualityObj.optString("url", "")
+                sourceMap["type"] = qualityObj.optString("type", "")
+                sourceMap["speed"] = source.optString("speed", "")
+                sourceMap["bitrate"] = source.optString("bitrate", "")
+                sourceMap["quality"] = qualityKey // Use the quality key (e.g., "480", "720")
+
+                sourcesList.add(sourceMap)
+            }
+        } else {
+            // Regular source with direct URL
+            val sourceMap = mutableMapOf<String, String>()
+            sourceMap["server"] = source.optString("server", key)
+            sourceMap["url"] = source.optString("url", "")
+            sourceMap["type"] = source.optString("type", "")
+            sourceMap["speed"] = source.optString("speed", "")
+            sourceMap["bitrate"] = source.optString("bitrate", "")
+            sourceMap["quality"] = source.optString("quality", "")
+
+            sourcesList.add(sourceMap)
+        }
     }
 
     return sourcesList
