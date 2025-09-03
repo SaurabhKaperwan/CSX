@@ -2922,7 +2922,7 @@ object CineStreamExtractors : CineStreamProvider() {
         title: String? = null,
         season: Int? = null,
         episode: Int? = null,
-        year: String? = null,
+        year: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
