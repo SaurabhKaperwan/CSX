@@ -2,25 +2,15 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.api.Log
-import android.util.Base64
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import com.lagradost.cloudstream3.APIHolder.unixTime
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import java.net.URLEncoder
-import okhttp3.FormBody
-import java.nio.charset.StandardCharsets
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import org.json.JSONObject
 import org.json.JSONArray
 import com.lagradost.cloudstream3.runAllAsync
-import com.lagradost.cloudstream3.extractors.helper.GogoHelper
 import com.lagradost.cloudstream3.mvvm.safeApiCall
-import com.lagradost.nicehttp.RequestBodyTypes
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
@@ -2923,6 +2913,94 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             } catch (_: Exception) {
             }
+        }
+    }
+
+    // only for movies
+    suspend fun invokeCinemaOS(
+        imdbId: String? = null,
+        tmdbId: Int? = null,
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        year: String? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val authUrl = "${cinemaOSApi}/api/auth/secure"
+        val headersRequest = mapOf(
+            "Accept" to "*/*",
+            "Accept-Language" to "en-US,en;q=0.9",
+            "Connection" to "keep-alive",
+            "Referer" to cinemaOSApi,
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "same-origin",
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+            "sec-ch-ua" to "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Windows\""
+        )
+
+        val headerAuth = mapOf(
+            "Accept" to "*/*",
+            "Accept-Language" to "en-US,en;q=0.9",
+            "Connection" to "keep-alive",
+            "Referer" to cinemaOSApi,
+            "Origin" to cinemaOSApi,
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "same-origin",
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+            "sec-ch-ua" to "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Windows\"",
+            "Content-Type" to "application/json"
+        )
+
+        val authResponse = app.get(authUrl, headers = headersRequest, timeout = 20).text
+        val authVerifyResponse = app.post(authUrl, headers = headerAuth, json = authResponse,timeout = 20).parsedSafe<CinemaOsAuthResponse>()
+
+
+        val sourceHeaders = mapOf(
+            "Accept" to "*/*",
+            "Accept-Language" to "en-US,en;q=0.9",
+            "Authorization" to "Bearer ${authVerifyResponse?.token}",
+            "Connection" to "keep-alive",
+            "Referer" to cinemaOSApi,
+            "Host" to "cinemaos.live",
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "same-origin",
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+            "sec-ch-ua" to "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Windows\"",
+            "Content-Type" to "application/json"
+        )
+
+        val fixTitle = title?.replace(" ", "+")
+        val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(), seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
+        val s = "a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456"
+        val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest,s)
+        val type = if(season == null) {"movie"}  else {"tv"}
+        val sourceUrl = if(season == null) {"$cinemaOSApi/api/cinemaos?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/cinemaos?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
+        val sourceResponse = app.get(sourceUrl, headers = sourceHeaders,timeout = 20).parsedSafe<CinemaOSReponse>()
+        val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data)
+        val json = parseCinemaOSSources(decryptedJson.toString())
+        json.forEach {
+            val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else { INFER_TYPE}
+            callback.invoke(
+                newExtractorLink(
+                    "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]}",
+                    "CinemaOS [${it["server"]}] ${it["bitrate"]} ${it["speed"]}",
+                    url = it["url"].toString(),
+                    type = extractorLinkType
+                )
+                {
+                    this.headers = mapOf("Referer" to cinemaOSApi)
+                }
+            )
         }
     }
 
