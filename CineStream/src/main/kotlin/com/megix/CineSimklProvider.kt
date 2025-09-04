@@ -70,6 +70,7 @@ import com.megix.CineStreamExtractors.invokeFilm1k
 import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
+import com.megix.CineStreamExtractors.invokeCinemaOS
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -478,6 +479,7 @@ class CineSimklProvider: MainAPI() {
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year,callback,subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
+            { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             // { if (!res.isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -533,6 +535,7 @@ class CineSimklProvider: MainAPI() {
             { invokeMultimovies(imdbTitle, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeToonstream(imdbTitle, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
+            { invokeCinemaOS(imdbId, tmdbId, res.title, imdbSeason, imdbEpisode, res.year, callback, subtitleCallback) },
             { invokeBollyflix(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(imdbId, imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeWYZIESubs(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
