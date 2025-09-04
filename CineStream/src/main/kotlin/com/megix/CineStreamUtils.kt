@@ -1,5 +1,6 @@
 package com.megix
 
+import android.os.Build
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
@@ -32,8 +33,13 @@ import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
 import kotlin.random.Random
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
+import java.security.spec.KeySpec
+import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -1260,4 +1266,167 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
     return sourcesList
 }
 
+/** Encodes input using Base64 with custom character mapping. */
+fun customEncode(input: String): String {
+    val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+    val dst = "BdNqfj2X1RalybZHxP50e8UGz4Tv6mg3QS-7JnAWIsiKrCpFktVM9D_chuYOoEwL"
+    val transMap = src.zip(dst).toMap()
+    val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Base64.getEncoder().encodeToString(input.toByteArray())
+            .replace("+", "-")
+            .replace("/", "_")
+            .replace("=", "")
+    } else {
+        android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
+    }
+    return base64.map { char -> transMap[char] ?: char }.joinToString("")
+}
+/** Extracts data using regex pattern */
+ fun extractData(pattern: String, input: String): String {
+    val regex = Regex(pattern)
+    val match = regex.find(input)
+    return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
+}
 
+/** Performs AES encryption */
+ fun aesEncrypt(data: String): String {
+    val aesKey = hexStringToByteArray("912660f3d9f3f35cee36396d31ed73366ab53c22c70710ce029697d17762997e")
+    val aesIv = hexStringToByteArray("f91f2863783814f51c56f341d6ce1677")
+
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
+
+    val encryptedData = cipher.doFinal(data.toByteArray())
+    return bytesToHex(encryptedData)
+}
+
+/** Performs XOR operation */
+ fun xorOperation(input: String): String {
+    val xorKey = hexStringToByteArray("be430a")
+    val result = StringBuilder()
+
+    for (i in input.indices) {
+        val char = input[i]
+        val xorByte = xorKey[i % xorKey.size].toInt()
+        result.append((char.code xor xorByte).toChar())
+    }
+
+    return result.toString()
+}
+
+
+fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
+    val servers = mutableListOf<TripleOneMoviesServer>()
+    try {
+        val jsonArray = JSONArray(jsonString)
+        for (i in 0 until jsonArray.length()) {
+            val jsonObject = jsonArray.getJSONObject(i)
+            val server = TripleOneMoviesServer(
+                name = jsonObject.getString("name"),
+                description = jsonObject.getString("description"),
+                image = jsonObject.getString("image"),
+                data = jsonObject.getString("data")
+            )
+            servers.add(server)
+        }
+    } catch (e: Exception) {
+        Log.e("salman731", "Manual parsing failed: ${e.message}")
+    }
+    return servers
+}
+
+ fun customEncode(input: ByteArray): String {
+    val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+    val targetChars = "19aQPL7DwphTK_xe0W8OUdRfE4lA-coSGjuzbN5q3BHtvrmXVMFkCsiIgy6Yn2JZ"
+
+    val translationMap = sourceChars.zip(targetChars).toMap()
+    val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Base64.getUrlEncoder().withoutPadding().encodeToString(input)
+    } else {
+        TODO("VERSION.SDK_INT < O")
+    }
+
+    return encoded.map { char ->
+        translationMap[char] ?: char
+    }.joinToString("")
+}
+
+
+/**
+ * Utility function to convert hex string to byte array
+ */
+ fun hexStringToByteArray2(hex: String): ByteArray {
+    val result = ByteArray(hex.length / 2)
+    for (i in hex.indices step 2) {
+        val value = hex.substring(i, i + 2).toInt(16)
+        result[i / 2] = value.toByte()
+    }
+    return result
+}
+
+/**
+ * PKCS7 padding implementation
+ */
+ fun padData(data: ByteArray, blockSize: Int): ByteArray {
+    val padding = blockSize - (data.size % blockSize)
+    val result = ByteArray(data.size + padding)
+    System.arraycopy(data, 0, result, 0, data.size)
+    for (i in data.size until result.size) {
+        result[i] = padding.toByte()
+    }
+    return result
+}
+
+
+/**
+ * PBKDF2 key derivation using Bouncy Castle
+ */
+// fun derivePbkdf2Key(password: String, salt: ByteArray, iterations: Int, keyLength: Int): ByteArray {
+//    val generator = PKCS5S2ParametersGenerator(SHA256Digest())
+//    generator.init(password.toByteArray(Charsets.UTF_8), salt, iterations)
+//    return (generator.generateDerivedParameters(keyLength * 8) as KeyParameter).key
+//}
+fun derivePbkdf2Key(
+    password: String,
+    salt: ByteArray,
+    iterations: Int,
+    keyLength: Int
+): ByteArray {
+    val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+    val spec: KeySpec = PBEKeySpec(password.toCharArray(), salt, iterations, keyLength * 8)
+    return factory.generateSecret(spec).encoded
+}
+
+/**
+ * Remove PKCS7 padding
+ */
+fun unpadData(data: ByteArray): ByteArray {
+    val padding = data[data.size - 1].toInt() and 0xFF
+    if (padding < 1 || padding > data.size) {
+        return data
+    }
+    return data.copyOf(data.size - padding)
+}
+
+fun logLongText(tag: String, text: String) {
+    if (text.length <= 4000) {
+        Log.d(tag, text)
+    } else {
+        var start = 0
+        val length = text.length
+        while (start < length) {
+            val end = (start + 4000).coerceAtMost(length)
+            Log.d(tag, text.substring(start, end))
+            start = end
+        }
+    }
+}
+
+fun hasHost(url: String): Boolean {
+    return try {
+        val host = URL(url).host
+        !host.isNullOrEmpty()
+    } catch (e: Exception) {
+        false
+    }
+}
