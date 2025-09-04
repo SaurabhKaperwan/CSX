@@ -570,6 +570,21 @@ data class CinemaOsAuthResponse(
     val expiresIn: Long,
 )
 
+typealias TripleOneMoviesServerList = List<TripleOneMoviesServer>;
+
+data class TripleOneMoviesServer(
+    val name: String,
+    val description: String,
+    val image: String,
+    val data: String,
+)
+
+data class TripleOneMoviesStream(
+    val noReferrer: Boolean,
+    val url: String,
+)
+
+
 
 
 

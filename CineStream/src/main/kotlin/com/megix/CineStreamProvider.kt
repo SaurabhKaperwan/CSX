@@ -5,15 +5,12 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
-import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.runAllAsync
-import kotlin.math.roundToInt
 import org.json.JSONObject
 import com.lagradost.api.Log
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -76,6 +73,9 @@ import com.megix.CineStreamExtractors.invokeFilm1k
 import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
+import com.megix.CineStreamExtractors.invokeTripleOneMovies
+import com.megix.CineStreamExtractors.invokeVidFastPro
+import com.megix.CineStreamExtractors.invokeVidPlus
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -125,6 +125,9 @@ open class CineStreamProvider : MainAPI() {
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"
+        const val tripleOneMoviesApi = "https://111movies.com"
+        const val vidfastProApi = "https://vidfast.pro"
+        const val vidPlusApi = "https://player.vidplus.to"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -683,6 +686,9 @@ open class CineStreamProvider : MainAPI() {
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year?.toInt(),callback,subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year?.toInt(), subtitleCallback, callback) },
             { invokeCinemaOS(res.id, res.tmdbID, res.title,res.season,res.episode,res.year, callback,subtitleCallback) },
+            { invokeTripleOneMovies( res.tmdbID, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVidFastPro( res.tmdbID, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVidPlus( res.tmdbID, res.season,res.episode, callback,subtitleCallback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },
