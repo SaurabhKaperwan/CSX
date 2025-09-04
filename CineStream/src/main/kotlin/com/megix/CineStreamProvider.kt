@@ -240,12 +240,15 @@ open class CineStreamProvider : MainAPI() {
         )
     }
 
-    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
+    override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
         val normalizedQuery = query.trim()
 
         suspend fun fetchResults(url: String): List<SearchResponse> {
+            if(page == 1) skipMap.clear()
+            val skip = skipMap[url] ?: 0
+            val newUrl = url.replace("###", skip.toString())
             val result = runCatching {
-                val json = app.get(url).text
+                val json = app.get(newUrl).text
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: ""
                     val score = it.imdbRating?.toDoubleOrNull()
@@ -261,9 +264,9 @@ open class CineStreamProvider : MainAPI() {
         }
 
         val endpoints = listOf(
-            "$cinemeta_url/catalog/movie/top/search=$normalizedQuery.json",
-            "$cinemeta_url/catalog/series/top/search=$normalizedQuery.json",
-            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$normalizedQuery.json"
+            "$cinemeta_url/catalog/movie/top/skip=###&search=$normalizedQuery.json",
+            "$cinemeta_url/catalog/series/top/skip=###&search=$normalizedQuery.json",
+            "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###&search=$normalizedQuery.json"
         )
 
         val resultsLists = endpoints.map {
@@ -272,13 +275,15 @@ open class CineStreamProvider : MainAPI() {
 
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
 
-        buildList {
+        val combinedList: List<SearchResponse> = buildList {
             for (i in 0 until maxSize) {
                 for (list in resultsLists) {
                     if (i < list.size) add(list[i])
                 }
             }
         }
+
+        newSearchResponseList(combinedList, true)
     }
 
     override suspend fun load(url: String): LoadResponse? {

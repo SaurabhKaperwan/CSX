@@ -71,6 +71,9 @@ import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
 import com.megix.CineStreamExtractors.invokeCinemaOS
+import com.megix.CineStreamExtractors.invokeTripleOneMovies
+import com.megix.CineStreamExtractors.invokeVidFastPro
+import com.megix.CineStreamExtractors.invokeVidPlus
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -222,11 +225,11 @@ class CineSimklProvider: MainAPI() {
             .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
     }
 
-    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
+    override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
             val result = runCatching {
-                val json = app.get("$apiUrl/search/$type?q=$query&page=1&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
+                val json = app.get("$apiUrl/search/$type?q=$query&page=$page&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
                 parseJson<Array<SimklResponse>>(json).map {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
@@ -248,13 +251,15 @@ class CineSimklProvider: MainAPI() {
 
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
 
-        buildList {
+        val combinedList: List<SearchResponse> = buildList {
             for (i in 0 until maxSize) {
                 for (list in resultsLists) {
                     if (i < list.size) add(list[i])
                 }
             }
         }
+
+        newSearchResponseList(combinedList, true)
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
@@ -480,6 +485,9 @@ class CineSimklProvider: MainAPI() {
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year,callback,subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            { invokeTripleOneMovies( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
+            { invokeVidPlus( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { if (!res.isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
