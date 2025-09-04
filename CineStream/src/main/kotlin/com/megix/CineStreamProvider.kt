@@ -677,7 +677,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, year, subtitleCallback, callback) },
-            { invokeCinemaOS(res.id, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            { invokeCinemaOS(res.id, res.tmdbId, res.title, res.season, res.episode, year, callback, subtitleCallback) },
             { invokeTripleOneMovies( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidPlus( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
