@@ -3,6 +3,25 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//Tmdb
+data class TmdbResponse(
+        @SerializedName("meta") val meta: TmdbMeta?
+)
+
+data class TmdbMeta(
+    @SerializedName("app_extras") val appExtras: TmdbAppExtras?
+)
+
+data class TmdbAppExtras(
+    @SerializedName("cast") val cast: List<TmdbCastMember>?
+)
+
+data class TmdbCastMember(
+    @SerializedName("name") val name: String?,
+    @SerializedName("character") val character: String?,
+    @SerializedName("photo") val photo: String?
+)
+
 //Primewire
 data class PrimewireClass(
     val link: String,

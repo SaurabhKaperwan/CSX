@@ -181,6 +181,7 @@ class Pahe : ExtractorApi() {
         val fContentRequest = Request.Builder()
             .url(kwikUrl)
             .header("referer", "https://kwik.cx/")
+            .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
             .get()
             .build()
 
@@ -210,7 +211,7 @@ class Pahe : ExtractorApi() {
 
             val postRequest = Request.Builder()
                 .url(uri)
-                .header("user-agent", " Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+                .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
                 .header("referer", fContent.request.url.toString())
                 .header("cookie",  fContent.headers("set-cookie").firstOrNull().toString())
                 .post(formBody)

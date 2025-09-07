@@ -236,19 +236,15 @@ open class CineStreamProvider : MainAPI() {
                 name = request.name,
                 list = home,
             ),
-            hasNext = true
+            hasNext = movies.hasMore
         )
     }
 
-    override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
-        val normalizedQuery = query.trim()
+    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
 
         suspend fun fetchResults(url: String): List<SearchResponse> {
-            if(page == 1) skipMap.clear()
-            val skip = skipMap[url] ?: 0
-            val newUrl = url.replace("###", skip.toString())
             val result = runCatching {
-                val json = app.get(newUrl).text
+                val json = app.get(url).text
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: ""
                     val score = it.imdbRating?.toDoubleOrNull()
@@ -264,9 +260,9 @@ open class CineStreamProvider : MainAPI() {
         }
 
         val endpoints = listOf(
-            "$cinemeta_url/catalog/movie/top/skip=###&search=$normalizedQuery.json",
-            "$cinemeta_url/catalog/series/top/skip=###&search=$normalizedQuery.json",
-            "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###&search=$normalizedQuery.json"
+            "$cinemeta_url/catalog/movie/top/search=$query.json",
+            "$cinemeta_url/catalog/series/top/search=$query.json",
+            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$query.json"
         )
 
         val resultsLists = endpoints.map {
@@ -275,7 +271,7 @@ open class CineStreamProvider : MainAPI() {
 
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
 
-        val combinedList: List<SearchResponse> = buildList {
+        buildList {
             for (i in 0 until maxSize) {
                 for (list in resultsLists) {
                     if (i < list.size) add(list[i])
@@ -283,7 +279,6 @@ open class CineStreamProvider : MainAPI() {
             }
         }
 
-        newSearchResponseList(combinedList, true)
     }
 
     override suspend fun load(url: String): LoadResponse? {
@@ -311,12 +306,20 @@ open class CineStreamProvider : MainAPI() {
         id = if(!isKitsu) movieData?.meta?.imdb_id.toString() else id
         var description = movieData?.meta?.description
 
-        val actors = movieData?.meta?.cast?.mapNotNull { name ->
-            ActorData(
-                actor = Actor(name, null),
-                roleString = null
-            )
-        } ?: emptyList()
+        var actors = if(isKitsu) {
+            null
+        } else {
+            parseTmdbCastData(tvtype, tmdbId)
+        }
+
+        if(actors == null && !isKitsu) {
+            actors = movieData?.meta?.cast?.mapNotNull { name ->
+                ActorData(
+                    actor = Actor(name, null),
+                    roleString = null
+                )
+            } ?: emptyList()
+        }
 
         val country = movieData?.meta?.country ?: ""
         val genre = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
@@ -536,7 +539,8 @@ open class CineStreamProvider : MainAPI() {
     )
 
     data class Home(
-        val metas: List<Media>
+        val metas: List<Media>,
+        val hasMore: Boolean = false,
     )
 
     data class ExtenalIds(

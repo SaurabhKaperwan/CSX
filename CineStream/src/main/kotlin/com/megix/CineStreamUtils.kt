@@ -147,6 +147,34 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
+//get TMDB Cast
+suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
+    return if (tvType != "anime") {
+        try {
+            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json").text
+            val gson = Gson()
+            val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
+            tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
+                if (castMember.name != null) {
+                    ActorData(
+                        Actor(
+                            name = castMember.name,
+                            image = castMember.photo
+                        ),
+                        roleString = castMember.character
+                    )
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    } else {
+        null
+    }
+}
+
 suspend fun NFBypass(mainUrl: String): String {
     // Check persistent storage first
     val (savedCookie, savedTimestamp) = CineStreamStorage.getCookie()

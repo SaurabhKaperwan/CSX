@@ -15,6 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.json.JSONObject
+import com.google.gson.Gson
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
@@ -90,7 +91,7 @@ class CineSimklProvider: MainAPI() {
     override val hasQuickSearch = false
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
-    private final val mediaLimit = 20
+    private final val mediaLimit = 10
     private val auth = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
     private val api = AccountManager.simklApi
@@ -297,7 +298,7 @@ class CineSimklProvider: MainAPI() {
                     name = request.name,
                     list = data,
                 ),
-                hasNext = true
+                hasNext = if(request.data.contains("limit=")) true else false
             )
         }
     }
@@ -338,6 +339,9 @@ class CineSimklProvider: MainAPI() {
 
         val recommendations = relations + users_recommendations
 
+        val tmdbType = if(tvType == "tv") "series" else tvType
+        val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb?.toIntOrNull())
+
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
                 json.title,
@@ -367,6 +371,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
+                this.actors = cast
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
@@ -416,6 +421,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
+                this.actors = cast
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
