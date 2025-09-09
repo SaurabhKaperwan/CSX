@@ -76,6 +76,7 @@ import com.megix.CineStreamExtractors.invokeNuvioStreams
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
+import com.megix.CineStreamExtractors.invokeRar
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -95,7 +96,7 @@ open class CineStreamProvider : MainAPI() {
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val TomAPI = "https://tom.autoembed.cc"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
-        // const val RarAPI = "https://nepu.to"
+        const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -120,7 +121,7 @@ open class CineStreamProvider : MainAPI() {
         const val animezAPI = "https://animeyy.com"
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":""}"""
-        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk"
+        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=showbox,vidzee,vidsrc,mp4hydra,uhdmovies,4khdhub,dramadrip,animepahe"
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"
@@ -657,6 +658,7 @@ open class CineStreamProvider : MainAPI() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
+            { invokeRar(res.title, year, res.season, res.episode, callback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             // { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
