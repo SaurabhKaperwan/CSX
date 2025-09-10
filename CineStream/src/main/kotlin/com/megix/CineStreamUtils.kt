@@ -86,16 +86,16 @@ val SPEC_OPTIONS = mapOf(
         mapOf("value" to "SDR", "label" to "SDR")
     ),
     "language" to listOf(
-        mapOf("value" to "HIN", "label" to "Hindi"),
-        mapOf("value" to "Hindi", "label" to "Hindi"),
-        mapOf("value" to "Tamil", "label" to "Tamil"),
-        mapOf("value" to "ENG", "label" to "English"),
-        mapOf("value" to "English", "label" to "English"),
-        mapOf("value" to "Korean", "label" to "Korean"),
-        mapOf("value" to "KOR", "label" to "Korean"),
-        mapOf("value" to "Japanese", "label" to "Japanese"),
-        mapOf("value" to "Chinese", "label" to "Chinese"),
-        mapOf("value" to "Telugu", "label" to "Telugu"),
+        mapOf("value" to "HIN", "label" to "🇮🇳 Hindi"),
+        mapOf("value" to "Hindi", "label" to "🇮🇳 Hindi"),
+        mapOf("value" to "Tamil", "label" to "🇮🇳 Tamil"),
+        mapOf("value" to "ENG", "label" to "🇺🇸 English"),
+        mapOf("value" to "English", "label" to "🇺🇸 English"),
+        mapOf("value" to "Korean", "label" to "🇰🇷 Korean"),
+        mapOf("value" to "KOR", "label" to "🇰🇷 Korean"),
+        mapOf("value" to "Japanese", "label" to "🇯🇵 Japanese"),
+        mapOf("value" to "Chinese", "label" to "🇨🇳 Chinese"),
+        mapOf("value" to "Telugu", "label" to "🇮🇳 Telugu"),
     )
 )
 
@@ -151,7 +151,7 @@ fun String.getHost(): String {
 suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
     return if (tvType != "anime") {
         try {
-            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json").text
+            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json", timeout = 2L).text
             val gson = Gson()
             val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
             tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
