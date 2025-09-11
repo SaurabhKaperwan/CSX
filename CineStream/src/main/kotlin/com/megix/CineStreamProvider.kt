@@ -71,6 +71,7 @@ import com.megix.CineStreamExtractors.invokeToonstream
 import com.megix.CineStreamExtractors.invokeDramadrip
 import com.megix.CineStreamExtractors.invokeFilm1k
 import com.megix.CineStreamExtractors.invokeMp4Moviez
+import com.megix.CineStreamExtractors.invokeMultiEmbeded
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
@@ -106,7 +107,7 @@ open class CineStreamProvider : MainAPI() {
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
         const val Player4uApi = "https://player4u.xyz"
-        const val Primewire = "https://www.primewire.tf"
+        const val Primewire = "https://www.primewire.mov"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
         //const val VidJoyApi = "https://vidjoy.pro"
         const val soaperAPI = "https://soaper.live"
@@ -128,6 +129,7 @@ open class CineStreamProvider : MainAPI() {
         const val tripleOneMoviesApi = "https://111movies.com"
         const val vidfastProApi = "https://vidfast.pro"
         const val vidPlusApi = "https://player.vidplus.to"
+        const val multiEmbededApi = "https://multiembed.mov"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -692,6 +694,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeTripleOneMovies( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidPlus( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeMultiEmbeded( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },
