@@ -1365,7 +1365,7 @@ fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
 
  fun customEncode(input: ByteArray): String {
     val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val targetChars = "19aQPL7DwphTK_xe0W8OUdRfE4lA-coSGjuzbN5q3BHtvrmXVMFkCsiIgy6Yn2JZ"
+    val targetChars = "ZYm5_ScNtbX3IgzV-7xk82BDR1aprAvWOhMwelUQ4iHdGuECTyF6os90fqPjLJnK"
 
     val translationMap = sourceChars.zip(targetChars).toMap()
     val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

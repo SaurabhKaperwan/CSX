@@ -3101,26 +3101,28 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
-    )
-    {
-        val STATIC_PATH = "hezushon/e881770604510fd5f378f952c69fcb6e191d66fd436c25997dee13fcf70531da/c7f55a19115f281e0b7279f8077c3b4113084807/APA91l3tB9AWRaN-YMHbYrXpV1xNal8FWhIQqISYQGT_vQp-squv3EoJVieii9yOljS27YjQgaVwkzWEUaal6U3Hvws-64zNEDWuJ-5XsgYstm4QoGwrewlgtB6y0JueRRA7HMzj0EcyqmKggZ8c3rFTVqQ2_zQ8_p-3_B7PHcQhgJh4r2Kr91h/eno/b923c088-e851-5887-aeb5-eb973475da92/af4335c7/1000044045881926/x"
-        val url = if(season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
+    ) {
+        val STATIC_PATH =
+            "hezushon/a/APA91PF9DMA4b5bJkuB33z2ZDGn2iCx2WLKkqD_P_Cxg4Km4ok_QhifhLIiI1Iot9obpDiXhYDQsrSypaRrTLy4j-rWowvM44fKIuJ8sXS20H7f-MgGjEUXiPIIP7SLbFCK93OIXj89ssW5r_N8QNchVUz7wLRltc8nYJIiFbvjJ0kQ6xSz6iny/1000085697207426/cek/ac7cdc69-3f2e-5d5f-82df-ca71bab8a274/b9de1beea88399820f70c22cd6827900c104af9daa5b526ce002f7847b550988/a94c1dc3d92a6cf9a1445d23d0f6c014a967562e"
+        val url =
+            if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
         val headers = mapOf(
             "Accept" to "*/*",
             "Referer" to vidfastProApi,
+            "X-Csrf-Token" to "JjcyiVDl4pPbnbSLUVDLiMFwJR8C2WNk",
             "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
-            "X-Requested-With" to "XMLHttpRequest")
-        val response = app.get(url,headers = headers, timeout = 20).text
+            "X-Requested-With" to "XMLHttpRequest"
+        )
+        val response = app.get(url, headers = headers, timeout = 20).text
         val regex = Regex("""\\"en\\":\\"(.*?)\\"""")
         val match = regex.find(response)
         val rawData = match?.groupValues?.get(1)
-        if(rawData.isNullOrEmpty())
-        {
+        if (rawData.isNullOrEmpty()) {
             return;
         }
         // AES encryption setup
-        val keyHex = "9c746a308f48f785fbe57488a6669e6d2f366f40e7c80101b24a264404e7ef9f"
-        val ivHex = "73ef6dd6f01c75f22566198b4d9ef6b9"
+        val keyHex = "e30df70860e74df551ea7be6001a2baec9a38d3dc5d96b63830f8721098e1c53"
+        val ivHex = "d04e83862d741774a4be0a60ebde5f89"
         val aesKey = hexStringToByteArray2(keyHex)
         val aesIv = hexStringToByteArray2(ivHex)
 
@@ -3131,7 +3133,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val aesEncrypted = cipher.doFinal(paddedData)
 
         // XOR operation
-        val xorKey = hexStringToByteArray2("1a544e951d2f1545ca")
+        val xorKey = hexStringToByteArray2("773e3c35d04495b4e9")
         val xorResult = aesEncrypted.mapIndexed { i, byte ->
             (byte.toInt() xor xorKey[i % xorKey.size].toInt()).toByte()
         }.toByteArray()
@@ -3140,21 +3142,25 @@ object CineStreamExtractors : CineStreamProvider() {
         val encodedFinal = customEncode(xorResult)
 
         // Get servers
-        val apiServers = "$vidfastProApi/$STATIC_PATH/v54C_v8/$encodedFinal"
-        val serversResponse = app.get(apiServers, timeout = 20, interceptor = CloudflareKiller(), headers = headers).text
-        if(serversResponse.isEmpty()) return
+        val apiServers = "$vidfastProApi/$STATIC_PATH/SqhAfKdX/$encodedFinal"
+        val serversResponse = app.get(
+            apiServers,
+            timeout = 20,
+            interceptor = CloudflareKiller(),
+            headers = headers
+        ).text
+        if (serversResponse.isEmpty()) return
         val servers = parseServers(serversResponse)
-        val urlList = mutableMapOf<String,String>()
+        val urlList = mutableMapOf<String, String>()
         servers.forEach {
             try {
-                val apiStream = "$vidfastProApi/${STATIC_PATH}/UVsx3Ss/${it.data}"
+                val apiStream = "$vidfastProApi/${STATIC_PATH}/2z2p-GV3ow/${it.data}"
                 val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
-                if(streamResponse.isNotEmpty())
-                {
+                if (streamResponse.isNotEmpty()) {
                     val jsonObject = JSONObject(streamResponse)
                     val url = jsonObject.getString("url")
 
-                    urlList.put(it.name,url)
+                    urlList.put(it.name, url)
                 }
             } catch (e: Exception) {
                 TODO("Not yet implemented")
@@ -3265,6 +3271,37 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             )
         }
+    }
+
+    suspend fun invokeMultiEmbeded(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    )
+    {
+        val url = if(season == null) "$multiEmbededApi/?video_id=$tmdbId&tmdb=1" else " $multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
+        val streamingUrl = app.get(url,allowRedirects = false).headers.get("Location")
+        val mediaType = "application/x-www-form-urlencoded".toMediaType()
+        val body = "button-click=ZEhKMVpTLVF0LVBTLVF0TnprekxTLVF5LVBEVXRMLTAtVjNOLTBjMU8tMEF5TmpneC1QRFUtNQ==&button-referer=".toRequestBody(mediaType)
+        val sourcesDoc = app.post(streamingUrl.toString(), requestBody = body, timeout = 40).text
+        val pattern = "load_sources\\(\"(.*?)\"\\)".toRegex()
+        val sourcesHash = pattern.find(sourcesDoc)?.groupValues?.getOrNull(1) ?: return
+        val hostUrl = "${URI(streamingUrl).scheme}://${URI(streamingUrl).host}"
+        val rbody = FormBody.Builder().add("token", sourcesHash).build()
+        val sourceslistDoc = app.post("$hostUrl/response.php", requestBody = rbody, headers = mapOf("x-requested-with" to "XMLHttpRequest")).document
+        val serverList = sourceslistDoc.select("li")
+        serverList.forEach {
+            val serverDataId = it.attr("data-id")
+            val serverData = it.attr("data-server")
+            val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"
+            val src = app.get(playVideoUrl, ).document
+            val iframe = src.select("iframe").attr("src")
+            loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
+        }
+
+
     }
 
 
