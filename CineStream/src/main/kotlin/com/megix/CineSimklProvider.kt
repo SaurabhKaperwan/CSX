@@ -75,6 +75,7 @@ import com.megix.CineStreamExtractors.invokeCinemaOS
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
+import com.megix.CineStreamExtractors.invokeMultiEmbeded
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -494,6 +495,7 @@ class CineSimklProvider: MainAPI() {
             { invokeTripleOneMovies( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
             { invokeVidPlus( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokeMultiEmbeded( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { if (!res.isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },

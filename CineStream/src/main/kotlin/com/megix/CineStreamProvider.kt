@@ -122,7 +122,7 @@ open class CineStreamProvider : MainAPI() {
         const val animezAPI = "https://animeyy.com"
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":""}"""
-        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=showbox,vidzee,vidsrc,mp4hydra,uhdmovies,4khdhub,dramadrip,animepahe"
+        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=vidzee,vidsrc,mp4hydra,uhdmovies,4khdhub,dramadrip,animepahe"
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"
