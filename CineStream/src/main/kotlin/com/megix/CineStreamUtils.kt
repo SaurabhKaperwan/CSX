@@ -373,6 +373,7 @@ suspend fun loadSourceNameExtractor(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
+    size: String = "",
 ) {
     val scope = CoroutineScope(Dispatchers.Default + Job())
 
@@ -382,9 +383,10 @@ suspend fun loadSourceNameExtractor(
             val extractedSpecs = buildExtractedTitle(extracted)
             val isDownload = if(link.source.contains("Download")) true else false
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
+            val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source[${link.source}] $extractedSpecs",
+                "$source[${link.source}$fixSize] $extractedSpecs",
                 link.url,
                 type = link.type
             ) {
@@ -1189,7 +1191,7 @@ fun getVideoQuality(string: String?): Int {
 
 
 fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest, s: String): String {
-    val data = "tmdb:${t.tmdbId}|season:${t.seasonId}|episode:${t.episodeId}"
+    val data = "media|episodeId:${t.episodeId}|seasonId:${t.seasonId}|tmdbId:${t.tmdbId}"
     val secretKey = SecretKeySpec(s.toByteArray(Charsets.UTF_8), "HmacSHA256")
     val mac = Mac.getInstance("HmacSHA256")
     mac.init(secretKey)
@@ -1214,7 +1216,7 @@ fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): Any {
     val cin = e?.cin
     val mao = e?.mao
 
-    val keyBytes = hexStringToByteArray("a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456")
+    val keyBytes = hexStringToByteArray("a1b2c3d4e4f6589008115678901477567890abcdef1234567890abcdef123456") // Ch. Ov Tm
     val ivBytes = hexStringToByteArray(cin.toString())
     val authTagBytes = hexStringToByteArray(mao.toString())
     val encryptedBytes = hexStringToByteArray(encrypted.toString())

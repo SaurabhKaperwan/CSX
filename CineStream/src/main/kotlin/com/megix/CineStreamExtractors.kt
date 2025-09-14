@@ -20,7 +20,6 @@ import com.google.gson.Gson
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import okhttp3.MediaType.Companion.toMediaType
 import java.util.Base64
-import java.util.regex.Pattern
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -2732,36 +2731,38 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokePrimeWire(
+    suspend fun invokePrimeSrc(
         imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        val headers = mapOf(
+            "accept" to "*/*",
+            "referer" to if(season == null) "$PrimeSrcApi/embed/movie?imdb=$imdbId" else "$PrimeSrcApi/embed/tv?imdb=$imdbId&season=$season&episode=$episode",
+            "sec-ch-ua" to "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Windows\"",
+            "sec-fetch-dest" to "empty",
+            "sec-fetch-mode" to "cors",
+            "sec-fetch-site" to "same-origin",
+            "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        )
         val url = if (season == null) {
-            "$Primewire/embed/movie?imdb=$imdbId"
+            "$PrimeSrcApi/api/v1/s?imdb=$imdbId&type=movie"
         } else {
-            "$Primewire/embed/tv?imdb=$imdbId&season=$season&episode=$episode"
+            "$PrimeSrcApi/api/v1/s?imdb=$imdbId&season=$season&episode=$episode&type=tv"
         }
-        val doc = app.get(url, timeout = 10).document
-        val userData = doc.select("#user-data")
-        var decryptedLinks = decryptLinks(userData.attr("v"))
-        for (link in decryptedLinks) {
-            val href = "$Primewire/links/gos/$link"
-            // Thanks to @phisher98
-            val token= app.get("https://raw.githubusercontent.com/phisher98/TVVVV/refs/heads/main/Primetoken.txt").text
-            val oUrl = app.get(href, timeout = 10)
-            val iframeurl= app.get("${oUrl.url.replace("/gos/","/go/")}?token=$token").parsedSafe<PrimewireClass>()?.link
-            if(iframeurl == null) continue
-            loadSourceNameExtractor(
-                "Primewire",
-                iframeurl,
-                "",
-                subtitleCallback,
-                callback
-            )
+
+        val serverList = app.get(url, timeout = 30, headers = headers).parsedSafe<PrimeSrcServerList>()
+        serverList?.servers?.forEach {
+            val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
+            val jsonObject = JSONObject(rawServerJson)
+            loadSourceNameExtractor("PrimeWire${if(it.fileName.isNullOrEmpty()) "" else " (${it.fileName}) "}", jsonObject.optString("link",""),PrimeSrcApi, subtitleCallback, callback,null,it.fileSize?:"")
         }
+
     }
 
     suspend fun invokeSoaper(
@@ -2952,7 +2953,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val authUrl = "${cinemaOSApi}/api/auth/secure"
+        val authUrl = "${cinemaOSApi}/api/auth/player"
         val headersRequest = mapOf(
             "Accept" to "*/*",
             "Accept-Language" to "en-US,en;q=0.9",
@@ -2983,8 +2984,8 @@ object CineStreamExtractors : CineStreamProvider() {
             "Content-Type" to "application/json"
         )
 
-        val authResponse = app.get(authUrl, headers = headersRequest, timeout = 20).text
-        val authVerifyResponse = app.post(authUrl, headers = headerAuth, json = authResponse,timeout = 20).parsedSafe<CinemaOsAuthResponse>()
+        val authResponse = app.get(authUrl, headers = headersRequest, timeout = 60).text
+        val authVerifyResponse = app.post(authUrl, headers = headerAuth, json = authResponse,timeout = 60).parsedSafe<CinemaOsAuthResponse>()
 
 
         val sourceHeaders = mapOf(
@@ -3006,11 +3007,11 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val fixTitle = title?.replace(" ", "+")
         val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(), seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
-        val s = "a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456"
+        val s = "a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3" // Ch. Ov Tm
         val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest,s)
         val type = if(season == null) {"movie"}  else {"tv"}
         val sourceUrl = if(season == null) {"$cinemaOSApi/api/cinemaos?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/cinemaos?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
-        val sourceResponse = app.get(sourceUrl, headers = sourceHeaders,timeout = 20).parsedSafe<CinemaOSReponse>()
+        val sourceResponse = app.get(sourceUrl, headers = sourceHeaders,timeout = 60).parsedSafe<CinemaOSReponse>()
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data)
         val json = parseCinemaOSSources(decryptedJson.toString())
         json.forEach {
@@ -3018,14 +3019,14 @@ object CineStreamExtractors : CineStreamProvider() {
             val quality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080 } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720} else { Qualities.P1080}
             callback.invoke(
                 newExtractorLink(
-                    "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]} ${it["quality"]}",
-                    "CinemaOS [${it["server"]}] ${it["bitrate"]} ${it["speed"]} ${it["quality"]}",
+                    "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]}".replace("\\s{2,}".toRegex(), " ").trim(),
+                    "CinemaOS [${it["server"]}] ${it["bitrate"]} ${it["speed"]}".replace("\\s{2,}".toRegex(), " ").trim(),
                     url = it["url"].toString(),
                     type = extractorLinkType
                 )
                 {
                     this.headers = mapOf("Referer" to cinemaOSApi)
-                    this.quality = quality.value
+                    this.quality = if(it["quality"]?.isNotEmpty() == true) getQualityFromName(it["quality"]) else Qualities.P1080.value
                 }
             )
         }

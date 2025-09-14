@@ -45,7 +45,6 @@ import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
 import com.megix.CineStreamExtractors.invokeMostraguarda
 import com.megix.CineStreamExtractors.invokePlayer4U
-import com.megix.CineStreamExtractors.invokePrimeWire
 import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
 import com.megix.CineStreamExtractors.invokeTom
@@ -72,6 +71,7 @@ import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
 import com.megix.CineStreamExtractors.invokeCinemaOS
+import com.megix.CineStreamExtractors.invokePrimeSrc
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
@@ -479,7 +479,7 @@ class CineSimklProvider: MainAPI() {
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeWire(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -555,7 +555,7 @@ class CineSimklProvider: MainAPI() {
             { invokeWYZIESubs(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
             { invokePrimebox(imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeWire(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
+            { invokePrimeSrc(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeSoaper(imdbId, tmdbId, imdbTitle, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokePhoenix(imdbTitle, imdbId, tmdbId, res.year, imdbSeason, imdbEpisode, callback) },
             { invokeTom(tmdbId, imdbSeason, imdbEpisode, callback, subtitleCallback) },
