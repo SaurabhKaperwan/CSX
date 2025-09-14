@@ -46,7 +46,6 @@ import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
 import com.megix.CineStreamExtractors.invokeMostraguarda
 import com.megix.CineStreamExtractors.invokePlayer4U
-import com.megix.CineStreamExtractors.invokePrimeWire
 import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
 import com.megix.CineStreamExtractors.invokeTom
@@ -74,6 +73,7 @@ import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeMultiEmbeded
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
+import com.megix.CineStreamExtractors.invokePrimeSrc
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
@@ -107,7 +107,7 @@ open class CineStreamProvider : MainAPI() {
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
         const val Player4uApi = "https://player4u.xyz"
-        const val Primewire = "https://www.primewire.tf"
+        const val PrimeSrcApi = "https://primesrc.me"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
         //const val VidJoyApi = "https://vidjoy.pro"
         const val soaperAPI = "https://soaper.live"
@@ -623,7 +623,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeMoviesdrive(imdbTitle, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeToonstream(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMultimovies(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokePrimeSrc(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, year, callback) },
             { invokeCinemaluxe(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             { invokePrimebox(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
@@ -679,7 +679,7 @@ open class CineStreamProvider : MainAPI() {
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeWire(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokePrimeSrc(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },
