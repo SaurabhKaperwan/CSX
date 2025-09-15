@@ -2675,11 +2675,13 @@ object CineStreamExtractors : CineStreamProvider() {
                         val titleText = element.text()?.split(" | ")?.lastOrNull() ?: return@mapNotNull null
 
                         if (season == null && episode == null) {
-                            if (year != null && (titleText.contains(title, ignoreCase = true) && titleText.contains(year.toString(), ignoreCase = true))) {
+                            if (year != null && (titleText.startsWith("$title $year", ignoreCase = true) ||
+                                 titleText.startsWith("$title ($year)", ignoreCase = true))) {
                                 Player4uLinkData(name = titleText, url = element.attr("onclick"))
                             } else null
                         } else {
-                            if (season != null && episode != null && titleText.contains(title, ignoreCase = true) && titleText.contains("S${"%02d".format(season)}E${"%02d".format(episode)}", ignoreCase = true)) {
+                            if (season != null && episode != null &&
+                                titleText.startsWith("$title S${"%02d".format(season)}E${"%02d".format(episode)}", ignoreCase = true)) {
                                 Player4uLinkData(name = titleText, url = element.attr("onclick"))
                             } else null
                         }
