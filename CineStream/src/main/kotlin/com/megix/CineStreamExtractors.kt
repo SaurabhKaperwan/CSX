@@ -2660,8 +2660,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if (title.isNullOrBlank()) return
         if(season == null && year == null) return
 
-        val fixTitle = title.createPlayerSlug().orEmpty()
-        val fixQuery = (season?.let { "$fixTitle S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$fixTitle $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
+        val fixQuery = (season?.let { "$title S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$title $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
         val allLinks = HashSet<Player4uLinkData>()
 
         var page = 0
@@ -3015,8 +3014,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data)
         val json = parseCinemaOSSources(decryptedJson.toString())
         json.forEach {
-            val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else { INFER_TYPE}
-            val quality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080 } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720} else { Qualities.P1080}
+            val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
+            val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value}
+            val quality =  if(it["quality"]?.isNotEmpty() == true && it["quality"]?.toIntOrNull() !=null) getQualityFromName(it["quality"]) else if (it["quality"]?.isNotEmpty() == true)  if(it["quality"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["quality"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value} else bitrateQuality
             callback.invoke(
                 newExtractorLink(
                     "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]}".replace("\\s{2,}".toRegex(), " ").trim(),
@@ -3026,7 +3026,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
                 {
                     this.headers = mapOf("Referer" to cinemaOSApi)
-                    this.quality = if(it["quality"]?.isNotEmpty() == true) getQualityFromName(it["quality"]) else Qualities.P1080.value
+                    this.quality = quality
                 }
             )
         }
