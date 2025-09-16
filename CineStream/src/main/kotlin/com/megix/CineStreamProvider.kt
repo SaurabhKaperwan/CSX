@@ -98,7 +98,7 @@ open class CineStreamProvider : MainAPI() {
         const val TomAPI = "https://tom.autoembed.cc"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val RarAPI = "https://nepu.to"
-        const val animepaheAPI = "https://animepahe.ru"
+        const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
@@ -122,7 +122,7 @@ open class CineStreamProvider : MainAPI() {
         const val animezAPI = "https://animeyy.com"
         const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
-        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=vidzee,vidsrc,mp4hydra,uhdmovies,animepahe"
+        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=vidzee,vidsrc,mp4hydra,uhdmovies"
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"

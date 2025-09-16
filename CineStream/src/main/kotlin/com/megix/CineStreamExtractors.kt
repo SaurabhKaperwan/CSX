@@ -49,6 +49,7 @@ object CineStreamExtractors : CineStreamProvider() {
         data.streams.forEach {
             val title = it.title ?: ""
             val name = it.name ?: "Nuvio"
+            if(it.url.contains("https://github.com")) return@forEach
             callback.invoke(
                 newExtractorLink(
                     name,
