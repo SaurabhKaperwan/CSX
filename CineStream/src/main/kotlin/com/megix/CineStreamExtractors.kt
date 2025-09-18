@@ -1901,17 +1901,17 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT,
             "Cookie" to "__ddg2_=1234567890"
         )
-        val id = app.get("$proxyAPI/$url" ?: return, headers).document.selectFirst("meta[property=og:url]")
+        val id = app.get(url ?: return, headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
         val animeData =
-            app.get("$proxyAPI/$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
+            app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
         val session = if(episode == null) {
             animeData?.firstOrNull()?.session ?: return
         } else {
             animeData?.getOrNull(episode-1)?.session ?: return
         }
-        val doc = app.get("$proxyAPI/$animepaheAPI/play/$id/$session", headers).document
+        val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
 
         runAllAsync(
             {
@@ -2890,8 +2890,8 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val proxyUrl = "https://corsproxy.io/?url="
-        val mainUrl = "$proxyUrl$Film1kApi"
+        //val proxyUrl = "https://corsproxy.io/?url="
+        val mainUrl = "$Film1kApi"
         if (season == null) {
             try {
                 val fixTitle = title?.replace(":", "")?.replace(" ", "+")
@@ -2908,7 +2908,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         .contains(year.toString())
                 }.toList()
                 val url = posts.firstOrNull()?.select("a:nth-child(1)")?.attr("href")
-                val postDoc = url?.let { app.get("$proxyUrl$it", cacheTime = 60, timeout = 30).document }
+                val postDoc = url?.let { app.get("$it", cacheTime = 60, timeout = 30).document }
                 val id = postDoc?.select("a.Button.B.on")?.attr("data-ide")
                 repeat(5) { i ->
                     val mediaType = "application/x-www-form-urlencoded".toMediaType()
