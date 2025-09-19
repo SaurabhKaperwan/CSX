@@ -121,7 +121,6 @@ open class CineStreamProvider : MainAPI() {
         const val miruroAPI = "https://www.miruro.to"
         const val animezAPI = "https://animeyy.com"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
-        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=vidzee,vidsrc,mp4hydra,uhdmovies"
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"
@@ -169,6 +168,7 @@ open class CineStreamProvider : MainAPI() {
         val toonStreamAPI get() = api("toonstream")
         val hianimeAPI get() = api("hianime")
         val dramadripAPI get() = api("dramadrip")
+        val nuvioStreamsAPI get() = api("nuvio")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
