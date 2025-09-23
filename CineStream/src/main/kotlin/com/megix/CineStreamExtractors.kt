@@ -23,6 +23,9 @@ import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.ranges.contains
+import kotlin.text.get
+import kotlin.toString
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -2953,45 +2956,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val authUrl = "${cinemaOSApi}/api/auth/player"
-        val headersRequest = mapOf(
-            "Accept" to "*/*",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Connection" to "keep-alive",
-            "Referer" to cinemaOSApi,
-            "Sec-Fetch-Dest" to "empty",
-            "Sec-Fetch-Mode" to "cors",
-            "Sec-Fetch-Site" to "same-origin",
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-            "sec-ch-ua" to "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
-            "sec-ch-ua-mobile" to "?0",
-            "sec-ch-ua-platform" to "\"Windows\""
-        )
-
-        val headerAuth = mapOf(
-            "Accept" to "*/*",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Connection" to "keep-alive",
-            "Referer" to cinemaOSApi,
-            "Origin" to cinemaOSApi,
-            "Sec-Fetch-Dest" to "empty",
-            "Sec-Fetch-Mode" to "cors",
-            "Sec-Fetch-Site" to "same-origin",
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-            "sec-ch-ua" to "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
-            "sec-ch-ua-mobile" to "?0",
-            "sec-ch-ua-platform" to "\"Windows\"",
-            "Content-Type" to "application/json"
-        )
-
-        val authResponse = app.get(authUrl, headers = headersRequest, timeout = 60).text
-        val authVerifyResponse = app.post(authUrl, headers = headerAuth, json = authResponse,timeout = 60).parsedSafe<CinemaOsAuthResponse>()
-
-
         val sourceHeaders = mapOf(
             "Accept" to "*/*",
             "Accept-Language" to "en-US,en;q=0.9",
-            "Authorization" to "Bearer ${authVerifyResponse?.token}",
             "Connection" to "keep-alive",
             "Referer" to cinemaOSApi,
             "Host" to "cinemaos.live",
@@ -3007,7 +2974,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val fixTitle = title?.replace(" ", "+")
         val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(), seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
-        val s = "a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3" // Ch. Ov Tm
+        val s = "a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3"
         val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest,s)
         val type = if(season == null) {"movie"}  else {"tv"}
         val sourceUrl = if(season == null) {"$cinemaOSApi/api/cinemaos?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/cinemaos?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
@@ -3105,7 +3072,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val STATIC_PATH =
-            "hezushon/a/APA91PF9DMA4b5bJkuB33z2ZDGn2iCx2WLKkqD_P_Cxg4Km4ok_QhifhLIiI1Iot9obpDiXhYDQsrSypaRrTLy4j-rWowvM44fKIuJ8sXS20H7f-MgGjEUXiPIIP7SLbFCK93OIXj89ssW5r_N8QNchVUz7wLRltc8nYJIiFbvjJ0kQ6xSz6iny/1000085697207426/cek/ac7cdc69-3f2e-5d5f-82df-ca71bab8a274/b9de1beea88399820f70c22cd6827900c104af9daa5b526ce002f7847b550988/a94c1dc3d92a6cf9a1445d23d0f6c014a967562e"
+            "hezushon/e7b3cf8497ae580e7a703f996cf17ce48587cbd5/ev/9fdf613a9204683a789e4bfe9fd06da405e6ef36c4338b5baf14d0f2ea18f7a4"
         val url =
             if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
         val headers = mapOf(
@@ -3123,8 +3090,8 @@ object CineStreamExtractors : CineStreamProvider() {
             return;
         }
         // AES encryption setup
-        val keyHex = "e30df70860e74df551ea7be6001a2baec9a38d3dc5d96b63830f8721098e1c53"
-        val ivHex = "d04e83862d741774a4be0a60ebde5f89"
+        val keyHex = "8321a6aa7add8f2874b4b03f4f0fd9de8fa33bb91d9fa63534975ab49a584c8f"
+        val ivHex = "7d7a35a72b54d40c323d64d268e84382"
         val aesKey = hexStringToByteArray2(keyHex)
         val aesIv = hexStringToByteArray2(ivHex)
 
@@ -3135,7 +3102,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val aesEncrypted = cipher.doFinal(paddedData)
 
         // XOR operation
-        val xorKey = hexStringToByteArray2("773e3c35d04495b4e9")
+        val xorKey = hexStringToByteArray2("7ce1477edc99e718b8")
         val xorResult = aesEncrypted.mapIndexed { i, byte ->
             (byte.toInt() xor xorKey[i % xorKey.size].toInt()).toByte()
         }.toByteArray()
@@ -3144,7 +3111,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val encodedFinal = customEncode(xorResult)
 
         // Get servers
-        val apiServers = "$vidfastProApi/$STATIC_PATH/SqhAfKdX/$encodedFinal"
+        val apiServers = "$vidfastProApi/$STATIC_PATH/wpPdKYzdySpv/$encodedFinal"
         val serversResponse = app.get(
             apiServers,
             timeout = 20,
@@ -3156,7 +3123,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val urlList = mutableMapOf<String, String>()
         servers.forEach {
             try {
-                val apiStream = "$vidfastProApi/${STATIC_PATH}/2z2p-GV3ow/${it.data}"
+                val apiStream = "$vidfastProApi/${STATIC_PATH}/6rbZBh6h9A/${it.data}"
                 val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
                 if (streamResponse.isNotEmpty()) {
                     val jsonObject = JSONObject(streamResponse)
