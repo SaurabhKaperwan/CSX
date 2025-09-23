@@ -851,49 +851,50 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val api = if(source == "HindMoviez") hindMoviezAPI else jaduMoviesAPI
-        val doc = app.get("$api/${title?.lowercase()?.replace(" ", "-") ?: return}", timeout = 50L).document
-        val imdbLink = doc.select("li > span > a").attr("href")
-        if(!imdbLink.contains("$id")) return
+        // val doc = app.get("$api/${title?.lowercase()?.replace(" ", "-") ?: return}", timeout = 50L).document
+        // val imdbLink = doc.select("li > span > a").attr("href")
+        // if(!imdbLink.contains("$id")) return
 
-        if(episode == null) {
-            doc.select("a.maxbutton").amap {
-                val res = app.get(it.attr("href"), timeout = 50L).document
-                val link = res.select("a.get-link-btn").attr("href")
-                getHindMoviezLinks(source, link, callback)
-            }
-        }
-        else {
-            doc.select("a.maxbutton").amap {
-                val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
-                if(text.contains("Season $season")) {
-                    val res = app.get(it.attr("href"), timeout = 50L).document
-                    res.select("h3 > a").getOrNull(episode-1)?.let { link ->
-                        getHindMoviezLinks(source, link.attr("href"), callback)
-                    }
-                }
-            }
-        }
-        // app.get("$api/?s=$id", timeout = 50L).document.select("h2.entry-title > a").amap {
-        //     val doc = app.get(it.attr("href"), timeout = 50L).document
-        //     if(episode == null) {
-        //         doc.select("a.maxbutton").amap {
-        //             val res = app.get(it.attr("href"), timeout = 50L).document
-        //             val link = res.select("a.get-link-btn").attr("href")
-        //             getHindMoviezLinks(source, link, callback)
-        //         }
+        // if(episode == null) {
+        //     doc.select("a.maxbutton").amap {
+        //         val res = app.get(it.attr("href"), timeout = 50L).document
+        //         val link = res.select("a.get-link-btn").attr("href")
+        //         getHindMoviezLinks(source, link, callback)
         //     }
-        //     else {
-        //         doc.select("a.maxbutton").amap {
-        //             val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
-        //             if(text.contains("Season $season")) {
-        //                 val res = app.get(it.attr("href"), timeout = 50L).document
-        //                 res.select("h3 > a").getOrNull(episode-1)?.let { link ->
-        //                     getHindMoviezLinks(source, link.attr("href"), callback)
-        //                 }
+        // }
+        // else {
+        //     doc.select("a.maxbutton").amap {
+        //         val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
+        //         if(text.contains("Season $season")) {
+        //             val res = app.get(it.attr("href"), timeout = 50L).document
+        //             res.select("h3 > a").getOrNull(episode-1)?.let { link ->
+        //                 getHindMoviezLinks(source, link.attr("href"), callback)
         //             }
         //         }
         //     }
         // }
+
+        app.get("$api/?s=$id", timeout = 50L).document.select("h2.entry-title > a").amap {
+            val doc = app.get(it.attr("href"), timeout = 50L).document
+            if(episode == null) {
+                doc.select("a.maxbutton").amap {
+                    val res = app.get(it.attr("href"), timeout = 50L).document
+                    val link = res.select("a.get-link-btn").attr("href")
+                    getHindMoviezLinks(source, link, callback)
+                }
+            }
+            else {
+                doc.select("a.maxbutton").amap {
+                    val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
+                    if(text.contains("Season $season")) {
+                        val res = app.get(it.attr("href"), timeout = 50L).document
+                        res.select("h3 > a").getOrNull(episode-1)?.let { link ->
+                            getHindMoviezLinks(source, link.attr("href"), callback)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     suspend fun invokeStreamAsia(
