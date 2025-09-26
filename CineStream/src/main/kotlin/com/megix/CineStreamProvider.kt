@@ -77,6 +77,7 @@ import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
 import com.megix.CineStreamExtractors.invokeRar
+import com.megix.CineStreamExtractors.invokeVicSrcWtf
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -126,6 +127,8 @@ open class CineStreamProvider : MainAPI() {
         const val vidfastProApi = "https://vidfast.pro"
         const val vidPlusApi = "https://player.vidplus.to"
         const val multiEmbededApi = "https://multiembed.mov"
+        const val vidSrcApi = "https://api.rgshows.me"
+        const val vidSrcHindiApi = "https://hindi.rgshows.me"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -690,6 +693,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidPlus( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeMultiEmbeded( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVicSrcWtf( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },

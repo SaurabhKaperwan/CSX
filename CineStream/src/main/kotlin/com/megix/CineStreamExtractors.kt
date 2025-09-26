@@ -1,8 +1,8 @@
 package com.megix
 
+import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.api.Log
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import org.jsoup.Jsoup
@@ -23,8 +23,6 @@ import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.ranges.contains
-import kotlin.text.get
 import kotlin.toString
 
 object CineStreamExtractors : CineStreamProvider() {
@@ -3240,6 +3238,71 @@ object CineStreamExtractors : CineStreamProvider() {
             val iframe = src.select("iframe").attr("src")
             loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
         }
+
+
+    }
+
+
+       suspend fun invokeVicSrcWtf(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    )
+    {
+        val referer = "https://www.vidsrc.wtf"
+        val headers = mapOf("Origin" to referer,"Referer" to referer,"User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
+
+        try {
+            val mainServer = if(season == null) "$vidSrcApi/main/movie/$tmdbId" else "$vidSrcApi/main/tv/$tmdbId/$season/$episode"
+            val mainResponse = app.get(mainServer, timeout = 30, headers = headers).text
+            val jsonObject = JSONObject(mainResponse)
+            val streamUrl = jsonObject.getJSONObject("stream").getString("url")
+            M3u8Helper.generateM3u8(
+                "VidSrc [Main]",
+                streamUrl,
+                referer,
+            ).forEach(callback)
+        } catch (e: Exception) {}
+
+        try {
+            val hindiServer =
+                if (season == null) "$vidSrcHindiApi/movie/$tmdbId" else "$vidSrcHindiApi/tv/$tmdbId/$season/$episode"
+            val hindiResponse = app.get(hindiServer, timeout = 30, headers = headers).text
+            val hindiJsonObject = JSONObject(hindiResponse)
+            val streamsArray = hindiJsonObject.getJSONArray("streams")
+            for (i in 0 until streamsArray.length()) {
+                val streamObj = streamsArray.getJSONObject(i)
+                val language = streamObj.getString("language")
+                val url = streamObj.getString("url")
+                // Convert headers JSONObject to Map<String, String>
+                val headersJson = streamObj.getJSONObject("headers")
+                val headersMap = mutableMapOf<String, String>()
+                headersJson.keys().forEach { key ->
+                    headersMap[key] = headersJson.getString(key)
+                }
+                M3u8Helper.generateM3u8(
+                    "VidSrc [$language]",
+                    url,
+                    headersJson.getString("Referer"),
+                    headers = headersMap
+                ).forEach(callback)
+
+            }
+        } catch (e: Exception) { }
+
+        try {
+            val embededServer = if(season == null) "$vidSrcApi/premium_embeds/movie/$tmdbId" else "$vidSrcApi/premium_embeds/tv/$tmdbId/$season/$episode"
+            val embededResponse = app.get(embededServer, timeout = 30, headers = headers).text
+            val embededJsonObject = JSONObject(embededResponse)
+            val linksArray = embededJsonObject.getJSONArray("links")
+            for (i in 0 until linksArray.length()) {
+                val streamObj = linksArray.getJSONObject(i)
+                val url = streamObj.getString("url")
+                loadSourceNameExtractor("VidSrc",url,"",subtitleCallback,callback)
+            }
+        } catch (e: Exception) { }
 
 
     }
