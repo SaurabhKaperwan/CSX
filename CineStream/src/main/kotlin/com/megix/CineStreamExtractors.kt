@@ -1358,40 +1358,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeTom(
-        id: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit
-    ) {
-        val url = if(season == null) "$TomAPI/api/getVideoSource?type=movie&id=$id" else "$TomAPI/api/getVideoSource?type=tv&id=$id/$season/$episode"
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
-            "Referer" to "https://autoembed.cc"
-        )
-        val json = app.get(url, headers = headers).text
-        val data = tryParseJson<TomResponse>(json) ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "Tom",
-                "Tom",
-                data.videoSource,
-                ExtractorLinkType.M3U8
-            )
-        )
-
-        data.subtitles.map {
-            subtitleCallback.invoke(
-                SubtitleFile(
-                    it.label,
-                    it.file,
-                )
-            )
-        }
-    }
-
     suspend fun invokeProtonmovies(
         id: String? = null,
         season: Int? = null,
@@ -2500,7 +2466,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val id = url?.substringAfterLast("/")?.substringAfterLast("-") ?: return
+        val hiId = url?.substringAfterLast("/") ?: return
+        val id = hiId.substringAfterLast("-") ?: return
 
         val epId = app.get(
             "$hianimeAPI/ajax/v2/episode/list/$id",
@@ -2517,28 +2484,31 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val types = listOf("sub", "dub")
+        val servers = listOf("HD-1", "HD-2")
 
         types.forEach { t ->
-            val epData = app.get("$miruroAPI/api/sources?episodeId=$epId&provider=zoro&fetchType=embed&category=$t").parsedSafe<HianimeStreamResponse>() ?: return@forEach
-            val streamUrl = epData.streams.firstOrNull()?.url
-            if(streamUrl != null) {
-                M3u8Helper.generateM3u8(
-                    "HiAnime [${t.uppercase()}]",
-                    streamUrl,
-                    "https://megacloud.blog/",
-                    headers = videoHeaders
-                ).forEach(callback)
-            }
+            servers.forEach { server ->
+                val epData = app.get("$aniversehdAPI/api/v2/zoro/watch/$hiId?ep=$epId&type=$t&server=$server", referer = aniversehdAPI).parsedSafe<HianimeStreamResponse>() ?: return@forEach
+                val streamUrl = epData.sources.firstOrNull()?.url
+                if(streamUrl != null) {
+                    M3u8Helper.generateM3u8(
+                        "HiAnime [${t.uppercase()}] [$server]",
+                        streamUrl,
+                        "https://megacloud.blog/",
+                        headers = videoHeaders
+                    ).forEach(callback)
+                }
 
-            epData.tracks.forEach { track ->
-                if(track.kind == "captions") {
-                    subtitleCallback.invoke(
-                        SubtitleFile(
-                            track.label ?: "und",
-                            track.file
+                epData.tracks.forEach { track ->
+                    if(track.kind == "captions") {
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                track.label ?: "und",
+                                track.file
+                            )
                         )
-                    )
 
+                    }
                 }
             }
         }

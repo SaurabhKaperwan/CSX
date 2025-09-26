@@ -37,16 +37,16 @@ data class HianimeResponses(
 )
 
 data class HianimeStreamResponse(
-    val streams: List<HianimeStream>,
-    val tracks: List<HianimeTrack>,
+    val sources: List<HianimeSources>,
+    val tracks: List<HianimeTracks>,
 )
 
-data class HianimeStream(
+data class HianimeSources(
     val url: String,
     val type: String,
 )
 
-data class HianimeTrack(
+data class HianimeTracks(
     val file: String,
     val label: String?,
     val kind: String,

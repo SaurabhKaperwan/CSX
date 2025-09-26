@@ -48,7 +48,6 @@ import com.megix.CineStreamExtractors.invokeMostraguarda
 import com.megix.CineStreamExtractors.invokePlayer4U
 import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
-import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeAllmovieland
 import com.megix.CineStreamExtractors.invoke4khdhub
 // import com.megix.CineStreamExtractors.invokeVidJoy
@@ -95,7 +94,6 @@ open class CineStreamProvider : MainAPI() {
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
-        const val TomAPI = "https://tom.autoembed.cc"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.si"
@@ -118,7 +116,7 @@ open class CineStreamProvider : MainAPI() {
         const val animeparadiseBaseAPI = "https://www.animeparadise.moe"
         const val animeparadiseAPI = "https://api.animeparadise.moe"
         const val sudatchiAPI = "https://sudatchi.com"
-        const val miruroAPI = "https://www.miruro.to"
+        const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
@@ -609,7 +607,6 @@ open class CineStreamProvider : MainAPI() {
             { invokeNetflix(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeTom(tmdbId, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             { invokeCinemaOS(res.imdb_id, tmdbId, imdbTitle, res.imdbSeason, res.imdbEpisode, year, callback, subtitleCallback) },
             { invokeMovies4u(res.imdb_id, imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -682,7 +679,6 @@ open class CineStreamProvider : MainAPI() {
             { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },
-            { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { if(!isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, year, callback) },
