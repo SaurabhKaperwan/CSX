@@ -1213,17 +1213,14 @@ fun generateHashedString(): String {
 fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest,isSeries: Boolean): String {
     val c = generateHashedString()
 
-    // Step 2: Handle optional compression
     val m: String = if (isSeries) "content_v3::contentId=${t.tmdbId}::partId=${t.episodeId}::seriesId=${t.seasonId}::environment=production" else "content_v3::contentId=${t.tmdbId}::environment=production"
 
 
-    // Step 3: HMAC-SHA384 using c as the key, and m as message
     val hmac384 = Mac.getInstance("HmacSHA384")
     hmac384.init(SecretKeySpec(c.toByteArray(Charsets.UTF_8), "HmacSHA384"))
     hmac384.update(m.toByteArray(Charsets.UTF_8))
     val x = hmac384.doFinal().joinToString("") { "%02x".format(it) }
 
-    // Step 4: HMAC-SHA512 using x as key, and last 64 characters of c as message
     val hmac512 = Mac.getInstance("HmacSHA512")
     hmac512.init(SecretKeySpec(x.toByteArray(Charsets.UTF_8), "HmacSHA512"))
     hmac512.update(c.takeLast(64).toByteArray(Charsets.UTF_8))
