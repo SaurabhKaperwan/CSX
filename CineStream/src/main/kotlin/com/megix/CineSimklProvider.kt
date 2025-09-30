@@ -47,7 +47,6 @@ import com.megix.CineStreamExtractors.invokeMostraguarda
 import com.megix.CineStreamExtractors.invokePlayer4U
 import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
-import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeAllmovieland
 import com.megix.CineStreamExtractors.invoke4khdhub
 // import com.megix.CineStreamExtractors.invokeVidJoy
@@ -324,6 +323,8 @@ class CineSimklProvider: MainAPI() {
         val allratings = json.ratings
         val rating = allratings?.mal?.rating ?: allratings?.imdb?.rating
         val kitsuId = json.ids?.kitsu?.toIntOrNull()
+        val anilistId = json.ids?.anilist?.toIntOrNull()
+        val malId = json.ids?.mal?.toIntOrNull()
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(firstTrailerId, "youtube")
 
@@ -353,8 +354,8 @@ class CineSimklProvider: MainAPI() {
                 json.ids?.imdb,
                 json.ids?.tmdb?.toIntOrNull(),
                 json.year,
-                json.ids?.anilist?.toIntOrNull(),
-                json.ids?.mal?.toIntOrNull(),
+                anilistId,
+                malId,
                 kitsuId,
                 null,
                 null,
@@ -377,7 +378,7 @@ class CineSimklProvider: MainAPI() {
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
-                this.addAniListId(json.ids?.anilist?.toIntOrNull())
+                this.addAniListId(anilistId)
             }
         } else {
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
@@ -392,8 +393,8 @@ class CineSimklProvider: MainAPI() {
                         json.ids?.imdb,
                         json.ids?.tmdb?.toIntOrNull(),
                         json.year,
-                        json.ids?.anilist?.toIntOrNull(),
-                        json.ids?.mal?.toIntOrNull(),
+                        anilistId,
+                        malId,
                         kitsuId,
                         json.season?.toIntOrNull(),
                         it.season,
@@ -427,7 +428,7 @@ class CineSimklProvider: MainAPI() {
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
-                this.addAniListId(json.ids?.anilist?.toIntOrNull())
+                this.addAniListId(anilistId)
             }
         }
     }
@@ -486,7 +487,6 @@ class CineSimklProvider: MainAPI() {
             { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, callback) },
-            { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
@@ -562,7 +562,6 @@ class CineSimklProvider: MainAPI() {
             { invokePrimeSrc(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeSoaper(imdbId, tmdbId, imdbTitle, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokePhoenix(imdbTitle, imdbId, tmdbId, res.year, imdbSeason, imdbEpisode, callback) },
-            { invokeTom(tmdbId, imdbSeason, imdbEpisode, callback, subtitleCallback) },
             { invokePrimenet(tmdbId, imdbSeason, imdbEpisode, callback) },
             { invokePlayer4U(imdbTitle, imdbSeason, imdbEpisode, res.year, callback) },
             { invokeThepiratebay(imdbId, imdbSeason, imdbEpisode, callback) },
