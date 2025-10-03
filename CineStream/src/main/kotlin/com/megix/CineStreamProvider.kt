@@ -57,11 +57,9 @@ import com.megix.CineStreamExtractors.invokeAsiaflix
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokePrimebox
 import com.megix.CineStreamExtractors.invokePrimenet
-import com.megix.CineStreamExtractors.invokeAnimeparadise
 import com.megix.CineStreamExtractors.invokeCinemaOS
 import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
-import com.megix.CineStreamExtractors.invokePhoenix
 import com.megix.CineStreamExtractors.invokeKatMovieHd
 import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
@@ -114,8 +112,6 @@ open class CineStreamProvider : MainAPI() {
         const val twoembedAPI = "https://2embed.cc"
         const val xprimeBaseAPI = "https://xprime.tv"
         const val xprimeAPI = "https://backend.xprime.tv"
-        const val animeparadiseBaseAPI = "https://www.animeparadise.moe"
-        const val animeparadiseAPI = "https://api.animeparadise.moe"
         const val sudatchiAPI = "https://sudatchi.com"
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
@@ -600,7 +596,6 @@ open class CineStreamProvider : MainAPI() {
             { invokeAnimes(res.malId, res.anilistId, res.episode, year, "kitsu", subtitleCallback, callback) },
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
-            { invokeAnimeparadise(res.title, res.malId, res.episode, subtitleCallback, callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAllanime(res.title, year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
@@ -681,7 +676,6 @@ open class CineStreamProvider : MainAPI() {
             { invokePrimeSrc(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },
             { if(!isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, year, callback) },

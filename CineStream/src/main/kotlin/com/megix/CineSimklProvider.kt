@@ -56,10 +56,8 @@ import com.megix.CineStreamExtractors.invokeAsiaflix
 import com.megix.CineStreamExtractors.invoke2embed
 import com.megix.CineStreamExtractors.invokePrimebox
 import com.megix.CineStreamExtractors.invokePrimenet
-import com.megix.CineStreamExtractors.invokeAnimeparadise
 import com.megix.CineStreamExtractors.invokeGojo
 import com.megix.CineStreamExtractors.invokeSudatchi
-import com.megix.CineStreamExtractors.invokePhoenix
 import com.megix.CineStreamExtractors.invokeKatMovieHd
 import com.megix.CineStreamExtractors.invokeMadplay
 import com.megix.CineStreamExtractors.invokeStremioSubtitles
@@ -486,7 +484,6 @@ class CineSimklProvider: MainAPI() {
             { invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokePhoenix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
@@ -542,7 +539,6 @@ class CineSimklProvider: MainAPI() {
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
-            { invokeAnimeparadise(res.title, res.malId, res.episode, subtitleCallback, callback) },
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
@@ -561,7 +557,6 @@ class CineSimklProvider: MainAPI() {
             { invokePrimebox(imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeSoaper(imdbId, tmdbId, imdbTitle, imdbSeason, imdbEpisode, subtitleCallback, callback) },
-            { invokePhoenix(imdbTitle, imdbId, tmdbId, res.year, imdbSeason, imdbEpisode, callback) },
             { invokePrimenet(tmdbId, imdbSeason, imdbEpisode, callback) },
             { invokePlayer4U(imdbTitle, imdbSeason, imdbEpisode, res.year, callback) },
             { invokeThepiratebay(imdbId, imdbSeason, imdbEpisode, callback) },
