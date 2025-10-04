@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://rogmovies.sbs"
+    override var mainUrl = "https://rogmovies.store"
     override var name = "Rogmovies"
     override val hasMainPage = true
     override var lang = "hi"

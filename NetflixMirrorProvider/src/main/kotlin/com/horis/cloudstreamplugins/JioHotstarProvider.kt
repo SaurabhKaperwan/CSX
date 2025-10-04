@@ -27,7 +27,7 @@ class JioHotstarProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net2025.cc"
+    override var mainUrl = "https://net20.cc"
     override var name = "JioHotstar"
 
     override val hasMainPage = true

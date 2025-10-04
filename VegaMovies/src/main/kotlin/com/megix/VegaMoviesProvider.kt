@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.frl"
+    override var mainUrl = "https://vegamovies.menu"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -211,12 +211,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val Eurl = unilink?.attr("href")
                 Eurl?.let { eurl ->
                     val document2 = app.get(eurl, headers = headers).document
-                    val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
-                    var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
-
-                    if (vcloudLinks.isEmpty()) {
-                        val fastDlRegex = Regex("""https:\/\/fastdl.icu\/embed\?download=[a-zA-Z0-9]+""")
-                        vcloudLinks = fastDlRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
+                    val vcloudLinks = document2.select("p > a").mapNotNull {
+                        if(it.attr("href").contains("vcloud", true)) {
+                            it.attr("href")
+                        } else {
+                            null
+                        }
                     }
 
                     vcloudLinks.mapNotNull { vcloudlink ->

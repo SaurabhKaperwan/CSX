@@ -11,6 +11,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.VidHidePro
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 fun getIndexQuality(str: String?): Int {
     return Regex("""(\d{3,4})[pP]""").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
@@ -314,9 +316,13 @@ open class Driveleech : ExtractorApi() {
     }
 }
 
-class VCloud : ExtractorApi() {
-    override val name: String = "V-Cloud"
+class VCloudLol : VCloud() {
     override val mainUrl: String = "https://vcloud.lol"
+}
+
+open class VCloud : ExtractorApi() {
+    override val name: String = "V-Cloud"
+    override val mainUrl: String = "https://vcloud.zip"
     override val requiresReferer = false
 
     fun getBaseUrl(url: String): String {
@@ -348,7 +354,7 @@ class VCloud : ExtractorApi() {
             div?.select("h2 a.btn")?.amap {
                 val link = it.attr("href")
                 val text = it.text()
-                if (text.contains("Download [FSL Server]"))
+                if (text.contains("[FSL Server]"))
                 {
                     callback.invoke(
                         newExtractorLink(
@@ -360,7 +366,7 @@ class VCloud : ExtractorApi() {
                         }
                     )
                 }
-                else if (text.contains("Download [Server : 1]")) {
+                else if (text.contains("[Server : 1]")) {
                     callback.invoke(
                         newExtractorLink(
                             "$name",
@@ -492,12 +498,36 @@ open class HubCloud : ExtractorApi() {
             val link = it.attr("href")
             val text = it.text()
 
-            if (text.contains("Download [FSL Server]"))
+            if (text.contains("[FSL Server]"))
             {
                 callback.invoke(
                     newExtractorLink(
                         "$name[FSL Server]",
                         "$name[FSL Server] $header[$size]",
+                        link,
+                    ) {
+                        this.quality = getIndexQuality(header)
+                    }
+                )
+            }
+            else if (text.contains("[FSLv2 Server]"))
+            {
+                callback.invoke(
+                    newExtractorLink(
+                        "$name[FSLv2 Server]",
+                        "$name[FSLv2 Server] $header[$size]",
+                        link,
+                    ) {
+                        this.quality = getIndexQuality(header)
+                    }
+                )
+            }
+            else if (text.contains("[Mega Server]"))
+            {
+                callback.invoke(
+                    newExtractorLink(
+                        "$name[Mega Server]",
+                        "$name[Mega Server] $header[$size]",
                         link,
                     ) {
                         this.quality = getIndexQuality(header)
@@ -523,7 +553,7 @@ open class HubCloud : ExtractorApi() {
                         newExtractorLink(
                             "$name[BuzzServer]",
                             "$name[BuzzServer] $header[$size]",
-                            baseUrl+dlink,
+                            baseUrl + dlink,
                         ) {
                             this.quality = getIndexQuality(header)
                         }
@@ -556,7 +586,7 @@ open class HubCloud : ExtractorApi() {
             }
             else
             {
-                loadExtractor(link,"",subtitleCallback, callback)
+                //loadExtractor(link,"",subtitleCallback, callback)
             }
         }
     }
@@ -600,8 +630,8 @@ class GDFlix7 : GDFlix() {
     override var mainUrl = "https://gdflix.dad"
 }
 
-class GDFlixXYZ : GDFlix() {
-    override var mainUrl = "https://gdflix.xyz"
+class GDFlixNet : GDFlix() {
+    override var mainUrl = "https://new.gdflix.net"
 }
 
 class GDFlixDev : GDFlix() {
@@ -610,7 +640,7 @@ class GDFlixDev : GDFlix() {
 
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://new.gdflix.net"
+    override val mainUrl = "https://new4.gdflix.net"
     override val requiresReferer = false
 
     private suspend fun getLatestUrl(): String {
@@ -651,7 +681,7 @@ open class GDFlix : ExtractorApi() {
                 }
 
                 text.contains("CLOUD DOWNLOAD [R2]") -> {
-                    val link = anchor.attr("href")
+                    val link = URLDecoder.decode(anchor.attr("href").substringAfter("url="), StandardCharsets.UTF_8.toString())
                     callback.invoke(
                         newExtractorLink("GDFlix[Cloud]", "GDFlix[Cloud] $fileName[$fileSize]", link) {
                             this.quality = getIndexQuality(fileName)
@@ -659,7 +689,7 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
 
-                text.contains("PixelDrain DL") -> {
+                text.contains("PixelDrain") -> {
                     val link = anchor.attr("href")
                     callback.invoke(
                         newExtractorLink(
