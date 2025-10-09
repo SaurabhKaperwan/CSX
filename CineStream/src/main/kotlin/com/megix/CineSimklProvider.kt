@@ -74,6 +74,7 @@ import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
 import com.megix.CineStreamExtractors.invokeMultiEmbeded
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
+import com.megix.CineStreamExtractors.invokeXDmovies
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -483,6 +484,7 @@ class CineSimklProvider: MainAPI() {
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
+            { if(res.season == null) invokeXDmovies(res.tmdbId, subtitleCallback, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },

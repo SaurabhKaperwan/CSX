@@ -171,6 +171,27 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeXDmovies(
+        tmdbId: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Referer" to "$XDmoviesAPI/",
+            "x-requested-with" to "XMLHttpRequest",
+            "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
+        )
+
+        val url = "$XDmoviesAPI/api/xyz123?tmdb_id=$tmdbId"
+        val text = app.get(url, headers = headers).text
+        val gson = Gson()
+        val response = gson.fromJson(text, XDmoviesMovie::class.java)
+        val links = response.download_links.amap { source ->
+            loadSourceNameExtractor("XDmovies", source.download_link, "", subtitleCallback, callback)
+        }
+    }
+
     suspend fun invokeToonstream(
         title: String? = null,
         season: Int? = null,

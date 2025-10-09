@@ -593,22 +593,21 @@ suspend fun gofileExtractor(
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
     val headers = mapOf(
-        "User-Agent" to USER_AGENT,
+        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
         "Origin" to mainUrl,
         "Referer" to mainUrl,
     )
-    //val res = app.get(url)
-    val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+    val id = url.substringAfter("d/").substringBefore("/")
+
     val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
     val jsonResp = JSONObject(genAccountRes)
     val token = jsonResp.getJSONObject("data").getString("token") ?: return
-
     val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
     val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
     val response = app.get("$mainApi/contents/$id?wt=$wt",
         headers = mapOf(
-            "User-Agent" to USER_AGENT,
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Origin" to mainUrl,
             "Referer" to mainUrl,
             "Authorization" to "Bearer $token",

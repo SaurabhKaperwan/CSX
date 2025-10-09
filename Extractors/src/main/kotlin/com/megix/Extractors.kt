@@ -350,6 +350,7 @@ open class VCloud : ExtractorApi() {
             val div = document.selectFirst("div.card-body")
             val header = document.select("div.card-header").text() ?: ""
             val size = document.select("i#size").text() ?: ""
+            val quality = getIndexQuality(header)
 
             div?.select("h2 a.btn")?.amap {
                 val link = it.attr("href")
@@ -362,7 +363,7 @@ open class VCloud : ExtractorApi() {
                             "$name[FSL Server] $header[$size]",
                             link,
                         ) {
-                            this.quality = getIndexQuality(header)
+                            this.quality = quality
                         }
                     )
                 }
@@ -373,7 +374,7 @@ open class VCloud : ExtractorApi() {
                             "$name $header[$size]",
                             link,
                         ) {
-                            this.quality = getIndexQuality(header)
+                            this.quality = quality
                         }
                     )
                 }
@@ -385,9 +386,9 @@ open class VCloud : ExtractorApi() {
                             newExtractorLink(
                                 "$name[BuzzServer]",
                                 "$name[BuzzServer] $header[$size]",
-                                baseUrl+dlink,
+                                baseUrl + dlink,
                             ) {
-                                this.quality = getIndexQuality(header)
+                                this.quality = quality
                             }
                         )
                     }
@@ -400,7 +401,7 @@ open class VCloud : ExtractorApi() {
                             "Pixeldrain $header[$size]",
                             link,
                         ) {
-                            this.quality = getIndexQuality(header)
+                            this.quality = quality
                         }
                     )
                 }
@@ -412,13 +413,23 @@ open class VCloud : ExtractorApi() {
                             "$name[Download] $header[$size]",
                             dlink.substringAfter("link="),
                         ) {
-                            this.quality = getIndexQuality(header)
+                            this.quality = quality
                         }
                     )
                 }
                 else
                 {
-                    loadExtractor(link,"",subtitleCallback, callback)
+                    if(link.contains(".mkv") || link.contains(".mp4")) {
+                        callback.invoke(
+                            newExtractorLink(
+                                "$name",
+                                "$name $header[$size]",
+                                link,
+                            ) {
+                                this.quality = quality
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -493,6 +504,7 @@ open class HubCloud : ExtractorApi() {
         val div = document.selectFirst("div.card-body")
         val header = document.select("div.card-header").text() ?: ""
         val size = document.select("i#size").text() ?: ""
+        val quality = getIndexQuality(header)
 
         div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
@@ -506,7 +518,7 @@ open class HubCloud : ExtractorApi() {
                         "$name[FSL Server] $header[$size]",
                         link,
                     ) {
-                        this.quality = getIndexQuality(header)
+                        this.quality = quality
                     }
                 )
             }
@@ -518,7 +530,7 @@ open class HubCloud : ExtractorApi() {
                         "$name[FSLv2 Server] $header[$size]",
                         link,
                     ) {
-                        this.quality = getIndexQuality(header)
+                        this.quality = quality
                     }
                 )
             }
@@ -530,7 +542,7 @@ open class HubCloud : ExtractorApi() {
                         "$name[Mega Server] $header[$size]",
                         link,
                     ) {
-                        this.quality = getIndexQuality(header)
+                        this.quality = quality
                     }
                 )
             }
@@ -541,7 +553,7 @@ open class HubCloud : ExtractorApi() {
                         "$name $header[$size]",
                         link,
                     ) {
-                        this.quality = getIndexQuality(header)
+                        this.quality = quality
                     }
                 )
             }
@@ -555,7 +567,7 @@ open class HubCloud : ExtractorApi() {
                             "$name[BuzzServer] $header[$size]",
                             baseUrl + dlink,
                         ) {
-                            this.quality = getIndexQuality(header)
+                            this.quality = quality
                         }
                     )
                 }
@@ -568,7 +580,7 @@ open class HubCloud : ExtractorApi() {
                         "Pixeldrain $header[$size]",
                         link,
                     ) {
-                        this.quality = getIndexQuality(header)
+                        this.quality = quality
                     }
                 )
             }
@@ -580,13 +592,23 @@ open class HubCloud : ExtractorApi() {
                         "$name[Download] $header[$size]",
                         dlink.substringAfter("link="),
                     ) {
-                        this.quality = getIndexQuality(header)
+                        this.quality = quality
                     }
                 )
             }
             else
             {
-                //loadExtractor(link,"",subtitleCallback, callback)
+                if(link.contains(".mkv") || link.contains(".mp4")) {
+                    callback.invoke(
+                        newExtractorLink(
+                            "$name",
+                            "$name $header[$size]",
+                            link,
+                        ) {
+                            this.quality = quality
+                        }
+                    )
+                }
             }
         }
     }
@@ -666,45 +688,44 @@ open class GDFlix : ExtractorApi() {
             .substringAfter("Name : ").orEmpty()
         val fileSize = document.select("ul > li.list-group-item:contains(Size)").text()
             .substringAfter("Size : ").orEmpty()
+        val quality = getIndexQuality(fileName)
 
         document.select("div.text-center a").amap { anchor ->
             val text = anchor.select("a").text()
+            val link = anchor.attr("href")
 
             when {
                 text.contains("DIRECT DL") -> {
-                    val link = anchor.attr("href")
                     callback.invoke(
                         newExtractorLink("GDFlix[Direct]", "GDFlix[Direct] $fileName[$fileSize]", link) {
-                            this.quality = getIndexQuality(fileName)
+                            this.quality = quality
                         }
                     )
                 }
 
                 text.contains("CLOUD DOWNLOAD [R2]") -> {
-                    val link = URLDecoder.decode(anchor.attr("href").substringAfter("url="), StandardCharsets.UTF_8.toString())
+                    val link = URLDecoder.decode(link.substringAfter("url="), StandardCharsets.UTF_8.toString())
                     callback.invoke(
                         newExtractorLink("GDFlix[Cloud]", "GDFlix[Cloud] $fileName[$fileSize]", link) {
-                            this.quality = getIndexQuality(fileName)
+                            this.quality = quality
                         }
                     )
                 }
 
                 text.contains("PixelDrain") -> {
-                    val link = anchor.attr("href")
                     callback.invoke(
                         newExtractorLink(
                             "Pixeldrain",
                             "Pixeldrain $fileName[$fileSize]",
                             link
                         ) {
-                            this.quality = getIndexQuality(fileName)
+                            this.quality = quality
                         }
                     )
                 }
 
                 text.contains("Index Links") -> {
                     try {
-                        val link = anchor.attr("href")
                         app.get("$latestUrl$link").document
                             .select("a.btn.btn-outline-info").amap { btn ->
                                 val serverUrl = latestUrl + btn.attr("href")
@@ -713,7 +734,7 @@ open class GDFlix : ExtractorApi() {
                                         val source = sourceAnchor.attr("href")
                                         callback.invoke(
                                             newExtractorLink("GDFlix[Index]", "GDFlix[Index] $fileName[$fileSize]", source) {
-                                                this.quality = getIndexQuality(fileName)
+                                                this.quality = quality
                                             }
                                         )
                                     }
@@ -725,7 +746,7 @@ open class GDFlix : ExtractorApi() {
 
                 text.contains("DRIVEBOT") -> {
                     try {
-                        val driveLink = anchor.attr("href")
+                        val driveLink = link
                         val id = driveLink.substringAfter("id=").substringBefore("&")
                         val doId = driveLink.substringAfter("do=").substringBefore("==")
                         val baseUrls = listOf("https://drivebot.sbs", "https://indexbot.site")
@@ -764,7 +785,7 @@ open class GDFlix : ExtractorApi() {
                                 callback.invoke(
                                     newExtractorLink("GDFlix[DriveBot]", "GDFlix[DriveBot] $fileName[$fileSize]", downloadLink) {
                                         this.referer = baseUrl
-                                        this.quality = getIndexQuality(fileName)
+                                        this.quality = quality
                                     }
                                 )
                             }
@@ -776,13 +797,13 @@ open class GDFlix : ExtractorApi() {
 
                 text.contains("Instant DL") -> {
                     try {
-                        val instantLink = anchor.attr("href")
+                        val instantLink = link
                         val link = app.get(instantLink, allowRedirects = false)
                             .headers["location"]?.substringAfter("url=").orEmpty()
 
                         callback.invoke(
                             newExtractorLink("GDFlix[Instant Download]", "GDFlix[Instant Download] $fileName[$fileSize]", link) {
-                                this.quality = getIndexQuality(fileName)
+                                this.quality = quality
                             }
                         )
                     } catch (e: Exception) {
@@ -791,7 +812,7 @@ open class GDFlix : ExtractorApi() {
                 }
                 text.contains("GoFile") -> {
                     try {
-                        app.get(anchor.attr("href")).document
+                        app.get(link).document
                             .select(".row .row a").amap { gofileAnchor ->
                                 val link = gofileAnchor.attr("href")
                                 if (link.contains("gofile")) {
@@ -844,12 +865,11 @@ class Gofile : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
-            "User-Agent" to USER_AGENT,
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Origin" to mainUrl,
             "Referer" to mainUrl,
         )
-        //val res = app.get(url)
-        val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+        val id = url.substringAfter("d/").substringBefore("/")
         val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
         val jsonResp = JSONObject(genAccountRes)
         val token = jsonResp.getJSONObject("data").getString("token") ?: return
@@ -859,7 +879,7 @@ class Gofile : ExtractorApi() {
 
         val response = app.get("$mainApi/contents/$id?wt=$wt",
             headers = mapOf(
-                "User-Agent" to USER_AGENT,
+                "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
                 "Origin" to mainUrl,
                 "Referer" to mainUrl,
                 "Authorization" to "Bearer $token",
