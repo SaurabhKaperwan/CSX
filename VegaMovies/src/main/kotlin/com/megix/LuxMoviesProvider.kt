@@ -79,21 +79,15 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
             this.posterUrl = posterUrl
         }
     }
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
-        for (i in 1..7) {
-            val document = app.get(
-                "$mainUrl/page/$i/?s=$query",
-                referer = mainUrl,
-                headers = headers
-            ).document
-            val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
-            if (results.isEmpty()) {
-                break
-            }
-            searchResponse.addAll(results)
-        }
-        return searchResponse
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get(
+            "$mainUrl/page/$page/?s=$query",
+            referer = mainUrl,
+            headers = headers
+        ).document
+        val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
 }

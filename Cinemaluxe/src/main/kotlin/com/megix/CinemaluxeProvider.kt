@@ -18,7 +18,7 @@ import okhttp3.MediaType.Companion.toMediaType
 
 
 class CinemaluxeProvider : MainAPI() {
-    override var mainUrl = "https://cinemalux.net"
+    override var mainUrl = "https://cinemalux.zip"
     override var name = "Cinemaluxe"
     override val hasMainPage = true
     override var lang = "hi"
@@ -139,21 +139,11 @@ class CinemaluxeProvider : MainAPI() {
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
-
-        for (i in 1..6) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
-
-            val results = document.select("div.result-item").mapNotNull { it.toSearchResult() }
-
-            if (results.isEmpty()) {
-                break
-            }
-            searchResponse.addAll(results)
-        }
-
-        return searchResponse
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get("$mainUrl/page/$page/?s=$query").document
+        val results = document.select("div.result-item").mapNotNull { it.toSearchResult() }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {

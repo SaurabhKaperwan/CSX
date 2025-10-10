@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 class TopmoviesProvider : MoviesmodProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://topmovies.rodeo"
+    override var mainUrl = "https://topmovies.pet"
     override var name = "TopMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -47,20 +47,10 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
         "/movies/hindi-movies/page/" to "Latest Hindi Movies",
     )
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
-
-        for (i in 1..7) {
-            val document = app.get("$mainUrl/search/$query/page/$i").document
-
-            val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
-
-            if (results.isEmpty()) {
-                break
-            }
-            searchResponse.addAll(results)
-        }
-
-        return searchResponse
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get("$mainUrl/search/$query/page/$page").document
+        val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 }

@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesdrive.design"
+    override var mainUrl = "https://moviesdrive.mom"
     override var name = "MoviesDrive"
     override val hasMainPage = true
     override var lang = "hi"
@@ -85,21 +85,11 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
-
-        for (i in 1..7) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
-
-            val results = document.select("ul.recent-movies > li").mapNotNull { it.toSearchResult() }
-
-            if (results.isEmpty()) {
-                break
-            }
-            searchResponse.addAll(results)
-        }
-
-        return searchResponse
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get("$mainUrl/page/$i/?s=$query").document
+        val results = document.select("ul.recent-movies > li").mapNotNull { it.toSearchResult() }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {

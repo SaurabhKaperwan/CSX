@@ -102,29 +102,17 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResults = mutableListOf<SearchResponse>()
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get(
+            "$mainUrl/page/$page/?s=$query",
+            referer = mainUrl,
+            headers = headers
+        ).document
 
-        for (i in 1..5) {
-            try {
-                val document = app.get(
-                    "$mainUrl/page/$i/?s=$query",
-                    referer = mainUrl,
-                    headers = headers
-                ).document ?: continue
-
-                val results = document.select(".post-inner.post-hover")
-                    .mapNotNull { it.toSearchResult() }
-
-                if (results.isEmpty()) break
-
-                searchResults.addAll(results)
-            } catch (e: Exception) {
-                break
-            }
-        }
-
-        return searchResults
+        val results = document.select(".post-inner.post-hover")
+            .mapNotNull { it.toSearchResult() }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {

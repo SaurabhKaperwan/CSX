@@ -12,7 +12,7 @@ import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
 
 class CinevezProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.cinevez.io"
+    override var mainUrl = "https://www.cinevez.foo"
     override var name = "Cinevez"
     override val hasMainPage = true
     override var lang = "hi"
@@ -56,12 +56,13 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/?s=$query").document
-
-        return document.select(".post-item").mapNotNull {
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get("$mainUrl/page/$page/?s=$query").document
+        val results = document.select(".post-item").mapNotNull {
             it.toSearchResult()
         }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {

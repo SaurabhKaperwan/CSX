@@ -17,7 +17,7 @@ import org.json.JSONObject
 
 
 class World4uFreeProvider : MainAPI() {
-    override var mainUrl = "https://world4ufree.rodeo"
+    override var mainUrl = "https://world4ufree.red"
     override var name = "World4uFree"
     override val hasMainPage = true
     override var lang = "hi"
@@ -88,21 +88,11 @@ class World4uFreeProvider : MainAPI() {
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
-        val searchResponse = mutableListOf<SearchResponse>()
-
-        for (i in 1..7) {
-            val document = app.get("$mainUrl/page/$i/?s=$query").document
-
-            val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
-
-            if (results.isEmpty()) {
-                break
-            }
-            searchResponse.addAll(results)
-        }
-
-        return searchResponse
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
+        val document = app.get("$mainUrl/page/$page/?s=$query").document
+        val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
+        val hasNext = if(results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {
