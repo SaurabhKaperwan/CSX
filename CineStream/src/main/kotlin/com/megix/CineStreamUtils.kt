@@ -381,9 +381,14 @@ suspend fun loadSourceNameExtractor(
 
     loadExtractor(url, referer, subtitleCallback) { link ->
         scope.launch {
+            val isDownload = if(link.source.contains("Download")
+                || link.url.contains("video-downloads.googleusercontent")
+            ){ true } else { false }
+
+            if(isDownload) return@launch
+
             val extracted = extractSpecs(link.name)
             val extractedSpecs = buildExtractedTitle(extracted)
-            val isDownload = if(link.source.contains("Download")) true else false
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
