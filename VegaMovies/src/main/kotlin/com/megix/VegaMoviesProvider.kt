@@ -112,7 +112,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val results = document.select(".post-inner.post-hover")
             .mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
-        return SearchResponseList(results, hasNext)
+        return newSearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {

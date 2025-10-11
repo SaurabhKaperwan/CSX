@@ -62,7 +62,7 @@ class CinevezProvider : MainAPI() { // all providers must be an instance of Main
             it.toSearchResult()
         }
         val hasNext = if(results.isEmpty()) false else true
-        return SearchResponseList(results, hasNext)
+        return newSearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {

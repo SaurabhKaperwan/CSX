@@ -83,7 +83,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         ).document
         val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
-        return SearchResponseList(results, hasNext)
+        return newSearchResponseList(results, hasNext)
     }
 
 }

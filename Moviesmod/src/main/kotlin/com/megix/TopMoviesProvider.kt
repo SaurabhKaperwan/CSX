@@ -51,6 +51,6 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
         val document = app.get("$mainUrl/search/$query/page/$page").document
         val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
-        return SearchResponseList(results, hasNext)
+        return newSearchResponseList(results, hasNext)
     }
 }

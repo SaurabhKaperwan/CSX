@@ -89,7 +89,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val document = app.get("$mainUrl/page/$page/?s=$query").document
         val results = document.select("ul.recent-movies > li").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
-        return SearchResponseList(results, hasNext)
+        return newSearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {
