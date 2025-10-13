@@ -153,7 +153,8 @@ fun String.getHost(): String {
 suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
     return if (tvType != "anime") {
         try {
-            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json", timeout = 3L).text
+            val url = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json"
+            val tmdbJson = app.get(url, timeout = 8L).text
             val gson = Gson()
             val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
             tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
@@ -1048,7 +1049,7 @@ suspend fun getGojoStreams(
             val url = item.optString("url", null) ?: continue
             val lang = item.optString("lang", null) ?: continue
             subtitleCallback.invoke(
-                SubtitleFile(
+                newSubtitleFile(
                     lang,
                     url
                 )
@@ -1108,7 +1109,7 @@ suspend fun getSoaperLinks(
         val path = sub.getString("path").replace("\\/", "/")
         val subUrl = soaperAPI + path
         subtitleCallback.invoke(
-            SubtitleFile(
+            newSubtitleFile(
                 name,
                 subUrl
             )

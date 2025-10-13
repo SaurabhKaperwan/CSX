@@ -3,15 +3,6 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
-//Xdmovies
-data class XDmoviesMovie (
-    var download_links : ArrayList<XDmoviesDownloadLinks> = arrayListOf(),
-)
-
-data class XDmoviesDownloadLinks (
-    var download_link  : String
-)
-
 //Tmdb
 data class TmdbResponse(
     @SerializedName("meta") val meta: TmdbMeta?

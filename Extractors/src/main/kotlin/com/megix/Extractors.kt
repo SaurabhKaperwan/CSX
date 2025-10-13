@@ -44,15 +44,9 @@ class Howblogs : ExtractorApi() {
     }
 }
 
-class Ziddiflix: Vifix() {
-    override val name: String = "Ziddiflix"
-    override val mainUrl: String = "https://ziddiflix.com"
-    override val requiresReferer = false
-}
-
-open class Vifix: ExtractorApi() {
-    override val name: String = "Vifix"
-    override val mainUrl: String = "https://vifix.site"
+open class XDmovies: ExtractorApi() {
+    override val name: String = "XDmovies"
+    override val mainUrl: String = "https://link.xdmovies.site"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -66,68 +60,6 @@ open class Vifix: ExtractorApi() {
             loadExtractor(location, "", subtitleCallback, callback)
         }
 
-    }
-}
-
-class Linkstore : ExtractorApi() {
-    override val name: String = "Linkstore"
-    override val mainUrl: String = "https://linkstore.rest"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        app.get(url).document.select("a.ep-simple-button").amap {
-            loadExtractor(it.attr("href"), "", subtitleCallback, callback)
-        }
-    }
-}
-
-class LinkstoreDrive : ExtractorApi() {
-    override val name: String = "Linkstore Drive"
-    override val mainUrl: String = "https://drive.linkstore.rest"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val redirectUrl = url.replace(mainUrl, "https://new7.luxedrive.space")
-        loadExtractor(redirectUrl, "", subtitleCallback, callback)
-    }
-}
-
-open class Luxdrive : ExtractorApi() {
-    override val name: String = "Luxdrive"
-    override val mainUrl: String = "https://new7.luxedrive.space"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val document = app.get(url).document
-        document.select("div > div > a").map {
-            val href = it.attr("href")
-            if(href.contains(".mkv")) {
-                callback.invoke(
-                    newExtractorLink(
-                        "Instant(Download)",
-                        "Instant(Download)",
-                        href,
-                    )
-                )
-            } else {
-                loadExtractor(href, "", subtitleCallback, callback)
-            }
-        }
     }
 }
 
