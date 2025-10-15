@@ -400,9 +400,13 @@ class HubCloudBz : HubCloud() {
     override val mainUrl: String = "https://hubcloud.bz"
 }
 
+class HubCloudOne : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.one"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.one"
+    override val mainUrl: String = "https://hubcloud.fit"
     override val requiresReferer = false
 
     fun getBaseUrl(url: String): String {
@@ -417,7 +421,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newBaseUrl = "https://hubcloud.one"
+        val newBaseUrl = "https://hubcloud.fit"
         val newUrl = url.replace(mainUrl, newBaseUrl)
         val doc = app.get(newUrl).document
         var link = if(newUrl.contains("drive")) {
@@ -594,7 +598,7 @@ class GDFlixDev : GDFlix() {
 
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://new4.gdflix.net"
+    override val mainUrl = "https://new5.gdflix.net"
     override val requiresReferer = false
 
     private suspend fun getLatestUrl(): String {
