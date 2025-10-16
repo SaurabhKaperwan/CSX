@@ -49,7 +49,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.streams.forEach {
             val title = it.title ?: ""
-            val name = it.name ?: "Nuvio"
+            val name = it.name?.replace("(SLOW) ", "") ?: "Nuvio"
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")

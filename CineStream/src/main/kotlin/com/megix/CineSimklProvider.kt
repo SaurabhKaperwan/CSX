@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
@@ -100,22 +101,22 @@ class CineSimklProvider: MainAPI() {
     private val haglund_url = "https://arm.haglund.dev/api/v2"
 
     override val mainPage = mainPageOf(
-        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
-        "/tv/genres/all-types/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
+        "/movies/genres/all/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
+        "/tv/genres/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
         "/anime/genres/all/this-year/popular-today?limit=$mediaLimit" to "Trending Anime",
         "/anime/airing?date?sort=rank" to "Airing Anime Today",
-        "/tv/genres/all-types/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
-        "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
-        "/tv/genres/all-types/all-countries/all-networks/this-year/popular-today?limit=$mediaLimit" to "Top Rated Shows This Year",
-        "/tv/genres/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit" to "Trending Netflix Shows",
-        "/tv/genres/all-types/all-countries/disney/all-years/popular-today?limit=$mediaLimit" to "Trending Disney Shows",
-        "/tv/genres/all-types/all-countries/hbo/all-years/popular-today?limit=$mediaLimit" to "Trending HBO Shows",
-        "/tv/genres/all-types/all-countries/appletv/all-years/popular-today?limit=$mediaLimit" to "Trending Apple TV+ Shows",
-        "/movies/genres/all/all-types/all-countries/this-year/revenue?limit=$mediaLimit" to "Box Office Hits This Year",
-        "/movies/genres/all/all-types/all-countries/all-years/rank?limit=$mediaLimit" to "Top Rated Movies",
-        "/tv/genres/all-types/all-countries/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Shows",
-        "/anime/genres/all/all-types/all-years?limit=$mediaLimit" to "Top Rated Anime",
-        "/movies/genres/all/all-types/all-countries/all-years/most-anticipated?limit=$mediaLimit" to "Most Anticipated Movies",
+        "/tv/genres/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
+        "/movies/genres/all//all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
+        "/tv/genres/all-countries/all-networks/this-year/popular-today?limit=$mediaLimit" to "Top Rated Shows This Year",
+        "/tv/genres/all-countries/netflix/all-years/popular-today?limit=$mediaLimit" to "Trending Netflix Shows",
+        "/tv/genres/all-countries/disney/all-years/popular-today?limit=$mediaLimit" to "Trending Disney Shows",
+        "/tv/genres/all-countries/hbo/all-years/popular-today?limit=$mediaLimit" to "Trending HBO Shows",
+        "/tv/genres/all-countries/appletv/all-years/popular-today?limit=$mediaLimit" to "Trending Apple TV+ Shows",
+        "/movies/genres/all/all-countries/this-year/revenue?limit=$mediaLimit" to "Box Office Hits This Year",
+        "/movies/genres/all/all-countries/all-years/rank?limit=$mediaLimit" to "Top Rated Movies",
+        "/tv/genres/all-countries/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Shows",
+        "/anime/genres/all/all-years?limit=$mediaLimit" to "Top Rated Anime",
+        "/movies/genres/all/all-countries/all-years/most-anticipated?limit=$mediaLimit" to "Most Anticipated Movies",
         "/anime/premieres/soon?type=all&limit=$mediaLimit" to "Upcoming Anime",
         "Personal" to "Personal",
     )
@@ -130,6 +131,14 @@ class CineSimklProvider: MainAPI() {
         val url = "$haglund_url/ids?source=myanimelist&id=$id"
         val json = app.get(url).text
         return tryParseJson<ExtenalIds>(json)?.imdb
+    }
+
+    private fun getStatus(status: String?): ShowStatus? {
+        return when (status) {
+            "airing" -> ShowStatus.Ongoing
+            "ended" -> ShowStatus.Completed
+            else -> null
+        }
     }
 
    private suspend fun extractImdbInfo(
@@ -212,20 +221,6 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private fun normalizeSeasonString(input: String?): String? {
-        if(input == null) return null
-        val seasonRegex = """(?i)(season\s+\d+)""".toRegex()
-        val matches = seasonRegex.findAll(input).toList()
-        if (matches.isEmpty()) return input
-
-        val firstSeason = matches.first().value
-        val seasonNumber = """\d+""".toRegex().find(firstSeason)?.value ?: return input
-        val normalizedSeason = "Season $seasonNumber"
-
-        return input.replace(seasonRegex, normalizedSeason)
-            .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
-    }
-
     override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
@@ -303,29 +298,39 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    override suspend fun load(url: String): LoadResponse {
+     override suspend fun load(url: String): LoadResponse {
         val simklId = getSimklId(url)
         val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth&extended=full", headers = headers).text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it.toString() }
-        val tvType = json.type ?: ""
-        val country = json.country ?: ""
-        val isAnime = if(tvType == "anime") true else false
-        val isBollywood = if(country == "IN") true else false
-        val isCartoon = genres?.contains("Animation") ?: false
-        val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
-        val en_title = if (isAnime) {
-            normalizeSeasonString(json.en_title ?: json.title)
-        } else {
-            json.en_title ?: json.title
-        }
-        val allratings = json.ratings
-        val rating = allratings?.mal?.rating ?: allratings?.imdb?.rating
-        val kitsuId = json.ids?.kitsu?.toIntOrNull()
-        val anilistId = json.ids?.anilist?.toIntOrNull()
-        val malId = json.ids?.mal?.toIntOrNull()
+        val tvType = json.type.orEmpty()
+        val country = json.country.orEmpty()
+        val isAnime = tvType == "anime"
+        val isBollywood = country == "IN"
+        val isCartoon = genres?.contains("Animation") == true
+        val isAsian = !isAnime && country in listOf("JP", "KR", "CN")
+
+        val enTitle = if (isAnime) {
+            json.alt_titles
+                ?.filter { it.lang == 7 }
+                ?.maxByOrNull { it.name?.length ?: 0 }
+                ?.name ?: json.en_title ?: json.title
+        } else json.en_title ?: json.title
+
+        val ids = json.ids
+        val allRatings = json.ratings
+        val rating = allRatings?.mal?.rating ?: allRatings?.imdb?.rating
+
+        val kitsuId = ids?.kitsu?.toIntOrNull()
+        val anilistId = ids?.anilist?.toIntOrNull()
+        val malId = ids?.mal?.toIntOrNull()
+        val tmdbId = ids?.tmdb?.toIntOrNull()
+        val imdbId = ids?.imdb
+
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
-        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(firstTrailerId, "youtube")
+        val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
+        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+            ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
             newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
@@ -341,17 +346,17 @@ class CineSimklProvider: MainAPI() {
 
         val recommendations = relations + users_recommendations
 
-        val tmdbType = if(tvType == "tv") "series" else tvType
+        val tmdbType = if (tvType == "tv") "series" else tvType
         val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb?.toIntOrNull())
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
                 json.title,
-                en_title,
+                enTitle,
                 tvType,
                 simklId?.toIntOrNull(),
-                json.ids?.imdb,
-                json.ids?.tmdb?.toIntOrNull(),
+                imdbId,
+                tmdbId,
                 json.year,
                 anilistId,
                 malId,
@@ -365,7 +370,7 @@ class CineSimklProvider: MainAPI() {
                 isAsian,
                 isCartoon
             ).toJson()
-            return newMovieLoadResponse("${en_title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
+            return newMovieLoadResponse("${enTitle}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = json.overview
@@ -378,6 +383,7 @@ class CineSimklProvider: MainAPI() {
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
+                this.addTrailer(trailerLink)
             }
         } else {
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
@@ -386,11 +392,11 @@ class CineSimklProvider: MainAPI() {
                 newEpisode(
                     LoadLinksData(
                         json.title,
-                        en_title,
+                        enTitle,
                         tvType,
                         simklId?.toIntOrNull(),
-                        json.ids?.imdb,
-                        json.ids?.tmdb?.toIntOrNull(),
+                        imdbId,
+                        tmdbId,
                         json.year,
                         anilistId,
                         malId,
@@ -414,7 +420,7 @@ class CineSimklProvider: MainAPI() {
                 }
             }
 
-            return newAnimeLoadResponse("${en_title}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
+            return newAnimeLoadResponse("${enTitle}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
                 addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = backgroundPosterUrl
@@ -424,10 +430,12 @@ class CineSimklProvider: MainAPI() {
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
+                this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
+                this.addTrailer(trailerLink)
             }
         }
     }
@@ -597,7 +605,14 @@ class CineSimklProvider: MainAPI() {
         var genres                : ArrayList<String>?               = null,
         var users_recommendations : ArrayList<UsersRecommendations>? = null,
         var relations             : ArrayList<Relations>?            = null,
-        var trailers              : ArrayList<Trailers>?             = null
+        var trailers              : ArrayList<Trailers>?             = null,
+        var alt_titles            : ArrayList<AltTitle>?             = null
+    )
+
+    data class AltTitle(
+        var name: String,
+        var lang: Int,
+        var type: String
     )
 
     data class Trailers (
