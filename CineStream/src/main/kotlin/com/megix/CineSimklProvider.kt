@@ -103,7 +103,7 @@ class CineSimklProvider: MainAPI() {
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
         "/tv/genres/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
-        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit" to "Trending Anime",
+        "/anime/trending?extended=overview&limit=$mediaLimit" to "Trending Anime",
         "/anime/airing?date?sort=rank" to "Airing Anime Today",
         "/tv/genres/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
         "/movies/genres/all//all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
@@ -139,6 +139,27 @@ class CineSimklProvider: MainAPI() {
             "ended" -> ShowStatus.Completed
             else -> null
         }
+    }
+
+    private fun normalizeSeasonString(input: String?): String? {
+        val text = input ?: return null
+
+        val patterns = listOf("season", "part")
+        var result = text
+
+        for (word in patterns) {
+            val regex = Regex("(?i)($word\\s*\\d+)")
+            val match = regex.find(result) ?: continue
+
+            val number = Regex("\\d+").find(match.value)?.value ?: continue
+            val normalized = "${word.replaceFirstChar { it.uppercase() }} $number"
+
+            result = result.replace(regex, normalized)
+            val duplicateRegex = Regex("(?i)($normalized)(\\s+\\1)+")
+            result = result.replace(duplicateRegex, normalized)
+        }
+
+        return result.trim()
     }
 
    private suspend fun extractImdbInfo(
@@ -309,24 +330,21 @@ class CineSimklProvider: MainAPI() {
         val isBollywood = country == "IN"
         val isCartoon = genres?.contains("Animation") == true
         val isAsian = !isAnime && country in listOf("JP", "KR", "CN")
-
-        val enTitle = if (isAnime) {
-            json.alt_titles
-                ?.filter { it.lang == 7 }
-                ?.maxByOrNull { it.name?.length ?: 0 }
-                ?.name ?: json.en_title ?: json.title
-        } else json.en_title ?: json.title
-
         val ids = json.ids
         val allRatings = json.ratings
         val rating = allRatings?.mal?.rating ?: allRatings?.imdb?.rating
+
+        val enTitle = if (isAnime) {
+            normalizeSeasonString(json.en_title ?: json.title)
+        } else {
+            json.en_title ?: json.title
+        }
 
         val kitsuId = ids?.kitsu?.toIntOrNull()
         val anilistId = ids?.anilist?.toIntOrNull()
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
-
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
@@ -606,13 +624,6 @@ class CineSimklProvider: MainAPI() {
         var users_recommendations : ArrayList<UsersRecommendations>? = null,
         var relations             : ArrayList<Relations>?            = null,
         var trailers              : ArrayList<Trailers>?             = null,
-        var alt_titles            : ArrayList<AltTitle>?             = null
-    )
-
-    data class AltTitle(
-        var name: String,
-        var lang: Int,
-        var type: String
     )
 
     data class Trailers (

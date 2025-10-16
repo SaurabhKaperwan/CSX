@@ -1841,7 +1841,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if(it.select("span").text().contains("eng")) type = "DUB"
                     val quality = it.attr("data-resolution")
                     val href = it.attr("data-src")
-                    if (href.contains("kwik.si")) {
+                    if (href.contains("kwik.cx")) {
                         loadCustomExtractor(
                             "Animepahe(VLC) [$type]",
                             href,
