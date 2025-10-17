@@ -1,6 +1,7 @@
 package com.megix
 
 import android.os.Build
+import androidx.annotation.RequiresApi
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
@@ -1142,6 +1143,7 @@ suspend fun getSoaperLinks(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 suspend fun getRedirectLinks(url: String): String {
     fun encode(value: String): String {
         return Base64.getEncoder().encodeToString(value.toByteArray())
@@ -1182,28 +1184,17 @@ suspend fun getRedirectLinks(url: String): String {
     }
 }
 
-fun cinematickitBase64Decode(string: String): String {
-    val clean = string.trim().replace("\n", "").replace("\r", "")
-    val padded = clean.padEnd((clean.length + 3) / 4 * 4, '=')
-    return try {
-        val decodedBytes = Base64.getDecoder().decode(padded)
-        String(decodedBytes, Charsets.UTF_8)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        ""
-    }
-}
-
+@RequiresApi(Build.VERSION_CODES.O)
 suspend fun cinematickitBypass(url: String): String? {
     return try {
         val cleanedUrl = url.replace("&#038;", "&")
         val encodedLink = cleanedUrl.substringAfter("safelink=").substringBefore("-")
         if (encodedLink.isEmpty()) return null
-        val decodedUrl = cinematickitBase64Decode(encodedLink)
+        val decodedUrl = base64Decode(encodedLink)
         val doc = app.get(decodedUrl).document
         val goValue = doc.select("form#landing input[name=go]").attr("value")
         if (goValue.isBlank()) return null
-        val decodedGoUrl = cinematickitBase64Decode(goValue).replace("&#038;", "&")
+        val decodedGoUrl = base64Decode(goValue).replace("&#038;", "&")
         val responseDoc = app.get(decodedGoUrl).document
         val script = responseDoc.select("script").firstOrNull { it.data().contains("window.location.replace") }?.data() ?: return null
         val regex = Regex("""window\.location\.replace\s*\(\s*["'](.+?)["']\s*\)\s*;?""")

@@ -607,7 +607,6 @@ open class CineStreamProvider : MainAPI() {
             { invokeNetflix(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeCinemaOS(res.imdb_id, tmdbId, imdbTitle, res.imdbSeason, res.imdbEpisode, year, callback, subtitleCallback) },
             { invokeXDmovies(tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdb_id, imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },

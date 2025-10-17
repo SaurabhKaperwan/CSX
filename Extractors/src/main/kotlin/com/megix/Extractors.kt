@@ -370,7 +370,7 @@ open class VCloud : ExtractorApi() {
 
 open class Hubdrive : ExtractorApi() {
     override val name = "Hubdrive"
-    override val mainUrl = "https://hubdrive.wales"
+    override val mainUrl = "https://hubdrive.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(

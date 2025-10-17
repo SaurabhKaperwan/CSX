@@ -1,5 +1,7 @@
 package com.megix
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -120,7 +122,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val link = app.get("$dramadripAPI/?s=$imdbId").document.selectFirst("article > a")?.attr("href") ?: return
-        val document = app.get(link).document
+
         if(season != null && episode != null) {
             val seasonLink = document.select("div.file-spoiler h2").filter { element ->
                 val text = element.text().trim().lowercase()
@@ -131,33 +133,21 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             seasonLink.amap {
-                val doc = app.get(it).document
+                val bypassUrl = cinematickitBypass(it) ?: return@amap
+                val doc = app.get(bypassUrl).document
                 var sourceUrl = doc.select("div.series_btn > a")
                     .getOrNull(episode-1)?.attr("href")
                     ?: return@amap
-                sourceUrl = if ("unblockedgames" in sourceUrl) {
-                    bypassHrefli(sourceUrl) ?: return@amap
-                } else if("safelink=" in sourceUrl) {
-                    cinematickitBypass(sourceUrl) ?: return@amap
-                } else {
-                    sourceUrl
-                }
+                sourceUrl = cinematickitBypass(sourceUrl) ?: return@amap
 
                 loadSourceNameExtractor("Dramadrip", sourceUrl, "", subtitleCallback, callback)
             }
         } else {
             document.select("div.file-spoiler a").amap {
-                val doc = app.get(it.attr("href")).document
+                val bypassUrl = cinematickitBypass(it.attr("href")) ?: return@amap
+                val doc = app.get(bypassUrl).document
                 doc.select("a.wp-element-button").amap { source ->
-                    var sourceUrl = source.attr("href")
-                    sourceUrl = if ("unblockedgames" in sourceUrl) {
-                        bypassHrefli(sourceUrl) ?: return@amap
-                    } else if("safelink=" in sourceUrl) {
-                        cinematickitBypass(sourceUrl) ?: return@amap
-                    } else {
-                        sourceUrl
-                    }
-
+                    val sourceUrl = cinematickitBypass(source.attr("href")) ?: return@amap
                     loadSourceNameExtractor(
                         "Dramadrip",
                         sourceUrl,
@@ -1578,6 +1568,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeBollyflix(
         id: String? = null,
         season: Int? = null,
@@ -2267,6 +2258,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeModflix(
         id: String? = null,
         season: Int? = null,
