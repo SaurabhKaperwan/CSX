@@ -227,7 +227,7 @@ class JioHotstarProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        fixUrl(it.file),
+                        "https://net51.cc/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$mainUrl/tv/home"

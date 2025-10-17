@@ -1006,7 +1006,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Hotstar",
                     "Hotstar",
-                    "$netflixAPI/${it.file}",
+                    "https://net51.cc/${it.file}",
                 ) {
                     this.referer = "$netflixAPI/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
