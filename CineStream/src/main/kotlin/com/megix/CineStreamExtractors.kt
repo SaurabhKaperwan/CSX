@@ -122,7 +122,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val link = app.get("$dramadripAPI/?s=$imdbId").document.selectFirst("article > a")?.attr("href") ?: return
-
+        val document = app.get(link).document
         if(season != null && episode != null) {
             val seasonLink = document.select("div.file-spoiler h2").filter { element ->
                 val text = element.text().trim().lowercase()
