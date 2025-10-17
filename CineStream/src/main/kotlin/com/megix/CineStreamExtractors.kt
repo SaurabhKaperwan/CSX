@@ -542,7 +542,9 @@ object CineStreamExtractors : CineStreamProvider() {
             "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode"
         }
 
-        val json = app.get(url, headers = headers).text
+        val text = app.get(url, headers = headers).text
+        val json = multiDecrypt(text, "dec-xprime") ?: return
+
         val sourceUrl = JSONObject(json).getString("url")
         if(sourceUrl == "null") {
             return
@@ -581,7 +583,8 @@ object CineStreamExtractors : CineStreamProvider() {
         } else {
             "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
         }
-        val json = app.get(url, headers = headers).text
+        val text = app.get(url, headers = headers).text
+        val json = multiDecrypt(text, "dec-xprime") ?: return
         val data = tryParseJson<Primebox>(json) ?: return
 
         data.streams?.let { streams ->
