@@ -42,7 +42,7 @@ class GDIndexProvider : MainAPI() {
             HomePageList(it.name, gdFiles.toSearchResponseList())
         }
 
-        return HomePageResponse(homePages)
+        return newHomePageResponse(homePages)
     }
 
     override suspend fun search(query: String): List<SearchResponse>? {
