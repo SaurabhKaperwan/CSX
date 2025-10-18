@@ -77,6 +77,7 @@ import com.megix.CineStreamExtractors.invokeVidPlus
 import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
+import com.megix.CineStreamExtractors.invokeDahmerMovies
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -126,6 +127,7 @@ open class CineStreamProvider : MainAPI() {
         const val multiEmbededApi = "https://multiembed.mov"
         const val vidSrcApi = "https://api.rgshows.ru"
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
+        const val dahmerMoviesAPI = "https://a.111477.xyz"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -622,6 +624,7 @@ open class CineStreamProvider : MainAPI() {
             { invokePrimeSrc(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, year, callback) },
             { invokeCinemaluxe(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
+            { invokeDahmerMovies(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             { invokePrimebox(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
             { invokePrimenet(tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
@@ -656,6 +659,7 @@ open class CineStreamProvider : MainAPI() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeXDmovies(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeDahmerMovies(res.title, year, res.season, res.episode, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { invokeRar(res.title, year, res.season, res.episode, callback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },

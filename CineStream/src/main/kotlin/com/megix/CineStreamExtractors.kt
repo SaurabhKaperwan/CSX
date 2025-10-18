@@ -114,6 +114,50 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeDahmerMovies(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if (season == null) {
+            "$dahmerMoviesAPI/movies/${title?.replace(":", "")} ($year)/"
+        } else {
+            "$dahmerMoviesAPI/tvs/${title?.replace(":", " -")}/Season $season/"
+        }
+        val request = app.get(url, timeout = 60L)
+        if (!request.isSuccessful) return
+        val paths = request.document.select("a").map {
+            it.text() to it.attr("href")
+        }.filter {
+            if (season == null) {
+                it.first.contains(Regex("(?i)(1080p|2160p)"))
+            } else {
+                val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+                it.first.contains(Regex("(?i)S${seasonSlug}E${episodeSlug}"))
+            }
+        }.ifEmpty { return }
+
+        paths.map {
+            val quality = getIndexQuality(it.first)
+            val tags = getIndexQualityTags(it.first)
+            val href = if (it.second.contains(url)) it.second else (url + it.second)
+
+            callback.invoke(
+                newExtractorLink(
+                    "DahmerMovies",
+                    "DahmerMovies $tags",
+                    url = href.encodeUrl()
+                ) {
+                    this.referer = ""
+                    this.quality = quality
+                }
+            )
+        }
+
+    }
+
     suspend fun invokeDramadrip(
         imdbId: String? = null,
         season: Int? = null,
@@ -133,7 +177,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             seasonLink.amap {
-                val bypassUrl = cinematickitBypass(it) ?: return@amap
+                val bypassUrl = cinematickitloadBypass(it) ?: return@amap
                 val doc = app.get(bypassUrl).document
                 var sourceUrl = doc.select("div.series_btn > a")
                     .getOrNull(episode-1)?.attr("href")
@@ -144,7 +188,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         } else {
             document.select("div.file-spoiler a").amap {
-                val bypassUrl = cinematickitBypass(it.attr("href")) ?: return@amap
+                val bypassUrl = cinematickitloadBypass(it.attr("href")) ?: return@amap
                 val doc = app.get(bypassUrl).document
                 doc.select("a.wp-element-button").amap { source ->
                     val sourceUrl = cinematickitBypass(source.attr("href")) ?: return@amap
@@ -155,7 +199,6 @@ object CineStreamExtractors : CineStreamProvider() {
                         subtitleCallback,
                         callback
                     )
-
                 }
             }
         }

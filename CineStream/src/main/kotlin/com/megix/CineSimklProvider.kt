@@ -76,6 +76,7 @@ import com.megix.CineStreamExtractors.invokeVidPlus
 import com.megix.CineStreamExtractors.invokeMultiEmbeded
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
+import com.megix.CineStreamExtractors.invokeDahmerMovies
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -494,6 +495,7 @@ class CineSimklProvider: MainAPI() {
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
+            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             // { invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -579,6 +581,7 @@ class CineSimklProvider: MainAPI() {
             { invokeMoviesmod(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(imdbId, imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
+            { invokeDahmerMovies(imdbTitle, res.year, imdbSeason, imdbEpisode, callback) },
             { invokeWYZIESubs(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
             { invokePrimebox(imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
