@@ -1894,12 +1894,13 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeRar(
-        title: String,
+        title: String? = null,
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
     ) {
+        if (title == null) return
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Referer" to "$RarAPI/"

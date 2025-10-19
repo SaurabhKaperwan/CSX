@@ -11,7 +11,6 @@ import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.runAllAsync
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -517,7 +516,7 @@ class CineSimklProvider: MainAPI() {
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
-            { invokeMp4Moviez(res.title, res.season, res.episode, res.year,callback,subtitleCallback) },
+            { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeTripleOneMovies( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },

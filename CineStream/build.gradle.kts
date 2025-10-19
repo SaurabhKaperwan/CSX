@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 232
+version = 233
 
 android {
     defaultConfig {
@@ -9,6 +9,7 @@ android {
         android.buildFeatures.buildConfig=true
         buildConfigField("String", "CONSUMET_API", "\"${properties.getProperty("CONSUMET_API")}\"")
         buildConfigField("String", "SIMKL_API", "\"${properties.getProperty("SIMKL_API")}\"")
+        buildConfigField("String", "TMDB_KEY", "\"${properties.getProperty("TMDB_KEY")}\"")
     }
 }
 

@@ -3,6 +3,13 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+data class TmdbDate(
+    val today: String,
+    val nextWeek: String,
+    val lastWeekStart: String,
+    val monthStart: String
+)
+
 //Tmdb
 data class TmdbResponse(
     @SerializedName("meta") val meta: TmdbMeta?

@@ -10,6 +10,7 @@ open class CineStream: Plugin() {
         CineStreamStorage.init(context.applicationContext)
         registerMainAPI(CineStreamProvider())
         registerMainAPI(CineSimklProvider())
+        registerMainAPI(CineTmdbProvider())
         registerExtractorAPI(Kwik())
         registerExtractorAPI(Animezia())
         registerExtractorAPI(server2())
