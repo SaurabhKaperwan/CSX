@@ -355,7 +355,7 @@ class CineTmdbProvider: MainAPI() {
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { if (res.isAnime) {
-                val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
+                val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, res.airedYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },
