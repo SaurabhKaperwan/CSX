@@ -127,6 +127,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidSrcApi = "https://api.rgshows.ru"
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
         const val dahmerMoviesAPI = "https://a.111477.xyz"
+        const val netflix2API = "https://net51.cc"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

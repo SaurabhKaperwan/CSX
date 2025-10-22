@@ -87,9 +87,9 @@ class CineTmdbProvider: MainAPI() {
 
     override val mainPage = mainPageOf(
         "trending/all/day?api_key=$apiKey&region=US" to "Trending",
-        "trending/movie/week?api_key=$apiKey&region=US&with_original_language=en" to "Popular Movies",
-        "trending/tv/week?api_key=$apiKey&region=US&with_original_language=en" to "Popular TV Shows",
-        "tv/airing_today?api_key=$apiKey&region=US&with_original_language=en" to "Airing Today TV Shows",
+        "trending/movie/week?api_key=$apiKey&region=US" to "Popular Movies",
+        "trending/tv/week?api_key=$apiKey&region=US" to "Popular TV Shows",
+        "discover/tv?api_key=$apiKey&with_original_language=ko" to "Korean Shows",
         "discover/tv?api_key=$apiKey&with_networks=213" to "Netflix",
         "discover/tv?api_key=$apiKey&with_networks=1024" to "Amazon",
         "discover/tv?api_key=$apiKey&with_networks=2739" to "Disney+",
@@ -105,7 +105,6 @@ class CineTmdbProvider: MainAPI() {
         "discover/movie?api_key=$apiKey&with_keywords=210024|222243" to "Anime Movies",
         "movie/top_rated?api_key=$apiKey&region=US" to "Top Rated Movies",
         "tv/top_rated?api_key=$apiKey&region=US" to "Top Rated TV Shows",
-        "discover/tv?api_key=$apiKey&with_original_language=ko" to "Korean Shows",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {

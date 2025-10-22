@@ -1039,9 +1039,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Hotstar",
                     "Hotstar",
-                    "https://net51.cc/${it.file}",
+                    "$netflix2API/${it.file}",
                 ) {
-                    this.referer = "$netflixAPI/"
+                    this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
                     this.headers = mapOf("Cookie" to "hd=on")
                 }
@@ -1100,10 +1100,10 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflixAPI/tv/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflix2API/tv/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
-            referer = "$netflixAPI/",
+            referer = "$netflix2API/",
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
@@ -1111,10 +1111,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
-                    """https://net50.cc${it.file?.replace("/tv/", "/")}""",
+                    """$netflix2API${it.file?.replace("/tv/", "/")}""",
                     type = ExtractorLinkType.M3U8
                 ) {
-                    this.referer = "https://net50.cc/"
+                    this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
                     this.headers = mapOf("Cookie" to "hd=on")
                 }
@@ -1175,10 +1175,10 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflixAPI/tv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflix2API/tv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
-            referer = "$netflixAPI/",
+            referer = "$netflix2API/",
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
@@ -1186,10 +1186,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Netflix",
                     "Netflix",
-                    """https://net50.cc${it.file?.replace("/tv/", "/")}""",
+                    """$netflix2API${it.file?.replace("/tv/", "/")}""",
                     type = ExtractorLinkType.M3U8
                 ) {
-                    this.referer = "https://net50.cc/"
+                    this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
                     this.headers = mapOf("Cookie" to "hd=on")
                 }
