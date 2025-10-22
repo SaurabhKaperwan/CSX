@@ -616,13 +616,7 @@ suspend fun convertTmdbToAnimeId(
     return if (type == TvType.AnimeMovie) {
         tmdbToAnimeId(title, airedYear, "", type)
     } else {
-        val ids = tmdbToAnimeId(title, year, season, type)
-        if (ids.id == null && ids.idMal == null) tmdbToAnimeId(
-            title,
-            airedYear,
-            airedSeason,
-            type
-        ) else ids
+        tmdbToAnimeId(title, year, airedSeason, type)
     }
 }
 
