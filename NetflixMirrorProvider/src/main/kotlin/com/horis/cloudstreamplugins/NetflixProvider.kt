@@ -28,6 +28,7 @@ class NetflixProvider : MainAPI() {
     override var lang = "en"
 
     override var mainUrl = "https://net20.cc"
+    private var newUrl = "https://net51.cc"
     override var name = "Netflix"
 
     override val hasMainPage = true
@@ -65,11 +66,11 @@ class NetflixProvider : MainAPI() {
 
     private fun Element.toSearchResult(): SearchResponse? {
         val id = attr("data-src").substringAfterLast("/").substringBefore(".")
-        val posterUrl = "https://imgcdn.media/poster/v/$id.jpg"
+        val posterUrl = "https://imgcdn.kim/poster/v/$id.jpg"
 
         return newAnimeSearchResponse("", Id(id).toJson()) {
             this.posterUrl = posterUrl
-            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+            posterHeaders = mapOf("Referer" to "$mainUrl/home")
         }
     }
 
@@ -89,8 +90,8 @@ class NetflixProvider : MainAPI() {
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://imgcdn.media/poster/v/${it.id}.jpg"
-                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+                posterUrl = "https://imgcdn.kim/poster/v/${it.id}.jpg"
+                posterHeaders = mapOf("Referer" to "$mainUrl/home")
             }
         }
     }
@@ -122,12 +123,12 @@ class NetflixProvider : MainAPI() {
         val genre = data.genre?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
-        val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
+        val rating = data.match?.replace("IMDb ", "")
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
         val suggest = data.suggest?.map {
             newAnimeSearchResponse("", Id(it.id).toJson()) {
-                this.posterUrl = "https://imgcdn.media/poster/v/${it.id}.jpg"
-                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+                this.posterUrl = "https://imgcdn.kim/poster/v/${it.id}.jpg"
+                posterHeaders = mapOf("Referer" to "$mainUrl/home")
             }
         }
 
@@ -141,7 +142,7 @@ class NetflixProvider : MainAPI() {
                     this.name = it.t
                     this.episode = it.ep.replace("E", "").toIntOrNull()
                     this.season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://imgcdn.media/epimg/150/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.kim/epimg/150/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -158,14 +159,14 @@ class NetflixProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://imgcdn.media/poster/v/$id.jpg"
-            backgroundPosterUrl ="https://imgcdn.media/poster/h/$id.jpg"
-            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+            posterUrl = "https://imgcdn.kim/poster/v/$id.jpg"
+            backgroundPosterUrl ="https://imgcdn.kim/poster/h/$id.jpg"
+            posterHeaders = mapOf("Referer" to "$mainUrl/home")
             plot = data.desc
             year = data.year.toIntOrNull()
             tags = genre
             actors = cast
-            this.rating = rating
+            this.score =  Score.from10(rating)
             this.duration = runTime
             this.contentRating = data.ua
             this.recommendations = suggest
@@ -194,7 +195,7 @@ class NetflixProvider : MainAPI() {
                     name = it.t
                     episode = it.ep.replace("E", "").toIntOrNull()
                     season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://img.nfmirrorcdn.top/epimg/150/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.kim/epimg/150/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -217,9 +218,9 @@ class NetflixProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$mainUrl/tv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/tv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/tv/home",
+            referer = "$mainUrl/home",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -229,10 +230,10 @@ class NetflixProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        """https://net50.cc${it.file.replace("/tv/", "/")}""",
+                        """$newUrl${it.file.replace("/tv/", "/")}""",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "https://net50.cc/"
+                        this.referer = "$newUrl/"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
                     }
                 )

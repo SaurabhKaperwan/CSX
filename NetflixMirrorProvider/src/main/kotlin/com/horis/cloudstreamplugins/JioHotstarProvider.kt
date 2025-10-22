@@ -28,6 +28,7 @@ class JioHotstarProvider : MainAPI() {
     override var lang = "en"
 
     override var mainUrl = "https://net20.cc"
+    private var newUrl = "https://net51.cc"
     override var name = "JioHotstar"
 
     override val hasMainPage = true
@@ -46,7 +47,7 @@ class JioHotstarProvider : MainAPI() {
         val document = app.get(
             "$mainUrl/mobile/home",
             cookies = cookies,
-            referer = "$mainUrl/tv/home",
+            referer = "$mainUrl/home",
         ).document
         val items = document.select(".tray-container, #top10").map {
             it.toHomePageList()
@@ -68,8 +69,8 @@ class JioHotstarProvider : MainAPI() {
         //     fixUrlNull(selectFirst(".card-img-container img, .top10-img img")?.attr("data-src"))
 
         return newAnimeSearchResponse("", Id(id).toJson()) {
-            this.posterUrl = "https://imgcdn.media/hs/v/$id.jpg"
-            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+            this.posterUrl = "https://imgcdn.kim/hs/v/$id.jpg"
+            posterHeaders = mapOf("Referer" to "$mainUrl/home")
         }
     }
 
@@ -81,12 +82,12 @@ class JioHotstarProvider : MainAPI() {
             "ott" to "hs"
         )
         val url = "$mainUrl/mobile/hs/search.php?s=$query&t=${APIHolder.unixTime}"
-        val data = app.get(url, referer = "$mainUrl/tv/home", cookies = cookies).parsed<SearchData>()
+        val data = app.get(url, referer = "$mainUrl/home", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
-                posterUrl = "https://imgcdn.media/hs/v/${it.id}.jpg"
-                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+                posterUrl = "https://imgcdn.kim/hs/v/${it.id}.jpg"
+                posterHeaders = mapOf("Referer" to "$mainUrl/home")
             }
         }
     }
@@ -102,7 +103,7 @@ class JioHotstarProvider : MainAPI() {
         val data = app.get(
             "$mainUrl/mobile/hs/post.php?id=$id&t=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/tv/home",
+            referer = "$mainUrl/home",
             cookies = cookies
         ).parsed<PostData>()
 
@@ -119,13 +120,13 @@ class JioHotstarProvider : MainAPI() {
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
 
-        val rating = data.match?.replace("IMDb ", "")?.toRatingInt()
+        val rating = data.match?.replace("IMDb ", "")
         val runTime = convertRuntimeToMinutes(data.runtime.toString())
 
         val suggest = data.suggest?.map {
             newAnimeSearchResponse("", Id(it.id).toJson()) {
-                this.posterUrl = "https://imgcdn.media/hs/v/${it.id}.jpg"
-                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+                this.posterUrl = "https://imgcdn.kim/hs/v/${it.id}.jpg"
+                posterHeaders = mapOf("Referer" to "$mainUrl/home")
             }
         }
 
@@ -139,7 +140,7 @@ class JioHotstarProvider : MainAPI() {
                     this.name = it.t
                     this.episode = it.ep.replace("E", "").toIntOrNull()
                     this.season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://imgcdn.media/hsepimg/150/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.kim/hsepimg/150/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -156,14 +157,14 @@ class JioHotstarProvider : MainAPI() {
         val type = if (data.episodes.first() == null) TvType.Movie else TvType.TvSeries
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
-            posterUrl = "https://imgcdn.media/hs/v/$id.jpg"
-            backgroundPosterUrl = "https://imgcdn.media/hs/h/$id.jpg"
-            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
+            posterUrl = "https://imgcdn.kim/hs/v/$id.jpg"
+            backgroundPosterUrl = "https://imgcdn.kim/hs/h/$id.jpg"
+            posterHeaders = mapOf("Referer" to "$mainUrl/home")
             plot = data.desc
             year = data.year.toIntOrNull()
             tags = genre
             actors = cast
-            this.rating = rating
+            this.score =  Score.from10(rating)
             this.duration = runTime
             this.contentRating = data.ua
             this.recommendations = suggest
@@ -184,7 +185,7 @@ class JioHotstarProvider : MainAPI() {
             val data = app.get(
                 "$mainUrl/mobile/hs/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
                 headers,
-                referer = "$mainUrl/tv/home",
+                referer = "$mainUrl/home",
                 cookies = cookies
             ).parsed<EpisodesData>()
             data.episodes?.mapTo(episodes) {
@@ -192,7 +193,7 @@ class JioHotstarProvider : MainAPI() {
                     name = it.t
                     episode = it.ep.replace("E", "").toIntOrNull()
                     season = it.s.replace("S", "").toIntOrNull()
-                    this.posterUrl = "https://imgcdn.media/hsepimg/${it.id}.jpg"
+                    this.posterUrl = "https://imgcdn.kim/hsepimg/${it.id}.jpg"
                     this.runTime = it.time.replace("m", "").toIntOrNull()
                 }
             }
@@ -217,7 +218,7 @@ class JioHotstarProvider : MainAPI() {
         val playlist = app.get(
             "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/tv/home",
+            referer = "$mainUrl/home",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -227,10 +228,10 @@ class JioHotstarProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        "https://net51.cc/${it.file}",
+                        "$newUrl/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/tv/home"
+                        this.referer = "$newUrl/home"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
                     }
                 )

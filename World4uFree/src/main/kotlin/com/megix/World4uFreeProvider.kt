@@ -226,7 +226,7 @@ class World4uFreeProvider : MainAPI() {
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
-                this.rating = imdbRating.toRatingInt()
+                this.score = Score.from10(imdbRating)
                 this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
@@ -252,7 +252,7 @@ class World4uFreeProvider : MainAPI() {
                 this.posterUrl = posterUrl
                 this.plot = description
                 this.tags = genre
-                this.rating = imdbRating.toRatingInt()
+                this.score = Score.from10(imdbRating)
                 this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
                 addActors(cast)
