@@ -156,15 +156,15 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-//get TMDB Cast
-suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
+//get Cast Data
+suspend fun parseCastData(tvType: String, imdbId: String? = null): List<ActorData>? {
     return if (tvType != "anime") {
         try {
-            val url = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json"
-            val tmdbJson = app.get(url, timeout = 8L).text
+            val url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
+            val json = app.get(url, timeout = 6L).text
             val gson = Gson()
-            val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
-            tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
+            val data = gson.fromJson(json, TmdbResponse::class.java)
+            data.meta?.appExtras?.cast?.mapNotNull { castMember ->
                 if (castMember.name != null) {
                     ActorData(
                         Actor(
@@ -616,7 +616,7 @@ suspend fun convertTmdbToAnimeId(
     return if (type == TvType.AnimeMovie) {
         tmdbToAnimeId(title, airedYear, "", type)
     } else {
-        tmdbToAnimeId(title, year, airedSeason, type)
+        tmdbToAnimeId(title, year, season, type)
     }
 }
 

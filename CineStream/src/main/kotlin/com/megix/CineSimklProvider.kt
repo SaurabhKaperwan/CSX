@@ -364,8 +364,8 @@ class CineSimklProvider: MainAPI() {
 
         val recommendations = relations + users_recommendations
 
-        val tmdbType = if (tvType == "tv") "series" else tvType
-        val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb?.toIntOrNull())
+        val imdbType = if (tvType == "show") "series" else tvType
+        val cast = parseCastData(imdbType, imdbId)
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
