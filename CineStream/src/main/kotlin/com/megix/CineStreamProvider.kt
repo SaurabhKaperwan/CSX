@@ -23,13 +23,10 @@ import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWYZIESubs
 import com.megix.CineStreamExtractors.invokeAnizone
-// import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
-// import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
-import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeTokyoInsider
@@ -73,10 +70,10 @@ import com.megix.CineStreamExtractors.invokePrimeSrc
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
-import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
 import com.megix.CineStreamExtractors.invokeDahmerMovies
+import com.megix.CineStreamExtractors.invokeVideasy
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -146,7 +143,6 @@ open class CineStreamProvider : MainAPI() {
         val W4UAPI get() = api("w4u")
         val fourkhdhubAPI get() = api("4khdhub")
         val multimoviesAPI get() = api("multimovies")
-        val cinemaluxeAPI get() = api("cinemaluxe")
         val bollyflixAPI get() = api("bollyflix")
         val movies4uAPI get() = api("movies4u")
         val skymoviesAPI get() = api("skymovies")
@@ -621,7 +617,6 @@ open class CineStreamProvider : MainAPI() {
             { invokeMultimovies(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, year, callback) },
-            { invokeCinemaluxe(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             { invokeDahmerMovies(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             { invokePrimebox(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
             { invokePrimenet(tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
@@ -658,12 +653,11 @@ open class CineStreamProvider : MainAPI() {
             { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeXDmovies(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, year, res.season, res.episode, callback) },
-            { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
-            { invokeRar(res.title, year, res.season, res.episode, callback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             // { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVideasy(res.title ,res.tmdbId, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
             { if (!isBollywood) invokeHindmoviez("HindMoviez", res.id, res.title, res.season, res.episode, callback) },

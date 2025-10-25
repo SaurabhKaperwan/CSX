@@ -158,6 +158,86 @@ object CineStreamExtractors : CineStreamProvider() {
 
     }
 
+    suspend fun invokeVideasy(
+        title: String? = null,
+        tmdbId: Int? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "Connection" to "keep-alive",
+        )
+
+        val servers = listOf(
+            "myflixerzupcloud",
+            "1movies",
+            "moviebox",
+            "primewire",
+            "onionplay",
+            "m4uhd",
+            "hdmovie",
+            "cdn"
+        )
+
+        servers.amap { server ->
+            val url = if (season == null) {
+                "https://api.videasy.net/$server/sources-with-title?title=$title&mediaType=movie&year=$year&tmdbId=$tmdbId"
+            } else {
+                "https://api.videasy.net/$server/sources-with-title?title=$title&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season"
+            }
+
+            val enc_data = app.get(url, headers = headers).text
+
+            val jsonBody = """{"text":"$enc_data","id":"$tmdbId"}"""
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+            val response = app.post(
+                "https://enc-dec.app/api/dec-videasy",
+                requestBody = requestBody
+            )
+
+            if(response.isSuccessful) {
+
+                val result = JSONObject(json).getJSONObject("result")
+
+                val sourcesArray = result.getJSONArray("sources")
+                for (i in 0 until sourcesArray.length()) {
+                    val obj = sourcesArray.getJSONObject(i)
+                    val quality = obj.getString("quality")
+                    val source = obj.getString("url")
+                    callback.invoke(
+                        newExtractorLink(
+                            "Videasy[$server]",
+                            "Videasy[$server]",
+                            source
+                        ) {
+                            this.quality = getIndexQuality(quality)
+                        }
+                    )
+                }
+
+                val subtitlesArray = result.getJSONArray("subtitles")
+                for (i in 0 until subtitlesArray.length()) {
+                    val obj = subtitlesArray.getJSONObject(i)
+                    val source = obj.getString("url")
+                    val language = obj.getString("language")
+
+                    subtitleCallback.invoke(
+                        newSubtitleFile(
+                            language,
+                            source
+                        )
+                    )
+                }
+
+            }
+        }
+    }
+
     suspend fun invokeDramadrip(
         imdbId: String? = null,
         season: Int? = null,
@@ -569,10 +649,14 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT
         )
 
+        val tokenJson = app.get("https://enc-dec.app/api/enc-xprime").text
+        val jsonObject = JSONObject(tokenJson)
+        val token = jsonObject.getString("result")
+
         val url = if(season == null) {
-            "$xprimeAPI/primenet?id=$tmdbId"
+            "$xprimeAPI/primenet?id=$tmdbId&turnstile=$token"
         } else {
-            "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode"
+            "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode&turnstile=$token"
         }
 
         val text = app.get(url, headers = headers).text
@@ -611,11 +695,16 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT
         )
 
+        val tokenJson = app.get("https://enc-dec.app/api/enc-xprime").text
+        val jsonObject = JSONObject(tokenJson)
+        val token = jsonObject.getString("result")
+
         val url = if(season == null) {
-            "$xprimeAPI/primebox?name=$title&fallback_year=$year"
+            "$xprimeAPI/primebox?name=$title&fallback_year=$year&turnstile=$token"
         } else {
-            "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
+            "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode&turnstile=$token"
         }
+
         val text = app.get(url, headers = headers).text
         val json = multiDecrypt(text, "dec-xprime") ?: return
         val data = tryParseJson<Primebox>(json) ?: return
@@ -1564,53 +1653,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeCinemaluxe(
-        title: String? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit
-    ) {
-        val query = "$title $year"
-        val url = app.get("$cinemaluxeAPI/?s=$query").document
-            .select("div.title > a:contains($query)").attr("href")
-        val document = app.get(url).document
-
-        if(season == null) {
-            document.select("div.wp-content div.ep-button-container > a").amap {
-                val link = cinemaluxeBypass(it.attr("href"))
-                loadSourceNameExtractor(
-                    "Cinemaluxe",
-                    link,
-                    "",
-                    subtitleCallback,
-                    callback,
-                )
-            }
-        }
-        else {
-            document.select("div.wp-content div.ep-button-container").amap { div ->
-                val text = div.toString()
-                if(text.contains("Season $season", ignoreCase = true) ||
-                    text.contains("Season 0$season", ignoreCase = true)
-                ) {
-                    val link = cinemaluxeBypass(div.select("a").attr("href"))
-
-                    app.get(link).document.select("""div.ep-button-container > a:matches((?i)(?:episode\s*[-]?\s*)(0?$episode\b))""").amap {
-                        loadSourceNameExtractor(
-                            "Cinemaluxe",
-                            it.attr("href"),
-                            "",
-                            subtitleCallback,
-                            callback,
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeBollyflix(
         id: String? = null,
@@ -1890,42 +1932,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                 }
             },
-        )
-    }
-
-    suspend fun invokeRar(
-        title: String? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        if (title == null) return
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Referer" to "$RarAPI/"
-        )
-        val json = app.get("$RarAPI/ajax/posts?q=$title ($year)", headers = headers).text
-        val responseData = parseJson<RarResponseData>(json)
-        val id = responseData.data?.firstOrNull {
-            it.second_name == title
-        }?.id ?: return
-        val slug = "$title $year $id".createSlug()
-        val url = if(season != null) "$RarAPI/show/$slug/season/$season/episode/$episode" else "$RarAPI/movie/$slug"
-        val embedId = app.get(url, headers = headers).document.selectFirst("a.btn-service")?.attr("data-embed") ?: return
-        val body = FormBody.Builder().add("id", embedId).build()
-        val document = app.post("$RarAPI/ajax/embed", requestBody = body, headers = headers).text
-        val regex = Regex("""(\/public\/[^\"']+\.m3u8)""")
-        val link = regex.find(document)?.groupValues?.get(1) ?: return
-        callback.invoke(
-            newExtractorLink(
-                "Rar",
-                "Rar",
-                RarAPI + link,
-                ExtractorLinkType.M3U8
-            ) {
-                this.headers = headers
-            }
         )
     }
 

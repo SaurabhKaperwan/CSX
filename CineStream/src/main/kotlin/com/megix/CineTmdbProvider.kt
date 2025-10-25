@@ -19,7 +19,6 @@ import com.megix.CineStreamExtractors.invokeUhdmovies
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
-import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeTokyoInsider
@@ -61,7 +60,6 @@ import com.megix.CineStreamExtractors.invokePrimeSrc
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
-import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
 import com.megix.CineStreamExtractors.invokeDahmerMovies
@@ -343,8 +341,6 @@ class CineTmdbProvider: MainAPI() {
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
             { invokeXDmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, year, res.season, res.episode, callback) },
-            { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
-            { invokeRar(res.title, year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
