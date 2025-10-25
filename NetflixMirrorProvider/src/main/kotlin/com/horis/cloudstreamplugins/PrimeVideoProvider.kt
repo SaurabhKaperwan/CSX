@@ -243,7 +243,7 @@ class PrimeVideoProvider : MainAPI() {
 
             item.tracks?.filter { it.kind == "captions" }?.map { track ->
                 subtitleCallback.invoke(
-                    SubtitleFile(
+                    newSubtitleFile(
                         track.label.toString(),
                         httpsify(track.file.toString())
                     )

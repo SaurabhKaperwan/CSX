@@ -201,7 +201,7 @@ object CineStreamExtractors : CineStreamProvider() {
             )
 
             if(response.isSuccessful) {
-
+                val json = response.text
                 val result = JSONObject(json).getJSONObject("result")
 
                 val sourcesArray = result.getJSONArray("sources")
