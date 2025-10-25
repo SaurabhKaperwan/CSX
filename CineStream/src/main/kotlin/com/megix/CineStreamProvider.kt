@@ -74,6 +74,7 @@ import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
 import com.megix.CineStreamExtractors.invokeDahmerMovies
 import com.megix.CineStreamExtractors.invokeVideasy
+import com.megix.CineStreamExtractors.invokeTorrentsDB
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -125,6 +126,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
         const val dahmerMoviesAPI = "https://a.111477.xyz"
         const val netflix2API = "https://net51.cc"
+        const val torrentsDBAPI = "https://torrentsdb.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -598,6 +600,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeAllanime(res.title, year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeTorrentsDB(res.imdb_id, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeNetflix(imdbTitle, year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -660,6 +663,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeVideasy(res.title ,res.tmdbId, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
+            { invokeTorrentsDB(res.id, res.season, res.episode, callback) },
             { if (!isBollywood) invokeHindmoviez("HindMoviez", res.id, res.title, res.season, res.episode, callback) },
         //  { if (isBollywood) invokeHindmoviez("JaduMovies", res.id, res.season, res.episode, callback) },
             { if (!isBollywood && !isAnime) invokeKatMovieHd("KatMovieHd", res.id, res.season, res.episode, subtitleCallback ,callback) },

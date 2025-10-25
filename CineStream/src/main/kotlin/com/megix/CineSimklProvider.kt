@@ -73,6 +73,8 @@ import com.megix.CineStreamExtractors.invokeMultiEmbeded
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
 import com.megix.CineStreamExtractors.invokeDahmerMovies
+import com.megix.CineStreamExtractors.invokeVideasy
+import com.megix.CineStreamExtractors.invokeTorrentsDB
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -475,6 +477,7 @@ class CineSimklProvider: MainAPI() {
     ) {
         runAllAsync(
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
+            { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
             { if(!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -503,6 +506,7 @@ class CineSimklProvider: MainAPI() {
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVideasy(res.title ,res.tmdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
@@ -567,6 +571,7 @@ class CineSimklProvider: MainAPI() {
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(imdbId, imdbSeason, imdbEpisode, callback) },
+            { invokeTorrentsDB(imdbId, imdbSeason, imdbEpisode, callback) },
             { invokeVegamovies("VegaMovies", imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeNetflix(imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(imdbTitle, imdbSeason, imdbEpisode, res.episode, subtitleCallback, callback) },

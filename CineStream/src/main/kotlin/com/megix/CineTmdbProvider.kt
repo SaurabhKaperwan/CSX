@@ -63,6 +63,8 @@ import com.megix.CineStreamExtractors.invokeVidPlus
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
 import com.megix.CineStreamExtractors.invokeDahmerMovies
+import com.megix.CineStreamExtractors.invokeVideasy
+import com.megix.CineStreamExtractors.invokeTorrentsDB
 
 class CineTmdbProvider: MainAPI() {
     override var name = "CineTmdb"
@@ -346,6 +348,7 @@ class CineTmdbProvider: MainAPI() {
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
+            { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
             { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
@@ -366,6 +369,7 @@ class CineTmdbProvider: MainAPI() {
             { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
+            { invokeVideasy(res.title ,res.id, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.id, res.title, res.season, res.episode, year, callback, subtitleCallback) },
             { invokeTripleOneMovies( res.id, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidFastPro( res.id, res.season,res.episode, callback,subtitleCallback) },
