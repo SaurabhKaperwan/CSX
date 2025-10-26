@@ -79,10 +79,10 @@ open class Driveleech : ExtractorApi() {
         return links
     }
 
-    private suspend fun resumeCloudLink(url: String): String {
+    private suspend fun resumeCloudLink(url: String): String? {
         val resumeCloudUrl = mainUrl + url
         val document = app.get(resumeCloudUrl).document
-        val link = document.selectFirst("a.btn-success")?.attr("href").toString()
+        val link = document.selectFirst("a.btn-success")?.attr("href")
         return link
     }
 
@@ -112,24 +112,9 @@ open class Driveleech : ExtractorApi() {
         return link
     }
 
-    private suspend fun instantLink(finallink: String): String {
-        val baseUrl = finallink.substringBefore("/?url=").substringAfter("https://")
-        val token = finallink.substringAfter("url=")
-        val downloadlink = app.post(
-            url = "https://$baseUrl/api",
-            data = mapOf(
-                "keys" to token
-            ),
-            referer = finallink,
-            headers = mapOf(
-                "x-token" to baseUrl
-            )
-        )
-        val link =
-            downloadlink.toString().substringAfter("url\":\"")
-                .substringBefore("\",\"name")
-                .replace("\\/", "/")
-        return link
+    private suspend fun instantLink(finallink: String): String? {
+        val link = app.get(finallink, allowRedirects = false).headers["location"]
+        return link?.substringAfter("?url=")
     }
 
 
@@ -171,7 +156,7 @@ open class Driveleech : ExtractorApi() {
                 }
                 text.contains("Instant Download") -> {
                     try{
-                        val instant = instantLink(href)
+                        val instant = instantLink(href) ?: return@amap
                         callback.invoke(
                             newExtractorLink(
                                 "$name Instant(Download)",
@@ -222,7 +207,7 @@ open class Driveleech : ExtractorApi() {
                 }
                 text.contains("Resume Cloud") -> {
                     try {
-                        val resumeCloud = resumeCloudLink(href)
+                        val resumeCloud = resumeCloudLink(href) ?: return@amap
                         callback.invoke(
                             newExtractorLink(
                                 "$name ResumeCloud",
