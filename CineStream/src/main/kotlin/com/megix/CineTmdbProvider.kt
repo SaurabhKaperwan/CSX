@@ -8,63 +8,8 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import com.megix.CineStreamExtractors.invokeVegamovies
-import com.megix.CineStreamExtractors.invokeMoviesmod
-import com.megix.CineStreamExtractors.invokeTopMovies
-import com.megix.CineStreamExtractors.invokeMoviesdrive
-import com.megix.CineStreamExtractors.invokeW4U
-import com.megix.CineStreamExtractors.invokeWYZIESubs
-import com.megix.CineStreamExtractors.invokeAnizone
-import com.megix.CineStreamExtractors.invokeUhdmovies
+import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAnimes
-import com.megix.CineStreamExtractors.invokeMultimovies
-import com.megix.CineStreamExtractors.invokeStreamify
-import com.megix.CineStreamExtractors.invokeBollyflix
-import com.megix.CineStreamExtractors.invokeTorrentio
-import com.megix.CineStreamExtractors.invokeTokyoInsider
-import com.megix.CineStreamExtractors.invokeAllanime
-import com.megix.CineStreamExtractors.invokeStreamAsia
-import com.megix.CineStreamExtractors.invokeNetflix
-import com.megix.CineStreamExtractors.invokePrimeVideo
-import com.megix.CineStreamExtractors.invokeDisney
-import com.megix.CineStreamExtractors.invokeSkymovies
-import com.megix.CineStreamExtractors.invokeMoviesflix
-import com.megix.CineStreamExtractors.invokeHdmovie2
-import com.megix.CineStreamExtractors.invokeHindmoviez
-import com.megix.CineStreamExtractors.invokeMostraguarda
-import com.megix.CineStreamExtractors.invokePlayer4U
-import com.megix.CineStreamExtractors.invokeProtonmovies
-import com.megix.CineStreamExtractors.invokeThepiratebay
-import com.megix.CineStreamExtractors.invokeAllmovieland
-import com.megix.CineStreamExtractors.invoke4khdhub
-import com.megix.CineStreamExtractors.invokeMovies4u
-import com.megix.CineStreamExtractors.invokeSoaper
-import com.megix.CineStreamExtractors.invokeAsiaflix
-import com.megix.CineStreamExtractors.invoke2embed
-import com.megix.CineStreamExtractors.invokePrimebox
-import com.megix.CineStreamExtractors.invokePrimenet
-import com.megix.CineStreamExtractors.invokeCinemaOS
-import com.megix.CineStreamExtractors.invokeGojo
-import com.megix.CineStreamExtractors.invokeSudatchi
-import com.megix.CineStreamExtractors.invokeKatMovieHd
-import com.megix.CineStreamExtractors.invokeMadplay
-import com.megix.CineStreamExtractors.invokeStremioSubtitles
-import com.megix.CineStreamExtractors.invokeToonstream
-import com.megix.CineStreamExtractors.invokeDramadrip
-import com.megix.CineStreamExtractors.invokeFilm1k
-import com.megix.CineStreamExtractors.invokeMp4Moviez
-import com.megix.CineStreamExtractors.invokeMultiEmbeded
-import com.megix.CineStreamExtractors.invokeWebStreamr
-import com.megix.CineStreamExtractors.invokeNuvioStreams
-import com.megix.CineStreamExtractors.invokePrimeSrc
-import com.megix.CineStreamExtractors.invokeTripleOneMovies
-import com.megix.CineStreamExtractors.invokeVidFastPro
-import com.megix.CineStreamExtractors.invokeVidPlus
-import com.megix.CineStreamExtractors.invokeVicSrcWtf
-import com.megix.CineStreamExtractors.invokeXDmovies
-import com.megix.CineStreamExtractors.invokeDahmerMovies
-import com.megix.CineStreamExtractors.invokeVideasy
-import com.megix.CineStreamExtractors.invokeTorrentsDB
 
 class CineTmdbProvider: MainAPI() {
     override var name = "CineTmdb"
@@ -320,72 +265,44 @@ class CineTmdbProvider: MainAPI() {
             callback: (ExtractorLink) -> Unit
     ): Boolean {
         val res = parseJson<LinkData>(data)
-        //year : first episode year
-        //seasonYear : current episode year
-
         val year = res.airedYear ?: res.year
         val seasonYear = res.year ?: res.airedYear
 
         runAllAsync(
-            { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeNetflix(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeVideo(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeDisney(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.season == null) invokeStreamify(res.imdbId, callback) },
-            { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeTopMovies(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeDramadrip(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
-            { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
-            { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
-            { invokeXDmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.title, year, res.season, res.episode, callback) },
-            { if (!res.isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },
-            { if (!res.isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
-            { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMovies4u(res.imdbId, res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
-            { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
-            { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
-            { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
-            { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
-            { invokeW4U(res.title, year, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { if (res.isAnime) {
-                val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
-                invokeAnimes(malId, aniId, res.episode, res.airedYear, "imdb", subtitleCallback, callback)
-            }},
-            { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
-            { invokeSoaper(res.imdbId, res.id, res.title, res.season, res.episode, subtitleCallback, callback) },
-            { if(!res.isAnime) invokeMadplay(res.id, res.season, res.episode, callback) },
-            { invokePrimenet(res.id, res.season, res.episode, callback) },
-            { invokePlayer4U(res.title, res.season, res.episode, year, callback) },
-            { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
-            { invokeMp4Moviez(res.title, res.season, res.episode, year, callback, subtitleCallback) },
-            { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
-            { invokeVideasy(res.title ,res.id, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeCinemaOS(res.imdbId, res.id, res.title, res.season, res.episode, year, callback, subtitleCallback) },
-            { invokeTripleOneMovies( res.id, res.season,res.episode, callback,subtitleCallback) },
-            { invokeVidFastPro( res.id, res.season,res.episode, callback,subtitleCallback) },
-            { invokeVidPlus( res.id, res.season,res.episode, callback,subtitleCallback) },
-            { invokeMultiEmbeded( res.id, res.season, res.episode, callback,subtitleCallback) },
-            { invokeVicSrcWtf( res.id, res.season,res.episode, callback, subtitleCallback) },
-            { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeNuvioStreams(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
-            { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-            { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeMoviesflix("Hdmoviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeUhdmovies(res.title, year, res.season, res.episode, callback, subtitleCallback) },
-            { if (!res.isBollywood) invoke4khdhub(res.title, year, res.season, res.episode, subtitleCallback, callback) }
+            {
+                invokeAllSources(
+                    AllLoadLinksData(
+                        res.title,
+                        res.imdbId,
+                        res.id,
+                        res.aniId?.toIntOrNull(),
+                        null,
+                        year,
+                        seasonYear,
+                        res.season,
+                        res.episode,
+                        res.isAnime,
+                        res.isBollywood,
+                        res.isAsian,
+                        res.isCartoon,
+                        res.orgTitle,
+                        null,
+                        null,
+                        null,
+                        null,
+                    ),
+                    subtitleCallback,
+                    callback
+                )
+            },
+            {
+                if (res.isAnime) {
+                    val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
+                    invokeAnimes(malId, aniId, res.episode, res.airedYear, "imdb", subtitleCallback, callback)
+                }
+            }
         )
+
         return true
     }
 
