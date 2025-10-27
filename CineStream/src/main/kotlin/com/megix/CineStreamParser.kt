@@ -28,6 +28,16 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//Vidlink
+data class VidlinkResponse(
+    @SerializedName("stream") val stream: VidlinkStream
+)
+
+data class VidlinkStream(
+    @SerializedName("playlist") val playlist: String
+)
+
+
 data class TmdbDate(
     val today: String,
     val nextWeek: String,
