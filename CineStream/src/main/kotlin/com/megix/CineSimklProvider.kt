@@ -339,6 +339,7 @@ class CineSimklProvider: MainAPI() {
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = json.overview
                 this.tags = genres
+                this.comingSoon = isUpcoming(json.released)
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
@@ -375,7 +376,7 @@ class CineSimklProvider: MainAPI() {
                         isCartoon
                     ).toJson()
                 ) {
-                    this.name = it.title
+                    this.name = it.title + if (it.aired == false) " • [UPCOMING]" else ""
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
@@ -501,6 +502,7 @@ class CineSimklProvider: MainAPI() {
         var en_title              : String?                          = null,
         var title_en              : String?                          = null,
         var year                  : Int?                             = null,
+        var released              : String?                          = null,
         var type                  : String?                          = null,
         var url                   : String?                          = null,
         var poster                : String?                          = null,
@@ -585,7 +587,7 @@ class CineSimklProvider: MainAPI() {
         var episode     : Int?     = null,
         var type        : String?  = null,
         var description : String?  = null,
-        var aired       : Boolean? = null,
+        var aired       : Boolean  = false,
         var img         : String?  = null,
         var date        : String?  = null,
     )

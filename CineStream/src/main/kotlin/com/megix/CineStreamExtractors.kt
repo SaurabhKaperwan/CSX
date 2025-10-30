@@ -277,7 +277,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
 
-        val headers = mapOf(
+        var headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
         )
@@ -318,11 +318,34 @@ object CineStreamExtractors : CineStreamProvider() {
                     val obj = sourcesArray.getJSONObject(i)
                     val quality = obj.getString("quality")
                     val source = obj.getString("url")
+                    var type = INFER_TYPE
+
+                    if(source.contains(".m3u8")) {
+                        headers = headers + mapOf(
+                            "Accept" to "application/vnd.apple.mpegurl,application/x-mpegURL,*/*",
+                            "Referer" to "$videasyAPI/"
+                        )
+                        type = ExtractorLinkType.M3U8
+                    } else if(source.contains(".mp4")) {
+                        headers = headers + mapOf(
+                            "Accept" to "video/mp4,*/*",
+                            "Range" to "bytes=0-",
+                        )
+                        type = ExtractorLinkType.VIDEO
+                    } else if(source.contains(".mkv")) {
+                        headers = headers + mapOf(
+                            "Accept" to "video/x-matroska,*/*",
+                            "Range" to "bytes=0-",
+                        )
+                        type = ExtractorLinkType.VIDEO
+                    }
+
                     callback.invoke(
                         newExtractorLink(
                             "Videasy[$server]",
                             "Videasy[$server]",
-                            source
+                            source,
+                            type
                         ) {
                             this.quality = getIndexQuality(quality)
                             this.headers = headers
@@ -394,9 +417,9 @@ object CineStreamExtractors : CineStreamProvider() {
                         "Hexa[$server]",
                         "Hexa[$server]",
                         m3u8,
-                        type = ExtractorLinkType.M3U8
+                        type = if(m3u8.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
                     ) {
-                        this.referer = "https://hexa.watch/"
+                        this.referer = "$hexaAPI/"
                     }
                 )
             }
@@ -410,12 +433,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season == null) {
-            "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
-        } else {
-            "$multiDecryptAPI/enc-vidlink?text=$tmdbId/$season/$episode"
-        }
-
+        val url = "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
         val json = app.get(url).text
         val enc_data = JSONObject(json).getString("result")
 

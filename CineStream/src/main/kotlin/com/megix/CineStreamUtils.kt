@@ -329,7 +329,6 @@ fun isUpcoming(dateString: String?): Boolean {
     }
 }
 
-
 suspend fun loadNameExtractor(
     name: String? = null,
     url: String,
