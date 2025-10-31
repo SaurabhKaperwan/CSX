@@ -27,6 +27,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.toString
 import java.security.SecureRandom
+import java.net.URLEncoder
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -160,7 +161,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.streams.forEach {
             val title = it.title ?: ""
-            val name = it.name?.replace("(SLOW) ", "") ?: "Nuvio"
+            val name = it.name ?: "Nuvio"
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
@@ -295,9 +296,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
         servers.amap { server ->
             val url = if (season == null) {
-                "$videasyAPI/$server/sources-with-title?title=$title&mediaType=movie&year=$year&tmdbId=$tmdbId"
+                "$videasyAPI/$server/sources-with-title?title=${URLEncoder.encode(title, "UTF-8")}&mediaType=movie&year=$year&tmdbId=$tmdbId"
             } else {
-                "$videasyAPI/$server/sources-with-title?title=$title&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season"
+                "$videasyAPI/$server/sources-with-title?title=${URLEncoder.encode(title, "UTF-8")}&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season"
             }
 
             val enc_data = app.get(url, headers = headers).text
@@ -528,12 +529,8 @@ object CineStreamExtractors : CineStreamProvider() {
             "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
         )
 
-        val url = if(season == null) {
-            "$XDmoviesAPI/api/xyz123?tmdb_id=$tmdbId"
-        } else {
-            "$XDmoviesAPI/api/abc456?tmdb_id=$tmdbId"
-        }
-
+        val type = if(season == null) "xyz123" else "abc456"
+        val url = "$XDmoviesAPI/api/$type?tmdb_id=$tmdbId"
         val jsonString = app.get(url, headers = headers).text
         val jsonObject = JSONObject(jsonString)
 
@@ -879,7 +876,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT
         )
 
-        val tokenJson = app.get("https://enc-dec.app/api/enc-xprime").text
+        val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
         val jsonObject = JSONObject(tokenJson)
         val token = jsonObject.getString("result")
 
@@ -925,7 +922,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT
         )
 
-        val tokenJson = app.get("https://enc-dec.app/api/enc-xprime").text
+        val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
         val jsonObject = JSONObject(tokenJson)
         val token = jsonObject.getString("result")
 

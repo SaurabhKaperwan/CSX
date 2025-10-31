@@ -30,6 +30,12 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
+    val posterHeaders = mapOf(
+        "Accept" to "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "Referer" to "https://web.stremio.com/",
+        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+    )
+
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -177,6 +183,7 @@ open class CineStreamProvider : MainAPI() {
             newMovieSearchResponse(title, PassData(movie.id, movie.type).toJson(), type) {
                 this.posterUrl = movie.poster
                 this.score = Score.from10(movie.imdbRating)
+                this.posterHeaders = posterHeaders
             }
         }
         return newHomePageResponse(
@@ -198,6 +205,7 @@ open class CineStreamProvider : MainAPI() {
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
                         posterUrl = it.poster
                         this.score = Score.from10(it.imdbRating)
+                        this.posterHeaders = posterHeaders
                     }
                 } ?: emptyList()
             }.getOrDefault(emptyList())
@@ -302,6 +310,7 @@ open class CineStreamProvider : MainAPI() {
             ).toJson()
             return newMovieLoadResponse(engTitle, url, if(isAnime) TvType.AnimeMovie  else type, data) {
                 this.posterUrl = posterUrl
+                this.posterHeaders = posterHeaders
                 this.plot = description
                 this.tags = genre
                 this.score = Score.from10(imdbRating)
@@ -351,6 +360,7 @@ open class CineStreamProvider : MainAPI() {
             return newAnimeLoadResponse(engTitle, url, if(isAnime) TvType.Anime else TvType.TvSeries) {
                 addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = posterUrl
+                this.posterHeaders = posterHeaders
                 this.backgroundPosterUrl = background
                 this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.plot = description
@@ -520,7 +530,7 @@ open class CineStreamProvider : MainAPI() {
 
     data class Home(
         val metas: List<Media>,
-        val hasMore: Boolean = false,
+        val hasMore: Boolean = true,
     )
 
     data class ExtenalIds(
