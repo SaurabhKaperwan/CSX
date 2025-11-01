@@ -181,6 +181,8 @@ class CineSimklProvider: MainAPI() {
             return "$baseUrl/episodes/${id}_w.webp"
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
+        } else if(type == "imdb:bg") {
+            return "https://wsrv.nl/?url=https://images.metahub.space/background/large/$id/img"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
@@ -301,6 +303,7 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
