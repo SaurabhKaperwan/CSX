@@ -240,7 +240,6 @@ open class CineStreamProvider : MainAPI() {
                 }
             }
         }
-
     }
 
     override suspend fun load(url: String): LoadResponse? {
@@ -395,12 +394,10 @@ open class CineStreamProvider : MainAPI() {
         val seasonYear = getSeasonYear(res)
 
         return when {
-
             res.isKitsu -> {
                 runKitsuInvokers(res, year, seasonYear, subtitleCallback, callback)
                 true
             }
-
             else -> {
                 runAllAsync(
                     {

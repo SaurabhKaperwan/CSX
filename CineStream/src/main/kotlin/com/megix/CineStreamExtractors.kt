@@ -50,7 +50,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeDramadrip(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isAsian && res.season != null) invokeKisskh(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isAsian) invokeOnetouchtv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
@@ -1170,9 +1171,66 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeStreamAsia(
+    suspend fun invokeOnetouchtv(
         title: String? = null,
-        provider: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val json = app.get("$StreamAsiaAPI/catalog/onetouchtv/ottv-search-results/search=$title.json").text
+        val searhData = tryParseJson<StreamAsiaSearch>(json) ?: return
+        val id = searhData.metas.firstOrNull { meta ->
+            if(season == null) {
+            meta.name.equals(title, ignoreCase = true)
+            } else if(season == 1) {
+                meta.name.equals("$title ($year)", ignoreCase = true)
+            } else {
+                meta.name.equals("$title Season $season ($year)", ignoreCase = true)
+            }
+        }?.id ?: return
+
+        val epJson = app.get("$StreamAsiaAPI/meta/series/$id.json").text
+        val epData = tryParseJson<StreamAsiaInfo>(epJson) ?: return
+        val epId = epData.meta.videos.firstOrNull { video ->
+            video.episode == episode ?: 1
+        }?.id ?: return
+
+        val streamJson = app.get("$StreamAsiaAPI/stream/series/$epId.json").text
+        val streamData = tryParseJson<StreamAsiaStreams>(streamJson)
+        if(streamData != null) {
+               streamData.streams.forEach {
+                val url = it.url ?: return@forEach
+                callback.invoke(
+                    newExtractorLink(
+                        "Onetouchtv",
+                        "Onetouchtv",
+                        url,
+                        ExtractorLinkType.M3U8
+                    )
+                )
+            }
+        }
+
+        val subtitleJson = app.get("$StreamAsiaAPI/subtitles/series/$epId.json").text
+        val subtitleData = tryParseJson<StreamAsiaSubtitles>(subtitleJson)
+
+        if(subtitleData != null) {
+            subtitleData.subtitles.forEach {
+                val lang = it.lang ?: "und"
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        lang,
+                        it.url ?: return@forEach,
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun invokeKisskh(
+        title: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,

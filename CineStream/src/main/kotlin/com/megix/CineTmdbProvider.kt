@@ -96,7 +96,6 @@ class CineTmdbProvider: MainAPI() {
         }
     }
 
-
     override suspend fun quickSearch(query: String): List<SearchResponse>? = search(query)
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
@@ -191,7 +190,7 @@ class CineTmdbProvider: MainAPI() {
                                 eps.name + if (isUpcoming(eps.airDate)) " • [UPCOMING]" else ""
                             this.season = eps.seasonNumber
                             this.episode = eps.episodeNumber
-                            this.posterUrl = getImageUrl(eps.stillPath)
+                            this.posterUrl = getImageUrl(eps.stillPath) ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                             this.score = Score.from10(eps.voteAverage)
                             this.description = eps.overview
                         }.apply {
@@ -256,7 +255,6 @@ class CineTmdbProvider: MainAPI() {
             }
         }
     }
-
 
      override suspend fun loadLinks(
             data: String,
@@ -425,7 +423,6 @@ class CineTmdbProvider: MainAPI() {
     data class ProductionCountries(
         @JsonProperty("name") val name: String? = null,
     )
-
 
     data class MediaDetail(
         @JsonProperty("id") val id: Int? = null,
