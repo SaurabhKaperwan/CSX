@@ -1459,7 +1459,7 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 /** Encodes input using Base64 with custom character mapping. */
 fun customEncode(input: String): String {
     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val dst = "BdNqfj2X1RalybZHxP50e8UGz4Tv6mg3QS-7JnAWIsiKrCpFktVM9D_chuYOoEwL"
+    val dst = "oE5J6vu_AikszPbNK1TWjV-X29Ue0HFZDILRwdclBxp3M8tOamGgCQSh7rnfqy4Y"
     val transMap = src.zip(dst).toMap()
     val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         Base64.getEncoder().encodeToString(input.toByteArray())
@@ -1480,8 +1480,8 @@ fun customEncode(input: String): String {
 
 /** Performs AES encryption */
  fun aesEncrypt(data: String): String {
-    val aesKey = hexStringToByteArray("912660f3d9f3f35cee36396d31ed73366ab53c22c70710ce029697d17762997e")
-    val aesIv = hexStringToByteArray("f91f2863783814f51c56f341d6ce1677")
+    val aesKey = hexStringToByteArray("94e85c22b4df4848cd222b989dbcda3837a0337e101f7f3807999bef7ecca15f")
+    val aesIv = hexStringToByteArray("335a8603e5cbd87e1e22dc6c18fdd5ba")
 
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
@@ -1492,7 +1492,7 @@ fun customEncode(input: String): String {
 
 /** Performs XOR operation */
  fun xorOperation(input: String): String {
-    val xorKey = hexStringToByteArray("be430a")
+    val xorKey = hexStringToByteArray("e258d953232391c4c3a1")
     val result = StringBuilder()
 
     for (i in input.indices) {
@@ -1527,7 +1527,7 @@ fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
 
  fun customEncode(input: ByteArray): String {
     val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val targetChars = "qKSV9YJhF-WvABcOTH6P1ewt8NrfkREg3LZjU2b_GnmyaDI5piX7xz0CoMuQdl4s"
+    val targetChars = "4stjqN6BT05-L8rQe_HxWmAVv9icYKaCDzIP1fZ7kwXRyFhd2GEng3SMJlUubOop"
 
     val translationMap = sourceChars.zip(targetChars).toMap()
     val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

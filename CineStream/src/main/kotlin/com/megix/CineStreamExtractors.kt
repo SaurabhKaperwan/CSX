@@ -3162,10 +3162,11 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     )
     {
-        val STATIC_PATH = "to/1000003134441812/c945be05/2f30b6e198562e7015537bb71a738ff8245942a7/y/2c20617150078ad280239d1cc3a8b6ee9331acef9b0bdc6b742435597c38edb4/c8ddbffe-3efb-53e1-b883-3b6ce90ba310"
+        val STATIC_PATH = "2eeec28a/acea4c02bf30505abfeda0bbd2c9bf57189e299a302a64a088acca0c40dc9c47/otujosnub/1000092240837998/7b97259b75afc183a62b5745ee91feee633196e3"
         val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
         val headers = mapOf(
             "Referer" to tripleOneMoviesApi,
+            "X-Csrf-Token" to "2hMBbDj1GbuON0tOGuitsOFTlVcLwoV8",
             "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
             "X-Requested-With" to "XMLHttpRequest")
         val response = app.get(url,headers = headers, timeout = 20).text
@@ -3181,13 +3182,13 @@ object CineStreamExtractors : CineStreamProvider() {
 
         // Get servers
         val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
-        val serversResponse = app.post(apiServers, timeout = 20, headers = headers).text
+        val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
         val servers = parseServers(serversResponse)
         val urlList = mutableMapOf<String,String>()
         servers.forEach {
             try {
                 val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
-                val streamResponse = app.post(apiStream, timeout = 20, headers = headers).text
+                val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
                 if(streamResponse.isNotEmpty())
                 {
                     val jsonObject = JSONObject(streamResponse)
@@ -3226,13 +3227,13 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val STATIC_PATH =
-            "hezushon/b09fcca4f7144731f91e8ef917d2ace2ec6a29aa19a199b12a9d02d132db0ee9/kirumo/11bec683-3937-5830-b400-1ba5ab45241f/wuf/s/APA91e_LxHlKO3YiQ7vznjtYzGy69DCoEINphFQr51qaVRBjehCSbP1Xz9Ks0M503tPCX73Uei4u-LG_yOezROuHI-X_YXeNMLeRlbzyxYQDz9GLDQzeF5H0wBeo7IJ9IFGDho7KIbw_yM8V5JAgcnB-SgNUzWVbgX0UPKWlHmpAlTn7f1TvIoB/143b6797/1000019772292744"
+            "hezushon/ira/2264ec23bfa5e4891e26d563e5daac61bcb05688/b544e02b"
         val url =
             if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
         val headers = mapOf(
             "Accept" to "*/*",
             "Referer" to vidfastProApi,
-            "X-Csrf-Token" to "JjcyiVDl4pPbnbSLUVDLiMFwJR8C2WNk",
+            "X-Csrf-Token" to "iwwuf3C7tleIfqxlgG5NUxOrOROfn5d9",
             "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
             "X-Requested-With" to "XMLHttpRequest"
         )
@@ -3244,8 +3245,8 @@ object CineStreamExtractors : CineStreamProvider() {
             return;
         }
         // AES encryption setup
-        val keyHex = "3d57e7fcb67c95d0cffa215230aa1cbbd18421a448305a51f4d4505a1fd1305f"
-        val ivHex = "5799f00dfd2f5dfecd20880567fdf7fa"
+        val keyHex = "1f9b96f4e6604062c39f69f4c2edd92210d44d185434b0d569b077a72975bf08"
+        val ivHex = "70ed610a03c6a59c7967abf77db57f71"
         val aesKey = hexStringToByteArray2(keyHex)
         val aesIv = hexStringToByteArray2(ivHex)
 
@@ -3256,7 +3257,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val aesEncrypted = cipher.doFinal(paddedData)
 
         // XOR operation
-        val xorKey = hexStringToByteArray2("ff094f1e808cd09a7c")
+        val xorKey = hexStringToByteArray2("d6f87ef72c")
         val xorResult = aesEncrypted.mapIndexed { i, byte ->
             (byte.toInt() xor xorKey[i % xorKey.size].toInt()).toByte()
         }.toByteArray()
@@ -3265,7 +3266,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val encodedFinal = customEncode(xorResult)
 
         // Get servers
-        val apiServers = "$vidfastProApi/$STATIC_PATH/5_5N/$encodedFinal"
+        val apiServers = "$vidfastProApi/$STATIC_PATH/wfPFjh__qQ/$encodedFinal"
         val serversResponse = app.get(
             apiServers,
             timeout = 20,
@@ -3277,7 +3278,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val urlList = mutableMapOf<String, String>()
         servers.forEach {
             try {
-                val apiStream = "$vidfastProApi/${STATIC_PATH}/kruiW6A/${it.data}"
+                val apiStream = "$vidfastProApi/${STATIC_PATH}/AddlBFe5/${it.data}"
                 val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
                 if (streamResponse.isNotEmpty()) {
                     val jsonObject = JSONObject(streamResponse)
