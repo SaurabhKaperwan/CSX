@@ -137,14 +137,12 @@ class CineTmdbProvider: MainAPI() {
         val keywords = res.keywords?.results?.mapNotNull { it.name }.orEmpty()
             .ifEmpty { res.keywords?.keywords?.mapNotNull { it.name } }
 
-        var actors = res.credits?.cast?.mapNotNull { cast ->
+        val actors = res.credits?.cast?.mapNotNull { cast ->
             val name = cast.name ?: cast.originalName ?: return@mapNotNull null
             ActorData(
                 Actor(name, getImageUrl(cast.profilePath)), roleString = cast.character
             )
         } ?: emptyList()
-
-        actors = if(isAnime) null else actors
 
         val recommendations =
             res.recommendations?.results?.mapNotNull { media -> media.toSearchResponse() }
