@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
@@ -357,6 +358,7 @@ class CineSimklProvider: MainAPI() {
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
+                this.addMalId(malId)
                 this.addTrailer(trailerLink)
             }
         } else {
@@ -409,6 +411,7 @@ class CineSimklProvider: MainAPI() {
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
+                this.addMalId(malId)
                 this.addTrailer(trailerLink)
             }
         }
