@@ -217,51 +217,18 @@ suspend fun NFBypass(mainUrl: String): String {
     return newCookie
 }
 
-suspend fun makePostRequestCinemaluxe(jsonString: String, url: String, action: String): String {
-    val gson = Gson()
-    val item = gson.fromJson(jsonString, CinemaluxeItem::class.java)
-
-    val requestBody = "token=${
-        URLEncoder.encode(item.token, "UTF-8")
-    }&id=${
-        item.id
-    }&time=${
-        item.time
-    }&post=${
-        URLEncoder.encode(item.post, "UTF-8")
-    }&redirect=${
-        URLEncoder.encode(item.redirect, "UTF-8")
-    }&cacha=${
-        URLEncoder.encode(item.cacha, "UTF-8")
-    }&new=${
-        item.new
-    }&link=${
-        URLEncoder.encode(item.link, "UTF-8")
-    }&action=$action".toRequestBody("application/x-www-form-urlencoded".toMediaType())
-
-    val response = app.post(url, requestBody = requestBody, allowRedirects = false).headers["Location"] ?: ""
-    return response
+fun buildMagnetString(stream: TorrentioStream): String {
+    val trackersString = stream.sources
+        ?.asSequence()
+        ?.filter { it.startsWith("tracker:", ignoreCase = true) }
+        ?.map { it.substringAfter("tracker:").trim() }
+        ?.filter { it.isNotEmpty() }
+        ?.distinct()
+        ?.joinToString("") { "&tr=$it" }
+        ?: ""
+    return "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$trackersString&index=${stream.fileIdx}"
 }
 
-suspend fun cinemaluxeBypass(url: String): String {
-    val text = app.get(url).text
-    val encodeUrl = Regex("""link":"([^"]+)""").find(text)?.groupValues?.get(1) ?: ""
-    if(encodeUrl.isNotEmpty()) {
-        return base64Decode(encodeUrl.replace("\\/", "/"))
-    }
-    val postUrl =
-        """\"soralink_ajaxurl":"([^"]+)\"""".toRegex().find(text)?.groupValues?.get(1)
-    val jsonData =
-        """var\s+item\s*=\s*(\{.*?\});""".toRegex(RegexOption.DOT_MATCHES_ALL)
-        .find(text)?.groupValues?.get(1)
-    val soraLink =
-        """\"soralink_z"\s*:\s*"([^"]+)\"""".toRegex().find(text)?.groupValues?.get(1)
-
-    if(postUrl != null && jsonData != null && soraLink != null) {
-        return makePostRequestCinemaluxe(jsonData, postUrl, soraLink)
-    }
-    return url
-}
 
 fun getFirstCharacterOrZero(input: String): String {
     val firstChar = input[0]

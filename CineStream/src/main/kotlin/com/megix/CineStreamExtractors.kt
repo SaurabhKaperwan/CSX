@@ -64,6 +64,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVideasy(res.title ,res.tmdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
+            { invokeComet(res.imdbId, res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
             { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
@@ -78,7 +79,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(!res.isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
-            { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
@@ -104,16 +104,17 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
-            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
-            { invokeTorrentio(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeComet("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -1880,8 +1881,9 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = if(season == null) {
             "$torrentioAPI/$torrentioCONFIG/stream/movie/$id.json"
-        }
-        else {
+        } else if(id?.contains("kitsu") == true) {
+            "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$episode.json"
+        } else {
             "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$season:$episode.json"
         }
         val headers = mapOf(
@@ -1889,23 +1891,17 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         )
         val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
-        val resp = app.get(TRACKER_LIST_URL).text
-        val sourceTrackers = resp
-            .split("\n")
-            .filterIndexed { i, _ -> i % 2 == 0 }
-            .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
-
         res?.streams?.forEach { stream ->
             val title = stream.title ?: stream.name ?: ""
             val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
             val match = regex.find(title)
             val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
             if (seeders < 20) return@forEach
-            val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
+            val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
                     "Torrentio",
-                    title,
+                    "[Torrentio🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -1923,8 +1919,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = if(season == null) {
             "$torrentsDBAPI/stream/movie/$id.json"
-        }
-        else {
+        } else {
             "$torrentsDBAPI/stream/series/$id:$season:$episode.json"
         }
         val headers = mapOf(
@@ -1932,11 +1927,6 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         )
         val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
-        val resp = app.get(TRACKER_LIST_URL).text
-        val sourceTrackers = resp
-            .split("\n")
-            .filterIndexed { i, _ -> i % 2 == 0 }
-            .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
 
         res?.streams?.forEach { stream ->
             val title = stream.title ?: stream.name ?: ""
@@ -1944,11 +1934,50 @@ object CineStreamExtractors : CineStreamProvider() {
             val match = regex.find(title)
             val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
             if (seeders < 20) return@forEach
-            val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
+            val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB",
-                    title,
+                    "[TorrentsDB🧲] " + title,
+                    magnet,
+                    ExtractorLinkType.MAGNET,
+                ) {
+                    this.quality = getIndexQuality(stream.name)
+                }
+            )
+        }
+    }
+
+    suspend fun invokeComet(
+        id: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season == null) {
+            "$cometAPI/stream/movie/$id.json"
+        } else if(id?.contains("kitsu") == true) {
+            "$cometAPI/stream/series/$id:$episode.json"
+        } else {
+            "$cometAPI/stream/series/$id:$season:$episode.json"
+        }
+        val headers = mapOf(
+            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        )
+        val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
+
+        res?.streams?.forEach { stream ->
+            val title = stream.description ?: stream.title ?: stream.name ?: ""
+            val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
+            val match = regex.find(title)
+            val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
+            if (seeders < 20) return@forEach
+            val magnet = buildMagnetString(stream)
+            callback.invoke(
+                newExtractorLink(
+                    "Comet",
+                    "[Comet🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -3011,42 +3040,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
             getSoaperLinks(soaperAPI ,"$soaperAPI$episodeLink", "E", subtitleCallback, callback)
         }
-    }
-
-    suspend fun invokeThepiratebay(
-        imdbId: String? =null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        try {
-            val url = if(season == null) {
-                "$ThePirateBayApi/stream/movie/$imdbId.json"
-            }
-            else {
-                "$ThePirateBayApi/stream/series/$imdbId:$season:$episode.json"
-            }
-            val res = app.get(url, timeout = 10).parsedSafe<TBPResponse>()
-
-            for(stream in res?.streams!!)
-            {
-                val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
-                val match = regex.find(stream.title)
-                val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
-                if (seeders < 20) continue
-                val magnetLink = generateMagnetLink(TRACKER_LIST_URL,stream.infoHash)
-                callback.invoke(
-                    newExtractorLink(
-                        "ThePirateBay",
-                        "ThePirateBay [${stream.title}]",
-                        magnetLink,
-                        ExtractorLinkType.MAGNET
-                    ) {
-                        this.quality = getIndexQuality(stream.title)
-                    }
-                )
-            }
-        } catch (_: Exception) { }
     }
 
     // only for movies

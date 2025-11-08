@@ -106,7 +106,7 @@ class CineSimklProvider: MainAPI() {
     }
 
    private suspend fun extractImdbInfo(
-        kitsuId: Int? = null,
+        kitsuId: String? = null,
         season: Int? = null,
         episode: Int? = null
     ): Triple<String?, Int?, Int?>? {
@@ -288,7 +288,7 @@ class CineSimklProvider: MainAPI() {
             json.en_title ?: json.title
         }
 
-        val kitsuId = ids?.kitsu?.toIntOrNull()
+        val kitsuId = ids?.kitsu
         val anilistId = ids?.anilist?.toIntOrNull()
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
@@ -434,6 +434,7 @@ class CineSimklProvider: MainAPI() {
                     res.tmdbId,
                     res.anilistId,
                     res.malId,
+                    res.kitsuId,
                     res.year,
                     res.airedYear,
                     res.season,
@@ -462,9 +463,9 @@ class CineSimklProvider: MainAPI() {
     ) {
         var (imdbId, imdbSeason, imdbEpisode) = try {
             if (res.imdbId != null) {
-                Triple(res.imdbId, res.season, res.episode)
+                Triple(res.imdbId, res.imdbSeason ?: res.season, res.episode)
             } else {
-                extractImdbInfo(res.kitsuId, res.season, res.episode) ?: Triple(null, null, null)
+                extractImdbInfo(res.kitsuId, res.imdbSeason ?: res.season, res.episode) ?: Triple(null, null, null)
             }
         } catch (e: Exception) {
             Triple(null, null, null)
@@ -489,6 +490,7 @@ class CineSimklProvider: MainAPI() {
                 tmdbId,
                 res.anilistId,
                 res.malId,
+                res.kitsuId,
                 res.year,
                 res.airedYear,
                 res.season,
@@ -612,7 +614,7 @@ class CineSimklProvider: MainAPI() {
         val year        : Int?    = null,
         val anilistId   : Int?    = null,
         val malId       : Int?    = null,
-        val kitsuId     : Int?    = null,
+        val kitsuId     : String? = null,
         val imdbSeason  : Int?    = null,
         val season      : Int?    = null,
         val episode     : Int?    = null,

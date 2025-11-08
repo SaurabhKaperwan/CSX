@@ -13,6 +13,7 @@ data class AllLoadLinksData(
     val tmdbId: Int? = null,
     val anilistId: Int? = null,
     val malId: Int? = null,
+    val kitsuId: String? = null,
     val year: Int? = null,
     val airedYear: Int? = null,
     val season: Int? = null,
@@ -404,6 +405,8 @@ data class TorrentioStream(
     val title: String?,
     val infoHash: String?,
     val fileIdx: Int?,
+    val description: String?,
+    val sources: List<String>? = null,
 )
 
 data class StreamifyResponse(
