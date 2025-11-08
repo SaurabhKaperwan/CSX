@@ -389,9 +389,13 @@ class HubCloudOne : HubCloud() {
     override val mainUrl: String = "https://hubcloud.one"
 }
 
+class HubCloudFit : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.fit"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.fit"
+    override val mainUrl: String = "https://hubcloud.fyi"
     override val requiresReferer = false
 
     fun getBaseUrl(url: String): String {
@@ -406,7 +410,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newBaseUrl = "https://hubcloud.fit"
+        val newBaseUrl = "https://hubcloud.fyi"
         val newUrl = url.replace(mainUrl, newBaseUrl)
         val doc = app.get(newUrl).document
         var link = if(newUrl.contains("drive")) {
@@ -495,11 +499,15 @@ open class HubCloud : ExtractorApi() {
             }
 
             else if (link.contains("pixeldra")) {
+                val baseUrlLink = getBaseUrl(link)
+                val finalURL = if (link.contains("download", true)) link
+                else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+
                 callback.invoke(
                     newExtractorLink(
                         "Pixeldrain",
                         "Pixeldrain $header[$size]",
-                        link,
+                        finalURL,
                     ) {
                         this.quality = quality
                     }
@@ -519,7 +527,7 @@ open class HubCloud : ExtractorApi() {
             }
             else
             {
-                if(link.contains(".mkv") || link.contains(".mp4")) {
+                if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
                     callback.invoke(
                         newExtractorLink(
                             "$name",
@@ -583,7 +591,7 @@ class GDFlixDev : GDFlix() {
 
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://new5.gdflix.net"
+    override val mainUrl = "https://new7.gdflix.net"
     override val requiresReferer = false
 
     private suspend fun getLatestUrl(): String {
@@ -594,6 +602,12 @@ open class GDFlix : ExtractorApi() {
             return mainUrl
         }
         return url
+    }
+
+    fun getBaseUrl(url: String): String {
+        return URI(url).let {
+            "${it.scheme}://${it.host}"
+        }
     }
 
     override suspend fun getUrl(
@@ -633,7 +647,10 @@ open class GDFlix : ExtractorApi() {
                     )
                 }
 
-                text.contains("PixelDrain") -> {
+                text.contains("PixelDrain", true) -> {
+                    val baseUrlLink = getBaseUrl(link)
+                    val finalURL = if (link.contains("download", true)) link
+                    else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                     callback.invoke(
                         newExtractorLink(
                             "Pixeldrain",
