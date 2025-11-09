@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.CommonActivity.activity
+import com.lagradost.cloudstream3.syncproviders.SyncRepo
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
@@ -38,7 +39,7 @@ class CineSimklProvider: MainAPI() {
     private final val mediaLimit = 10
     private val auth = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
-    private val api = AccountManager.simklApi
+    private val repo = SyncRepo(AccountManager.simklApi)
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
@@ -230,14 +231,14 @@ class CineSimklProvider: MainAPI() {
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         if (request.name.contains("Personal")) {
             // Reading and manipulating personal library
-            api.loginInfo()
+            repo.authUser()
                     ?: return newHomePageResponse(
                             "Login required for personal content.",
                             emptyList<SearchResponse>(),
                             false
                     )
             var homePageList =
-                    api.getPersonalLibrary()?.allLibraryLists?.mapNotNull {
+                    repo.library()?.getOrThrow()?.allLibraryLists?.mapNotNull {
                         if (it.items.isEmpty()) return@mapNotNull null
                         val libraryName =
                                 it.name.asString(activity ?: return@mapNotNull null)

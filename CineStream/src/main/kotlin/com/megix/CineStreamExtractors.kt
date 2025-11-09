@@ -163,14 +163,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.streams.forEach {
             val title = it.title ?: ""
-            val name = it.name ?: "Nuvio"
+            val name = it.name?.replace(" (SLOW) -", "") ?: "Nuvio"
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
-                    name,
+                    "Nuvio",
                     name,
                     it.url,
                 ) {
@@ -2671,18 +2671,19 @@ object CineStreamExtractors : CineStreamProvider() {
                         .contains("1080p", true) || !element.text().contains("720p", true)
                 }
         entries.amap { it ->
-            var href =
+            var link =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
                     ?.substringAfter("=") ?: ""
-            href = base64Decode(href)
+            //link = base64Decode(href)
+
             val selector =
                 if (season == null) "p a.maxbutton" else "h3 a:matches(Episode $episode)"
-            if (href.isNotEmpty())
+            if (link.isNotEmpty())
             app.get(
-                href,
+                link,
             ).document.selectFirst(selector)?.let {
-                val link = it.attr("href")
-                val bypassedLink = bypassHrefli(link).toString()
+                val source = it.attr("href")
+                val bypassedLink = bypassHrefli(source).toString()
                 loadSourceNameExtractor("Moviesmod", bypassedLink, "", subtitleCallback, callback)
             }
         }
