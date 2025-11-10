@@ -29,6 +29,23 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//Anizip
+data class AnizipEpisode(
+    @SerializedName("anidbEid") val anidbEid: Int?,
+    @SerializedName("episode") val episode: String?,
+)
+
+data class Anizip(val episodes: Map<String, AnizipEpisode>?)
+
+//Animetosho
+data class Animetosho(
+    val title: String?,
+    @SerializedName("magnet_uri") val magnetUri: String?,
+    val seeders: Int?,
+    val leechers: Int?,
+    @SerializedName("total_size") val totalSize: String?
+)
+
 //Vidlink
 data class VidlinkResponse(
     @SerializedName("stream") val stream: VidlinkStream

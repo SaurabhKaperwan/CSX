@@ -19,6 +19,7 @@ import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import okhttp3.MediaType.Companion.toMediaType
 import java.util.Base64
@@ -110,6 +111,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeAnimetosho(res.kitsuId, res.episode, callback) },
             { invokeComet("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
@@ -1900,12 +1902,49 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "Torrentio",
+                    "Torrentio🧲",
                     "[Torrentio🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
                     this.quality = getIndexQuality(stream.name)
+                }
+            )
+        }
+    }
+
+    suspend fun invokeAnimetosho(
+        id: String? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val json = app.get("$anizipAPI/mappings?kitsu_id=$id").text
+        val epId = getEpAnizipId(json, episode ?: 1) ?: return
+        val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
+        val gson = Gson()
+        val listType = object : TypeToken<List<Animetosho>>() {}.type
+        val items: List<Animetosho> = gson.fromJson(json2, listType)
+        val filtered = items.filter { (it.seeders ?: 0) > 20 }
+        val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
+
+         for (it in sorted) {
+            val title = it.title ?: ""
+            val s = it.seeders ?: 0
+            val l = it.leechers ?: 0
+            val magnet = it.magnetUri ?: ""
+            val size = it.totalSize?.toLongOrNull() ?: 0L
+
+            val sizeStr = formatSize(size)
+            val displayTitle = "[Animetosho🧲] $title | 🟢⬆️ $s | 🔴⬇️ $l | 💾 $sizeStr"
+
+            callback.invoke(
+                newExtractorLink(
+                    "Animetosho🧲",
+                    displayTitle,
+                    magnet,
+                    ExtractorLinkType.MAGNET,
+                ) {
+                    this.quality = getIndexQuality(title)
                 }
             )
         }
@@ -1937,7 +1976,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "TorrentsDB",
+                    "TorrentsDB🧲",
                     "[TorrentsDB🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
@@ -1976,7 +2015,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "Comet",
+                    "Comet🧲",
                     "[Comet🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,

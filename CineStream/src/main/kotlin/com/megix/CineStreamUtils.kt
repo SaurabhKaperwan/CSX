@@ -508,6 +508,28 @@ fun fixUrl(url: String, domain: String): String {
     }
 }
 
+//Anizip
+fun getEpAnizipId(json: String, ep: Int): Int? {
+    val gson = Gson()
+    val root = gson.fromJson(json, Anizip::class.java)
+    val episode = root.episodes?.get(ep.toString())
+    val anidbEid = episode?.anidbEid
+    return anidbEid
+}
+
+// --- Converts bytes → readable GB/MB ---
+fun formatSize(bytes: Long): String {
+    if (bytes <= 0) return "-"
+    val kb = 1024.0
+    val mb = kb * 1024
+    val gb = mb * 1024
+    return when {
+        bytes >= gb -> String.format("%.2f GB", bytes / gb)
+        bytes >= mb -> String.format("%.2f MB", bytes / mb)
+        else -> String.format("%.2f KB", bytes / kb)
+    }
+}
+
 //Xprime
 suspend fun multiDecrypt(text : String, source: String) : String? {
     val headers = mapOf(
