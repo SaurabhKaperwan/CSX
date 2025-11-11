@@ -2293,7 +2293,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val Regex = """\"${it}\",\"([^\"]+)\"""".toRegex()
             val epUrl = Regex.find(epText)?.groupValues?.get(1) ?: return@forEach
             val isDub = if(it == "dub") "[DUB]" else "[SUB]"
-            M3u8Helper.generateM3u8("AniXL $isDub", epUrl).forEach(callback)
+            M3u8Helper.generateM3u8("AniXL $isDub", epUrl, "$baseUrl/").forEach(callback)
         }
 
         val subtitleRegex = """\"([^\"]+)\",\"[^\"]*\",\"(https?:\/\/[^\"]+\.vtt)\"""".toRegex()
