@@ -79,6 +79,7 @@ open class CineStreamProvider : MainAPI() {
         const val cometAPI = "https://comet.elfhosted.com"
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
+        const val animekaiAPI = "https://anikai.to"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

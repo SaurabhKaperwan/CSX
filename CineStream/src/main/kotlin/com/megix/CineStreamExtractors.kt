@@ -269,7 +269,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             )
         }
-
     }
 
     suspend fun invokeVideasy(
@@ -1232,6 +1231,92 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeAnimekai(
+        title: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Connection" to "keep-alive",
+        )
+
+        suspend fun encrypt(id: String): String {
+            val body = app.get("$multiDecryptAPI/enc-kai?text=$id").text
+            val json = JSONObject(body)
+            return json.getString("result")
+        }
+
+        data class ServerInfo(
+            val serverType: String,
+            val lid: String?,
+        )
+
+        fun getEpisodeToken(html: String, episode: Int): String? {
+            val doc = Jsoup.parse(html)
+            val selector = "div.eplist ul.range li a[num=\"$episode\"]"
+            val episodeElement = doc.selectFirst(selector)
+            return episodeElement?.attr("token")
+        }
+
+        fun parseServersFromHtml(html: String): List<ServerInfo> {
+            val doc = Jsoup.parse(html)
+            val servers = mutableListOf<ServerInfo>()
+
+            val groups = doc.select("div.server-items.lang-group")
+            for (grp in groups) {
+                val serverType = grp.attr("data-id").uppercase()
+                for (span in grp.select("span.server")) {
+                    val lid = span.attr("data-lid").ifBlank { null }
+                    servers.add(ServerInfo(serverType, lid))
+                }
+            }
+            return servers
+        }
+
+
+        suspend fun decrypt(text: String): String {
+            val jsonBody = """{"text":"$text"}"""
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+
+            val text = app.post(
+                "$multiDecryptAPI/dec-kai",
+                requestBody = requestBody
+            ).text
+
+            val json = JSONObject(text)
+            return json.getJSONObject("result").getString("url")
+        }
+
+        val searchJson = app.get("$animekaiAPI/ajax/anime/search?keyword=$title", headers = headers).text
+        val root = JSONObject(searchJson)
+        var html = root.getJSONObject("result").getString("html")
+        val doc = Jsoup.parse(html)
+        val url = doc.selectFirst("a.aitem")?.attr("href") ?: return
+        val id = app.get(animekaiAPI + url)
+            .document
+            .selectFirst("div.rate-box")?.attr("data-id") ?: return
+        val enc_id = encrypt(id)
+        val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
+        html = JSONObject(json).getString("result")
+        val token = getEpisodeToken(html, episode ?: 1) ?: return
+        val enc_token = encrypt(token)
+        val servers_resp = app.get("$animekaiAPI/ajax/links/list?token=$token&_=$enc_token", headers = headers).text
+        val servers = JSONObject(servers_resp).getString("result")
+        val all = parseServersFromHtml(servers)
+
+        all.amap {
+            val lid = it.lid ?: return@amap
+            val enc_lid = encrypt(lid)
+            val type = it.serverType
+            val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
+            val encrypted = JSONObject(embed_resp).getString("result")
+            val embed_url = decrypt(encrypted)
+            loadExtractor(embed_url, "Animekai[$type]" ,subtitleCallback, callback)
+        }
+    }
+
     suspend fun invokeKisskh(
         title: String? = null,
         season: Int? = null,
@@ -1935,7 +2020,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val size = it.totalSize?.toLongOrNull() ?: 0L
 
             val sizeStr = formatSize(size)
-            val displayTitle = "[Animetosho🧲] $title | 🟢⬆️ $s | 🔴⬇️ $l | 💾 $sizeStr"
+            val displayTitle = "[Animetosho🧲] $title | ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(
                 newExtractorLink(
@@ -2203,6 +2288,9 @@ object CineStreamExtractors : CineStreamProvider() {
             },
             {
                 invokeAnimez(zorotitle, episode, callback)
+            },
+            {
+                invokeAnimekai(zorotitle, episode, subtitleCallback, callback)
             },
             {
                 if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
