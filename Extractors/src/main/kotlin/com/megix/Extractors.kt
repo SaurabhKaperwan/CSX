@@ -312,11 +312,15 @@ open class VCloud : ExtractorApi() {
                 }
 
                 else if (link.contains("pixeldra")) {
+                    val baseUrlLink = getBaseUrl(link)
+                    val finalURL = if (link.contains("download", true)) link
+                    else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+
                     callback.invoke(
                         newExtractorLink(
                             "Pixeldrain",
                             "Pixeldrain $header[$size]",
-                            link,
+                            finalURL,
                         ) {
                             this.quality = quality
                         }
@@ -336,7 +340,7 @@ open class VCloud : ExtractorApi() {
                 }
                 else
                 {
-                    if(link.contains(".mkv") || link.contains(".mp4")) {
+                    if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
                         callback.invoke(
                             newExtractorLink(
                                 "$name",

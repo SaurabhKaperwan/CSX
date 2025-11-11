@@ -57,6 +57,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -346,8 +347,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
                     callback.invoke(
                         newExtractorLink(
-                            "Videasy[$server]",
-                            "Videasy[$server]",
+                            "Videasy[${server.uppercase()}]",
+                            "Videasy[${server.uppercase()}]",
                             source,
                             type
                         ) {
@@ -371,6 +372,77 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
 
+            }
+        }
+    }
+
+    suspend fun invokeMapple(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val text = app.get("$multiDecryptAPI/enc-mapple").text
+        val sessionId = JSONObject(text).getJSONObject("result").getString("sessionId")
+
+        var mediaType = ""
+        var tv_slug = ""
+        var url = ""
+
+        if(season == null) {
+          mediaType =  "movie"
+          url = "$mappleAPI/watch/movie/$tmdbId"
+        } else {
+            mediaType = "tv"
+            tv_slug = "$season-$episode"
+            url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
+        }
+
+        val sources = listOf(
+            "mapple",
+            "sakura",
+            "alfa",
+            "oak",
+            "wiggles"
+        )
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Connection" to "keep-alive",
+            "Referer" to "$mappleAPI/",
+            "Next-Action" to "40c2896f5f22d9d6342e5a6d8f4d8c58d69654bacd"
+        )
+
+        sources.amap { source ->
+
+            val jsonBody = """
+                [
+                    {
+                        "mediaId": "$tmdbId",
+                        "mediaType": "$mediaType",
+                        "tv_slug": "$tv_slug",
+                        "source": "$source",
+                        "sessionId": "$sessionId"
+                    }
+                ]
+            """.trimIndent()
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+
+            val json = app.post(
+                url,
+                requestBody = requestBody,
+                headers = headers
+            ).text
+
+            val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
+            val video_link =  regex.find(json)?.groupValues?.get(1)
+
+            if(video_link != null) {
+                M3u8Helper.generateM3u8(
+                    "Mapple [${source.uppercase()}]",
+                    video_link,
+                    "$mappleAPI/",
+                ).forEach(callback)
             }
         }
     }
@@ -418,8 +490,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
                 callback.invoke(
                     newExtractorLink(
-                        "Hexa[$server]",
-                        "Hexa[$server]",
+                        "Hexa[${server.uppercase()}]",
+                        "Hexa[${server.uppercase()}]",
                         m3u8,
                         type = if(m3u8.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
                     ) {
@@ -459,17 +531,12 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = gson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist
 
-        callback.invoke(
-            newExtractorLink(
-                "Vidlink",
-                "Vidlink",
-                m3u8,
-                type = ExtractorLinkType.M3U8
-            ) {
-                this.headers = headers
-            }
-        )
-
+        M3u8Helper.generateM3u8(
+            "Vidlink",
+            m3u8,
+            "$vidlinkAPI/",
+            headers = headers
+        ).forEach(callback)
     }
 
     suspend fun invokeDramadrip(
@@ -618,17 +685,12 @@ object CineStreamExtractors : CineStreamProvider() {
             val type = if(link.text().contains("Dub")) "DUB" else "SUB"
             val epDoc = app.get(animezAPI + link.attr("href")).document
             val source = epDoc.select("iframe").attr("src")
-            callback.invoke(
-                newExtractorLink(
-                    "Animez [$type]",
-                    "Animez [$type]",
-                    source.replace("/embed/", "/anime/"),
-                    ExtractorLinkType.M3U8
-                ) {
-                    this.referer = "$animezAPI/"
-                    this.quality = 1080
-                }
-            )
+
+            M3u8Helper.generateM3u8(
+                "Animez [$type]",
+                source.replace("/embed/", "/anime/"),
+                "$animezAPI/",
+            ).forEach(callback)
         }
     }
 
@@ -2231,17 +2293,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val Regex = """\"${it}\",\"([^\"]+)\"""".toRegex()
             val epUrl = Regex.find(epText)?.groupValues?.get(1) ?: return@forEach
             val isDub = if(it == "dub") "[DUB]" else "[SUB]"
-
-            callback.invoke(
-                newExtractorLink(
-                    "AniXL $isDub",
-                    "AniXL $isDub",
-                    epUrl,
-                    ExtractorLinkType.M3U8
-                ) {
-                    this.quality = 1080
-                }
-            )
+            M3u8Helper.generateM3u8("AniXL $isDub", epUrl).forEach(callback)
         }
 
         val subtitleRegex = """\"([^\"]+)\",\"[^\"]*\",\"(https?:\/\/[^\"]+\.vtt)\"""".toRegex()
