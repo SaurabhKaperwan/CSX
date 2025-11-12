@@ -45,20 +45,20 @@ class CineSimklProvider: MainAPI() {
     private val haglund_url = "https://arm.haglund.dev/api/v2"
 
     override val mainPage = mainPageOf(
-        "/movies/genres/all/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
-        "/tv/genres/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
-        "/anime/trending?extended=overview&limit=$mediaLimit" to "Trending Anime",
-        "/anime/airing?date?sort=rank" to "Airing Anime Today",
+        "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
+        "/tv/trending/today?limit=$mediaLimit&extended=overview" to "Trending Shows Today",
+        "/anime/trending/today?limit=$mediaLimit&extended=overview" to "Trending Anime",
+        "/anime/airing?today?sort=rank" to "Airing Anime Today",
         "/tv/genres/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
-        "/movies/genres/all//all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
+        // "/movies/genres/all/all-types/all-countries/this-year/rank?limit=$mediaLimit" to "Top Rated Movies This Year",
         "/tv/genres/all-countries/all-networks/this-year/popular-today?limit=$mediaLimit" to "Top Rated Shows This Year",
         "/tv/genres/all-countries/netflix/all-years/popular-today?limit=$mediaLimit" to "Trending Netflix Shows",
         "/tv/genres/all-countries/disney/all-years/popular-today?limit=$mediaLimit" to "Trending Disney Shows",
         "/tv/genres/all-countries/hbo/all-years/popular-today?limit=$mediaLimit" to "Trending HBO Shows",
         "/tv/genres/all-countries/appletv/all-years/popular-today?limit=$mediaLimit" to "Trending Apple TV+ Shows",
-        "/movies/genres/all/all-countries/this-year/revenue?limit=$mediaLimit" to "Box Office Hits This Year",
-        "/movies/genres/all/all-countries/all-years/rank?limit=$mediaLimit" to "Top Rated Movies",
-        "/tv/genres/all-countries/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Shows",
+        // "/movies/genres/all/all-countries/this-year/revenue?limit=$mediaLimit" to "Box Office Hits This Year",
+        // "/movies/genres/all/all-countries/all-years/rank?limit=$mediaLimit" to "Top Rated Movies",
+        "/tv/best/all?type=series?limit=$mediaLimit" to "Best Shows",
         "/anime/genres/all/all-years?limit=$mediaLimit" to "Top Rated Anime",
         "/movies/genres/all/all-countries/all-years/most-anticipated?limit=$mediaLimit" to "Most Anticipated Movies",
         "/anime/premieres/soon?type=all&limit=$mediaLimit" to "Upcoming Anime",
@@ -247,16 +247,16 @@ class CineSimklProvider: MainAPI() {
                             ?: return null
             return newHomePageResponse(homePageList, false)
         } else {
-            val jsonString = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers).text
-            val json = parseJson<Array<SimklResponse>>(jsonString)
-            val data = json.map {
-                val allratings = it.ratings
-                val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
-                    this.posterUrl = getPosterUrl(it.poster, "poster")
-                    this.score = Score.from10(score)
-                }
-            }
+
+             val data = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers)
+                .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
+                    val allratings = it.ratings
+                    val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
+                    newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
+                        this.posterUrl = getPosterUrl(it.poster, "poster")
+                        this.score = Score.from10(score)
+                    }
+                } ?: return null
 
             return newHomePageResponse(
                 list = HomePageList(
