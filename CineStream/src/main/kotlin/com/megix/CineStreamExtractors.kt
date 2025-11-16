@@ -2065,8 +2065,8 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val id = kitsuId ?: malId.toString()
-        val type = if(kitsuId == null) "mal_id" else "kitsu_id"
+        val id = malId ?: kitsuId?.toIntOrNull() ?: return
+        val type = if(malId == null) "kitsu_id" else "mal_id"
         val json = app.get("$anizipAPI/mappings?$type=$id").text
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
         val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
