@@ -112,7 +112,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            { invokeAnimetosho(res.kitsuId, res.episode, callback) },
+            { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
             { invokeComet("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
@@ -2060,11 +2060,14 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeAnimetosho(
-        id: String? = null,
+        kitsuId: String? = null,
+        malId: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val json = app.get("$anizipAPI/mappings?kitsu_id=$id").text
+        val id = kitsuId ?: malId.toString()
+        val type = if(kitsuId == null) "mal_id" else "kitsu_id"
+        val json = app.get("$anizipAPI/mappings?$type=$id").text
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
         val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
         val gson = Gson()
