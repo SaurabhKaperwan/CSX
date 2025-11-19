@@ -246,10 +246,11 @@ class PrimeVideoProvider : MainAPI() {
                     newSubtitleFile(
                         track.label.toString(),
                         httpsify(track.file.toString()),
-                        mapOf(
+                    ) {
+                        this.headers = mapOf(
                             "Referer" to "$mainUrl/"
                         )
-                    )
+                    }
                 )
             }
         }
