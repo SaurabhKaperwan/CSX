@@ -63,19 +63,16 @@ class World4uFreeProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
         val document = app.get("${mainUrl}${request.data}${page}").document
-        val home = document.select("ul.recent-posts > li").mapNotNull {
+        val home = document.select("div.thumb").mapNotNull {
             it.toSearchResult()
         }
         return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div > a")?.attr("title")?.replace("Download ", "").toString()
-        val href = this.selectFirst("div > a") ?. attr("href").toString()
-        var posterUrl = this.selectFirst("div > a > img")?.attr("data-src").toString()
-        if(posterUrl.isEmpty()) {
-            posterUrl = this.selectFirst("div > a > img")?.attr("src").toString()
-        }
+        val title = this.select("figure img").attr("alt")
+        val href = this.select("figure a").attr("href")
+        val posterUrl = this.select("figure img").attr("src")
         val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
             SearchQuality.CamRip
         }
@@ -90,7 +87,7 @@ class World4uFreeProvider : MainAPI() {
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
         val document = app.get("$mainUrl/page/$page/?s=$query").document
-        val results = document.select("ul.recent-posts > li").mapNotNull { it.toSearchResult() }
+        val results = document.select("div.thumb").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
     }

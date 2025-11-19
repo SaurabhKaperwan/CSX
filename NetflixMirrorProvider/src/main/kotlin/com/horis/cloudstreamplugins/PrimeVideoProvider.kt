@@ -245,7 +245,10 @@ class PrimeVideoProvider : MainAPI() {
                 subtitleCallback.invoke(
                     newSubtitleFile(
                         track.label.toString(),
-                        httpsify(track.file.toString())
+                        httpsify(track.file.toString()),
+                        mapOf(
+                            "Referer" to "$mainUrl/"
+                        )
                     )
                 )
             }
