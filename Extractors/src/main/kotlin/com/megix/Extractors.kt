@@ -19,6 +19,22 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+fun getBaseUrl(url: String): String {
+    return URI(url).let {
+        "${it.scheme}://${it.host}"
+    }
+}
+
+suspend fun getLatestUrl(url: String, source: String): String {
+    val link = JSONObject(
+        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+    ).optString(source)
+    if(link.isNullOrEmpty()) {
+        return getBaseUrl(url)
+    }
+    return link
+}
+
 class Watchadsontape : StreamTape() {
     override var mainUrl: String = "https://watchadsontape.com"
 }
@@ -29,7 +45,7 @@ class Smoothpre : VidHidePro() {
 
 class Howblogs : ExtractorApi() {
     override val name: String = "Howblogs"
-    override val mainUrl: String = "https://howblogs.xyz"
+    override val mainUrl: String = "https://howblogs.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -79,8 +95,8 @@ open class Driveleech : ExtractorApi() {
         return links
     }
 
-    private suspend fun resumeCloudLink(url: String): String? {
-        val resumeCloudUrl = mainUrl + url
+    private suspend fun resumeCloudLink(baseUrl: String, url: String): String? {
+        val resumeCloudUrl = baseUrl + url
         val document = app.get(resumeCloudUrl).document
         val link = document.selectFirst("a.btn-success")?.attr("href")
         return link
@@ -117,16 +133,16 @@ open class Driveleech : ExtractorApi() {
         return link?.substringAfter("?url=")
     }
 
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        val baseUrl = getBaseUrl(url)
         val document = if(url.contains("r?key=")) {
             val temp = app.get(url).document.selectFirst("script")?.data()?.substringAfter("replace(\"")?.substringBefore("\")") ?: ""
-            app.get(mainUrl + temp).document
+            app.get(baseUrl + temp).document
         }
         else {
             app.get(url).document
@@ -189,7 +205,7 @@ open class Driveleech : ExtractorApi() {
                 }
                 text.contains("Direct Links") -> {
                     try {
-                        val link = mainUrl + href
+                        val link = baseUrl + href
                         CFType1(link).forEach {
                             callback.invoke(
                                 newExtractorLink(
@@ -207,7 +223,7 @@ open class Driveleech : ExtractorApi() {
                 }
                 text.contains("Resume Cloud") -> {
                     try {
-                        val resumeCloud = resumeCloudLink(href) ?: return@amap
+                        val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@amap
                         callback.invoke(
                             newExtractorLink(
                                 "$name ResumeCloud",
@@ -238,19 +254,13 @@ open class VCloud : ExtractorApi() {
     override val mainUrl: String = "https://vcloud.*"
     override val requiresReferer = false
 
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        var href=url
+        var href = url
         if (href.contains("api/index.php"))
         {
             href=app.get(url).document.selectFirst("div.main h4 a")?.attr("href") ?:""
@@ -375,30 +385,15 @@ open class HubCloud : ExtractorApi() {
     override val mainUrl: String = "https://hubcloud.*"
     override val requiresReferer = false
 
-    private suspend fun getLatestUrl(): String {
-        val url = JSONObject(
-            app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-        ).optString("hubcloud")
-        if(url.isNullOrEmpty()) {
-            return mainUrl
-        }
-        return url
-    }
-
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val latestUrl = getLatestUrl()
-        val newUrl = url.replace(mainUrl, latestUrl)
+        val latestUrl = getLatestUrl(url, "hubcloud")
+        val baseUrl = getBaseUrl(url)
+        val newUrl = url.replace(baseUrl, latestUrl)
         val doc = app.get(newUrl).document
         var link = if(newUrl.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
@@ -552,26 +547,14 @@ class GDLink : GDFlix() {
     override var mainUrl = "https://gdlink.*"
 }
 
+class GDFlixNet : GDFlix() {
+    override var mainUrl = "https://new9.gdflix.*"
+}
+
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "*.gdflix.*"
+    override val mainUrl = "https://gdflix.*"
     override val requiresReferer = false
-
-    private suspend fun getLatestUrl(): String {
-        val url = JSONObject(
-            app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-        ).optString("gdflix")
-        if(url.isNullOrEmpty()) {
-            return mainUrl
-        }
-        return url
-    }
-
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
 
     override suspend fun getUrl(
         url: String,
@@ -579,8 +562,9 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val latestUrl = getLatestUrl()
-        val newUrl = url.replace(mainUrl, latestUrl)
+        val latestUrl = getLatestUrl(url, "gdflix")
+        val baseUrl = getBaseUrl(url)
+        val newUrl = url.replace(baseUrl, latestUrl)
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
@@ -855,7 +839,7 @@ class FastLinks : ExtractorApi() {
 
 class Photolinx : ExtractorApi() {
     override val name: String = "Photolinx"
-    override val mainUrl: String = "https://photolinx.*"
+    override val mainUrl: String = "https://photolinx.space"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -906,7 +890,7 @@ class Photolinx : ExtractorApi() {
 
 class WLinkFast : ExtractorApi() {
     override val name: String = "WLinkFast"
-    override val mainUrl: String = "https://wlinkfast.*"
+    override val mainUrl: String = "https://wlinkfast.store"
     override val requiresReferer = false
 
     override suspend fun getUrl(
