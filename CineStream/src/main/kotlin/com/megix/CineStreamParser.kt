@@ -514,6 +514,7 @@ data class MALSyncSites(
 )
 
 data class MALSyncResponses(
+    @JsonProperty("title") val title: String? = null,
     @JsonProperty("Sites") val sites: MALSyncSites? = null,
 )
 

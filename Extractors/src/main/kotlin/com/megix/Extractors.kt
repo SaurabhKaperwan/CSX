@@ -14,6 +14,15 @@ import com.lagradost.cloudstream3.extractors.VidHidePro
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+val VIDEO_HEADERS = mapOf(
+    "User-Agent" to "VLC/3.6.0 LibVLC/3.0.18 (Android)",
+    "Accept" to "*/*",
+    "Accept-Encoding" to "identity",
+    "Connection" to "keep-alive",
+    "Range" to "bytes=0-",
+    "Icy-MetaData" to "1"
+)
+
 fun getIndexQuality(str: String?): Int {
     return Regex("""(\d{3,4})[pP]""").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
         ?: Qualities.Unknown.value
@@ -164,7 +173,9 @@ open class Driveleech : ExtractorApi() {
                                 "$name[Cloud] $fileName[$fileSize]",
                                 href,
                             ) {
-                                this.quality = quality                            }
+                                this.quality = quality
+                                this.headers = VIDEO_HEADERS
+                            }
                         )
                     } catch (e: Exception) {
                         Log.d("Error:", e.toString())
@@ -180,6 +191,7 @@ open class Driveleech : ExtractorApi() {
                                 instant,
                             ) {
                                 this.quality = quality
+                                this.headers = VIDEO_HEADERS
                             }
                         )
                     } catch (e: Exception) {
@@ -196,6 +208,7 @@ open class Driveleech : ExtractorApi() {
                                 resumeLink,
                             ) {
                                 this.quality = quality
+                                this.headers = VIDEO_HEADERS
                             }
                         )
                     } catch (e: Exception) {
@@ -214,6 +227,7 @@ open class Driveleech : ExtractorApi() {
                                     it,
                                 ) {
                                     this.quality = quality
+                                    this.headers = VIDEO_HEADERS
                                 }
                             )
                         }
@@ -231,6 +245,7 @@ open class Driveleech : ExtractorApi() {
                                 resumeCloud,
                             ) {
                                 this.quality = quality
+                                this.headers = VIDEO_HEADERS
                             }
                         )
                     } catch (e: Exception) {
@@ -287,6 +302,7 @@ open class VCloud : ExtractorApi() {
                             link,
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -298,6 +314,7 @@ open class VCloud : ExtractorApi() {
                             link,
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -312,6 +329,7 @@ open class VCloud : ExtractorApi() {
                                 baseUrl + dlink,
                             ) {
                                 this.quality = quality
+                                this.headers = VIDEO_HEADERS
                             }
                         )
                     }
@@ -329,6 +347,7 @@ open class VCloud : ExtractorApi() {
                             finalURL,
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -341,6 +360,7 @@ open class VCloud : ExtractorApi() {
                             dlink.substringAfter("link="),
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -354,6 +374,7 @@ open class VCloud : ExtractorApi() {
                                 link,
                             ) {
                                 this.quality = quality
+                                this.headers = VIDEO_HEADERS
                             }
                         )
                     }
@@ -426,6 +447,7 @@ open class HubCloud : ExtractorApi() {
                         link,
                     ) {
                         this.quality = quality
+                        this.headers = VIDEO_HEADERS
                     }
                 )
             }
@@ -438,6 +460,7 @@ open class HubCloud : ExtractorApi() {
                         link,
                     ) {
                         this.quality = quality
+                        this.headers = VIDEO_HEADERS
                     }
                 )
             }
@@ -450,6 +473,7 @@ open class HubCloud : ExtractorApi() {
                         link,
                     ) {
                         this.quality = quality
+                        this.headers = VIDEO_HEADERS
                     }
                 )
             }
@@ -461,6 +485,7 @@ open class HubCloud : ExtractorApi() {
                         link,
                     ) {
                         this.quality = quality
+                        this.headers = VIDEO_HEADERS
                     }
                 )
             }
@@ -475,6 +500,7 @@ open class HubCloud : ExtractorApi() {
                             baseUrl + dlink,
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -492,6 +518,7 @@ open class HubCloud : ExtractorApi() {
                         finalURL,
                     ) {
                         this.quality = quality
+                        this.headers = VIDEO_HEADERS
                     }
                 )
             }
@@ -504,6 +531,7 @@ open class HubCloud : ExtractorApi() {
                         dlink.substringAfter("link="),
                     ) {
                         this.quality = quality
+                        this.headers = VIDEO_HEADERS
                     }
                 )
             }
@@ -517,6 +545,7 @@ open class HubCloud : ExtractorApi() {
                             link,
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -581,6 +610,7 @@ open class GDFlix : ExtractorApi() {
                     callback.invoke(
                         newExtractorLink("GDFlix[Direct]", "GDFlix[Direct] $fileName[$fileSize]", link) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -590,21 +620,23 @@ open class GDFlix : ExtractorApi() {
                     callback.invoke(
                         newExtractorLink("GDFlix[Cloud]", "GDFlix[Cloud] $fileName[$fileSize]", link) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
 
-                text.contains("PixelDrain", true) -> {
+                link.contains("pixeldra") -> {
                     val baseUrlLink = getBaseUrl(link)
                     val finalURL = if (link.contains("download", true)) link
-                    else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+                        else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                     callback.invoke(
                         newExtractorLink(
                             "Pixeldrain",
-                            "Pixeldrain $fileName[$fileSize]",
-                            link
+                            "GDFlix[Pixeldrain] $fileName[$fileSize]",
+                            finalURL
                         ) {
                             this.quality = quality
+                            this.headers = VIDEO_HEADERS
                         }
                     )
                 }
@@ -620,6 +652,7 @@ open class GDFlix : ExtractorApi() {
                                         callback.invoke(
                                             newExtractorLink("GDFlix[Index]", "GDFlix[Index] $fileName[$fileSize]", source) {
                                                 this.quality = quality
+                                                this.headers = VIDEO_HEADERS
                                             }
                                         )
                                     }
@@ -671,6 +704,7 @@ open class GDFlix : ExtractorApi() {
                                     newExtractorLink("GDFlix[DriveBot]", "GDFlix[DriveBot] $fileName[$fileSize]", downloadLink) {
                                         this.referer = baseUrl
                                         this.quality = quality
+                                        this.headers = VIDEO_HEADERS
                                     }
                                 )
                             }
@@ -689,6 +723,7 @@ open class GDFlix : ExtractorApi() {
                         callback.invoke(
                             newExtractorLink("GDFlix[Instant Download]", "GDFlix[Instant Download] $fileName[$fileSize]", link) {
                                 this.quality = quality
+                                this.headers = VIDEO_HEADERS
                             }
                         )
                     } catch (e: Exception) {
@@ -794,7 +829,7 @@ class Gofile : ExtractorApi() {
                     link,
                 ) {
                     this.quality = getQuality(fileName)
-                    this.headers = mapOf(
+                    this.headers = VIDEO_HEADERS + mapOf(
                         "Cookie" to "accountToken=$token"
                     )
                 }

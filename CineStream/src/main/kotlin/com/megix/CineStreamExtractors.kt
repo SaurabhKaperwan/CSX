@@ -2320,10 +2320,12 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val malsync = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
-            .parsedSafe<MALSyncResponses>()?.sites
+        val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
+            .parsedSafe<MALSyncResponses>()
 
         // val zoroIds = malsync?.zoro?.keys?.map { it }
+        val title = mal_response?.title
+        val malsync = mal_response?.sites
         val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":"," ")
         val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
         val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
@@ -2341,13 +2343,13 @@ object CineStreamExtractors : CineStreamProvider() {
                 invokeAniXL(aniXL, episode, subtitleCallback, callback)
             },
             {
-                invokeAnimez(zorotitle, episode, callback)
+                invokeAnimez(title, episode, callback)
             },
             {
-                invokeAnimekai(zorotitle, episode, subtitleCallback, callback)
+                invokeAnimekai(title, episode, subtitleCallback, callback)
             },
             {
-                if(origin == "imdb" && zorotitle != null) invokeTokyoInsider(
+                if(origin == "imdb" && title != null) invokeTokyoInsider(
                     zorotitle,
                     episode,
                     subtitleCallback,
@@ -2355,7 +2357,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             },
             {
-                if(origin == "imdb" && zorotitle != null) invokeAllanime(
+                if(origin == "imdb" && title != null) invokeAllanime(
                     zorotitle,
                     year,
                     episode,
@@ -2364,7 +2366,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             },
             {
-                if(origin == "imdb" && zorotitle != null) invokeAnizone(
+                if(origin == "imdb" && title!= null) invokeAnizone(
                     zorotitle,
                     episode,
                     subtitleCallback,
