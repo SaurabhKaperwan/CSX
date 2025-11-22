@@ -20,7 +20,7 @@ class BollyflixProvider : MainAPI() {
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
-    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
+    val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,

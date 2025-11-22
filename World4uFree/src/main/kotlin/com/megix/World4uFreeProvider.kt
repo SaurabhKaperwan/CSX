@@ -22,7 +22,7 @@ class World4uFreeProvider : MainAPI() {
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
+    val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries

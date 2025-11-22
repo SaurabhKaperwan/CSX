@@ -50,6 +50,13 @@ import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 
 
+val M3U8_HEADERS = mapOf(
+    "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
+    "Accept" to "*/*",
+    "Accept-Encoding" to "identity",
+    "Connection" to "keep-alive",
+)
+
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
         mapOf("value" to "BluRay", "label" to "BluRay"),

@@ -1543,7 +1543,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = mapOf("Cookie" to "hd=on")
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on")
                 }
             )
         }
@@ -1616,7 +1616,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = mapOf("Cookie" to "hd=on")
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on")
                 }
             )
         }
@@ -1691,7 +1691,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = mapOf("Cookie" to "hd=on")
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on")
                 }
             )
         }
