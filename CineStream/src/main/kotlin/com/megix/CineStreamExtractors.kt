@@ -409,7 +409,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$mappleAPI/",
-            "Next-Action" to "40c2896f5f22d9d6342e5a6d8f4d8c58d69654bacd"
+            "Next-Action" to "40770771b1e06bb7435ca5d311ed845d4fd406dca2"
         )
 
         sources.amap { source ->
