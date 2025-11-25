@@ -19,6 +19,8 @@ import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
 import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import okhttp3.MediaType.Companion.toMediaType
@@ -86,7 +88,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokeVidFastPro(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            { invokeVidPlus(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
@@ -3547,8 +3549,11 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeVidPlus(
         tmdbId: Int? = null,
+        imdbId: String? = null,
+        title: String? = null,
         season: Int? = null,
         episode: Int? = null,
+        year: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     )
@@ -3560,32 +3565,169 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
             "X-Requested-With" to "XMLHttpRequest"
         )
-        val data = mapOf(
-            "id" to tmdbId,
-            "key" to "cGxheWVyLnZpZHNyYy5jb19zZWNyZXRLZXk="
-        )
-        val encoded = Base64.getEncoder().encodeToString(data.toJson().toByteArray())
-        val apiUrl = "$vidPlusApi/api/tmdb?params=cbc7.$encoded.9lu"
-        val response = app.get(apiUrl, headers = headers).text
-        val jsonObject = JSONObject(response)
-        val dataJson = jsonObject.getJSONObject("data")
-        // Get required data
-        val imdbId = dataJson.getString("imdb_id")
-        val title = dataJson.getString("title")
-        val releaseDate = dataJson.getString("release_date")
-        val releaseYear = releaseDate.split("-")[0]
 
         // Build request parameters and fetch encrypted response
-        val requestArgs = listOf(title, releaseYear, imdbId).joinToString("*")
+        val requestArgs = listOf(title, year, imdbId).joinToString("*")
         val urlListMap = mutableMapOf<String,String>()
-        val myMap = listOf("Orion","Minecloud","Viet","Crown","Joker","Soda","Beta","Gork","Monk","Fox","Leo","4K","Adam","Sun","Maxi","Indus","Tor","Hindi","Delta","Ben","Pearl","Tamil","Ruby","Tel","Mal","Kan","Lava")
-        for ((index, entry) in myMap.withIndex()) {
+        val serList = """
+                    [
+                      {
+                        "flag": "US",
+                        "name": "Nexon",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Crown",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Cine",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Wink",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "VN",
+                        "name": "Viet",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "AU",
+                        "name": "Orion",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Beta",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "GB",
+                        "name": "Gork",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Vox",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Minecloud",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "US",
+                        "name": "Joker",
+                        "audioLanguage": "English audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "GB",
+                        "name": "Leo",
+                        "audioLanguage": "Original audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "4K",
+                        "name": "4K",
+                        "audioLanguage": "Original audio",
+                        "language": "English"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Hindi",
+                        "audioLanguage": "Hindi audio",
+                        "language": "Hindi"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Indus",
+                        "audioLanguage": "Hindi audio",
+                        "language": "Hindi"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Delta",
+                        "audioLanguage": "Bengali audio",
+                        "language": "Bengali"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Ben",
+                        "audioLanguage": "Bengali audio",
+                        "language": "Bengali"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Pearl",
+                        "audioLanguage": "Tamil audio",
+                        "language": "Tamil"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Tamil",
+                        "audioLanguage": "Tamil audio",
+                        "language": "Tamil"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Ruby",
+                        "audioLanguage": "Telugu audio",
+                        "language": "Telugu"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Tel",
+                        "audioLanguage": "Telugu audio",
+                        "language": "Telugu"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Mal",
+                        "audioLanguage": "Malayalam audio",
+                        "language": "Malayalam"
+                      },
+                      {
+                        "flag": "IN",
+                        "name": "Kan",
+                        "audioLanguage": "Kannada audio",
+                        "language": "Kannada"
+                      },
+                      {
+                        "flag": "FR",
+                        "name": "Lava",
+                        "audioLanguage": "French audio",
+                        "language": "French"
+                      }
+                    ]
+                    """.trimIndent()
+
+        val serverJson = JSONArray(serList)
+        for (index in 0 until serverJson.length()) {
+            val obj = serverJson.getJSONObject(index)
             try {
+                val serverName = obj.getString("name")
+                val serverLanguage = obj.getString("language")
                 val serverId = index+1;
                 val serverUrl = if(season == null) "$vidPlusApi/api/server?id=$tmdbId&sr=$serverId&args=$requestArgs" else  "$vidPlusApi/api/server?id=$tmdbId&sr=$serverId&ep=$episode&ss=$season&args=$requestArgs"
 
                 val apiResponse = app.get(serverUrl,headers=headers, timeout = 20,).text
-
                 if (apiResponse.contains("\"data\"",ignoreCase = true)) {
                     val decodedPayload = String(Base64.getDecoder().decode(JSONObject(apiResponse).getString("data")))
                     val payloadJson = JSONObject(decodedPayload)
@@ -3610,7 +3752,7 @@ object CineStreamExtractors : CineStreamProvider() {
                        }
 
 
-                        urlListMap[entry] = finalStreamUrl.toString()
+                        urlListMap["$serverName | $serverLanguage"] = finalStreamUrl.toString()
                     }
                 }
             } catch (e: Exception) {
