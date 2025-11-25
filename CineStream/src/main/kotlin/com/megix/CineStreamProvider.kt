@@ -81,6 +81,7 @@ open class CineStreamProvider : MainAPI() {
         const val anizipAPI = "https://api.ani.zip"
         const val animekaiAPI = "https://anikai.to"
         const val mappleAPI = "https://mapple.uk"
+        const val vidzeeApi = "https://player.vidzee.wtf"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

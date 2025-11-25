@@ -89,6 +89,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidPlus(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeNuvioStreams(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
@@ -3805,4 +3806,68 @@ object CineStreamExtractors : CineStreamProvider() {
 
     //     } catch (_: Exception) { }
     // }
+
+    suspend fun invokeVidzee(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    )
+    {
+        val KEY_HEX = "6966796f75736372617065796f75617265676179000000000000000000000000"
+        val headers = mapOf(
+            "Referer" to "",
+            "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+        )
+        for (i in 1..10) {
+            try {
+                val mainUrl = if(season == null) "$vidzeeApi/api/server?id=$tmdbId&sr=$i" else "$vidzeeApi/api/server?id=$tmdbId&sr=$i&ss=$season&ep=$episode"
+                val response = app.get(mainUrl,headers, timeout = 30).text;
+                val json = JSONObject(response);
+
+                val urlArray = json.optJSONArray("url")
+                if (urlArray != null) {
+                    val encryptedUrl = urlArray.getJSONObject(0).getString("link")
+                    val serverName = urlArray.getJSONObject(0).getString("name")
+
+                    // Decode decryption parameters
+                    val decoded = Base64.getDecoder().decode(encryptedUrl).toString(Charsets.UTF_8)
+                    val parts = decoded.split(":")
+                    val ivB64 = parts[0]
+                    val ciphertextB64 = parts[1]
+
+                    // Prepare decryption parameters
+                    val iv = Base64.getDecoder().decode(ivB64)
+                    val ciphertext = Base64.getDecoder().decode(ciphertextB64)
+                    val key = hexStringToByteArray(KEY_HEX)
+
+
+                    // Decrypt using AES-CBC
+                    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                    val secretKeySpec = SecretKeySpec(key, "AES")
+                    val ivParameterSpec = IvParameterSpec(iv)
+
+                    cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+                    val decryptedData = cipher.doFinal(ciphertext)
+
+                    // Remove PKCS7 padding (handled by PKCS5Padding in Java/Kotlin)
+                    val videoUrl = String(decryptedData, Charsets.UTF_8).trim()
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Vidzee [${serverName}]",
+                            "Vidzee [${serverName}]",
+                            url = videoUrl,
+                            type =  INFER_TYPE
+                        ) {
+                            this.quality = 1080
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                TODO("Not yet implemented")
+            }
+        }
+    }
 }
