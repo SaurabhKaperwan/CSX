@@ -29,6 +29,17 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//XDmovies
+class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {
+    data class SearchDataItem(
+        val id: Int,
+        val path: String,
+        val title: String,
+        val tmdb_id: Int,
+        val type: String
+    )
+}
+
 //Anizip
 data class AnizipEpisode(
     @SerializedName("anidbEid") val anidbEid: Int?,

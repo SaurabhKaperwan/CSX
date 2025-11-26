@@ -58,7 +58,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
-            { invokeXDmovies(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
@@ -125,7 +125,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeXDmovies(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
@@ -588,6 +588,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeXDmovies(
+        title: String? = null,
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -601,42 +602,32 @@ object CineStreamExtractors : CineStreamProvider() {
             "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
         )
 
-        val type = if(season == null) "xyz123" else "abc456"
-        val url = "$XDmoviesAPI/api/$type?tmdb_id=$tmdbId"
-        val jsonString = app.get(url, headers = headers).text
-        val jsonObject = JSONObject(jsonString)
+        val searchData = app.get(
+            "$XDmoviesAPI/php/search_api.php?query=$title&fuzzy=true",
+            headers = headers
+        ).parsedSafe<XDMoviesSearchResponse>() ?: return
 
-        if(season != null && episode != null) {
-            val downloadData = jsonObject.getJSONObject("download_data")
-            val seasonsArray = downloadData.getJSONArray("seasons")
+        val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
+        val document = app.get(XDmoviesAPI + matched.path).document
 
-            for (i in 0 until seasonsArray.length()) {
-                val seasonObj = seasonsArray.getJSONObject(i)
-                val seasonNum = seasonObj.getInt("season_num")
-
-                if (seasonNum == season) {
-                    val episodesArray = seasonObj.getJSONArray("episodes")
-
-                    for (j in 0 until episodesArray.length()) {
-                        val episodeObj = episodesArray.getJSONObject(j)
-                        val episodeNumber = episodeObj.getInt("episode_number")
-
-                        if (episodeNumber == episode) {
-                            val versionsArray = episodeObj.getJSONArray("versions")
-
-                            for (k in 0 until versionsArray.length()) {
-                                val version = versionsArray.getJSONObject(k)
-                                loadSourceNameExtractor("XDmovies", version.getString("download_link"), "", subtitleCallback, callback)
-                            }
-                        }
-                    }
-                }
+        if(season == null) {
+            document.select("div.download-item a").amap {
+                loadSourceNameExtractor("XDmovies", it.attr("href"), "", subtitleCallback, callback)
             }
         } else {
-            val downloadLinksArray = jsonObject.getJSONArray("download_links")
-            for (i in 0 until downloadLinksArray.length()) {
-                val linkObject = downloadLinksArray.getJSONObject(i)
-                loadSourceNameExtractor("XDmovies", linkObject.getString("download_link"), "", subtitleCallback, callback)
+            val epRegex = Regex(
+                "S${season.toString().padStart(2, '0')}E${
+                    episode.toString().padStart(2, '0')
+                }", RegexOption.IGNORE_CASE
+            )
+
+            val episodeCards = document.select("div.episode-card").filter { card ->
+                epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
+            }
+
+            episodeCards.amap {
+                val link = it.selectFirst("a")?.attr("href") ?: return@amap
+                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
     }
