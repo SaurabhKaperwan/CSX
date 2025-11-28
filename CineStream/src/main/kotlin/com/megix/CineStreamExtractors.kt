@@ -80,7 +80,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
-            { if(!res.isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
@@ -767,50 +766,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 subtitleCallback,
                 callback
             )
-        }
-    }
-
-    suspend fun invokeMadplay(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "Referer" to "https://uembed.site",
-            "Origin" to "https://uembed.site",
-            "User-Agent" to USER_AGENT
-        )
-        val jsonString = app.get("https://raw.githubusercontent.com/kunwarxshashank/rogplay_addons/refs/heads/main/cinema/hindi.json").text
-        val serverInfoList = parseMadplayServerInfo(jsonString)
-
-        serverInfoList.amap { info ->
-            val url = if(season != null) {
-                info.tvurl
-                .replace("\${tmdb}", tmdbId.toString())
-                .replace("\${season}", season.toString())
-                .replace("\${episode}", episode.toString())
-            } else {
-                info.movieurl.replace("\${tmdb}", tmdbId.toString())
-            }
-
-            val fileUrl = try {
-                val text = app.get(url, headers = headers).text
-                JSONArray(text).getJSONObject(0).getString("file")
-            } catch (e: Exception) { null }
-
-            if(fileUrl != null) {
-                callback.invoke(
-                    newExtractorLink(
-                        "Madplay [${info.server}]",
-                        "Madplay [${info.server}]",
-                        fileUrl,
-                        type = if(fileUrl.contains("mp4")) ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
-                    ) {
-                        this.headers = headers
-                    }
-                )
-            }
         }
     }
 
@@ -1524,8 +1479,8 @@ object CineStreamExtractors : CineStreamProvider() {
         app.get(
             "$netflixAPI/mobile/hs/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
-            cookies = cookies,
             referer = "$netflixAPI/",
+            cookies = cookies,
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
         }?.firstOrNull()?.sources?.map {
@@ -2269,42 +2224,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeAniXL(
-        url: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val document = app.get(url ?: return).document
-        val baseUrl = getBaseUrl(url)
-        val epLink = document.select("div.flex-wrap > a.btn")
-            .firstOrNull { it?.text()?.trim() == "${episode ?: 1}" }
-            ?.attr("href")
-            ?.takeIf { it.isNotBlank() }
-            ?: return
-        val epText = app.get(baseUrl + epLink).text
-        val types = listOf("dub", "sub", "raw")
-
-        types.forEach {
-            val Regex = """\"${it}\",\"([^\"]+)\"""".toRegex()
-            val epUrl = Regex.find(epText)?.groupValues?.get(1) ?: return@forEach
-            val isDub = if(it == "dub") "[DUB]" else "[SUB]"
-            M3u8Helper.generateM3u8("AniXL $isDub", epUrl, "$baseUrl/").forEach(callback)
-        }
-
-        val subtitleRegex = """\"([^\"]+)\",\"[^\"]*\",\"(https?:\/\/[^\"]+\.vtt)\"""".toRegex()
-        val subtitles = subtitleRegex.findAll(epText)
-        .forEach { match ->
-            val (language, subUrl) = match.destructured
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    language,
-                    subUrl
-                )
-            )
-        }
-    }
-
     suspend fun invokeAnimes(
         malId: Int? = null,
         aniId: Int? = null,
@@ -2332,9 +2251,6 @@ object CineStreamExtractors : CineStreamProvider() {
             {
                 if (animepaheUrl != null)
                     invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback)
-            },
-            {
-                invokeAniXL(aniXL, episode, subtitleCallback, callback)
             },
             {
                 invokeAnimez(title, episode, callback)
@@ -3060,7 +2976,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
                                     else -> {
                                         server.subtitles?.forEach { sub ->
-                                            val lang = SubtitleHelper.fromTwoLettersToLanguage(sub.lang ?: "") ?: sub.lang.orEmpty()
+                                            val lang = SubtitleHelper.fromTagToEnglishLanguageName(sub.lang ?: "") ?: sub.lang.orEmpty()
                                             val src = sub.src ?: return@forEach
                                             subtitleCallback(newSubtitleFile(lang, httpsify(src)))
                                         }

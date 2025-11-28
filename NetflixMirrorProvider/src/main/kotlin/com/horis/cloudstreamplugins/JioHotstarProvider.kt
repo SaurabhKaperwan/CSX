@@ -215,10 +215,11 @@ class JioHotstarProvider : MainAPI() {
             "hd" to "on",
             "ott" to "hs"
         )
+
         val playlist = app.get(
             "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/home",
+            referer = "$mainUrl/",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -227,18 +228,11 @@ class JioHotstarProvider : MainAPI() {
                 callback.invoke(
                     newExtractorLink(
                         name,
-                        name,
+                        it.label,
                         "$newUrl/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$newUrl/"
-                        this.headers = mapOf(
-                            "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
-                            "Accept" to "*/*",
-                            "Accept-Encoding" to "identity",
-                            "Connection" to "keep-alive",
-                            "Cookie" to "hd=on"
-                        )
                         this.quality = getQualityFromName(it.file.substringAfter("q=", "").substringBefore("&in"))
                     }
                 )
@@ -259,6 +253,22 @@ class JioHotstarProvider : MainAPI() {
         }
 
         return true
+    }
+
+    @Suppress("ObjectLiteralToLambda")
+    override fun getVideoInterceptor(extractorLink: ExtractorLink): Interceptor? {
+        return object : Interceptor {
+            override fun intercept(chain: Interceptor.Chain): Response {
+                val request = chain.request()
+                if (request.url.toString().contains(".m3u8")) {
+                    val newRequest = request.newBuilder()
+                        .header("Cookie", "hd=on")
+                        .build()
+                    return chain.proceed(newRequest)
+                }
+                return chain.proceed(request)
+            }
+        }
     }
 
     data class Id(

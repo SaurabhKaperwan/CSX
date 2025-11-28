@@ -953,21 +953,6 @@ fun decodeMeta(document: Document): Document? {
     return null
 }
 
-//Madplay
-fun parseMadplayServerInfo(jsonString: String): List<MadplayServerInfo> {
-    val gson = Gson()
-    val listType = object : TypeToken<List<Map<String, Any>>>() {}.type
-    val jsonList: List<Map<String, Any>> = gson.fromJson(jsonString, listType)
-
-    return jsonList.map { item ->
-        MadplayServerInfo(
-            tvurl = item["tvurl"] as String,
-            movieurl = item["movieurl"] as String,
-            server = item["server"] as String
-        )
-    }
-}
-
 fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
     val totalSize = keySize + ivSize
     val derived = ByteArray(totalSize)
