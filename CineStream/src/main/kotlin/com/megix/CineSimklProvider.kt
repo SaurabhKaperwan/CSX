@@ -43,6 +43,7 @@ class CineSimklProvider: MainAPI() {
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
+    private val image_proxy = "https://wsrv.nl/?url="
 
     override val mainPage = mainPageOf(
         "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
@@ -176,7 +177,7 @@ class CineSimklProvider: MainAPI() {
         id: String? = null,
         type: String,
      ): String? {
-        val baseUrl = "https://simkl.in"
+        val baseUrl = "${image_proxy}https://simkl.in"
         if(id == null) {
             return null
         } else if(type == "episode") {
@@ -184,7 +185,7 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            return "https://wsrv.nl/?url=https://images.metahub.space/background/large/$id/img"
+            return "${image_proxy}https://images.metahub.space/background/large/$id/img"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
