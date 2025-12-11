@@ -384,7 +384,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val text = app.get("$multiDecryptAPI/enc-mapple").text
-        val sessionId = JSONObject(text).getJSONObject("result").getString("sessionId")
+        val jsonObj= JSONObject(text)
+        val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
+        val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
 
         var mediaType = ""
         var tv_slug = ""
@@ -411,7 +413,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$mappleAPI/",
-            "Next-Action" to "40770771b1e06bb7435ca5d311ed845d4fd406dca2"
+            "Next-Action" to nextAction
         )
 
         sources.amap { source ->
