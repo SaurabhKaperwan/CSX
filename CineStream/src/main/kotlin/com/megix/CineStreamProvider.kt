@@ -54,8 +54,8 @@ open class CineStreamProvider : MainAPI() {
         const val soaperAPI = "https://soaper.live"
         const val asiaflixAPI = "https://asiaflix.net"
         const val twoembedAPI = "https://2embed.cc"
-        const val xprimeBaseAPI = "https://xprime.tv"
-        const val xprimeAPI = "https://backend.xprime.tv"
+        const val xprimeBaseAPI = "https://xprime.today"
+        const val xprimeAPI = "https://backend.xprime.today"
         const val sudatchiAPI = "https://sudatchi.com"
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
@@ -80,7 +80,7 @@ open class CineStreamProvider : MainAPI() {
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
         const val animekaiAPI = "https://anikai.to"
-        const val mappleAPI = "https://mapple.uk"
+        const val mappleAPI = "https://mapple.mov"
         const val vidzeeApi = "https://player.vidzee.wtf"
 
         private val apiConfig by lazy {

@@ -73,7 +73,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
-            { invokeW4U(res.title, res.year, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -2449,50 +2448,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     it.url
                 )
             )
-        }
-    }
-
-    suspend fun invokeW4U(
-        title: String? = null,
-        year: Int? = null,
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if(season == null) "$W4UAPI/?s=$title $year" else "$W4UAPI/?s=$title $season"
-        val document = app.get(url).document
-        val link = document.selectFirst("div.post-thumb > a")?.attr("href")
-        val doc = app.get(link ?: return).document
-        val imdbId = doc.selectFirst("div.imdb_left > a")?.attr("href")?.substringAfter("title/")?.substringBefore("/") ?: ""
-        if("$id" == imdbId) {
-            if(season != null && episode != null) {
-                doc.select("a.my-button").mapNotNull {
-                    val title = it.parent()?.parent()?.previousElementSibling()?.text()?: ""
-                    val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                    val quality = qualityRegex.find(title) ?. groupValues ?. get(1) ?: ""
-                    val realSeason = Regex("""(?:Season |S)(\d+)""").find(title) ?. groupValues ?. get(1) ?. toIntOrNull() ?: 300
-                    if(season == realSeason) {
-                        val doc2 = app.get(it.attr("href")).document
-                        val h3 = doc2.select("h3:matches((?i)(episode))").get(episode-1)
-                        var source = h3?.nextElementSibling()?.selectFirst("a")?.attr("href") ?: ""
-                        loadSourceNameExtractor("W4U", source, "", subtitleCallback, callback, getIndexQuality(quality))
-                    }
-                    else {
-                    }
-                }
-            }
-            else {
-                doc.select("a.my-button").mapNotNull {
-                    val title = it.parent()?.parent()?.previousElementSibling()?.text()?: ""
-                    val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                    val quality = qualityRegex.find(title) ?. groupValues ?. get(1) ?: ""
-                    app.get(it.attr("href")).document.select("h4 > a").mapNotNull {
-                        loadSourceNameExtractor("W4U", it.attr("href"), "", subtitleCallback, callback, getIndexQuality(quality))
-                    }
-                }
-            }
         }
     }
 
