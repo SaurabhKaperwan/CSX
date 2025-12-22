@@ -109,7 +109,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             headers = headers
         ).document
 
-        val results = document.select(".post-inner.post-hover")
+        val results = document.select("article.entry")
             .mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
