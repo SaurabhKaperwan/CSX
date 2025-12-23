@@ -91,7 +91,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeNuvioStreams(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams(vflixAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -130,7 +131,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeNuvioStreams(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams(vflixAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -145,7 +147,8 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeNuvioStreams(
+    suspend fun invokeStremioStreams(
+        api: String,
         imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -153,9 +156,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
-            "$nuvioStreamsAPI/stream/movie/$imdbId.json"
+            "$api/stream/movie/$imdbId.json"
         } else {
-            "$nuvioStreamsAPI/stream/series/$imdbId:$season:$episode.json"
+            "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
         val json = app.get(url).text
@@ -167,15 +170,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.streams.forEach {
             val title = it.title ?: ""
-            val name = it.name?.replace(" (SLOW) -", "") ?: "Nuvio"
+            val name = it.name?.replace(" (SLOW) -", "") ?: it.title ?: ""
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
-                    "Nuvio",
-                    name,
+                    "Stremio",
+                    "[Stremio]" + name,
                     it.url,
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
@@ -185,6 +188,7 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         }
     }
+
 
     suspend fun invokeWebStreamr(
         imdbId: String? = null,
@@ -383,7 +387,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val text = app.get("$multiDecryptAPI/enc-mapple").text
-        val jsonObj= JSONObject(text)
+        val jsonObj = JSONObject(text)
         val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
         val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
 
