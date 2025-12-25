@@ -131,7 +131,9 @@ class Kwik : ExtractorApi() {
                 name,
                 m3u8,
                 type = ExtractorLinkType.M3U8
-            )
+            ) {
+                this.referer = url
+            }
         )
     }
 }
@@ -234,7 +236,9 @@ class Pahe : ExtractorApi() {
                 name,
                 name,
                 location,
-            )
+            ) {
+                this.referer = url
+            }
         )
     }
 }
