@@ -237,7 +237,7 @@ class Pahe : ExtractorApi() {
                 name,
                 location,
             ) {
-                this.referer = url
+                this.referer = "https://kwik.cx/"
             }
         )
     }
