@@ -496,10 +496,9 @@ object CineStreamExtractors : CineStreamProvider() {
                     newExtractorLink(
                         "Hexa[${server.uppercase()}]",
                         "Hexa[${server.uppercase()}]",
-                        m3u8,
-                        type = if(m3u8.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+                        m3u8
                     ) {
-                        this.referer = "$hexaAPI/"
+                        this.headers = M3U8_HEADERS
                     }
                 )
             }
@@ -3251,7 +3250,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     type = extractorLinkType
                 )
                 {
-                    this.headers = mapOf("Referer" to cinemaOSApi)
+                    this.headers = mapOf("Referer" to cinemaOSApi) + M3U8_HEADERS
                     this.quality = quality
                 }
             )
