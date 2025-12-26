@@ -977,26 +977,6 @@ fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pai
     return Pair(key, iv)
 }
 
-fun decryptOpenSSLAES(base64Cipher: String, passphrase: String): String {
-    val cipherData = android.util.Base64.decode(base64Cipher, android.util.Base64.DEFAULT)
-
-    // OpenSSL prefix: "Salted__" + 8 bytes salt
-    val prefix = cipherData.copyOfRange(0, 8).toString(Charsets.US_ASCII)
-    if (prefix != "Salted__") throw IllegalArgumentException("Invalid OpenSSL format")
-
-    val salt = cipherData.copyOfRange(8, 16)
-    val ciphertext = cipherData.copyOfRange(16, cipherData.size)
-
-    val (key, iv) = evpKDF(passphrase.toByteArray(Charsets.UTF_8), salt, 32, 16)
-
-    val secretKey = SecretKeySpec(key, "AES")
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
-
-    val decrypted = cipher.doFinal(ciphertext)
-    return String(decrypted, Charsets.UTF_8)
-}
-
 //Allanime
 fun decrypthex(inputStr: String): String {
     val hexString = if (inputStr.startsWith("-")) {

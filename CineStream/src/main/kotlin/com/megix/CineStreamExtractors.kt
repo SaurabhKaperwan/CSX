@@ -3263,8 +3263,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
-    )
-    {
+    ) {
         val STATIC_PATH = "fcd552c4321aeac1e62c5304913b3420be75a19d390807281a425aabbb5dc4c0"
         val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
         val headers = mapOf(
@@ -3316,100 +3315,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             )
         }
-
-
-
-
-    }
-
-    suspend fun invokeVidFastPro(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val STATIC_PATH =
-            "hezushon/088b73be/1000068959767573/b28099eb-4dea-5589-9baa-a6b6560cad62/oh/y"
-        val url =
-            if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
-        val headers = mapOf(
-            "Accept" to "*/*",
-            "Referer" to vidfastProApi,
-            "X-Csrf-Token" to "pASKDBkXwNun4w2Y8RRo8lQ3thmugGxj",
-            "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
-            "X-Requested-With" to "XMLHttpRequest"
-        )
-        val response = app.get(url, headers = headers, timeout = 20).text
-        val regex = Regex("""\\"en\\":\\"(.*?)\\"""")
-        val match = regex.find(response)
-        val rawData = match?.groupValues?.get(1)
-        if (rawData.isNullOrEmpty()) {
-            return;
-        }
-        // AES encryption setup
-        val keyHex = "0cd6aa69d843f9565187caea6b260b59716a63f79dfef3ec3a2c2834b6724e55"
-        val ivHex = "67b2ddac30102321a83e3dbf83417696"
-        val aesKey = hexStringToByteArray2(keyHex)
-        val aesIv = hexStringToByteArray2(ivHex)
-
-        // Encrypt raw data
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
-        val paddedData = padData(rawData.toByteArray(Charsets.UTF_8), 16)
-        val aesEncrypted = cipher.doFinal(paddedData)
-
-        // XOR operation
-        val xorKey = hexStringToByteArray2("2329aba4015a")
-        val xorResult = aesEncrypted.mapIndexed { i, byte ->
-            (byte.toInt() xor xorKey[i % xorKey.size].toInt()).toByte()
-        }.toByteArray()
-
-        // Encode XORed data
-        val encodedFinal = customEncode(xorResult)
-
-        // Get servers
-        val apiServers = "$vidfastProApi/$STATIC_PATH/yu-5EXWKpA/$encodedFinal"
-        val serversResponse = app.get(
-            apiServers,
-            timeout = 20,
-            interceptor = CloudflareKiller(),
-            headers = headers
-        ).text
-        if (serversResponse.isEmpty()) return
-        val servers = parseServers(serversResponse)
-        val urlList = mutableMapOf<String, String>()
-        servers.forEach {
-            try {
-                val apiStream = "$vidfastProApi/${STATIC_PATH}/c14/${it.data}"
-                val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
-                if (streamResponse.isNotEmpty()) {
-                    val jsonObject = JSONObject(streamResponse)
-                    val url = jsonObject.getString("url")
-
-                    urlList.put(it.name, url)
-                }
-            } catch (e: Exception) {
-                TODO("Not yet implemented")
-            }
-        }
-
-        urlList.forEach {
-            callback.invoke(
-                newExtractorLink(
-                    "VidFastPro [${it.key}]",
-                    "VidFastPro [${it.key}]",
-                    url = it.value,
-                )
-                {
-                    this.quality = Qualities.P1080.value
-                }
-            )
-        }
-
-
-
-
     }
 
     suspend fun invokeVidPlus(
@@ -3421,8 +3326,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
-    )
-    {
+    ) {
         val headers = mapOf(
             "Accept" to "*/*",
             "Referer" to vidPlusApi,
@@ -3646,8 +3550,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
-    )
-    {
+    ) {
         val url = if(season == null) "$multiEmbededApi/?video_id=$tmdbId&tmdb=1" else " $multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
         val streamingUrl = app.get(url,allowRedirects = false).headers.get("Location")
         val mediaType = "application/x-www-form-urlencoded".toMediaType()
@@ -3667,8 +3570,6 @@ object CineStreamExtractors : CineStreamProvider() {
             val iframe = src.select("iframe").attr("src")
             loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
         }
-
-
     }
 
 
@@ -3678,8 +3579,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
-    )
-    {
+    ) {
         val referer = "https://www.vidsrc.wtf"
         val headers = mapOf("Origin" to referer,"Referer" to referer,"User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
 
@@ -3732,87 +3632,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 loadSourceNameExtractor("VidSrc",url,"",subtitleCallback,callback)
             }
         } catch (e: Exception) { }
-
-
     }
-
-
-    // suspend fun invokeVidJoy(
-    //     imdbId: Int? =null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     try {
-    //         val listSrc = listOf("Camelot","Atlantis","Babylon","NYC")
-    //         val link = if(season != null)
-    //         {
-    //             "$VidJoyApi/embed/api/fetch2/$imdbId/$season/$episode"
-    //         }
-    //         else
-    //         {
-    //             "$VidJoyApi/embed/api/fetch2/$imdbId"
-    //         }
-    //         listSrc.forEach { src ->
-    //             if(src == "Camelot")
-    //             {
-    //                 (0..4).forEach { i ->
-    //                     try {
-    //                         val finalLink = "$link/?srName=Camelot&sr=$i"
-    //                         val encrptedText = app.get(finalLink).text;
-    //                         val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
-    //                         if (decryptedJson != "> - <") {
-    //                             val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
-    //                             if (vidjoyResponse != null) {
-    //                                 for(url in vidjoyResponse.url)
-    //                                 {
-    //                                     callback.invoke(
-    //                                         newExtractorLink(
-    //                                             "Vidjoy ${url.lang}",
-    //                                             "Vidjoy ${url.lang}",
-    //                                             url = url.link,
-    //                                             type =  if(url.link.contains(".mp4")) ExtractorLinkType.VIDEO else INFER_TYPE
-    //                                         ) {
-    //                                             this.quality = getQualityFromName(url.resulation)
-    //                                         }
-    //                                     )
-    //                                 }
-    //                             }
-    //                         }
-    //                     } catch (e: Exception) { }
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 try {
-    //                     val finalLink = "$link/?srName=$src"
-    //                     val encrptedText = app.get(finalLink).text;
-    //                     val decryptedJson = decryptOpenSSLAES(encrptedText,"b91eeba6b7c848828ba8b84d44fa38a88affef23ec270ea4cd904810280b34fa")
-    //                     if (decryptedJson != "> - <") {
-    //                         val vidjoyResponse = tryParseJson<VidjoyResponse>(decryptedJson)
-    //                         if (vidjoyResponse != null) {
-    //                             for(url in vidjoyResponse.url)
-    //                             {
-
-    //                                 callback.invoke(
-    //                                     newExtractorLink(
-    //                                         "Vidjoy ${url.lang}",
-    //                                         "Vidjoy ${url.lang}",
-    //                                         url = url.link,
-    //                                         type =  if(url.link.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
-    //                                     ) {
-    //                                         this.quality = getQualityFromName(url.resulation)
-    //                                     }
-    //                                 )
-    //                             }
-    //                         }
-    //                     }
-    //                 } catch (e: Exception) { }
-    //             }
-    //         }
-
-    //     } catch (_: Exception) { }
-    // }
 
     suspend fun invokeVidzee(
         tmdbId: Int? = null,
@@ -3820,8 +3640,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
-    )
-    {
+    ) {
         val KEY_HEX = "6966796f75736372617065796f75617265676179000000000000000000000000"
         val headers = mapOf(
             "Referer" to "",
@@ -3869,12 +3688,99 @@ object CineStreamExtractors : CineStreamProvider() {
                             type =  INFER_TYPE
                         ) {
                             this.quality = 1080
+                            this.referer = "https://core.vidzee.wtf/"
                         }
                     )
                 }
             } catch (e: Exception) {
                 TODO("Not yet implemented")
             }
+        }
+    }
+
+    suspend fun invokeVidFastPro(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val STATIC_PATH =
+            "hezushon/088b73be/1000068959767573/b28099eb-4dea-5589-9baa-a6b6560cad62/oh/y"
+        val url =
+            if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "Referer" to vidfastProApi,
+            "X-Csrf-Token" to "pASKDBkXwNun4w2Y8RRo8lQ3thmugGxj",
+            "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
+            "X-Requested-With" to "XMLHttpRequest"
+        )
+        val response = app.get(url, headers = headers, timeout = 20).text
+        val regex = Regex("""\\"en\\":\\"(.*?)\\"""")
+        val match = regex.find(response)
+        val rawData = match?.groupValues?.get(1)
+        if (rawData.isNullOrEmpty()) {
+            return;
+        }
+        // AES encryption setup
+        val keyHex = "0cd6aa69d843f9565187caea6b260b59716a63f79dfef3ec3a2c2834b6724e55"
+        val ivHex = "67b2ddac30102321a83e3dbf83417696"
+        val aesKey = hexStringToByteArray2(keyHex)
+        val aesIv = hexStringToByteArray2(ivHex)
+
+        // Encrypt raw data
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
+        val paddedData = padData(rawData.toByteArray(Charsets.UTF_8), 16)
+        val aesEncrypted = cipher.doFinal(paddedData)
+
+        // XOR operation
+        val xorKey = hexStringToByteArray2("2329aba4015a")
+        val xorResult = aesEncrypted.mapIndexed { i, byte ->
+            (byte.toInt() xor xorKey[i % xorKey.size].toInt()).toByte()
+        }.toByteArray()
+
+        // Encode XORed data
+        val encodedFinal = customEncode(xorResult)
+
+        // Get servers
+        val apiServers = "$vidfastProApi/$STATIC_PATH/yu-5EXWKpA/$encodedFinal"
+        val serversResponse = app.get(
+            apiServers,
+            timeout = 20,
+            interceptor = CloudflareKiller(),
+            headers = headers
+        ).text
+        if (serversResponse.isEmpty()) return
+        val servers = parseServers(serversResponse)
+        val urlList = mutableMapOf<String, String>()
+        servers.forEach {
+            try {
+                val apiStream = "$vidfastProApi/${STATIC_PATH}/c14/${it.data}"
+                val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
+                if (streamResponse.isNotEmpty()) {
+                    val jsonObject = JSONObject(streamResponse)
+                    val url = jsonObject.getString("url")
+
+                    urlList.put(it.name, url)
+                }
+            } catch (e: Exception) {
+                TODO("Not yet implemented")
+            }
+        }
+
+        urlList.forEach {
+            callback.invoke(
+                newExtractorLink(
+                    "VidFastPro [${it.key}]",
+                    "VidFastPro [${it.key}]",
+                    url = it.value,
+                )
+                {
+                    this.quality = Qualities.P1080.value
+                }
+            )
         }
     }
 }
