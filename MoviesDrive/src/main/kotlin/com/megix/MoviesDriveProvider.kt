@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesdrive.mom"
+    override var mainUrl = "https://moviesdrive.forum"
     override var name = "MoviesDrive"
     override val hasMainPage = true
     override var lang = "hi"
@@ -94,7 +94,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
+        var title = document.select("title").text().replace("Download ", "")
         val ogTitle = title
         val plotElement = document.select(
             "h2:contains(Storyline), h3:contains(Storyline), h5:contains(Storyline), h4:contains(Storyline), h4:contains(STORYLINE)"

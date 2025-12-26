@@ -802,9 +802,8 @@ class Gofile : ExtractorApi() {
         val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
         val jsonResp = JSONObject(genAccountRes)
         val token = jsonResp.getJSONObject("data").getString("token") ?: return
-
-        // val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
-        // val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+        val globalRes = app.get("$mainUrl/dist/js/config.js", headers = headers).text
+        val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
         val response = app.get("$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
             headers = mapOf(
@@ -812,7 +811,7 @@ class Gofile : ExtractorApi() {
                 "Origin" to mainUrl,
                 "Referer" to mainUrl,
                 "Authorization" to "Bearer $token",
-                "X-Website-Token" to "4fd6sg89d7s6"
+                "X-Website-Token" to wt
             )
         ).text
 
