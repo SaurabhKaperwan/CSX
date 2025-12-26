@@ -706,15 +706,16 @@ suspend fun gofileExtractor(
     val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
     val jsonResp = JSONObject(genAccountRes)
     val token = jsonResp.getJSONObject("data").getString("token") ?: return
-    val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
-    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+    // val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
+    // val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
-    val response = app.get("$mainApi/contents/$id?wt=$wt",
+    val response = app.get("$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
         headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Origin" to mainUrl,
             "Referer" to mainUrl,
             "Authorization" to "Bearer $token",
+            "X-Website-Token" to "4fd6sg89d7s6"
         )
     ).text
 
