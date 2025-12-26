@@ -169,6 +169,7 @@ object CineStreamExtractors : CineStreamProvider() {
         data.streams.forEach {
             val title = it.title ?: ""
             val name = it.name?.replace(" (SLOW) -", "") ?: it.title ?: ""
+            val type = if(name.contains("Vixsrc")) ExtractorLinkType.M3U8 else INFER_TYPE
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
@@ -178,6 +179,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     "Nuvio",
                     "[Nuvio] " + name,
                     it.url,
+                    type,
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
                     this.quality = getIndexQuality(title)
@@ -2830,7 +2832,6 @@ object CineStreamExtractors : CineStreamProvider() {
                                 track.file
                             )
                         )
-
                     }
                 }
             }
@@ -3309,9 +3310,11 @@ object CineStreamExtractors : CineStreamProvider() {
                     "111Movies [${it.key}]",
                     "111Movies [${it.key}]",
                     url = it.value,
+                    type = ExtractorLinkType.M3U8
                 )
                 {
                     this.quality = Qualities.P1080.value
+                    this.headers = M3U8_HEADERS
                 }
             )
         }
@@ -3685,10 +3688,13 @@ object CineStreamExtractors : CineStreamProvider() {
                             "Vidzee [${serverName}]",
                             "Vidzee [${serverName}]",
                             url = videoUrl,
-                            type =  INFER_TYPE
+                            type =  ExtractorLinkType.M3U8,
                         ) {
                             this.quality = 1080
-                            this.referer = "https://core.vidzee.wtf/"
+                            this.referer = "https://player.vidzee.wtf/"
+                            this.headers = mapOf(
+                                "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36"
+                            )
                         }
                     )
                 }
