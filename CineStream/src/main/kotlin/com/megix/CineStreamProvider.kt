@@ -40,7 +40,6 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
-        const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -50,7 +49,6 @@ open class CineStreamProvider : MainAPI() {
         const val torrentioCONFIG = "sort=seeders"
         const val Player4uApi = "https://player4u.xyz"
         const val PrimeSrcApi = "https://primesrc.me"
-        //const val VidJoyApi = "https://vidjoy.pro"
         const val soaperAPI = "https://soaper.live"
         const val asiaflixAPI = "https://asiaflix.net"
         const val twoembedAPI = "https://2embed.cc"
@@ -97,7 +95,6 @@ open class CineStreamProvider : MainAPI() {
         private fun api(key: String) = apiConfig.optString(key)
 
         val protonmoviesAPI get() = api("protonmovies")
-        val W4UAPI get() = api("w4u")
         val fourkhdhubAPI get() = api("4khdhub")
         val multimoviesAPI get() = api("multimovies")
         val bollyflixAPI get() = api("bollyflix")
