@@ -75,11 +75,11 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
+            // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
@@ -139,8 +139,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(res.imdbTitle, res.imdbSeason, res.imdbEpisode, res.year, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
-            { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
+            // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
     }
@@ -881,115 +881,115 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokePrimenet(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "Referer" to xprimeBaseAPI,
-            "Origin" to xprimeBaseAPI,
-            "User-Agent" to USER_AGENT
-        )
+    // suspend fun invokePrimenet(
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     val headers = mapOf(
+    //         "Referer" to xprimeBaseAPI,
+    //         "Origin" to xprimeBaseAPI,
+    //         "User-Agent" to USER_AGENT
+    //     )
 
-        val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
-        val jsonObject = JSONObject(tokenJson)
-        val token = jsonObject.getString("result")
+    //     val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
+    //     val jsonObject = JSONObject(tokenJson)
+    //     val token = jsonObject.getString("result")
 
-        val url = if(season == null) {
-            "$xprimeAPI/primenet?id=$tmdbId&turnstile=$token"
-        } else {
-            "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode&turnstile=$token"
-        }
+    //     val url = if(season == null) {
+    //         "$xprimeAPI/primenet?id=$tmdbId&turnstile=$token"
+    //     } else {
+    //         "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode&turnstile=$token"
+    //     }
 
-        val text = app.get(url, headers = headers).text
-        val json = multiDecrypt(text, "dec-xprime") ?: return
+    //     val text = app.get(url, headers = headers).text
+    //     val json = multiDecrypt(text, "dec-xprime") ?: return
 
-        val sourceUrl = JSONObject(json).getString("url")
-        if(sourceUrl == "null") {
-            return
-        }
+    //     val sourceUrl = JSONObject(json).getString("url")
+    //     if(sourceUrl == "null") {
+    //         return
+    //     }
 
-        callback.invoke(
-            newExtractorLink(
-                "Primenet",
-                "Primenet",
-                sourceUrl,
-                type = ExtractorLinkType.M3U8
-            ) {
-                this.referer = xprimeBaseAPI
-                this.quality = 1080
-                this.headers = headers
-            }
-        )
-    }
+    //     callback.invoke(
+    //         newExtractorLink(
+    //             "Primenet",
+    //             "Primenet",
+    //             sourceUrl,
+    //             type = ExtractorLinkType.M3U8
+    //         ) {
+    //             this.referer = xprimeBaseAPI
+    //             this.quality = 1080
+    //             this.headers = headers
+    //         }
+    //     )
+    // }
 
-    suspend fun invokePrimebox(
-        title: String? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "Referer" to xprimeBaseAPI,
-            "Origin" to xprimeBaseAPI,
-            "User-Agent" to USER_AGENT
-        )
+    // suspend fun invokePrimebox(
+    //     title: String? = null,
+    //     year: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     val headers = mapOf(
+    //         "Referer" to xprimeBaseAPI,
+    //         "Origin" to xprimeBaseAPI,
+    //         "User-Agent" to USER_AGENT
+    //     )
 
-        val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
-        val jsonObject = JSONObject(tokenJson)
-        val token = jsonObject.getString("result")
+    //     val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
+    //     val jsonObject = JSONObject(tokenJson)
+    //     val token = jsonObject.getString("result")
 
-        val url = if(season == null) {
-            "$xprimeAPI/primebox?name=$title&fallback_year=$year&turnstile=$token"
-        } else {
-            "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode&turnstile=$token"
-        }
+    //     val url = if(season == null) {
+    //         "$xprimeAPI/primebox?name=$title&fallback_year=$year&turnstile=$token"
+    //     } else {
+    //         "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode&turnstile=$token"
+    //     }
 
-        val text = app.get(url, headers = headers).text
-        val json = multiDecrypt(text, "dec-xprime") ?: return
-        val data = tryParseJson<Primebox>(json) ?: return
+    //     val text = app.get(url, headers = headers).text
+    //     val json = multiDecrypt(text, "dec-xprime") ?: return
+    //     val data = tryParseJson<Primebox>(json) ?: return
 
-        data.streams?.let { streams ->
-            listOf(
-                360 to streams.quality360P,
-                720 to streams.quality720P,
-                1080 to streams.quality1080P
-            ).forEach { (quality, link) ->
-                if (!link.isNullOrBlank()) {
-                    callback.invoke(
-                        newExtractorLink(
-                            "PrimeBox",
-                            "PrimeBox",
-                            link,
-                            type = ExtractorLinkType.VIDEO,
-                        ) {
-                            this.quality = quality
-                            this.headers = headers
-                        }
-                    )
-                }
-            }
-        }
+    //     data.streams?.let { streams ->
+    //         listOf(
+    //             360 to streams.quality360P,
+    //             720 to streams.quality720P,
+    //             1080 to streams.quality1080P
+    //         ).forEach { (quality, link) ->
+    //             if (!link.isNullOrBlank()) {
+    //                 callback.invoke(
+    //                     newExtractorLink(
+    //                         "PrimeBox",
+    //                         "PrimeBox",
+    //                         link,
+    //                         type = ExtractorLinkType.VIDEO,
+    //                     ) {
+    //                         this.quality = quality
+    //                         this.headers = headers
+    //                     }
+    //                 )
+    //             }
+    //         }
+    //     }
 
-        if (data.hasSubtitles && data.subtitles.isNotEmpty()) {
-            data.subtitles.forEach { sub ->
-                val file = sub.file
-                val label = sub.label
-                if (!file.isNullOrBlank() && !label.isNullOrBlank()) {
-                    subtitleCallback.invoke(
-                        newSubtitleFile(
-                            label,
-                            file
-                        )
-                    )
-                }
-            }
-        }
-    }
+    //     if (data.hasSubtitles && data.subtitles.isNotEmpty()) {
+    //         data.subtitles.forEach { sub ->
+    //             val file = sub.file
+    //             val label = sub.label
+    //             if (!file.isNullOrBlank() && !label.isNullOrBlank()) {
+    //                 subtitleCallback.invoke(
+    //                     newSubtitleFile(
+    //                         label,
+    //                         file
+    //                     )
+    //                 )
+    //             }
+    //         }
+    //     }
+    // }
 
     suspend fun invoke2embed(
         id: String? = null,
