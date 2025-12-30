@@ -80,6 +80,9 @@ open class CineStreamProvider : MainAPI() {
         const val animekaiAPI = "https://anikai.to"
         const val mappleAPI = "https://mapple.mov"
         const val vidzeeApi = "https://player.vidzee.wtf"
+        const val einthusanAPI = "https://einthusan.asaddon.com/hindi"
+        const val ccloudAPI = "https://stremio-ccloud.liara.run"
+        const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

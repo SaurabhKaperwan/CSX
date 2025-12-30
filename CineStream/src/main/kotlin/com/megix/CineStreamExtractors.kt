@@ -90,8 +90,10 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Nuvio", nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Einthusan[Hindi]", einthusanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Ccloud", ccloudAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -129,8 +131,10 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeWebStreamr(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Anime World[Multi]", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Ccloud", ccloudAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -146,6 +150,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeStremioStreams(
+        sourceName: String,
         api: String,
         imdbId: String? = null,
         season: Int? = null,
@@ -169,20 +174,29 @@ object CineStreamExtractors : CineStreamProvider() {
         data.streams.forEach {
             val title = it.title ?: ""
             val name = it.name?.replace(" (SLOW) -", "") ?: it.title ?: ""
-            val type = if(name.contains("Vixsrc")) ExtractorLinkType.M3U8 else INFER_TYPE
+            val type = if(
+                title.contains("hls") ||
+                title.contains("m3u8") ||
+                name.contains("Vixsrc")
+            ) {
+                ExtractorLinkType.M3U8
+            } else {
+                INFER_TYPE
+            }
+
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
-                    "Nuvio",
-                    "[Nuvio] " + name,
+                    sourceName,
+                    "[$sourceName] " + name,
                     it.url,
                     type,
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
-                    this.quality = getIndexQuality(title)
+                    this.quality = getIndexQuality(title + name)
                     this.headers = headers
                 }
             )
