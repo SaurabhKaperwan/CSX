@@ -201,7 +201,7 @@ class CineSimklProvider: MainAPI() {
                 parseJson<Array<SimklResponse>>(json).map {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl${it.url}") {
+                    newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -254,7 +254,7 @@ class CineSimklProvider: MainAPI() {
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
+                    newMovieSearchResponse("${it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -395,7 +395,7 @@ class CineSimklProvider: MainAPI() {
                     this.episode = it.episode
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
-                    addDate(it.date)
+                    addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
                 }
             }
 
