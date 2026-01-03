@@ -185,9 +185,9 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             val headers = mapOf(
-                "User-Agent" to it.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT,
-                "Referer" to it.behaviorHints?.proxyHeaders?.request?.Referer ?: "",
-                "Origin" to it.behaviorHints?.proxyHeaders?.request?.Origin ?: ""
+                "User-Agent" to (it.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
+                "Referer"    to (it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
+                "Origin"     to (it.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
             )
 
             if(
