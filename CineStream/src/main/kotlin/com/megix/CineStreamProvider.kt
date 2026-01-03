@@ -57,7 +57,7 @@ open class CineStreamProvider : MainAPI() {
         const val sudatchiAPI = "https://sudatchi.com"
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
-        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
+        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","hi":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on"}"""
         const val mp4MoviezAPI = "https://www.mp4moviez.zip"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.tech"
@@ -82,6 +82,8 @@ open class CineStreamProvider : MainAPI() {
         const val vidzeeApi = "https://player.vidzee.wtf"
         const val einthusanAPI = "https://einthusan.asaddon.com/hindi"
         const val ccloudAPI = "https://stremio-ccloud.liara.run"
+        const val vflixAPI = "https://stream.vflix.life/stremio"
+        const val nodebridAPI = "https://nodebrid.fly.dev"
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
 
         private val apiConfig by lazy {

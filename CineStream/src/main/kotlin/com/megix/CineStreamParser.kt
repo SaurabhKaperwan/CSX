@@ -458,7 +458,9 @@ data class StreamifyProxyHeaders(
 )
 
 data class StreamifyRequest(
-    @SerializedName("Referer" ) var Referer: String? = null
+    @SerializedName("Referer" ) var Referer: String? = null,
+    @SerializedName("Origin"  ) var Origin  : String? = null,
+    @SerializedName("User-Agent") var userAgent: String? = null
 )
 
 data class JikanExternal(

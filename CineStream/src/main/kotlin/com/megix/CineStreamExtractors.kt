@@ -90,8 +90,10 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeStremioStreams("Nuvio", nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Vflix", vflixAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Einthusan[Hindi]", einthusanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Ccloud", ccloudAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
@@ -131,8 +133,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Vflix", vflixAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Anime World[Multi]", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Ccloud", ccloudAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -167,9 +170,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url).text
         val gson = Gson()
         val data = gson.fromJson(json, StreamifyResponse::class.java)
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        )
 
         data.streams.forEach {
             val title = it.title ?: ""
@@ -184,9 +184,16 @@ object CineStreamExtractors : CineStreamProvider() {
                 INFER_TYPE
             }
 
+            val headers = mapOf(
+                "User-Agent" to it.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT,
+                "Referer" to it.behaviorHints?.proxyHeaders?.request?.Referer ?: "",
+                "Origin" to it.behaviorHints?.proxyHeaders?.request?.Origin ?: ""
+            )
+
             if(
                 it.url.contains("https://github.com") ||
-                it.url.contains("video-downloads.googleusercontent")
+                it.url.contains("video-downloads.googleusercontent") ||
+                it.name?.contains("XDM") == true
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
