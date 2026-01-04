@@ -303,6 +303,10 @@ fun isUpcoming(dateString: String?): Boolean {
     }
 }
 
+fun getKisskhTitle(str: String?): String? {
+    return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
+}
+
 suspend fun loadNameExtractor(
     name: String? = null,
     url: String,

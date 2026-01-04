@@ -29,6 +29,31 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//Kisskh
+data class KisskhResults(
+    @JsonProperty("id") val id: Int?,
+    @JsonProperty("title") val title: String?,
+)
+
+data class KisskhDetail(
+    @JsonProperty("episodes") val episodes: ArrayList<KisskhEpisodes>? = arrayListOf(),
+)
+
+data class KisskhEpisodes(
+    @JsonProperty("id") val id: Int?,
+    @JsonProperty("number") val number: Int?,
+)
+
+data class KisskhSources(
+    @JsonProperty("Video") val video: String?,
+    @JsonProperty("ThirdParty") val thirdParty: String?,
+)
+
+data class KisskhSubtitle(
+    @JsonProperty("src") val src: String?,
+    @JsonProperty("label") val label: String?,
+)
+
 //XDmovies
 class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {
     data class SearchDataItem(
@@ -121,18 +146,6 @@ data class HianimeTracks(
     val file: String,
     val label: String?,
     val kind: String,
-)
-
-//Cinemaluxe
-data class CinemaluxeItem(
-    val token: String,
-    val id: Long,
-    val time: Long,
-    val post: String,
-    val redirect: String,
-    val cacha: String,
-    val new: Boolean,
-    val link: String
 )
 
 //Stremio Subtitles
