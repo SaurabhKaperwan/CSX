@@ -84,6 +84,8 @@ open class CineStreamProvider : MainAPI() {
         const val nodebridAPI = "https://nodebrid.fly.dev"
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
         const val kissKhAPI = "https://kisskh.ws"
+        const val bollywoodAPI = "https://tga-hd.api.hashhackers.com"
+        const val bollywoodBaseAPI = "https://bollywood.eu.org/"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
