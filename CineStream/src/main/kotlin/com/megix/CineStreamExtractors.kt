@@ -2485,7 +2485,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = "$MovieDrive_API/search/$title"
         val res = app.get(url, interceptor = wpRedisInterceptor).document
-        res.select("li.thumb > figcaption > a").amap {
+        res.select("#moviesGridMain > a").amap {
             val document = app.get(it.attr("href"), interceptor = wpRedisInterceptor).document
             val imdbId =  document.select("a[href*=\"imdb\"]").attr("href").substringAfter("title/").substringBefore("/")
             if(imdbId == id.orEmpty()) {
@@ -2517,7 +2517,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                 loadSourceNameExtractor(
                                     "MoviesDrive",
                                     url,
-                                    referer = "",
+                                    "",
                                     subtitleCallback,
                                     callback
                                 )

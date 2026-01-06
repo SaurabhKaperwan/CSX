@@ -241,7 +241,6 @@ class NetflixProvider : MainAPI() {
                             "Connection" to "keep-alive",
                             "Cookie" to "hd=on"
                         )
-                        this.quality = getQualityFromName(it.file.substringAfter("q=", "").substringBefore("&in"))
                     }
                 )
             }

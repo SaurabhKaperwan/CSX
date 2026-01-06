@@ -18,7 +18,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-    val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
+    val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -63,31 +63,24 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         request: MainPageRequest
     ): HomePageResponse {
         val document = app.get("${mainUrl}${request.data}${page}").document
-        val home = document.select("ul.recent-movies > li").mapNotNull {
+        val home = document.select("#moviesGridMain > a").mapNotNull {
             it.toSearchResult()
         }
         return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.select("figure > img").attr("title").replace("Download ", "")
-        val href = this.select("figure > a").attr("href")
-        val posterUrl = this.select("figure > img").attr("src")
-        val quality = if(title.contains("HDCAM", ignoreCase = true) || title.contains("CAMRip", ignoreCase = true)) {
-            SearchQuality.CamRip
-        }
-        else {
-            null
-        }
+        val title = this.select("p").text().replace("Download ", "")
+        val href = this.attr("href")
+        val posterUrl = this.select("img").attr("src")
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
-            this.quality = quality
         }
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
         val document = app.get("$mainUrl/page/$page/?s=$query").document
-        val results = document.select("ul.recent-movies > li").mapNotNull { it.toSearchResult() }
+        val results = document.select("#moviesGridMain > a").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
     }
@@ -95,63 +88,60 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
         var title = document.select("title").text().replace("Download ", "")
-        val ogTitle = title
-        val plotElement = document.select(
-            "h2:contains(Storyline), h3:contains(Storyline), h5:contains(Storyline), h4:contains(Storyline), h4:contains(STORYLINE)"
-        ).firstOrNull() ?. nextElementSibling()
-
-        var description = plotElement ?. text() ?: document.select(".ipc-html-content-inner-div").firstOrNull() ?. text().toString()
-
-        var posterUrl = document.select("img[decoding=\"async\"]").attr("src")
+        var posterUrl = document.select("main > p > img").attr("src")
+        val imdbUrl =  document.select("a[href*=\"imdb\"]").attr("href")
+        val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
         val seasonRegex = """(?i)season\s*\d+""".toRegex()
-        val imdbUrl = document.select("a[href*=\"imdb\"]").attr("href")
 
         val tvtype = if (
-            title.contains("Episode", ignoreCase = true) == true ||
+            title.contains("Episode", true) == true ||
             seasonRegex.containsMatchIn(title) ||
-            title.contains("series", ignoreCase = true) == true
+            title.contains("series", true) == true
         ) {
             "series"
         } else {
             "movie"
         }
 
-        val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
-        val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
+        val jsonResponse = app.get("$aiometa_url/$tvtype/$imdbId.json").text
         val responseData = tryParseJson<ResponseData>(jsonResponse)
 
-        var cast: List<String> = emptyList()
+        var cast: List<ActorData> = emptyList()
         var genre: List<String> = emptyList()
         var imdbRating: String = ""
         var year: String = ""
         var background: String = posterUrl
+        var description = ""
 
         if(responseData != null) {
-            description = responseData.meta.description ?: description
-            cast = responseData.meta.cast ?: emptyList()
-            title = responseData.meta.name ?: title
-            genre = responseData.meta.genre ?: emptyList()
-            imdbRating = responseData.meta.imdbRating ?: ""
-            year = responseData.meta.year ?: ""
-            posterUrl = responseData.meta.poster ?: posterUrl
-            background = responseData.meta.background ?: background
+            val meta = responseData.meta
+            description = meta.description ?: description
+            cast = meta?.app_extras?.cast?.mapNotNull { castMember ->
+                if (castMember.name != null) {
+                    ActorData(
+                        Actor(
+                            name = castMember.name,
+                            image = castMember.photo
+                        ),
+                        roleString = castMember.character
+                    )
+                } else {
+                    null
+                }
+            } ?: emptyList()
+            title = meta.name ?: title
+            genre = meta.genre ?: emptyList()
+            imdbRating = meta.imdbRating ?: ""
+            year = meta.year ?: ""
+            posterUrl = meta.poster ?: posterUrl
+            background = meta.background ?: background
         }
 
         if(tvtype == "series") {
-            if(title != ogTitle) {
-                val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
-                if (checkSeason == null) {
-                    val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
-                    if(seasonText != null) {
-                        title = title + " " + seasonText.toString()
-                    }
-                }
-            }
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
             var buttons = document.select("h5 > a")
                 .filter { element -> !element.text().contains("Zip", true) }
-
 
             buttons.forEach { button ->
                 val titleElement = button.parent() ?. previousElementSibling()
@@ -236,7 +226,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 this.score = Score.from10(imdbRating)
                 this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
-                addActors(cast)
+                this.actors = cast
                 addImdbUrl(imdbUrl)
             }
         }
@@ -262,7 +252,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 this.score = Score.from10(imdbRating)
                 this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
-                addActors(cast)
+                this.actors = cast
                 addImdbUrl(imdbUrl)
             }
         }
@@ -297,12 +287,23 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val status: String?,
         val runtime: String?,
         val cast: List<String>?,
+        val app_extras: AppExtras? = null,
         val language: String?,
         val country: String?,
         val imdbRating: String?,
         val slug: String?,
         val year: String?,
         val videos: List<EpisodeDetails>?
+    )
+
+    data class AppExtras (
+        val cast: List<Cast> = emptyList()
+    )
+
+    data class Cast (
+        val name      : String? = null,
+        val character : String? = null,
+        val photo     : String? = null
     )
 
     data class EpisodeDetails(
