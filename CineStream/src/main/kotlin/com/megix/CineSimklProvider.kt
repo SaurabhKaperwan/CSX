@@ -181,15 +181,15 @@ class CineSimklProvider: MainAPI() {
         if(id == null) {
             return null
         } else if(type == "episode") {
-            return "$baseUrl/episodes/${id}_w.webp"
+            return "$baseUrl/episodes/${id}_w.webp&con=18"
         } else if(type == "poster") {
-            return "$baseUrl/posters/${id}_m.webp"
+            return "$baseUrl/posters/${id}_m.webp&con=18"
         } else if(type == "imdb:bg") {
-            return "${image_proxy}https://images.metahub.space/background/large/$id/img"
+            return "${image_proxy}https://images.metahub.space/background/large/$id/img&con=18"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
-            return "$baseUrl/fanart/${id}_medium.webp"
+            return "$baseUrl/fanart/${id}_medium.webp&con=18"
         }
     }
 

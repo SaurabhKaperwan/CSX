@@ -168,7 +168,7 @@ open class CineStreamProvider : MainAPI() {
         if (url.isNullOrBlank()) return null
 
         if(url.contains("metahub.space")) {
-            return image_proxy + url.replace("/small/", "/large/").replace("/medium/", "/large/")
+            return image_proxy + url.replace("/small/", "/large/").replace("/medium/", "/large/") + "&con=18"
         } else {
             return url
         }
