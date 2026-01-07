@@ -47,7 +47,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.season == null) invokeStreamify(res.imdbId, callback) },
             { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -61,7 +60,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            // { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -79,9 +78,7 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
-            { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-            { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
@@ -143,7 +140,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePlayer4U(res.imdbTitle, res.imdbSeason, res.imdbEpisode, res.year, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
@@ -170,9 +166,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val gson = Gson()
         val data = gson.fromJson(json, StreamifyResponse::class.java)
 
-        data.streams.forEach {
-            val title = it.title ?: ""
-            val name = it.name?.replace(" (SLOW) -", "") ?: it.title ?: ""
+        data.streams.forEach { stream ->
+            val title = stream.title ?: ""
+            val name = stream.name?.replace(" (SLOW) -", "") ?: stream.title ?: ""
             val type = if(
                 title.contains("hls") ||
                 title.contains("m3u8") ||
@@ -184,25 +180,26 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             val headers = mapOf(
-                "User-Agent" to (it.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
-                "Referer"    to (it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
-                "Origin"     to (it.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
+                "User-Agent" to (stream.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
+                "Referer"    to (stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
+                "Origin"     to (stream.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
             )
 
-            if(
-                it.url.contains("https://github.com") ||
-                it.url.contains("video-downloads.googleusercontent") ||
-                it.name?.contains("XDM") == true ||
-                it.name?.contains("Instant Download") == true
-            ) return@forEach
+            val blockedUrls = listOf("https://github.com", "video-downloads.googleusercontent")
+            val blockedNames = listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM")
+
+            if (blockedUrls.any { stream.url.contains(it) } ||
+                blockedNames.any { key -> stream.name?.contains(key) == true }) {
+                return@forEach
+            }
             callback.invoke(
                 newExtractorLink(
                     sourceName,
                     "[$sourceName] " + name,
-                    it.url,
+                    stream.url,
                     type,
                 ) {
-                    this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                    this.referer = stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
                     this.quality = getIndexQuality(title + name)
                     this.headers = headers
                 }
@@ -356,78 +353,78 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeMapple(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val text = app.get("$multiDecryptAPI/enc-mapple").text
-        val jsonObj = JSONObject(text)
-        val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
-        val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
+    // suspend fun invokeMapple(
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     val text = app.get("$multiDecryptAPI/enc-mapple").text
+    //     val jsonObj = JSONObject(text)
+    //     val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
+    //     val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
 
-        var mediaType = ""
-        var tv_slug = ""
-        var url = ""
+    //     var mediaType = ""
+    //     var tv_slug = ""
+    //     var url = ""
 
-        if(season == null) {
-          mediaType =  "movie"
-          url = "$mappleAPI/watch/movie/$tmdbId"
-        } else {
-            mediaType = "tv"
-            tv_slug = "$season-$episode"
-            url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
-        }
+    //     if(season == null) {
+    //       mediaType =  "movie"
+    //       url = "$mappleAPI/watch/movie/$tmdbId"
+    //     } else {
+    //         mediaType = "tv"
+    //         tv_slug = "$season-$episode"
+    //         url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
+    //     }
 
-        val sources = listOf(
-            "mapple",
-            "sakura",
-            "alfa",
-            "oak",
-            "wiggles"
-        )
+    //     val sources = listOf(
+    //         "mapple",
+    //         "sakura",
+    //         "alfa",
+    //         "oak",
+    //         "wiggles"
+    //     )
 
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Connection" to "keep-alive",
-            "Referer" to "$mappleAPI/",
-            "Next-Action" to nextAction
-        )
+    //     val headers = mapOf(
+    //         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    //         "Connection" to "keep-alive",
+    //         "Referer" to "$mappleAPI/",
+    //         "Next-Action" to nextAction
+    //     )
 
-        sources.amap { source ->
+    //     sources.amap { source ->
 
-            val jsonBody = """
-                [
-                    {
-                        "mediaId": "$tmdbId",
-                        "mediaType": "$mediaType",
-                        "tv_slug": "$tv_slug",
-                        "source": "$source",
-                        "sessionId": "$sessionId"
-                    }
-                ]
-            """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+    //         val jsonBody = """
+    //             [
+    //                 {
+    //                     "mediaId": "$tmdbId",
+    //                     "mediaType": "$mediaType",
+    //                     "tv_slug": "$tv_slug",
+    //                     "source": "$source",
+    //                     "sessionId": "$sessionId"
+    //                 }
+    //             ]
+    //         """.trimIndent()
+    //         val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
 
-            val json = app.post(
-                url,
-                requestBody = requestBody,
-                headers = headers
-            ).text
+    //         val json = app.post(
+    //             url,
+    //             requestBody = requestBody,
+    //             headers = headers
+    //         ).text
 
-            val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
-            val video_link =  regex.find(json)?.groupValues?.get(1)
+    //         val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
+    //         val video_link =  regex.find(json)?.groupValues?.get(1)
 
-            if(video_link != null) {
-                M3u8Helper.generateM3u8(
-                    "Mapple [${source.uppercase()}]",
-                    video_link,
-                    "$mappleAPI/",
-                ).forEach(callback)
-            }
-        }
-    }
+    //         if(video_link != null) {
+    //             M3u8Helper.generateM3u8(
+    //                 "Mapple [${source.uppercase()}]",
+    //                 video_link,
+    //                 "$mappleAPI/",
+    //             ).forEach(callback)
+    //         }
+    //     }
+    // }
 
     suspend fun invokeHexa(
         tmdbId: Int? = null,
@@ -2123,26 +2120,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeStreamify(
-        id: String? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = "$stremifyAPI/movie/$id.json"
-        val json = app.get(url).text
-        val gson = Gson()
-        val data = gson.fromJson(json, StreamifyResponse::class.java)
-
-        data.streams.forEach {
-            callback.invoke(
-                newExtractorLink(
-                    it.name ?: "Streamify",
-                    "[${it.name}] ${it.title}",
-                    it.url,
-                )
-            )
-        }
-    }
-
     suspend fun invokeMultimovies(
         title: String? = null,
         season: Int? = null,
@@ -2908,86 +2885,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokePlayer4U(
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        year: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if (title.isNullOrBlank()) return
-        if(season == null && year == null) return
-
-        val fixQuery = (season?.let { "$title S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$title $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
-        val allLinks = HashSet<Player4uLinkData>()
-
-        var page = 0
-        var nextPageExists: Boolean = true
-
-        do {
-            val url = if(page == 0) {"$Player4uApi/embed?key=$fixQuery"} else {"$Player4uApi/embed?key=$fixQuery&page=$page"}
-            try {
-                var document = app.get(url, timeout = 20).document
-                allLinks.addAll(
-                    document.select(".playbtnx").mapNotNull { element ->
-                        val titleText = element.text()?.split(" | ")?.lastOrNull() ?: return@mapNotNull null
-
-                        if (season == null && episode == null) {
-                            if (year != null && (titleText.startsWith("$title $year", ignoreCase = true) ||
-                                 titleText.startsWith("$title ($year)", ignoreCase = true))) {
-                                Player4uLinkData(name = titleText, url = element.attr("onclick"))
-                            } else null
-                        } else {
-                            if (season != null && episode != null &&
-                                titleText.startsWith("$title S${"%02d".format(season)}E${"%02d".format(episode)}", ignoreCase = true)) {
-                                Player4uLinkData(name = titleText, url = element.attr("onclick"))
-                            } else null
-                        }
-                    }
-                )
-
-                // if(page == 0 && season == null && allLinks.size == 0)
-                // {
-                //     document = app.get("$Player4uApi/embed?key=${fixTitle.replace(" ","+")}", timeout = 20).document
-                //     allLinks.addAll(
-                //         document.select(".playbtnx").map {
-                //             Player4uLinkData(name = it.text(), url = it.attr("onclick"))
-                //         }
-                //     )
-                //     break
-                // }
-
-                nextPageExists = document.select("div a").any { it.text().contains("Next", true) }
-            } catch (e: Exception) {}
-            page++
-        } while (nextPageExists && page <= 4)
-
-        allLinks.distinctBy { it.name }.forEach { link ->
-            try {
-
-                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{${link.name}}" }}"
-
-                val qualityFromName = Regex("""(\d{3,4}p|4K|CAM|HQ|HD|SD|WEBRip|DVDRip|BluRay|HDRip|TVRip|HDTC|PREDVD)""", RegexOption.IGNORE_CASE)
-                    .find(nameFormatted)?.value?.uppercase() ?: "UNKNOWN"
-
-
-                val selectedQuality = getPlayer4UQuality(qualityFromName)
-
-                val subLink = "go\\('(.*)'\\)".toRegex().find(link.url)?.groups?.get(1)?.value ?: return@forEach
-                val iframeSource = app.get("$Player4uApi$subLink", timeout = 10, referer = Player4uApi)
-                    .document.select("iframe").attr("src")
-                getPlayer4uUrl(
-                    nameFormatted,
-                    selectedQuality,
-                    "https://uqloads.xyz/e/$iframeSource",
-                    Player4uApi,
-                    callback
-                )
-
-            } catch (_: Exception) { }
-        }
-    }
-
     suspend fun invokePrimeSrc(
         imdbId: String? = null,
         season: Int? = null,
@@ -3020,38 +2917,6 @@ object CineStreamExtractors : CineStreamProvider() {
             loadSourceNameExtractor("PrimeWire${if(it.fileName.isNullOrEmpty()) "" else " (${it.fileName}) "}", jsonObject.optString("link",""),PrimeSrcApi, subtitleCallback, callback,null,it.fileSize?:"")
         }
 
-    }
-
-    suspend fun invokeSoaper(
-        imdbId: String? = null,
-        tmdbId: Int? = null,
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "Referer" to soaperAPI,
-            "Origin" to soaperAPI
-        )
-        val document = app.get("$soaperAPI/search.html?keyword=$title", headers = headers).document
-        val href = document.selectFirst("div.img-group a:has(img[src*='$tmdbId']), div.img-group a:has(img[src*='$imdbId'])")?.attr("href") ?: return
-
-        if(season == null) {
-            getSoaperLinks(soaperAPI, "$soaperAPI$href", "M", subtitleCallback, callback)
-        } else {
-            val doc = app.get("$soaperAPI$href", headers = headers).document
-            val seasonDiv = doc.select("div.alert-info-ex").firstOrNull { div ->
-                div.selectFirst("h4")?.text()?.contains("Season$season", ignoreCase = true) == true
-            }
-
-            val episodeLink = seasonDiv?.select("a")?.firstOrNull { a ->
-                a.text().trim().startsWith("$episode.")
-            }?.attr("href") ?: return
-
-            getSoaperLinks(soaperAPI ,"$soaperAPI$episodeLink", "E", subtitleCallback, callback)
-        }
     }
 
     // only for movies
@@ -3690,8 +3555,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 val item = element.asJsonObject
                 val fileName = item.get("file_name").asString
                 val fileId = item.get("id").asString
-                val extracted = extractSpecs(fileName)
-                val extractedSpecs = buildExtractedTitle(extracted)
                 // val size = item.get("file_size").asString
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
@@ -3705,7 +3568,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood $extractedSpecs",
+                            "Bollywood [$fileName]",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {

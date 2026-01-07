@@ -91,7 +91,6 @@ data class VidlinkStream(
     @SerializedName("playlist") val playlist: String
 )
 
-
 data class TmdbDate(
     val today: String,
     val nextWeek: String,
@@ -216,17 +215,6 @@ data class AllMovielandServer(
         )
     }
 }
-
-//Tom
-data class TomResponse (
-  var videoSource    : String,
-  var subtitles      : ArrayList<TomSubtitles> = arrayListOf(),
-)
-
-data class TomSubtitles (
-  var file    : String,
-  var label   : String
-)
 
 //TMDB to mal
 data class AniMedia(
@@ -544,87 +532,11 @@ data class MALSyncResponses(
     @JsonProperty("Sites") val sites: MALSyncSites? = null,
 )
 
-data class RarResponseData(
-    val data: List<RarItem>?
-)
-
-data class RarItem(
-    val id: Int,
-    val name: String,
-    val second_name: String,
-    val image: String,
-    val url: String,
-    val type: String
-)
-
 //Subtitles
 data class WYZIESubtitle(
     val url: String,
     val language: String?,
     val display: String?,
-)
-
-//Consumet
-data class ConsumetSearch (
-    var results     : ArrayList<ConsumetResults> = arrayListOf()
-)
-
-data class ConsumetResults (
-    var id          : String,
-    var title       : String,
-    var type        : String
-)
-
-data class ConsumetInfo (
-    var id          : String,
-    var episodes    : ArrayList<ConsumetEpisodes> = arrayListOf()
-)
-
-
-data class ConsumetEpisodes (
-    var id     : String,
-    var number : Int? = null,
-    var season : Int? = null,
-)
-
-data class ConsumetWatch (
-    var headers   : ConsumetHeaders      = ConsumetHeaders(),
-    var sources   : ArrayList<ConsumetSources>   = arrayListOf(),
-    var subtitles : ArrayList<ConsumetSubtitles> = arrayListOf()
-)
-
-data class ConsumetHeaders (
-  var Referer : String? = null,
-)
-
-data class ConsumetSources (
-    var url     : String,
-    var quality : String,
-    var isM3U8  : Boolean
-)
-
-data class ConsumetSubtitles (
-    var url  : String,
-    var lang : String
-)
-
-data class Player4uLinkData(
-    val name: String,
-    val url: String,
-)
-
-data class TBPResponse(
-    val streams: List<TBPStream>,
-    val cacheMaxAge: Long,
-    val staleRevalidate: Long,
-    val staleError: Long,
-)
-
-data class TBPStream(
-    val name: String,
-    val title: String,
-    val infoHash: String,
-    val tag: String,
 )
 
 data class Track(
