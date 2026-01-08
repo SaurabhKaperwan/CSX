@@ -469,7 +469,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val m3u8 = src.getString("url")
 
                 M3u8Helper.generateM3u8(
-                    "Hexa ${server.uppercase()()}",
+                    "Hexa ${server.uppercase()}",
                     m3u8,
                     "https://hexa.su/",
                 ).forEach(callback)
