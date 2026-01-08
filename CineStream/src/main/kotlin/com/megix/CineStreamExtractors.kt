@@ -235,15 +235,15 @@ object CineStreamExtractors : CineStreamProvider() {
         paths.map {
             val quality = getIndexQuality(it.first)
             val tags = getIndexQualityTags(it.first)
-            val href = if (it.second.contains(url)) it.second else (url + it.second)
+            val href = if (it.second.contains(dahmerMoviesAPI)) it.second else (dahmerMoviesAPI + it.second)
 
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
                     "DahmerMovies $tags",
-                    url = href.encodeUrl()
+                    url = href,
+                    ExtractorLinkType.VIDEO
                 ) {
-                    this.referer = ""
                     this.quality = quality
                 }
             )
@@ -451,10 +451,11 @@ object CineStreamExtractors : CineStreamProvider() {
         val enc_data = app.get(url, headers = headers).text
 
         val jsonBody = """{"text":"$enc_data","key":"$key"}"""
-        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType())
         val response = app.post(
             "$multiDecryptAPI/dec-hexa",
-            requestBody = requestBody
+            requestBody = requestBody,
+            headers = mapOf("Content-Type" to "application/json")
         )
 
         if(response.isSuccessful) {
@@ -467,15 +468,11 @@ object CineStreamExtractors : CineStreamProvider() {
                 val server = src.getString("server")
                 val m3u8 = src.getString("url")
 
-                callback.invoke(
-                    newExtractorLink(
-                        "Hexa[${server.uppercase()}]",
-                        "Hexa[${server.uppercase()}]",
-                        m3u8
-                    ) {
-                        this.headers = M3U8_HEADERS
-                    }
-                )
+                M3u8Helper.generateM3u8(
+                    "Hexa ${server.uppercase()()}",
+                    m3u8,
+                    "https://hexa.su/",
+                ).forEach(callback)
             }
         }
     }

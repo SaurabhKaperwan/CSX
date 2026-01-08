@@ -111,12 +111,12 @@ class GDIndexProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val file = parseJson<GDFile>(data)
-        val path = file.path
+        val path = if(file.path.contains(mainUrl)) file.path else mainUrl + file.path
         callback.invoke(
             newExtractorLink(
                 name,
                 name,
-                path.encodeUrl(),
+                path,
                 ExtractorLinkType.VIDEO,
             ) {
                 this.referer = "$mainUrl/"
