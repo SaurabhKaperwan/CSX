@@ -73,7 +73,6 @@ open class CineStreamProvider : MainAPI() {
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
-        const val animekaiAPI = "https://animekai.to"
         const val mappleAPI = "https://mapple.mov"
         const val vidzeeApi = "https://player.vidzee.wtf"
         const val ccloudAPI = "https://stremio-ccloud.liara.run"
@@ -123,6 +122,7 @@ open class CineStreamProvider : MainAPI() {
         val dramadripAPI get() = api("dramadrip")
         val nuvioStreamsAPI get() = api("nuvio")
         val XDmoviesAPI get() = api("xdmovies")
+        val animekaiAPI get() = api("animekai")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
@@ -135,8 +135,6 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$aiometa_url/catalog/movie/tvdb.trending/skip=###" to "Trending Movies",
-        "$aiometa_url/catalog/series/tvdb.trending/skip=###" to "Trending Series",
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
         "$aiometa_url/catalog/anime/mal.airing/skip=###" to "Top Airing Anime",
