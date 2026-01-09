@@ -73,7 +73,7 @@ open class CineStreamProvider : MainAPI() {
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
-        const val mappleAPI = "https://mapple.mov"
+        const val mappleAPI = "https://mapple.uk"
         const val vidzeeApi = "https://player.vidzee.wtf"
         const val ccloudAPI = "https://stremio-ccloud.liara.run"
         const val vflixAPI = "https://stream.vflix.life/stremio"
@@ -81,7 +81,8 @@ open class CineStreamProvider : MainAPI() {
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
         const val kissKhAPI = "https://kisskh.ws"
         const val bollywoodAPI = "https://tga-hd.api.hashhackers.com"
-        const val bollywoodBaseAPI = "https://bollywood.eu.org/"
+        const val bollywoodBaseAPI = "https://bollywood.eu.org"
+        const val vadapavAPI = "https://vadapav.mov"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

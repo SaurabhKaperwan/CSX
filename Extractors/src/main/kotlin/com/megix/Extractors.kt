@@ -352,12 +352,12 @@ open class VCloud : ExtractorApi() {
                     )
                 }
                 else if (text.contains("Download [Server : 10Gbps]")) {
-                    val dlink = app.get(link, allowRedirects = false).headers["location"] ?: ""
+                    val dlink = app.get(link).document.select("a#vd").attr("href")
                     callback.invoke(
                         newExtractorLink(
                             "$name[Download]",
                             "$name[Download] $header[$size]",
-                            dlink.substringAfter("link="),
+                            dlink,
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -523,12 +523,12 @@ open class HubCloud : ExtractorApi() {
                 )
             }
             else if (text.contains("Download [Server : 10Gbps]")) {
-                val dlink = app.get(link, allowRedirects = false).headers["location"] ?: ""
+                val dlink = app.get(link).document.select("a#vd").attr("href")
                 callback.invoke(
                     newExtractorLink(
                         "$name[Download]",
                         "$name[Download] $header[$size]",
-                        dlink.substringAfter("link="),
+                        dlink,
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
@@ -577,7 +577,7 @@ class GDLink : GDFlix() {
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new10.gdflix.*"
+    override var mainUrl = "https://new11.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
@@ -625,7 +625,6 @@ open class GDFlix : ExtractorApi() {
                 }
 
                 text.contains("CLOUD DOWNLOAD [R2]") -> {
-                    val link = URLDecoder.decode(link.substringAfter("url="), StandardCharsets.UTF_8.toString())
                     callback.invoke(
                         newExtractorLink("GDFlix[Cloud]", "GDFlix[Cloud] $fileName[$fileSize]", link) {
                             this.quality = quality
