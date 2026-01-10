@@ -180,6 +180,8 @@ class CineSimklProvider: MainAPI() {
         val baseUrl = "${image_proxy}https://simkl.in"
         if(id == null) {
             return null
+        } else if(type == "imdb:lg") {
+            return "${image_proxy}https://live.metahub.space/logo/large/$id/img"
         } else if(type == "episode") {
             return "$baseUrl/episodes/${id}_w.webp"
         } else if(type == "poster") {
@@ -303,6 +305,7 @@ class CineSimklProvider: MainAPI() {
             json.overview
         }
 
+        val logo = imdbId?.let { getPosterUrl(it, "imdb:lg") }
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
@@ -310,13 +313,13 @@ class CineSimklProvider: MainAPI() {
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
-            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
+            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
                 this.posterUrl = getPosterUrl(it.poster, "poster")
             }
         } ?: emptyList()
 
         val relations = json.relations?.map {
-            newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/${it.anime_type}/${it.ids?.simkl}/${it.ids?.slug}") {
+            newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
                 this.posterUrl = getPosterUrl(it.poster, "poster")
             }
         } ?: emptyList()
@@ -357,6 +360,7 @@ class CineSimklProvider: MainAPI() {
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
+                try { this.logoUrl = logo} catch(_:Throwable){}
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
@@ -408,6 +412,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
+                try { this.logoUrl = logo} catch(_:Throwable){}
                 this.actors = cast
                 this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations

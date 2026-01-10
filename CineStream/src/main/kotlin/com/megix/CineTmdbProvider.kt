@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAnimes
@@ -25,6 +24,7 @@ class CineTmdbProvider: MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = true
     private val apiUrl = "https://api.themoviedb.org/3"
+    private val image_proxy = "https://wsrv.nl/?url="
 
     companion object {
         private const val apiKey = BuildConfig.TMDB_KEY
@@ -125,7 +125,8 @@ class CineTmdbProvider: MainAPI() {
         val releaseDate = res.releaseDate ?: res.firstAirDate
         val year = releaseDate?.split("-")?.first()?.toIntOrNull()
         val genres = res.genres?.mapNotNull { it.name }
-
+        val imdbId = res.external_ids?.imdb_id
+        val logo = imdbId?.let { "${image_proxy}https://live.metahub.space/logo/large/$imdbId/img" }
         val isCartoon = genres?.contains("Animation") ?: false
         val isAnime = isCartoon && (res.original_language == "zh" || res.original_language == "ja" || res.original_language == "ko")
         val isAsian = !isAnime && (res.original_language == "zh" || res.original_language == "ko")
@@ -205,6 +206,7 @@ class CineTmdbProvider: MainAPI() {
                 this.backgroundPosterUrl = bgPoster
                 this.year = year
                 this.plot = res.overview
+                try { this.logoUrl = logo} catch(_:Throwable){}
                 this.tags = keywords?.map { word -> word.replaceFirstChar { it.titlecase() } }
                     ?.takeIf { it.isNotEmpty() } ?: genres
                 this.score = Score.from10(res.vote_average.toString())
@@ -212,8 +214,7 @@ class CineTmdbProvider: MainAPI() {
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
-                addTMDbId(data.id.toString())
-                addImdbId(res.external_ids?.imdb_id)
+                addImdbId(imdbId)
             }
         } else {
             return newMovieLoadResponse(
@@ -243,6 +244,7 @@ class CineTmdbProvider: MainAPI() {
                 this.year = year
                 this.plot = res.overview
                 this.duration = res.runtime
+                try { this.logoUrl = logo} catch(_:Throwable){}
                 this.tags = keywords?.map { word -> word.replaceFirstChar { it.titlecase() } }
                     ?.takeIf { it.isNotEmpty() } ?: genres
 
@@ -250,8 +252,7 @@ class CineTmdbProvider: MainAPI() {
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
-                addTMDbId(data.id.toString())
-                addImdbId(res.external_ids?.imdb_id)
+                addImdbId(imdbId)
             }
         }
     }

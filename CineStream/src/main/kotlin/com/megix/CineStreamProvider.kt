@@ -257,22 +257,23 @@ open class CineStreamProvider : MainAPI() {
         val kitsuId = if(isKitsu) id.substringAfter("kitsu:") else null
         id = if(isKitsu) id.replace(":", "%3A") else id
         val json = app.get("$meta_url/meta/$tvtype/$id.json").text
-        val movieData = tryParseJson<ResponseData>(json)
+        val movieData = tryParseJson<ResponseData>(json)?.meta
         if(isKitsu && id.contains("mal")) {
-           id = movieData?.meta?.id ?: id
+           id = movieData?.id ?: id
         }
         val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else  null
         val malId = if(externalIds != null) externalIds.myanimelist else null
         val anilistId = if(externalIds != null) externalIds.anilist else null
-        val title = movieData?.meta?.name.toString()
-        val engTitle = movieData?.meta?.aliases?.firstOrNull() ?: title
-        val posterUrl = getPoster(movieData ?.meta?.poster)
-        val imdbRating = movieData?.meta?.imdbRating?.toDoubleOrNull()
-        val year = movieData?.meta?.year
-        val releaseInfo = movieData?.meta?.releaseInfo
-        val tmdbId = movieData?.meta?.moviedb_id
-        id = if(!isKitsu) movieData?.meta?.imdb_id.toString() else id
-        var description = movieData?.meta?.description
+        val title = movieData?.name.toString()
+        val engTitle = movieData?.aliases?.firstOrNull() ?: title
+        val posterUrl = getPoster(movieData?.poster)
+        val logo = getPoster(movieData?.logo)
+        val imdbRating = movieData?.imdbRating?.toDoubleOrNull()
+        val year = movieData?.year
+        val releaseInfo = movieData?.releaseInfo
+        val tmdbId = movieData?.moviedb_id
+        id = if(!isKitsu) movieData?.imdb_id.toString() else id
+        var description = movieData?.description
 
         var actors = if(isKitsu) {
             null
@@ -281,7 +282,7 @@ open class CineStreamProvider : MainAPI() {
         }
 
         if(actors == null && !isKitsu) {
-            actors = movieData?.meta?.cast?.mapNotNull { name ->
+            actors = movieData?.cast?.mapNotNull { name ->
                 ActorData(
                     actor = Actor(name, null),
                     roleString = null
@@ -289,9 +290,9 @@ open class CineStreamProvider : MainAPI() {
             } ?: emptyList()
         }
 
-        val country = movieData?.meta?.country ?: ""
-        val genre = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
-        val background = getPoster(movieData?.meta?.background)
+        val country = movieData?.country ?: ""
+        val genre = movieData?.genre ?: movieData?.genres ?: emptyList()
+        val background = getPoster(movieData?.background)
         val isCartoon = genre.any { it.contains("Animation", true) }
         var isAnime = (country.contains("Japan", true) ||
             country.contains("China", true)) && isCartoon
@@ -329,7 +330,8 @@ open class CineStreamProvider : MainAPI() {
                 this.score = Score.from10(imdbRating)
                 this.year = year ?.toIntOrNull() ?: releaseInfo?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
-                this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
+                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
                 addAniListId(anilistId)
@@ -338,7 +340,7 @@ open class CineStreamProvider : MainAPI() {
             }
         }
         else {
-            val episodes = movieData?.meta?.videos?.map { ep ->
+            val episodes = movieData?.videos?.map { ep ->
                 newEpisode(
                     LoadLinksData(
                         title,
@@ -378,7 +380,8 @@ open class CineStreamProvider : MainAPI() {
                 this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.plot = description
                 this.tags = genre
-                this.duration = movieData?.meta?.runtime?.replace(" min", "")?.toIntOrNull()
+                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.score = Score.from10(imdbRating)
                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
@@ -478,6 +481,7 @@ open class CineStreamProvider : MainAPI() {
         val type: String?,
         val aliases: ArrayList<String>?,
         val poster: String?,
+        val logo: String?,
         val background: String?,
         val moviedb_id: Int?,
         val name: String?,
