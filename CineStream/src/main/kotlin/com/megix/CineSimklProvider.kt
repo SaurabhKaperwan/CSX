@@ -44,6 +44,7 @@ class CineSimklProvider: MainAPI() {
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
     private val image_proxy = "https://wsrv.nl/?url="
+    private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
         "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
@@ -87,25 +88,14 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private fun normalizeSeasonString(input: String?): String? {
-        val text = input ?: return null
-
-        val patterns = listOf("season", "part")
-        var result = text
-
-        for (word in patterns) {
-            val regex = Regex("(?i)($word\\s*\\d+)")
-            val match = regex.find(result) ?: continue
-
-            val number = Regex("\\d+").find(match.value)?.value ?: continue
-            val normalized = "${word.replaceFirstChar { it.uppercase() }} $number"
-
-            result = result.replace(regex, normalized)
-            val duplicateRegex = Regex("(?i)($normalized)(\\s+\\1)+")
-            result = result.replace(duplicateRegex, normalized)
+    private suspend fun extractMetaAIO(malId: Int): JSONObject? {
+        return try {
+            val jsonString = app.get("$aio_meta/meta/series/mal%3A${malId}.json").text
+            val root = JSONObject(jsonString)
+            root.optJSONObject("meta")
+        } catch (e: Exception) {
+            null
         }
-
-        return result.trim()
     }
 
    private suspend fun extractImdbInfo(
@@ -286,18 +276,18 @@ class CineSimklProvider: MainAPI() {
         val ids = json.ids
         val allRatings = json.ratings
         val rating = allRatings?.mal?.rating ?: allRatings?.imdb?.rating
-
-        val enTitle = if (isAnime) {
-            normalizeSeasonString(json.en_title ?: json.title)
-        } else {
-            json.en_title ?: json.title
-        }
-
         val kitsuId = ids?.kitsu
         val anilistId = ids?.anilist?.toIntOrNull()
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
+
+        val aio_meta = if(malId != null) extractMetaAIO(malId) else null
+
+        val enTitle =
+            aio_meta?.optString("name", null)
+            ?: json.en_title
+            ?: json.title
 
         val plot = if(anilistId != null) {
             null
@@ -308,7 +298,9 @@ class CineSimklProvider: MainAPI() {
         val logo = imdbId?.let { getPosterUrl(it, "imdb:lg") }
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
-        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+        val backgroundPosterUrl =
+            getPosterUrl(json.fanart, "fanart")
+            ?: aio_meta?.optString("background", null)
             ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(firstTrailerId, "youtube")
 

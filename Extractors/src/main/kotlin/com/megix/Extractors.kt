@@ -290,15 +290,25 @@ open class VCloud : ExtractorApi() {
             val size = document.select("i#size").text() ?: ""
             val quality = getIndexQuality(header)
 
-            div?.select("h2 a.btn")?.amap {
+            div?.select("h2 a.btn")?.forEach {
                 val link = it.attr("href")
                 val text = it.text()
-                if (text.contains("[FSL Server]"))
-                {
+                if (text.contains("FSL Server")) {
                     callback.invoke(
                         newExtractorLink(
                             "$name[FSL Server]",
                             "$name[FSL Server] $header[$size]",
+                            link,
+                        ) {
+                            this.quality = quality
+                            this.headers = VIDEO_HEADERS
+                        }
+                    )
+                } else if (text.contains("FSLv2")) {
+                    callback.invoke(
+                        newExtractorLink(
+                            "$name[FSLv2 Server]",
+                            "$name[FSLv2 Server] $header[$size]",
                             link,
                         ) {
                             this.quality = quality
@@ -351,7 +361,7 @@ open class VCloud : ExtractorApi() {
                         }
                     )
                 }
-                else if (text.contains("Download [Server : 10Gbps]")) {
+                else if (text.contains("Server : 10Gbps")) {
                     val dlink = app.get(link).document.select("a#vd").attr("href")
                     callback.invoke(
                         newExtractorLink(
@@ -434,11 +444,11 @@ open class HubCloud : ExtractorApi() {
         val size = document.select("i#size").text() ?: ""
         val quality = getIndexQuality(header)
 
-        div?.select("h2 a.btn")?.amap {
+        div?.select("h2 a.btn")?.forEach {
             val link = it.attr("href")
             val text = it.text()
 
-            if (text.contains("[FSL Server]"))
+            if (text.contains("FSL Server"))
             {
                 callback.invoke(
                     newExtractorLink(
@@ -451,7 +461,7 @@ open class HubCloud : ExtractorApi() {
                     }
                 )
             }
-            else if (text.contains("[FSLv2 Server]"))
+            else if (text.contains("FSLv2"))
             {
                 callback.invoke(
                     newExtractorLink(
@@ -522,7 +532,7 @@ open class HubCloud : ExtractorApi() {
                     }
                 )
             }
-            else if (text.contains("Download [Server : 10Gbps]")) {
+            else if (text.contains("Server : 10Gbps")) {
                 val dlink = app.get(link).document.select("a#vd").attr("href")
                 callback.invoke(
                     newExtractorLink(
@@ -577,7 +587,7 @@ class GDLink : GDFlix() {
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new11.gdflix.*"
+    override var mainUrl = "https://new12.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
@@ -601,7 +611,7 @@ open class GDFlix : ExtractorApi() {
             .substringAfter("Size : ").orEmpty()
         val quality = getIndexQuality(fileName)
 
-        document.select("div.text-center a").amap { anchor ->
+        document.select("div.text-center a").forEach { anchor ->
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
 
