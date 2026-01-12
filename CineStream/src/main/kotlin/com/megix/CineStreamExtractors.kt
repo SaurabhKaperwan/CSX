@@ -12,8 +12,14 @@ import org.json.JSONObject
 import org.json.JSONArray
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
+
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.FormBody
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Headers
+
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
 import java.net.URL
@@ -22,19 +28,21 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
+
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+
 import com.lagradost.cloudstream3.network.CloudflareKiller
-import okhttp3.MediaType.Companion.toMediaType
 import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.toString
 import java.security.SecureRandom
+import java.io.IOException
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -52,6 +60,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
+            { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -125,6 +134,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -3620,6 +3630,169 @@ object CineStreamExtractors : CineStreamProvider() {
                         ) {
                             this.quality = getIndexQuality(fileName)
                             this.referer = bollywoodBaseAPI
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun invokeMoviebox(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        fun unwrapData(json: JSONObject): JSONObject {
+            val data = json.optJSONObject("data")
+            if (data != null) {
+                val nestedData = data.optJSONObject("data")
+                return nestedData ?: data
+            }
+            return json
+        }
+
+        val client = OkHttpClient()
+        val HOST = "h5.aoneroom.com"
+        val BASE_URL = "https://$HOST"
+
+        val BASE_HEADERS = Headers.Builder()
+        .add("X-Client-Info", "{\"timezone\":\"Africa/Nairobi\"}")
+        .add("Accept-Language", "en-US,en;q=0.5")
+        .add("Accept", "application/json")
+        .add("User-Agent", "okhttp/4.12.0")
+        .add("Referer", BASE_URL)
+        .add("Host", HOST)
+        .add("Connection", "keep-alive")
+        .build()
+
+        val initRequest = Request.Builder()
+            .url("$BASE_URL/wefeed-h5-bff/app/get-latest-app-pkgs?app_name=moviebox")
+            .headers(BASE_HEADERS)
+            .build()
+
+        client.newCall(initRequest).execute().close()
+
+        val subjectType = if (season != null) 2 else 1
+        val searchJson = JSONObject().apply {
+            put("keyword", title)
+            put("page", 1)
+            put("perPage", 24)
+            put("subjectType", subjectType)
+        }
+
+        val searchRequest = Request.Builder()
+            .url("$BASE_URL/wefeed-h5-bff/web/subject/search")
+            .headers(BASE_HEADERS)
+            .post(searchJson.toString().toRequestBody("application/json".toMediaType()))
+            .build()
+
+        val searchResponseString = client.newCall(searchRequest).execute().use {
+            if (!it.isSuccessful) throw IOException("Search failed: ${it.code}")
+            it.body?.string() ?: ""
+        }
+
+        val searchObj = JSONObject(searchResponseString)
+        val results = unwrapData(searchObj)
+        val items = results.optJSONArray("items")
+
+        if (items == null || items.length() == 0) return
+
+        // Regex to clean Season info (e.g., " S2")
+        val seasonSuffixRegex = Regex("\\sS\\d+$")
+
+        // Regex to Validate Title & Capture Language
+        // 1. Matches strictly the title (ignoring case)
+        // 2. Optionally captures content inside brackets: \[([^\]]+)\]
+        val titleMatchRegex = """^${Regex.escape(title ?: "")}(?: \[([^\]]+)\])?$""".toRegex(RegexOption.IGNORE_CASE)
+
+        val uniqueIdsWithLang = mutableMapOf<String, String>()
+
+        for (i in 0 until items.length()) {
+            val item = items.getJSONObject(i)
+            val rawTitle = item.optString("title", "")
+            val id = item.optString("subjectId")
+
+            if (id.isEmpty()) continue
+
+            // Clean Season Suffix: "Title [Hindi] S2" -> "Title [Hindi]"
+            val cleanTitle = rawTitle.replace(seasonSuffixRegex, "")
+
+            // Check match and extract language
+            val matchResult = titleMatchRegex.find(cleanTitle)
+
+            if (matchResult != null) {
+                val langTag = matchResult.groups[1]?.value
+                val language = langTag ?: "Original"
+
+                if (!uniqueIdsWithLang.containsKey(id)) {
+                    uniqueIdsWithLang[id] = language
+                }
+            }
+        }
+
+        if (uniqueIdsWithLang.isEmpty()) return
+
+        uniqueIdsWithLang.forEach { (subjectId, language) ->
+            val detailUrl = "$BASE_URL/wefeed-h5-bff/web/subject/detail?subjectId=${subjectId}"
+            val detailRequest = Request.Builder()
+                .url(detailUrl)
+                .headers(BASE_HEADERS)
+                .build()
+
+            val detailResponseString = client.newCall(detailRequest).execute().use {
+                it.body?.string() ?: ""
+            }
+
+            val detailObj = JSONObject(detailResponseString)
+            val detailInfo = unwrapData(detailObj)
+            val detailSubject = detailInfo.optJSONObject("subject")
+            val detailPath = detailSubject?.optString("detailPath") ?: ""
+            val params = StringBuilder("subjectId=$subjectId")
+
+            if (season != null) {
+                params.append("&se=$season")
+                params.append("&ep=$episode")
+            }
+
+            val downloadHeaders = BASE_HEADERS.newBuilder()
+                .set("Referer", "https://fmoviesunblocked.net/spa/videoPlayPage/movies/$detailPath?id=$subjectId&type=/movie/detail")
+                .set("Origin", "https://fmoviesunblocked.net")
+                .build()
+
+            val downloadRequest = Request.Builder()
+                .url("$BASE_URL/wefeed-h5-bff/web/subject/download?$params")
+                .headers(downloadHeaders)
+                .build()
+
+            val downloadResponseString = client.newCall(downloadRequest).execute().use {
+                it.body?.string() ?: ""
+            }
+
+            val sourceObj = JSONObject(downloadResponseString)
+            val sourceData = unwrapData(sourceObj)
+            val downloads = sourceData.optJSONArray("downloads")
+
+            if (downloads == null || downloads.length() == 0) return@forEach
+
+            for (i in 0 until downloads.length()) {
+                val d = downloads.getJSONObject(i)
+                val dlink = d.optString("url")
+                if (dlink.isNotEmpty()) {
+                    val resolution = d.optInt("resolution")
+                    callback.invoke(
+                        newExtractorLink(
+                            "MovieBox",
+                            "MovieBox [$language]",
+                            dlink,
+                        ) {
+                            this.headers = mapOf(
+                                "Referer" to "https://fmoviesunblocked.net/",
+                                "Origin" to "https://fmoviesunblocked.net"
+                            )
+                            this.quality = resolution
                         }
                     )
                 }
