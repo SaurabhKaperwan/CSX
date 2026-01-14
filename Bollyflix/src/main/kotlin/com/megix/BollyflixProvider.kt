@@ -16,7 +16,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
 class BollyflixProvider : MainAPI() {
-    override var mainUrl = "https://bollyflix.promo"
+    override var mainUrl = "https://bollyflix.do"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
@@ -146,7 +146,7 @@ class BollyflixProvider : MainAPI() {
         if (tvtype == "series") {
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, MutableList<String>> = mutableMapOf()
-            val buttons = document.select("a.maxbutton-download-links, a.dl")
+            val buttons = document.select("a.maxbutton-download-links, a.dl, a.btnn")
 
             coroutineScope {
                 buttons.map { button ->

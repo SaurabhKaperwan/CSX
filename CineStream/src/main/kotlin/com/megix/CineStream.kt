@@ -33,6 +33,7 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Multimoviesshg())
         registerExtractorAPI(Akamaicdn())
         registerExtractorAPI(VidHideHub())
+        registerExtractorAPI(Rapidairmax())
         registerExtractorAPI(MegaUp())
         registerExtractorAPI(MegaUpTwoTwo())
         registerExtractorAPI(Fourspromax())

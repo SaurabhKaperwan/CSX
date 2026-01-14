@@ -126,7 +126,6 @@ class CineTmdbProvider: MainAPI() {
         val year = releaseDate?.split("-")?.first()?.toIntOrNull()
         val genres = res.genres?.mapNotNull { it.name }
         val imdbId = res.external_ids?.imdb_id
-        val logo = imdbId?.let { "${image_proxy}https://live.metahub.space/logo/large/$imdbId/img" }
         val isCartoon = genres?.contains("Animation") ?: false
         val isAnime = isCartoon && (res.original_language == "zh" || res.original_language == "ja" || res.original_language == "ko")
         val isAsian = !isAnime && (res.original_language == "zh" || res.original_language == "ko")
@@ -144,6 +143,14 @@ class CineTmdbProvider: MainAPI() {
                 Actor(name, getImageUrl(cast.profilePath)), roleString = cast.character
             )
         } ?: emptyList()
+
+        val logo = fetchTmdbLogoUrl(
+            apiUrl,
+            apiKey,
+            type,
+            res.id,
+            "en"
+        )
 
         val recommendations =
             res.recommendations?.results?.mapNotNull { media -> media.toSearchResponse() }

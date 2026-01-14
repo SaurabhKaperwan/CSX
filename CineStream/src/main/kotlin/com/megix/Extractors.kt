@@ -306,6 +306,10 @@ class MegaUpTwoTwo : MegaUp() {
     override val requiresReferer = true
 }
 
+class Rapidairmax : MegaUp() {
+    override var mainUrl = "https://rapidairmax.site"
+    override val requiresReferer = true
+}
 //Thanks to https://github.com/AzartX47/EncDecEndpoints
 open class MegaUp : ExtractorApi() {
     override var name = "MegaUp"
