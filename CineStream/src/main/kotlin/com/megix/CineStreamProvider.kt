@@ -27,7 +27,6 @@ open class CineStreamProvider : MainAPI() {
     override var lang = "en"
     override val providerType = ProviderType.MetaProvider
     override val hasDownloadSupport = true
-    override val disableSeasonZero = true
     private val skipMap: MutableMap<String, Int> = mutableMapOf()
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
@@ -329,7 +328,7 @@ open class CineStreamProvider : MainAPI() {
             }
         }
         else {
-            val episodes = movieData?.videos?.map { ep ->
+            val episodes =  movieData?.videos?.map { ep ->
                 newEpisode(
                     LoadLinksData(
                         title,
