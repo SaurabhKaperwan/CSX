@@ -177,7 +177,7 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            return "https://images.metahub.space/background/large/$id/img"
+            return "https://images.metahub.space/background/medium/$id/img"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {

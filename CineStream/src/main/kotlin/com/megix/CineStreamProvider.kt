@@ -328,7 +328,7 @@ open class CineStreamProvider : MainAPI() {
             }
         }
         else {
-            val episodes =  movieData?.videos?.map { ep ->
+            val episodes = movieData?.videos?.map { ep ->
                 newEpisode(
                     LoadLinksData(
                         title,
