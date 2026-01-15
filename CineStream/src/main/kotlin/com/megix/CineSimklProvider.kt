@@ -33,7 +33,8 @@ class CineSimklProvider: MainAPI() {
     )
     override var lang = "en"
     override val hasMainPage = true
-    override val hasQuickSearch = false
+    override val hasQuickSearch = true
+    override val providerType = ProviderType.MetaProvider
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 10
@@ -184,6 +185,8 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
+    override suspend fun quickSearch(query: String): List<SearchResponse>? = search(query,1)?.items
+
     override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
@@ -298,9 +301,9 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
-            getPosterUrl(json.fanart, "fanart")
+            getPosterUrl(imdbId, "imdb:bg")
+            ?: getPosterUrl(json.fanart, "fanart")
             ?: aio_meta?.optString("background", null)
-            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {

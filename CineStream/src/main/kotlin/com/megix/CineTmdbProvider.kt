@@ -23,6 +23,7 @@ class CineTmdbProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = true
+    override val providerType = ProviderType.MetaProvider
     private val apiUrl = "https://api.themoviedb.org/3"
     private val image_proxy = "https://wsrv.nl/?url="
 
