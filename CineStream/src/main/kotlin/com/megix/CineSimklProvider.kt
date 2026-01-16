@@ -364,7 +364,7 @@ class CineSimklProvider: MainAPI() {
                 this.addTrailer(trailerLink)
             }
         } else {
-            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
+            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
