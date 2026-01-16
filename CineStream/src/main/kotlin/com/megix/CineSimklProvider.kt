@@ -39,6 +39,7 @@ class CineSimklProvider: MainAPI() {
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 10
     private val auth = com.lagradost.cloudstream3.BuildConfig.SIMKL_CLIENT_ID
+    private val auth2 = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
     private val repo = SyncRepo(AccountManager.simklApi)
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
@@ -266,7 +267,7 @@ class CineSimklProvider: MainAPI() {
 
      override suspend fun load(url: String): LoadResponse {
         val simklId = getSimklId(url)
-        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth&extended=full", headers = headers).text
+        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth2&extended=full", headers = headers).text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it.toString() }
         val tvType = json.type.orEmpty()
