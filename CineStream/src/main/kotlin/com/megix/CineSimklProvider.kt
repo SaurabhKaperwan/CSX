@@ -38,7 +38,7 @@ class CineSimklProvider: MainAPI() {
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 10
-    private val auth = BuildConfig.SIMKL_API
+    private val auth = com.lagradost.cloudstream3.BuildConfig.SIMKL_CLIENT_ID
     private val headers = mapOf("Content-Type" to "application/json")
     private val repo = SyncRepo(AccountManager.simklApi)
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
