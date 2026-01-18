@@ -81,6 +81,7 @@ open class CineStreamProvider : MainAPI() {
         const val bollywoodBaseAPI = "https://bollywood.eu.org"
         const val vadapavAPI = "https://vadapav.mov"
         const val YflixAPI = "https://solarmovie.fi"
+        const val notorrentAPI = "https://addon-osvh.onrender.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

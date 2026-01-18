@@ -79,7 +79,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/page/$page/?s=$query").document
+        val document = app.get("$mainUrl/search.html?q=$query&page=$page").document
         val results = document.select("#moviesGridMain > a").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)

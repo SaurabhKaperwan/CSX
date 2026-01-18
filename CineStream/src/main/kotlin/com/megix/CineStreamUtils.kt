@@ -159,6 +159,103 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
     }
 }
 
+val languageMap = mapOf(
+    "Afrikaans" to Pair("af", "afr"),
+    "Albanian" to Pair("sq", "sqi"),
+    "Amharic" to Pair("am", "amh"),
+    "Arabic" to Pair("ar", "ara"),
+    "Armenian" to Pair("hy", "hye"),
+    "Azerbaijani" to Pair("az", "aze"),
+    "Basque" to Pair("eu", "eus"),
+    "Belarusian" to Pair("be", "bel"),
+    "Bengali" to Pair("bn", "ben"),
+    "Bosnian" to Pair("bs", "bos"),
+    "Bulgarian" to Pair("bg", "bul"),
+    "Catalan" to Pair("ca", "cat"),
+    "Chinese" to Pair("zh", "zho"),
+    "Croatian" to Pair("hr", "hrv"),
+    "Czech" to Pair("cs", "ces"),
+    "Danish" to Pair("da", "dan"),
+    "Dutch" to Pair("nl", "nld"),
+    "English" to Pair("en", "eng"),
+    "Estonian" to Pair("et", "est"),
+    "Filipino" to Pair("tl", "tgl"),
+    "Finnish" to Pair("fi", "fin"),
+    "French" to Pair("fr", "fra"),
+    "Galician" to Pair("gl", "glg"),
+    "Georgian" to Pair("ka", "kat"),
+    "German" to Pair("de", "deu"),
+    "Greek" to Pair("el", "ell"),
+    "Gujarati" to Pair("gu", "guj"),
+    "Hebrew" to Pair("he", "heb"),
+    "Hindi" to Pair("hi", "hin"),
+    "Hungarian" to Pair("hu", "hun"),
+    "Icelandic" to Pair("is", "isl"),
+    "Indonesian" to Pair("id", "ind"),
+    "Italian" to Pair("it", "ita"),
+    "Japanese" to Pair("ja", "jpn"),
+    "Kannada" to Pair("kn", "kan"),
+    "Kazakh" to Pair("kk", "kaz"),
+    "Korean" to Pair("ko", "kor"),
+    "Latvian" to Pair("lv", "lav"),
+    "Lithuanian" to Pair("lt", "lit"),
+    "Macedonian" to Pair("mk", "mkd"),
+    "Malay" to Pair("ms", "msa"),
+    "Malayalam" to Pair("ml", "mal"),
+    "Maltese" to Pair("mt", "mlt"),
+    "Marathi" to Pair("mr", "mar"),
+    "Mongolian" to Pair("mn", "mon"),
+    "Nepali" to Pair("ne", "nep"),
+    "Norwegian" to Pair("no", "nor"),
+    "Persian" to Pair("fa", "fas"),
+    "Polish" to Pair("pl", "pol"),
+    "Portuguese" to Pair("pt", "por"),
+    "Punjabi" to Pair("pa", "pan"),
+    "Romanian" to Pair("ro", "ron"),
+    "Russian" to Pair("ru", "rus"),
+    "Serbian" to Pair("sr", "srp"),
+    "Sinhala" to Pair("si", "sin"),
+    "Slovak" to Pair("sk", "slk"),
+    "Slovenian" to Pair("sl", "slv"),
+    "Spanish" to Pair("es", "spa"),
+    "Swahili" to Pair("sw", "swa"),
+    "Swedish" to Pair("sv", "swe"),
+    "Tamil" to Pair("ta", "tam"),
+    "Telugu" to Pair("te", "tel"),
+    "Thai" to Pair("th", "tha"),
+    "Turkish" to Pair("tr", "tur"),
+    "Ukrainian" to Pair("uk", "ukr"),
+    "Urdu" to Pair("ur", "urd"),
+    "Uzbek" to Pair("uz", "uzb"),
+    "Vietnamese" to Pair("vi", "vie"),
+    "Welsh" to Pair("cy", "cym"),
+    "Yiddish" to Pair("yi", "yid")
+)
+
+fun getLanguage(language: String?): String? {
+
+    language ?: return null
+
+    var normalizedLang = if(language.contains("-")) {
+        language.substringBefore("-")
+    } else if(language.contains(" ")) {
+        language.substringBefore(" ")
+    } else {
+        language
+    }
+
+    if(normalizedLang.isBlank()) {
+        normalizedLang =  language
+    }
+
+    val tag =  languageMap.entries.find { it.value.first == normalizedLang || it.value.second == normalizedLang }?.key
+
+    if(tag == null) {
+        return normalizedLang
+    }
+    return tag
+}
+
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
@@ -1053,17 +1150,18 @@ suspend fun getGojoStreams(
     callback: (ExtractorLink) -> Unit
 ) {
     try {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "Referer" to gojoBaseAPI,
+            "Origin" to gojoBaseAPI
+        )
+
         val jsonObject = JSONObject(json)
         val sourcesArray = jsonObject.optJSONArray("sources") ?: return
 
         for (i in 0 until sourcesArray.length()) {
             val source = sourcesArray.optJSONObject(i) ?: continue
-            val rawUrl = source.optString("url", null) ?: continue
-
-            val fullUrl = rawUrl.substringAfterLast("https:", "")
-            if (fullUrl.isBlank()) continue
-
-            val url = "https:$fullUrl"
+            val url = source.optString("url", null) ?: continue
             val videoType = source.optString("type", "m3u8")
             val quality = source.optString("quality").replace("p", "").toIntOrNull()
 
@@ -1076,6 +1174,7 @@ suspend fun getGojoStreams(
                 ) {
                     this.quality = quality ?: Qualities.P1080.value
                     this.referer = gojoBaseAPI
+                    this.headers = headers
                 }
             )
         }
@@ -1088,7 +1187,7 @@ suspend fun getGojoStreams(
             val lang = item.optString("lang", null) ?: continue
             subtitleCallback.invoke(
                 newSubtitleFile(
-                    lang,
+                    getLanguage(lang) ?: lang,
                     url
                 )
             )

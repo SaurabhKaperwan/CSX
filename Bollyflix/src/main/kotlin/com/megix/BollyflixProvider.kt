@@ -7,6 +7,7 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.base64Decode
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import kotlinx.coroutines.runBlocking
@@ -65,10 +66,10 @@ class BollyflixProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
         val document = if(page == 1) {
-            app.get("${mainUrl}${request.data}").document
+            app.get("${mainUrl}${request.data}", interceptor = CloudflareKiller()).document
         }
         else {
-            app.get(request.data + "page/" + page).document
+            app.get(request.data + "page/" + page, interceptor = CloudflareKiller()).document
         }
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
@@ -94,14 +95,14 @@ class BollyflixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/search/$query/page/$page/").document
+        val document = app.get("$mainUrl/search/$query/page/$page/", interceptor = CloudflareKiller()).document
         val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        val document = app.get(url, interceptor = CloudflareKiller()).document
         var title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         var description = document.selectFirst("span#summary")?.text().toString()

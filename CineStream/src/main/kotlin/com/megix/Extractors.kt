@@ -394,7 +394,7 @@ open class MegaUp : ExtractorApi() {
                 val label = trackObj.optString("label").trim().takeIf { it.isNotEmpty() }
                 val file = trackObj.optString("file").takeIf { it.isNotBlank() }
                 if (label != null && file != null) {
-                    subtitleCallback(newSubtitleFile(label, file))
+                    subtitleCallback(newSubtitleFile(getLanguage(label) ?: label, file))
                 }
             }
         } catch (_: JSONException) {
