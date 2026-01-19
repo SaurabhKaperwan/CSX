@@ -2567,18 +2567,24 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeMoviesdrive(
         title: String? = null,
-        id: String? = null,
+        imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$MovieDrive_API/search.html?q=$title"
-        val res = app.get(url, interceptor = wpRedisInterceptor).document
-        res.select("#moviesGridMain > a").amap {
-            val document = app.get(it.attr("href"), interceptor = wpRedisInterceptor).document
-            val imdbId =  document.select("a[href*=\"imdb\"]").attr("href").substringAfter("title/").substringBefore("/")
-            if(imdbId == id.orEmpty()) {
+        val url = "$MovieDrive_API/searchapi.php?q=$imdbId"
+        val jsonString = app.get(url, interceptor = wpRedisInterceptor).text
+        val root = JSONObject(jsonString)
+        if (!root.has("hits")) return
+        val hits = root.getJSONArray("hits")
+
+        for (i in 0 until hits.length()) {
+            val hit = hits.getJSONObject(i)
+            val doc = hit.getJSONObject("document")
+            val currentImdbId = doc.optString("imdb_id")
+            if(imdbId == currentImdbId) {
+                val document = app.get(MovieDrive_API + doc.optString("permalink"), interceptor = wpRedisInterceptor).document
                 if (season == null) {
                     document.select("h5 > a").amap {
                         val href = it.attr("href")

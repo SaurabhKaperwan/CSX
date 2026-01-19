@@ -6,11 +6,13 @@ import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
-import com.google.gson.Gson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+// import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesdrive.forum"
@@ -79,9 +81,19 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/search.html?q=$query&page=$page").document
-        val results = document.select("#moviesGridMain > a").mapNotNull { it.toSearchResult() }
-        val hasNext = if(results.isEmpty()) false else true
+        val text = app.get(
+            "$mainUrl/searchapi.php?q=$query&page=$page"
+        ).text
+        val gson = Gson()
+        val response = gson.fromJson(text, MSearchResponse::class.java)
+        //val response = parseJson<MSearchResponse>(text)
+        val hasNext = response.hits.isNotEmpty()
+        val results = response.hits.map { hit ->
+            val doc = hit.document
+            newMovieSearchResponse(doc.postTitle, mainUrl + doc.permalink, TvType.Movie) {
+                this.posterUrl = doc.postThumbnail
+            }
+        }
         return newSearchResponseList(results, hasNext)
     }
 
@@ -324,6 +336,24 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
     data class EpisodeLink(
         val source: String
+    )
+
+    data class MSearchResponse(
+        val hits: List<Hit>
+    )
+
+    data class Hit(
+        val document: Document
+    )
+
+    data class Document(
+        val permalink: String,
+
+        @SerializedName("post_thumbnail")
+        val postThumbnail: String,
+
+        @SerializedName("post_title")
+        val postTitle: String
     )
 }
 
