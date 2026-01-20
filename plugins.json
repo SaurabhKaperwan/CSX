@@ -1,0 +1,157 @@
+[
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/Bollyflix.cs3",
+        "status": 1,
+        "version": 32,
+        "name": "Bollyflix",
+        "internalName": "Bollyflix",
+        "authors": [
+            "megix"
+        ],
+        "description": "Movies and Series upto 4K",
+        "fileSize": 39530,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "language": "hi",
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime"
+        ],
+        "iconUrl": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/refs/heads/master/Bollyflix/icon.png",
+        "apiVersion": 1,
+        "fileHash": "sha256-a9322125061157f700a7ccc919f28cd2f0feef55b667fef0b28ec44f5af24955"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/CineStream.cs3",
+        "status": 1,
+        "version": 434,
+        "name": "CineStream",
+        "internalName": "CineStream",
+        "authors": [
+            "megix"
+        ],
+        "description": "One stop solution for Movies, Series, Anime, AsianDrama and Torrents",
+        "fileSize": 628867,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime",
+            "Torrent"
+        ],
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/CineStream/icon.png",
+        "apiVersion": 1,
+        "fileHash": "sha256-445f034aa4cd211d062bafa3a2d49a31d88a52b78ca342e73b06d271fa156f1a"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/GDIndex.cs3",
+        "status": 1,
+        "version": 6,
+        "name": "GDIndex",
+        "internalName": "GDIndex",
+        "authors": [
+            "Horis"
+        ],
+        "fileSize": 17131,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "language": "en",
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/GDIndex/icon.ico",
+        "apiVersion": 1,
+        "fileHash": "sha256-d2c87c95b791c017f883b0fa1d58a6f11a50736097501290f367098f1e5cc889"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/MoviesDrive.cs3",
+        "status": 1,
+        "version": 31,
+        "name": "MoviesDrive",
+        "internalName": "MoviesDrive",
+        "authors": [
+            "megix"
+        ],
+        "description": "High Quality Movies and TV Shows",
+        "fileSize": 46919,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "language": "hi",
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime"
+        ],
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/MoviesDrive/icon.png",
+        "apiVersion": 1,
+        "fileHash": "sha256-0d91684c469200e84a94fa43dfc6273a8a30b374248891d302a634f19235386d"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/Moviesmod.cs3",
+        "status": 1,
+        "version": 30,
+        "name": "Moviesmod",
+        "internalName": "Moviesmod",
+        "authors": [
+            "megix"
+        ],
+        "description": "Includes Topmovies",
+        "fileSize": 43195,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime"
+        ],
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/Moviesmod/icon.png",
+        "apiVersion": 1,
+        "fileHash": "sha256-27e4facaf5f634ceeb65febf70d873fda60317ea7152b729e6a87849aa340f99"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/OnlineMoviesHinditProvider.cs3",
+        "status": 1,
+        "version": 6,
+        "name": "OnlineMoviesHinditProvider",
+        "internalName": "OnlineMoviesHinditProvider",
+        "authors": [
+            "megix"
+        ],
+        "description": "Use VPN",
+        "fileSize": 11950,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "language": "hi",
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "iconUrl": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/master/OnlineMoviesHinditProvider/icon.png",
+        "apiVersion": 1,
+        "fileHash": "sha256-577919ca8bbf01ded9e9299851431447c5964e979a9c4eb73ffd82ca8733ae2d"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/CSX/builds/VegaMovies.cs3",
+        "status": 1,
+        "version": 79,
+        "name": "VegaMovies",
+        "internalName": "VegaMovies",
+        "authors": [
+            "megix"
+        ],
+        "description": "Includes LuxMovies, Rogmovies",
+        "fileSize": 49804,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/CSX",
+        "language": "hi",
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime"
+        ],
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/VegaMovies/icon.jpg",
+        "apiVersion": 1,
+        "fileHash": "sha256-8e8fd8730e2ea57e4cfec928605cf46fd19849013cfb7ee5200225bbe5ea1c26"
+    }
+]
