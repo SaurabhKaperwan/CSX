@@ -106,6 +106,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -812,17 +813,18 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int?  = null,
         callback: (ExtractorLink) -> Unit
     ) {
+        if(title == null) return
         val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
         document.select("article > a").amap {
             val doc = app.get(animezAPI + it.attr("href")).document
-            val titles = doc.select("ul.InfoList > li").text()
+            val titles = doc.select("ul.InfoList > li").text().replace(" -Dub", "")
 
-            if(!titles.contains("$title")) return@amap
+            if(titles != title) return@amap
 
             val ep = episode ?: 1
             val links  = doc.select("li.wp-manga-chapter > a")
             val link = if (links.size >= ep) links[links.size - ep] else return@amap
-            val type = if(link.text().contains("Dub")) "DUB" else "SUB"
+            val type = if(link.text().contains("Dub", true)) "DUB" else "SUB"
             val epDoc = app.get(animezAPI + link.attr("href")).document
             val source = epDoc.select("iframe").attr("src")
 
@@ -1274,6 +1276,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 app.get(fixUrl(json?.file ?: return, host), headers = headers, referer = referer)
                         .text
                         .replace(Regex(""",\s*\[]"""), "")
+
         val servers =
                 tryParseJson<ArrayList<AllMovielandServer>>(serverRes).let { server ->
                     if (season == null) {
@@ -1295,7 +1298,18 @@ object CineStreamExtractors : CineStreamProvider() {
                         headers = headers,
                         referer = referer
                     ).text
-            M3u8Helper.generateM3u8("Allmovieland [$lang]", path, referer).forEach(callback)
+
+            callback.invoke(
+                newExtractorLink(
+                    "Allmovieland [$lang]",
+                    "Allmovieland [$lang]",
+                    path,
+                    type = ExtractorLinkType.M3U8
+                ) {
+                    this.referer = referer
+                    this.quality = Qualities.P1080.value
+                }
+            )
         }
     }
 
@@ -2306,7 +2320,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback)
             },
             {
-                invokeAnimez(title, episode, callback)
+                invokeAnimez(zorotitle, episode, callback)
             },
             {
                 invokeAnimekai(title, episode, subtitleCallback, callback)
@@ -3182,9 +3196,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val sourceResponse = app.get(sourceUrl, headers = sourceHeaders,timeout = 60).parsedSafe<CinemaOSReponse>()
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data,)
         val json = parseCinemaOSSources(decryptedJson.toString())
+
         json.forEach {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
-            val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value}
+            val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else if(it["bitrate"]?.contains("4K",true) ?: false){ Qualities.P2160.value} else { Qualities.P1080.value}
             val quality =  if(it["quality"]?.isNotEmpty() == true && it["quality"]?.toIntOrNull() !=null) getQualityFromName(it["quality"]) else if (it["quality"]?.isNotEmpty() == true)  if(it["quality"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["quality"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value} else bitrateQuality
             callback.invoke(
                 newExtractorLink(
@@ -3194,7 +3209,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     type = extractorLinkType
                 )
                 {
-                    this.headers = mapOf("Referer" to cinemaOSApi) + M3U8_HEADERS
+                    this.headers = mapOf("Referer" to cinemaOSApi)
                     this.quality = quality
                 }
             )

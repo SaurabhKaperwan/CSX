@@ -54,7 +54,7 @@ open class CineStreamProvider : MainAPI() {
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","hi":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on"}"""
-        const val mp4MoviezAPI = "https://www.mp4moviez.fail"
+        const val mp4MoviezAPI = "https://www.mp4moviez.talk"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.tech"
         const val tripleOneMoviesApi = "https://111movies.com"
@@ -82,6 +82,16 @@ open class CineStreamProvider : MainAPI() {
         const val vadapavAPI = "https://vadapav.mov"
         const val YflixAPI = "https://solarmovie.fi"
         const val notorrentAPI = "https://addon-osvh.onrender.com"
+        var leviathanAPI = """
+        https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
+        IiLCJ0bWRiIjoiIiwic29ydCI6ImJhbGFuY2VkIiwiYWlvc3RyZWFtc19tb2RlIj
+        pmYWxzZSwibWVkaWFmbG93Ijp7InVybCI6IiIsInBhc3MiOiIiLCJwcm94eURlYn
+        JpZCI6ZmFsc2V9LCJmaWx0ZXJzIjp7ImFsbG93RW5nIjpmYWxzZSwibm80ayI6Zm
+        Fsc2UsIm5vMTA4MCI6ZmFsc2UsIm5vNzIwIjpmYWxzZSwibm9TY3IiOmZhbHNlLC
+        Jub0NhbSI6ZmFsc2UsImVuYWJsZVZpeCI6dHJ1ZSwiZW5hYmxlR2hkIjp0cnVlLC
+        JlbmFibGVHcyI6dHJ1ZSwidml4TGFzdCI6ZmFsc2UsInNjUXVhbGl0eSI6ImFsbC
+        IsIm1heFBlclF1YWxpdHkiOjAsIm1heFNpemVHQiI6bnVsbH19
+        """.trimIndent().replace("\n", "")
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
