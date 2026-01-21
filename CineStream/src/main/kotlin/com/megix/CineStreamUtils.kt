@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
 import java.util.Base64
+import okhttp3.*
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
@@ -693,6 +694,46 @@ suspend fun bypassHrefli(url: String): String? {
         .substringBefore("\")")
     if (path == "/404") return null
     return fixUrl(path, getBaseUrl(driveUrl))
+}
+
+fun getAniListInfo(animeId: Int): AnimeInfo? {
+    val client = OkHttpClient()
+
+    val query = """
+        query (${"$"}id: Int) {
+            Media (id: ${"$"}id, type: ANIME) {
+                title {
+                    english
+                    romaji
+                }
+                bannerImage
+            }
+        }
+    """.trimIndent()
+
+    val jsonBody = JSONObject()
+    jsonBody.put("query", query)
+    jsonBody.put("variables", JSONObject().put("id", animeId))
+
+    val request = Request.Builder()
+        .url("https://graphql.anilist.co")
+        .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
+        .build()
+
+    client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) return null
+
+        val responseBody = response.body?.string() ?: return null
+        val json = JSONObject(responseBody)
+        val media = json.optJSONObject("data")?.optJSONObject("Media") ?: return null
+        val rawBanner = media.optString("bannerImage")
+        val finalBanner = rawBanner.takeUnless { it.isBlank() || it == "null" }
+        val titleObj = media.optJSONObject("title")
+        val english = titleObj?.optString("english")
+        //val romaji = titleObj?.optString("romaji")
+        val finalTitle = english?.takeUnless { it.isBlank() || it == "null" }
+        return AnimeInfo(finalTitle, finalBanner)
+    }
 }
 
 suspend fun convertTmdbToAnimeId(

@@ -54,6 +54,12 @@ data class KisskhSubtitle(
     @JsonProperty("label") val label: String?,
 )
 
+//Anilist
+data class AnimeInfo(
+    val title: String?,
+    val posterUrl: String?
+)
+
 //XDmovies
 class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {
     data class SearchDataItem(

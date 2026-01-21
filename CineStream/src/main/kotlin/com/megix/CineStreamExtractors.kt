@@ -107,6 +107,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Tstream", tstreamAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
