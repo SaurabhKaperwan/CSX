@@ -3006,7 +3006,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                         server.subtitles?.forEach { sub ->
                                             val lang = SubtitleHelper.fromTagToEnglishLanguageName(sub.lang ?: "") ?: sub.lang.orEmpty()
                                             val src = sub.src ?: return@forEach
-                                            subtitleCallback(newSubtitleFile(getLanguage(lang) ?: src, httpsify(src)))
+                                            subtitleCallback(newSubtitleFile(getLanguage(lang) ?: "", httpsify(src)))
                                         }
                                     }
                                 }
@@ -3875,6 +3875,23 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
             }
+
+            val subtitles = sourceData.optJSONArray("captions")
+
+            for (i in 0 until subtitles.length()) {
+                val s = subtitles.getJSONObject(i)
+                val slink = s.optString("url")
+                if (slink.isNotEmpty()) {
+                    val lan = s.optString("lan")
+                    subtitleCallback.invoke(
+                        newSubtitleFile(
+                            getLanguage(lan) ?: lan,
+                            slink
+                        )
+                    )
+                }
+            }
+
         }
     }
 

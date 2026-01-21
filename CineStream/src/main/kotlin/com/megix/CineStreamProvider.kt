@@ -31,6 +31,7 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
+    val image_proxy = "https://wsrv.nl/?url="
     val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     companion object {
@@ -169,6 +170,14 @@ open class CineStreamProvider : MainAPI() {
         "$mainUrl/top/catalog/series/top/skip=###&genre=Crime" to "Top Crime Series",
     )
 
+    private fun getPosterUrl(
+        url: String? = null,
+     ): String? {
+        if (url == null) return null
+        if(url.contains("metahub.space")) return image_proxy + url
+        return url
+    }
+
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
@@ -192,7 +201,7 @@ open class CineStreamProvider : MainAPI() {
                 else TvType.TvSeries
             val title = movie.aliases?.firstOrNull() ?: movie.name ?: ""
             newMovieSearchResponse(title, PassData(movie.id, movie.type).toJson(), type) {
-                this.posterUrl = movie.poster
+                this.posterUrl = getPosterUrl(movie.poster)
                 this.score = Score.from10(movie.imdbRating)
             }
         }
@@ -213,7 +222,7 @@ open class CineStreamProvider : MainAPI() {
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: ""
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
-                        posterUrl = it.poster
+                        posterUrl = getPosterUrl(it.poster)
                         this.score = Score.from10(it.imdbRating)
                     }
                 } ?: emptyList()
@@ -265,8 +274,8 @@ open class CineStreamProvider : MainAPI() {
         val anilistId = if(externalIds != null) externalIds.anilist else null
         val title = movieData?.name.toString()
         val engTitle = movieData?.aliases?.firstOrNull() ?: title
-        val posterUrl = movieData?.poster
-        val logo = movieData?.logo
+        val posterUrl = getPosterUrl(movieData?.poster)
+        val logo = getPosterUrl(movieData?.logo)
         val imdbRating = movieData?.imdbRating?.toDoubleOrNull()
         val year = movieData?.year
         val releaseInfo = movieData?.releaseInfo
@@ -291,7 +300,7 @@ open class CineStreamProvider : MainAPI() {
 
         val country = movieData?.country ?: ""
         val genre = movieData?.genre ?: movieData?.genres ?: emptyList()
-        val background = movieData?.background
+        val background = getPosterUrl(movieData?.background)
         val isCartoon = genre.any { it.contains("Animation", true) }
         var isAnime = (country.contains("Japan", true) ||
             country.contains("China", true)) && isCartoon
