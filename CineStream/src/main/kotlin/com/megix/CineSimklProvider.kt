@@ -306,7 +306,7 @@ class CineSimklProvider: MainAPI() {
         val users_recommendations = json.users_recommendations?.map {
             val rec_poster = getPosterUrl(it.poster, "poster")
             newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
-                this.posterUrl = poster
+                this.posterUrl = rec_poster
             }
         } ?: emptyList()
 

@@ -82,7 +82,11 @@ open class CineStreamProvider : MainAPI() {
         const val bollywoodBaseAPI = "https://bollywood.eu.org"
         const val vadapavAPI = "https://vadapav.mov"
         const val YflixAPI = "https://solarmovie.fi"
+        const val vidstackAPI = "https://api.smashystream.top/api/v1"
+        const val vidstackBaseAPI = "https://smashyplayer.top"
         const val notorrentAPI = "https://addon-osvh.onrender.com"
+        const val xpassAPI = "https://play.xpass.top"
+
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
         IiLCJ0bWRiIjoiIiwic29ydCI6ImJhbGFuY2VkIiwiYWlvc3RyZWFtc19tb2RlIj
@@ -117,7 +121,6 @@ open class CineStreamProvider : MainAPI() {
         val moviesflixAPI get() = api("moviesflix")
         val hdmoviesflixAPI get() = api("hdmoviesflix")
         val hdmovie2API get() = api("hdmovie2")
-        val jaduMoviesAPI get() = api("jadumovies")
         val netflixAPI get() = api("nfmirror")
         val MovieDrive_API get() = api("moviesdrive")
         val gojoBaseAPI get() = api("gojo_base")
@@ -130,11 +133,9 @@ open class CineStreamProvider : MainAPI() {
         val moviesBabaAPI get() = api("moviesbaba")
         val toonStreamAPI get() = api("toonstream")
         val hianimeAPI get() = api("hianime")
-        val dramadripAPI get() = api("dramadrip")
         val nuvioStreamsAPI get() = api("nuvio")
         val XDmoviesAPI get() = api("xdmovies")
         val animekaiAPI get() = api("animekai")
-        val tstreamAPI get() = api("tstream")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
