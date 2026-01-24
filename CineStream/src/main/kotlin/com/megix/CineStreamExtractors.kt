@@ -63,6 +63,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -161,6 +162,86 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
+    }
+
+    suspend fun invokeRtally(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        fun getStreamUrl(
+            id: String,
+            service: String
+        ): String? {
+            if(service == "vidhide") return "https://vidhideplus.com/v/$id"
+            else if(service == "lulustream") return "https://lulustream.com/e/$id"
+            else if(service == "filemoon") return "https://filemoon.sx/e/$id"
+            else if(service == "streamwish") return "https://playerwish.com/e/$id"
+            else if(service == "strmup") return "https://strmup.cc/$id"
+            else return null
+        }
+
+        // fun extractLinkByRegex(html: String, key: String, episode: Int): String? {
+        //     val skipCount = episode - 1
+        //     val pattern = if (skipCount > 0) {
+        //         Regex("""\\"$key\\":\\"(?:[^,"]+,){$skipCount}([^,"]+)""")
+        //     } else {
+        //         Regex("""\\"$key\\":\\"([^,"]+)""")
+        //     }
+        //     val match = pattern.find(html)
+        //     return match?.groupValues?.get(1)
+        // }
+
+        if(season != null) return
+
+        val slugTitle = if(season == null) title.createSlug() else "${title.createSlug()}-season-$season"
+        val url = "$rtallyAPI/post/$slugTitle"
+        val doc = app.get(url).document
+
+        if(season == null) {
+            val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
+
+            linkPattern.findAll(doc.toString()).forEach { match ->
+                val quality = match.groupValues[1]
+                val durl = match.groupValues[2]
+
+                loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
+            }
+
+            val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
+
+            streamPattern.findAll(doc.toString()).forEach { match ->
+                val service = match.groupValues[1]
+                val id = match.groupValues[2]
+
+                if (id != "null") {
+                    val eurl = getStreamUrl(id, service) ?: return@forEach
+                    loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
+                }
+            }
+        }
+        // else {
+        //     val keys = listOf(
+        //         "large_single",
+        //         "medium_single",
+        //         "lulustreamMultiUrl",
+        //         "strmupMultiUrl",
+        //         "multiLinksDl",
+        //         "vidstreamUrl",
+        //         "vidhideUrl",
+        //         "streamwishMultiUrl"
+        //     )
+
+        //     keys.forEach { key ->
+        //         val result = extractLinkByRegex(doc.toString(), key, episode ?: 1)
+        //         if (result != null) {
+        //             loadSourceNameExtractor("Rtally", result, "", subtitleCallback, callback)
+        //         }
+        //     }
+        // }
     }
 
     suspend fun invokeVidstack(
@@ -2883,12 +2964,13 @@ object CineStreamExtractors : CineStreamProvider() {
         val res = app.get(
             href ?: return,
         ).document
-        val entries =
-            res.select("div.thecontent $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
-                .filter { element ->
-                    !element.text().contains("MoviesMod", true) && !element.text()
-                        .contains("1080p", true) || !element.text().contains("720p", true)
-                }
+
+        val entries = res.select("div.thecontent $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
+        .filter { element ->
+            val text = element.text()
+            !text.contains("MoviesMod", true)
+        }
+
         entries.amap { it ->
             var link =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
