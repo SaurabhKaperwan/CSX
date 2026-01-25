@@ -7,6 +7,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addKitsuId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.SyncRepo
@@ -159,7 +160,7 @@ class CineSimklProvider: MainAPI() {
         id: String? = null,
         type: String,
      ): String? {
-        val baseUrl = "https://simkl.in"
+        val baseUrl = "${image_proxy}https://simkl.in"
         if(id == null) {
             return null
         } else if(type == "imdb:lg") {
@@ -169,7 +170,7 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            val res = app.head("https://images.metahub.space/background/large/$id/img")
+            val res = app.head("https://images.metahub.space/background/medium/$id/img")
             return if(res.code == 200) "${image_proxy}https://images.metahub.space/background/large/$id/img"
             else null
         } else if(type == "youtube") {
@@ -359,6 +360,7 @@ class CineSimklProvider: MainAPI() {
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
+                this.addKitsuId(kitsuId?.toIntOrNull())
                 this.addTrailer(trailerLink)
             }
         } else {
@@ -414,6 +416,7 @@ class CineSimklProvider: MainAPI() {
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
+                this.addKitsuId(kitsuId?.toIntOrNull())
                 this.addTrailer(trailerLink)
             }
         }

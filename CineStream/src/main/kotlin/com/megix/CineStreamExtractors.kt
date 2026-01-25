@@ -184,17 +184,6 @@ object CineStreamExtractors : CineStreamProvider() {
             else return null
         }
 
-        // fun extractLinkByRegex(html: String, key: String, episode: Int): String? {
-        //     val skipCount = episode - 1
-        //     val pattern = if (skipCount > 0) {
-        //         Regex("""\\"$key\\":\\"(?:[^,"]+,){$skipCount}([^,"]+)""")
-        //     } else {
-        //         Regex("""\\"$key\\":\\"([^,"]+)""")
-        //     }
-        //     val match = pattern.find(html)
-        //     return match?.groupValues?.get(1)
-        // }
-
         if(season != null) return
 
         val slugTitle = if(season == null) title.createSlug() else "${title.createSlug()}-season-$season"
@@ -223,25 +212,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
         }
-        // else {
-        //     val keys = listOf(
-        //         "large_single",
-        //         "medium_single",
-        //         "lulustreamMultiUrl",
-        //         "strmupMultiUrl",
-        //         "multiLinksDl",
-        //         "vidstreamUrl",
-        //         "vidhideUrl",
-        //         "streamwishMultiUrl"
-        //     )
-
-        //     keys.forEach { key ->
-        //         val result = extractLinkByRegex(doc.toString(), key, episode ?: 1)
-        //         if (result != null) {
-        //             loadSourceNameExtractor("Rtally", result, "", subtitleCallback, callback)
-        //         }
-        //     }
-        // }
     }
 
     suspend fun invokeVidstack(
