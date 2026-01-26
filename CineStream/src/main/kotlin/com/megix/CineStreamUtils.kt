@@ -161,76 +161,76 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
 }
 
 val languageMap = mapOf(
-    "Afrikaans" to Pair("af", "afr"),
-    "Albanian" to Pair("sq", "sqi"),
-    "Amharic" to Pair("am", "amh"),
-    "Arabic" to Pair("ar", "ara"),
-    "Armenian" to Pair("hy", "hye"),
-    "Azerbaijani" to Pair("az", "aze"),
-    "Basque" to Pair("eu", "eus"),
-    "Belarusian" to Pair("be", "bel"),
-    "Bengali" to Pair("bn", "ben"),
-    "Bosnian" to Pair("bs", "bos"),
-    "Bulgarian" to Pair("bg", "bul"),
-    "Catalan" to Pair("ca", "cat"),
-    "Chinese" to Pair("zh", "zho"),
-    "Croatian" to Pair("hr", "hrv"),
-    "Czech" to Pair("cs", "ces"),
-    "Danish" to Pair("da", "dan"),
-    "Dutch" to Pair("nl", "nld"),
-    "English" to Pair("en", "eng"),
-    "Estonian" to Pair("et", "est"),
-    "Filipino" to Pair("tl", "tgl"),
-    "Finnish" to Pair("fi", "fin"),
-    "French" to Pair("fr", "fra"),
-    "Galician" to Pair("gl", "glg"),
-    "Georgian" to Pair("ka", "kat"),
-    "German" to Pair("de", "deu"),
-    "Greek" to Pair("el", "ell"),
-    "Gujarati" to Pair("gu", "guj"),
-    "Hebrew" to Pair("he", "heb"),
-    "Hindi" to Pair("hi", "hin"),
-    "Hungarian" to Pair("hu", "hun"),
-    "Icelandic" to Pair("is", "isl"),
-    "Indonesian" to Pair("id", "ind"),
-    "Italian" to Pair("it", "ita"),
-    "Japanese" to Pair("ja", "jpn"),
-    "Kannada" to Pair("kn", "kan"),
-    "Kazakh" to Pair("kk", "kaz"),
-    "Korean" to Pair("ko", "kor"),
-    "Latvian" to Pair("lv", "lav"),
-    "Lithuanian" to Pair("lt", "lit"),
-    "Macedonian" to Pair("mk", "mkd"),
-    "Malay" to Pair("ms", "msa"),
-    "Malayalam" to Pair("ml", "mal"),
-    "Maltese" to Pair("mt", "mlt"),
-    "Marathi" to Pair("mr", "mar"),
-    "Mongolian" to Pair("mn", "mon"),
-    "Nepali" to Pair("ne", "nep"),
-    "Norwegian" to Pair("no", "nor"),
-    "Persian" to Pair("fa", "fas"),
-    "Polish" to Pair("pl", "pol"),
-    "Portuguese" to Pair("pt", "por"),
-    "Punjabi" to Pair("pa", "pan"),
-    "Romanian" to Pair("ro", "ron"),
-    "Russian" to Pair("ru", "rus"),
-    "Serbian" to Pair("sr", "srp"),
-    "Sinhala" to Pair("si", "sin"),
-    "Slovak" to Pair("sk", "slk"),
-    "Slovenian" to Pair("sl", "slv"),
-    "Spanish" to Pair("es", "spa"),
-    "Swahili" to Pair("sw", "swa"),
-    "Swedish" to Pair("sv", "swe"),
-    "Tamil" to Pair("ta", "tam"),
-    "Telugu" to Pair("te", "tel"),
-    "Thai" to Pair("th", "tha"),
-    "Turkish" to Pair("tr", "tur"),
-    "Ukrainian" to Pair("uk", "ukr"),
-    "Urdu" to Pair("ur", "urd"),
-    "Uzbek" to Pair("uz", "uzb"),
-    "Vietnamese" to Pair("vi", "vie"),
-    "Welsh" to Pair("cy", "cym"),
-    "Yiddish" to Pair("yi", "yid")
+    "Afrikaans" to listOf("af", "afr"),
+    "Albanian" to listOf("sq", "sqi"),
+    "Amharic" to listOf("am", "amh"),
+    "Arabic" to listOf("ar", "ara"),
+    "Armenian" to listOf("hy", "hye"),
+    "Azerbaijani" to listOf("az", "aze"),
+    "Basque" to listOf("eu", "eus"),
+    "Belarusian" to listOf("be", "bel"),
+    "Bengali" to listOf("bn", "ben"),
+    "Bosnian" to listOf("bs", "bos"),
+    "Bulgarian" to listOf("bg", "bul"),
+    "Catalan" to listOf("ca", "cat"),
+    "Chinese" to listOf("zh", "zho"),
+    "Croatian" to listOf("hr", "hrv"),
+    "Czech" to listOf("cs", "ces"),
+    "Danish" to listOf("da", "dan"),
+    "Dutch" to listOf("nl", "nld"),
+    "English" to listOf("en", "eng"),
+    "Estonian" to listOf("et", "est"),
+    "Filipino" to listOf("tl", "tgl", "fil"),
+    "Finnish" to listOf("fi", "fin"),
+    "French" to listOf("fr", "fra"),
+    "Galician" to listOf("gl", "glg"),
+    "Georgian" to listOf("ka", "kat"),
+    "German" to listOf("de", "deu", "ger"),
+    "Greek" to listOf("el", "ell"),
+    "Gujarati" to listOf("gu", "guj"),
+    "Hebrew" to listOf("he", "heb"),
+    "Hindi" to listOf("hi", "hin"),
+    "Hungarian" to listOf("hu", "hun"),
+    "Icelandic" to listOf("is", "isl"),
+    "Indonesian" to listOf("id", "ind"),
+    "Italian" to listOf("it", "ita"),
+    "Japanese" to listOf("ja", "jpn"),
+    "Kannada" to listOf("kn", "kan"),
+    "Kazakh" to listOf("kk", "kaz"),
+    "Korean" to listOf("ko", "kor"),
+    "Latvian" to listOf("lv", "lav"),
+    "Lithuanian" to listOf("lt", "lit"),
+    "Macedonian" to listOf("mk", "mkd"),
+    "Malay" to listOf("ms", "msa"),
+    "Malayalam" to listOf("ml", "mal"),
+    "Maltese" to listOf("mt", "mlt"),
+    "Marathi" to listOf("mr", "mar"),
+    "Mongolian" to listOf("mn", "mon"),
+    "Nepali" to listOf("ne", "nep"),
+    "Norwegian" to listOf("no", "nor"),
+    "Persian" to listOf("fa", "fas"),
+    "Polish" to listOf("pl", "pol"),
+    "Portuguese" to listOf("pt", "por"),
+    "Punjabi" to listOf("pa", "pan"),
+    "Romanian" to listOf("ro", "ron"),
+    "Russian" to listOf("ru", "rus"),
+    "Serbian" to listOf("sr", "srp"),
+    "Sinhala" to listOf("si", "sin"),
+    "Slovak" to listOf("sk", "slk"),
+    "Slovenian" to listOf("sl", "slv"),
+    "Spanish" to listOf("es", "spa"),
+    "Swahili" to listOf("sw", "swa"),
+    "Swedish" to listOf("sv", "swe"),
+    "Tamil" to listOf("ta", "tam"),
+    "Telugu" to listOf("te", "tel"),
+    "Thai" to listOf("th", "tha"),
+    "Turkish" to listOf("tr", "tur"),
+    "Ukrainian" to listOf("uk", "ukr"),
+    "Urdu" to listOf("ur", "urd"),
+    "Uzbek" to listOf("uz", "uzb"),
+    "Vietnamese" to listOf("vi", "vie"),
+    "Welsh" to listOf("cy", "cym"),
+    "Yiddish" to listOf("yi", "yid")
 )
 
 fun getLanguage(language: String?): String? {
@@ -249,7 +249,9 @@ fun getLanguage(language: String?): String? {
         normalizedLang =  language
     }
 
-    val tag =  languageMap.entries.find { it.value.first == normalizedLang || it.value.second == normalizedLang }?.key
+    val tag = languageMap.entries.find { entry ->
+        entry.value.contains(normalizedLang)
+    }?.key
 
     if(tag == null) {
         return normalizedLang
@@ -1066,28 +1068,28 @@ fun decodeMeta(document: Document): Document? {
     return null
 }
 
-fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
-    val totalSize = keySize + ivSize
-    val derived = ByteArray(totalSize)
-    var block: ByteArray? = null
-    var offset = 0
+// fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
+//     val totalSize = keySize + ivSize
+//     val derived = ByteArray(totalSize)
+//     var block: ByteArray? = null
+//     var offset = 0
 
-    while (offset < totalSize) {
-        val hasher = MessageDigest.getInstance("MD5")
-        if (block != null) hasher.update(block)
-        hasher.update(password)
-        hasher.update(salt)
-        block = hasher.digest()
+//     while (offset < totalSize) {
+//         val hasher = MessageDigest.getInstance("MD5")
+//         if (block != null) hasher.update(block)
+//         hasher.update(password)
+//         hasher.update(salt)
+//         block = hasher.digest()
 
-        val len = Math.min(block.size, totalSize - offset)
-        System.arraycopy(block, 0, derived, offset, len)
-        offset += len
-    }
+//         val len = Math.min(block.size, totalSize - offset)
+//         System.arraycopy(block, 0, derived, offset, len)
+//         offset += len
+//     }
 
-    val key = derived.copyOfRange(0, keySize)
-    val iv = derived.copyOfRange(keySize, totalSize)
-    return Pair(key, iv)
-}
+//     val key = derived.copyOfRange(0, keySize)
+//     val iv = derived.copyOfRange(keySize, totalSize)
+//     return Pair(key, iv)
+// }
 
 //Allanime
 fun decrypthex(inputStr: String): String {
@@ -1192,8 +1194,8 @@ suspend fun getGojoStreams(
 ) {
     try {
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
-            "Referer" to gojoBaseAPI,
+            "User-Agent" to USER_AGENT,
+            "Referer" to "$gojoBaseAPI/",
             "Origin" to gojoBaseAPI
         )
 
@@ -1285,23 +1287,23 @@ fun getVideoQuality(string: String?): Int {
         ?: Qualities.Unknown.value
 }
 
-fun generateHashedString(): String {
-    val s = "a8f7e9c2d4b6a1f3e8c9d2t4a7f6e9c2d4z6a1f3e8c9d2b4a7f5e9c2d4b6a1f3"
-    val a = "2"
-    val algorithm = "HmacSHA512"
-    val keySpec = SecretKeySpec(s.toByteArray(StandardCharsets.UTF_8), algorithm)
-    val mac = Mac.getInstance(algorithm)
-    mac.init(keySpec)
+// fun generateHashedString(): String {
+//     val s = "a8f7e9c2d4b6a1f3e8c9d2t4a7f6e9c2d4z6a1f3e8c9d2b4a7f5e9c2d4b6a1f3"
+//     val a = "2"
+//     val algorithm = "HmacSHA512"
+//     val keySpec = SecretKeySpec(s.toByteArray(StandardCharsets.UTF_8), algorithm)
+//     val mac = Mac.getInstance(algorithm)
+//     mac.init(keySpec)
 
-    val input = "crypto_rotation_v${a}_seed_2025"
-    val hmacBytes = mac.doFinal(input.toByteArray(StandardCharsets.UTF_8))
-    val hex = hmacBytes.joinToString("") { "%02x".format(it) }
+//     val input = "crypto_rotation_v${a}_seed_2025"
+//     val hmacBytes = mac.doFinal(input.toByteArray(StandardCharsets.UTF_8))
+//     val hex = hmacBytes.joinToString("") { "%02x".format(it) }
 
-    val repeated = hex.repeat(3)
-    val result = repeated.substring(0, max(s.length, 128))
+//     val repeated = hex.repeat(3)
+//     val result = repeated.substring(0, max(s.length, 128))
 
-    return result
-}
+//     return result
+// }
 
 fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest,isSeries: Boolean): String {
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
@@ -1342,16 +1344,15 @@ private fun calculateHmacSha256(data: String, key: String): String {
 }
 
 // Helper function to convert byte array to hex string
-fun bytesToHex(bytes: ByteArray): String {
-    val hexChars = CharArray(bytes.size * 2)
-    for (i in bytes.indices) {
-        val v = bytes[i].toInt() and 0xFF
-        hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
-        hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
-    }
-    return String(hexChars)
-}
-
+// fun bytesToHex(bytes: ByteArray): String {
+//     val hexChars = CharArray(bytes.size * 2)
+//     for (i in bytes.indices) {
+//         val v = bytes[i].toInt() and 0xFF
+//         hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
+//         hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
+//     }
+//     return String(hexChars)
+// }
 
 fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): Any {
     val encrypted = e?.encrypted
@@ -1443,116 +1444,115 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 }
 
 /** Encodes input using Base64 with custom character mapping. */
-fun customEncode(input: String): String {
-    val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val dst = "TuzHOxl7b0RW9o_1FPV3eGfmL4Z5pD8cahBQr2U-6yvEYwngXCdJjANtqKIMiSks"
-    val transMap = src.zip(dst).toMap()
-    val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        Base64.getEncoder().encodeToString(input.toByteArray())
-            .replace("+", "-")
-            .replace("/", "_")
-            .replace("=", "")
-    } else {
-        android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
-    }
-    return base64.map { char -> transMap[char] ?: char }.joinToString("")
-}
+// fun customEncode(input: String): String {
+//     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+//     val dst = "TuzHOxl7b0RW9o_1FPV3eGfmL4Z5pD8cahBQr2U-6yvEYwngXCdJjANtqKIMiSks"
+//     val transMap = src.zip(dst).toMap()
+//     val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//         Base64.getEncoder().encodeToString(input.toByteArray())
+//             .replace("+", "-")
+//             .replace("/", "_")
+//             .replace("=", "")
+//     } else {
+//         android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
+//     }
+//     return base64.map { char -> transMap[char] ?: char }.joinToString("")
+// }
+
 /** Extracts data using regex pattern */
- fun extractData(pattern: String, input: String): String {
-    val regex = Regex(pattern)
-    val match = regex.find(input)
-    return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
-}
+//  fun extractData(pattern: String, input: String): String {
+//     val regex = Regex(pattern)
+//     val match = regex.find(input)
+//     return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
+// }
 
 /** Performs AES encryption */
- fun aesEncrypt(data: String): String {
-    val aesKey = hexStringToByteArray("034bcfc6275541ff4059bffb23d6d1d23ea49b55f79ea730ac540d1213a61339")
-    val aesIv = hexStringToByteArray("a2e7ad865464f12105e9df84f5bdabed")
+//  fun aesEncrypt(data: String): String {
+//     val aesKey = hexStringToByteArray("034bcfc6275541ff4059bffb23d6d1d23ea49b55f79ea730ac540d1213a61339")
+//     val aesIv = hexStringToByteArray("a2e7ad865464f12105e9df84f5bdabed")
 
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
+//     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+//     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
 
-    val encryptedData = cipher.doFinal(data.toByteArray())
-    return bytesToHex(encryptedData)
-}
+//     val encryptedData = cipher.doFinal(data.toByteArray())
+//     return bytesToHex(encryptedData)
+// }
 
 /** Performs XOR operation */
- fun xorOperation(input: String): String {
-    val xorKey = hexStringToByteArray("aaa27e7e3cff888285")
-    val result = StringBuilder()
+//  fun xorOperation(input: String): String {
+//     val xorKey = hexStringToByteArray("aaa27e7e3cff888285")
+//     val result = StringBuilder()
 
-    for (i in input.indices) {
-        val char = input[i]
-        val xorByte = xorKey[i % xorKey.size].toInt()
-        result.append((char.code xor xorByte).toChar())
-    }
+//     for (i in input.indices) {
+//         val char = input[i]
+//         val xorByte = xorKey[i % xorKey.size].toInt()
+//         result.append((char.code xor xorByte).toChar())
+//     }
 
-    return result.toString()
-}
+//     return result.toString()
+// }
 
+// fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
+//     val servers = mutableListOf<TripleOneMoviesServer>()
+//     try {
+//         val jsonArray = JSONArray(jsonString)
+//         for (i in 0 until jsonArray.length()) {
+//             val jsonObject = jsonArray.getJSONObject(i)
+//             val server = TripleOneMoviesServer(
+//                 name = jsonObject.getString("name"),
+//                 description = jsonObject.getString("description"),
+//                 image = jsonObject.getString("image"),
+//                 data = jsonObject.getString("data")
+//             )
+//             servers.add(server)
+//         }
+//     } catch (e: Exception) {
+//         Log.e("salman731", "Manual parsing failed: ${e.message}")
+//     }
+//     return servers
+// }
 
-fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
-    val servers = mutableListOf<TripleOneMoviesServer>()
-    try {
-        val jsonArray = JSONArray(jsonString)
-        for (i in 0 until jsonArray.length()) {
-            val jsonObject = jsonArray.getJSONObject(i)
-            val server = TripleOneMoviesServer(
-                name = jsonObject.getString("name"),
-                description = jsonObject.getString("description"),
-                image = jsonObject.getString("image"),
-                data = jsonObject.getString("data")
-            )
-            servers.add(server)
-        }
-    } catch (e: Exception) {
-        Log.e("salman731", "Manual parsing failed: ${e.message}")
-    }
-    return servers
-}
+//  fun customEncode(input: ByteArray): String {
+//     val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+//     val targetChars = "yfhNJUs1-djqrDczw08Mk7CeQF4AvWltRGO3ao5Ypn9HKPBbEVSi_X2Zg6IuLmTx"
 
- fun customEncode(input: ByteArray): String {
-    val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val targetChars = "yfhNJUs1-djqrDczw08Mk7CeQF4AvWltRGO3ao5Ypn9HKPBbEVSi_X2Zg6IuLmTx"
+//     val translationMap = sourceChars.zip(targetChars).toMap()
+//     val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//         Base64.getUrlEncoder().withoutPadding().encodeToString(input)
+//     } else {
+//         TODO("VERSION.SDK_INT < O")
+//     }
 
-    val translationMap = sourceChars.zip(targetChars).toMap()
-    val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        Base64.getUrlEncoder().withoutPadding().encodeToString(input)
-    } else {
-        TODO("VERSION.SDK_INT < O")
-    }
-
-    return encoded.map { char ->
-        translationMap[char] ?: char
-    }.joinToString("")
-}
+//     return encoded.map { char ->
+//         translationMap[char] ?: char
+//     }.joinToString("")
+// }
 
 
 /**
  * Utility function to convert hex string to byte array
  */
- fun hexStringToByteArray2(hex: String): ByteArray {
-    val result = ByteArray(hex.length / 2)
-    for (i in hex.indices step 2) {
-        val value = hex.substring(i, i + 2).toInt(16)
-        result[i / 2] = value.toByte()
-    }
-    return result
-}
+//  fun hexStringToByteArray2(hex: String): ByteArray {
+//     val result = ByteArray(hex.length / 2)
+//     for (i in hex.indices step 2) {
+//         val value = hex.substring(i, i + 2).toInt(16)
+//         result[i / 2] = value.toByte()
+//     }
+//     return result
+// }
 
 /**
  * PKCS7 padding implementation
  */
- fun padData(data: ByteArray, blockSize: Int): ByteArray {
-    val padding = blockSize - (data.size % blockSize)
-    val result = ByteArray(data.size + padding)
-    System.arraycopy(data, 0, result, 0, data.size)
-    for (i in data.size until result.size) {
-        result[i] = padding.toByte()
-    }
-    return result
-}
-
+//  fun padData(data: ByteArray, blockSize: Int): ByteArray {
+//     val padding = blockSize - (data.size % blockSize)
+//     val result = ByteArray(data.size + padding)
+//     System.arraycopy(data, 0, result, 0, data.size)
+//     for (i in data.size until result.size) {
+//         result[i] = padding.toByte()
+//     }
+//     return result
+// }
 
 /**
  * PBKDF2 key derivation using Bouncy Castle
@@ -1562,47 +1562,34 @@ fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
 //    generator.init(password.toByteArray(Charsets.UTF_8), salt, iterations)
 //    return (generator.generateDerivedParameters(keyLength * 8) as KeyParameter).key
 //}
-fun derivePbkdf2Key(
-    password: String,
-    salt: ByteArray,
-    iterations: Int,
-    keyLength: Int
-): ByteArray {
-    val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-    val spec: KeySpec = PBEKeySpec(password.toCharArray(), salt, iterations, keyLength * 8)
-    return factory.generateSecret(spec).encoded
-}
+
+// fun derivePbkdf2Key(
+//     password: String,
+//     salt: ByteArray,
+//     iterations: Int,
+//     keyLength: Int
+// ): ByteArray {
+//     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+//     val spec: KeySpec = PBEKeySpec(password.toCharArray(), salt, iterations, keyLength * 8)
+//     return factory.generateSecret(spec).encoded
+// }
 
 /**
  * Remove PKCS7 padding
  */
-fun unpadData(data: ByteArray): ByteArray {
-    val padding = data[data.size - 1].toInt() and 0xFF
-    if (padding < 1 || padding > data.size) {
-        return data
-    }
-    return data.copyOf(data.size - padding)
-}
+// fun unpadData(data: ByteArray): ByteArray {
+//     val padding = data[data.size - 1].toInt() and 0xFF
+//     if (padding < 1 || padding > data.size) {
+//         return data
+//     }
+//     return data.copyOf(data.size - padding)
+// }
 
-fun logLongText(tag: String, text: String) {
-    if (text.length <= 4000) {
-        Log.d(tag, text)
-    } else {
-        var start = 0
-        val length = text.length
-        while (start < length) {
-            val end = (start + 4000).coerceAtMost(length)
-            Log.d(tag, text.substring(start, end))
-            start = end
-        }
-    }
-}
-
-fun hasHost(url: String): Boolean {
-    return try {
-        val host = URL(url).host
-        !host.isNullOrEmpty()
-    } catch (e: Exception) {
-        false
-    }
-}
+// fun hasHost(url: String): Boolean {
+//     return try {
+//         val host = URL(url).host
+//         !host.isNullOrEmpty()
+//     } catch (e: Exception) {
+//         false
+//     }
+// }

@@ -40,6 +40,7 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
+        const val CC_COOKIE = BuildConfig.CC_COOKIE
         const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.io"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -55,12 +56,12 @@ open class CineStreamProvider : MainAPI() {
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","hi":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on"}"""
-        const val mp4MoviezAPI = "https://www.mp4moviez.talk"
+        // const val mp4MoviezAPI = "https://www.mp4moviez.talk"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.tech"
-        const val tripleOneMoviesApi = "https://111movies.com"
-        const val vidfastProApi = "https://vidfast.pro"
-        const val vidPlusApi = "https://player.vidplus.to"
+        // const val tripleOneMoviesApi = "https://111movies.com"
+        // const val vidfastProApi = "https://vidfast.pro"
+        // const val vidPlusApi = "https://player.vidplus.to"
         const val multiEmbededApi = "https://multiembed.mov"
         const val vidSrcApi = "https://api.rgshows.ru"
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
@@ -73,7 +74,7 @@ open class CineStreamProvider : MainAPI() {
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
-        const val mappleAPI = "https://mapple.uk"
+        // const val mappleAPI = "https://mapple.uk"
         const val vidzeeApi = "https://player.vidzee.wtf"
         const val nodebridAPI = "https://nodebrid.fly.dev"
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
@@ -86,6 +87,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidstackBaseAPI = "https://smashyplayer.top"
         const val notorrentAPI = "https://addon-osvh.onrender.com"
         const val xpassAPI = "https://play.xpass.top"
+        const val cinemacityAPI = "https://cinemacity.cc"
 
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi

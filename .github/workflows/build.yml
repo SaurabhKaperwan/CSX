@@ -46,11 +46,13 @@ jobs:
           CONSUMET_API: ${{ secrets.CONSUMET_API }}
           SIMKL_API: ${{ secrets.SIMKL_API }}
           TMDB_KEY: ${{ secrets.TMDB_KEY }}
+          CC_COOKIE: ${{ secrets.CC_COOKIE }}
         run: |
           cd $GITHUB_WORKSPACE/src
           echo CONSUMET_API=$CONSUMET_API >> local.properties
           echo SIMKL_API=$SIMKL_API >> local.properties
           echo TMDB_KEY=$TMDB_KEY >> local.properties
+          echo CC_COOKIE=$CC_COOKIE >> local.properties
 
       - name: Build Plugins
         run: |
