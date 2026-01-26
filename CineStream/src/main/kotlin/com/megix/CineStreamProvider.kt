@@ -5,7 +5,7 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
-import com.lagradost.cloudstream3.LoadResponse.Companion.addKitsuId
+// import com.lagradost.cloudstream3.LoadResponse.Companion.addKitsuId
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
@@ -351,7 +351,7 @@ open class CineStreamProvider : MainAPI() {
                 addAniListId(anilistId)
                 addMalId(malId)
                 addImdbId(id)
-                try { addKitsuId(kitsuId) } catch(_:Throwable){}
+                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
             }
         }
         else {
@@ -403,7 +403,7 @@ open class CineStreamProvider : MainAPI() {
                 addAniListId(anilistId)
                 addMalId(malId)
                 addImdbId(id)
-                try { addKitsuId(kitsuId) } catch(_:Throwable){}
+                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
             }
         }
     }

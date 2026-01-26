@@ -2403,7 +2403,16 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = it.magnetUri ?: ""
             val size = it.totalSize?.toLongOrNull() ?: 0L
             val sizeStr = formatSize(size)
-            val type = if(title.contains("Dual Audio", ignoreCase = true)) "DUB" else "SUB"
+            val type = if(
+                title.contains("Dual", ignoreCase = true)
+                || title.contains("DUB", ignoreCase = true)
+            ) {
+                "DUB"
+            }
+            else {
+                "SUB"
+            }
+
             val displayTitle = "[Animetosho[$type]🧲] $title | ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(
