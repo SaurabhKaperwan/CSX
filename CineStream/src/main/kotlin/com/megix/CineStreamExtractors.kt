@@ -632,7 +632,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "[$sourceName] " + name,
+                    "[$sourceName] " + " $title",
                     streamUrl,
                     type,
                 ) {
