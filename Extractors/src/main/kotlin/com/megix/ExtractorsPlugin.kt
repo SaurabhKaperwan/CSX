@@ -11,6 +11,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(XDmovies())
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())
+        registerExtractorAPI(GDFlixApp())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(GDFlixNet())
         registerExtractorAPI(Hubdrive())

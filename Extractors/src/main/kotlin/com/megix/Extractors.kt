@@ -172,6 +172,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name Cloud",
                                 "$name[Cloud] $fileName[$fileSize]",
                                 href,
+                                ExtractorLinkType.VIDEO
                             ) {
                                 this.quality = quality
                                 this.headers = VIDEO_HEADERS
@@ -189,6 +190,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name Instant(Download)",
                                 "$name[Instant(Download)] $fileName[$fileSize]",
                                 instant,
+                                ExtractorLinkType.VIDEO
                             ) {
                                 this.quality = quality
                                 this.headers = VIDEO_HEADERS
@@ -206,6 +208,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name ResumeBot",
                                 "$name[ResumeBot] $fileName[$fileSize]",
                                 resumeLink,
+                                ExtractorLinkType.VIDEO
                             ) {
                                 this.quality = quality
                                 this.headers = VIDEO_HEADERS
@@ -225,6 +228,7 @@ open class Driveleech : ExtractorApi() {
                                     "$name CF Type1",
                                     "$name[CF Type1] $fileName[$fileSize]",
                                     it,
+                                    ExtractorLinkType.VIDEO
                                 ) {
                                     this.quality = quality
                                     this.headers = VIDEO_HEADERS
@@ -243,6 +247,7 @@ open class Driveleech : ExtractorApi() {
                                 "$name ResumeCloud",
                                 "$name[ResumeCloud] $fileName[$fileSize]",
                                 resumeCloud,
+                                ExtractorLinkType.VIDEO
                             ) {
                                 this.quality = quality
                                 this.headers = VIDEO_HEADERS
@@ -290,7 +295,7 @@ open class VCloud : ExtractorApi() {
             val size = document.select("i#size").text() ?: ""
             val quality = getIndexQuality(header)
 
-            div?.select("h2 a.btn")?.forEach {
+            div?.select("h2 a.btn")?.amap {
                 val link = it.attr("href")
                 val text = it.text()
                 if (text.contains("FSL Server")) {
@@ -299,6 +304,7 @@ open class VCloud : ExtractorApi() {
                             "$name[FSL Server]",
                             "$name[FSL Server] $header[$size]",
                             link,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -310,6 +316,7 @@ open class VCloud : ExtractorApi() {
                             "$name[FSLv2 Server]",
                             "$name[FSLv2 Server] $header[$size]",
                             link,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -322,6 +329,7 @@ open class VCloud : ExtractorApi() {
                             "$name",
                             "$name $header[$size]",
                             link,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -337,6 +345,7 @@ open class VCloud : ExtractorApi() {
                                 "$name[BuzzServer]",
                                 "$name[BuzzServer] $header[$size]",
                                 baseUrl + dlink,
+                                ExtractorLinkType.VIDEO
                             ) {
                                 this.quality = quality
                                 this.headers = VIDEO_HEADERS
@@ -355,6 +364,7 @@ open class VCloud : ExtractorApi() {
                             "Pixeldrain",
                             "Pixeldrain $header[$size]",
                             finalURL,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -463,7 +473,7 @@ open class HubCloud : ExtractorApi() {
         val size = document.select("i#size").text() ?: ""
         val quality = getIndexQuality(header)
 
-        div?.select("h2 a.btn")?.forEach {
+        div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
             val text = it.text()
 
@@ -474,6 +484,7 @@ open class HubCloud : ExtractorApi() {
                         "$name[FSL Server]",
                         "$name[FSL Server] $header[$size]",
                         link,
+                        ExtractorLinkType.VIDEO
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
@@ -487,6 +498,7 @@ open class HubCloud : ExtractorApi() {
                         "$name[FSLv2 Server]",
                         "$name[FSLv2 Server] $header[$size]",
                         link,
+                        ExtractorLinkType.VIDEO
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
@@ -500,6 +512,7 @@ open class HubCloud : ExtractorApi() {
                         "$name[Mega Server]",
                         "$name[Mega Server] $header[$size]",
                         link,
+                        ExtractorLinkType.VIDEO
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
@@ -512,6 +525,7 @@ open class HubCloud : ExtractorApi() {
                         "$name",
                         "$name $header[$size]",
                         link,
+                        ExtractorLinkType.VIDEO
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
@@ -527,6 +541,7 @@ open class HubCloud : ExtractorApi() {
                             "$name[BuzzServer]",
                             "$name[BuzzServer] $header[$size]",
                             baseUrl + dlink,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -545,6 +560,7 @@ open class HubCloud : ExtractorApi() {
                         "Pixeldrain",
                         "Pixeldrain $header[$size]",
                         finalURL,
+                        ExtractorLinkType.VIDEO
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
@@ -624,6 +640,10 @@ class GDLink : GDFlix() {
     override var mainUrl = "https://gdlink.*"
 }
 
+class GDFlixApp: GDFlix() {
+    override var mainUrl = "https://new.gdflix.*"
+}
+
 class GDFlixNet : GDFlix() {
     override var mainUrl = "https://new12.gdflix.*"
 }
@@ -649,14 +669,44 @@ open class GDFlix : ExtractorApi() {
             .substringAfter("Size : ").orEmpty()
         val quality = getIndexQuality(fileName)
 
-        document.select("div.text-center a").forEach { anchor ->
+        //Cloudflare backup links
+        try {
+            val types = listOf("type=1", "type=2")
+            types.map { type ->
+                val source = app.get("${newUrl.replace("file", "wfile")}?$type")
+                    .document.select("a.btn-success").attr("href")
+
+                if (source.isNotEmpty()) {
+                    callback.invoke(
+                        newExtractorLink(
+                            "GDFlix[CF]",
+                            "GDFlix[CF] $fileName[$fileSize]",
+                            source,
+                            ExtractorLinkType.VIDEO
+                        ) {
+                            this.quality = quality
+                            this.headers = VIDEO_HEADERS
+                        }
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("CF", e.toString())
+        }
+
+        document.select("div.text-center a").amap { anchor ->
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
 
             when {
                 text.contains("DIRECT DL") -> {
                     callback.invoke(
-                        newExtractorLink("GDFlix[Direct]", "GDFlix[Direct] $fileName[$fileSize]", link) {
+                        newExtractorLink(
+                            "GDFlix[Direct]",
+                            "GDFlix[Direct] $fileName[$fileSize]",
+                            link,
+                            ExtractorLinkType.VIDEO
+                        ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
                         }
@@ -665,7 +715,12 @@ open class GDFlix : ExtractorApi() {
 
                 text.contains("DIRECT SERVER") -> {
                     callback.invoke(
-                        newExtractorLink("GDFlix[Direct]", "GDFlix[Direct] $fileName[$fileSize]", link) {
+                        newExtractorLink(
+                            "GDFlix[Direct]",
+                            "GDFlix[Direct] $fileName[$fileSize]",
+                            link,
+                            ExtractorLinkType.VIDEO
+                        ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
                         }
@@ -674,7 +729,11 @@ open class GDFlix : ExtractorApi() {
 
                 text.contains("CLOUD DOWNLOAD [R2]") -> {
                     callback.invoke(
-                        newExtractorLink("GDFlix[Cloud]", "GDFlix[Cloud] $fileName[$fileSize]", link) {
+                        newExtractorLink("GDFlix[Cloud]",
+                            "GDFlix[Cloud] $fileName[$fileSize]",
+                            link,
+                            ExtractorLinkType.VIDEO
+                        ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
                         }
@@ -689,7 +748,8 @@ open class GDFlix : ExtractorApi() {
                         newExtractorLink(
                             "Pixeldrain",
                             "GDFlix[Pixeldrain] $fileName[$fileSize]",
-                            finalURL
+                            finalURL,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -706,7 +766,12 @@ open class GDFlix : ExtractorApi() {
                                     .select("div.mb-4 > a").amap { sourceAnchor ->
                                         val source = sourceAnchor.attr("href")
                                         callback.invoke(
-                                            newExtractorLink("GDFlix[Index]", "GDFlix[Index] $fileName[$fileSize]", source) {
+                                            newExtractorLink(
+                                                "GDFlix[Index]",
+                                                "GDFlix[Index] $fileName[$fileSize]",
+                                                source,
+                                                ExtractorLinkType.VIDEO
+                                            ) {
                                                 this.quality = quality
                                                 this.headers = VIDEO_HEADERS
                                             }
@@ -757,7 +822,12 @@ open class GDFlix : ExtractorApi() {
                                 }
 
                                 callback.invoke(
-                                    newExtractorLink("GDFlix[DriveBot]", "GDFlix[DriveBot] $fileName[$fileSize]", downloadLink) {
+                                    newExtractorLink(
+                                        "GDFlix[DriveBot]",
+                                        "GDFlix[DriveBot] $fileName[$fileSize]",
+                                        downloadLink,
+                                        ExtractorLinkType.VIDEO
+                                    ) {
                                         this.referer = baseUrl
                                         this.quality = quality
                                         this.headers = VIDEO_HEADERS
@@ -777,7 +847,12 @@ open class GDFlix : ExtractorApi() {
                             .headers["location"]?.substringAfter("url=").orEmpty()
 
                         callback.invoke(
-                            newExtractorLink("GDFlix[Instant Download]", "GDFlix[Instant Download] $fileName[$fileSize]", link) {
+                            newExtractorLink(
+                                "GDFlix[Instant Download]",
+                                "GDFlix[Instant Download] $fileName[$fileSize]",
+                                link,
+                                ExtractorLinkType.VIDEO
+                            ) {
                                 this.quality = quality
                                 this.headers = VIDEO_HEADERS
                             }
@@ -805,25 +880,6 @@ open class GDFlix : ExtractorApi() {
                 }
             }
         }
-
-        // Cloudflare backup links
-        // try {
-        //     val types = listOf("type=1", "type=2")
-        //     types.map { type ->
-        //         val source = app.get("${newUrl.replace("file", "wfile")}?$type")
-        //             .document.select("a.btn-success").attr("href")
-
-        //         if (source.isNotEmpty()) {
-        //             callback.invoke(
-        //                 newExtractorLink("GDFlix[CF]", "GDFlix[CF] $fileName[$fileSize]", source) {
-        //                     this.quality = getIndexQuality(fileName)
-        //                 }
-        //             )
-        //         }
-        //     }
-        // } catch (e: Exception) {
-        //     Log.d("CF", e.toString())
-        // }
     }
 }
 
@@ -883,6 +939,7 @@ class Gofile : ExtractorApi() {
                     "Gofile",
                     "Gofile $fileName[$formattedSize]",
                     link,
+                    ExtractorLinkType.VIDEO
                 ) {
                     this.quality = getQuality(fileName)
                     this.headers = VIDEO_HEADERS + mapOf(
