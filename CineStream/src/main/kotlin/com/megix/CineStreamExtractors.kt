@@ -137,6 +137,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
+            { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -3924,10 +3925,11 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+        val titleSlug = title?.replace(" ", ".")
         val url = if (season == null) {
-            """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title $year", "UTF-8")}&page=1"""
+            """$bollywoodAPI/files/search?q=${titleSlug}&page=1"""
         } else {
-            """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title  S${seasonSlug}E${episodeSlug}", "UTF-8")}&page=1"""
+            """$bollywoodAPI/files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"""
         }
 
         val response = app.get(
