@@ -56,7 +56,7 @@ open class CineStreamProvider : MainAPI() {
         const val sudatchiAPI = "https://sudatchi.com"
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
-        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","hi":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on"}"""
+        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on","disableExtractor_hubdrive":"on"}"""
         // const val mp4MoviezAPI = "https://www.mp4moviez.talk"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.tech"
@@ -72,6 +72,7 @@ open class CineStreamProvider : MainAPI() {
         const val videasyAPI = "https://api.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
+        const val sootiAPI = """https://sooti.info/{"DebridServices":[{"provider":"httpstreaming","httpHDHub4u":true,"httpCineDoze":true}],"Languages":[],"Scrapers":["knaben","extto","torrentdownload"],"IndexerScrapers":["zilean","stremthru"],"minSize":0,"maxSize":200,"ShowCatalog":true,"DebridProvider":"httpstreaming"}"""
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
@@ -89,6 +90,9 @@ open class CineStreamProvider : MainAPI() {
         const val notorrentAPI = "https://addon-osvh.onrender.com"
         const val xpassAPI = "https://play.xpass.top"
         const val cinemacityAPI = "https://cinemacity.cc"
+        const val castleAPI = "aHR0cHM6Ly9tZW93dHYudmZsaXguc2hvcA=="
+        const val cineAPI = "aHR0cHM6Ly9oaWNpbmUudmZsaXguc2hvcC9zdHJlbWlv"
+        const val dramafullAPI = "https://dramafull.cc"
 
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
