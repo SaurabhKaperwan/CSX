@@ -701,7 +701,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val blockedTitles = listOf("redirecting")
 
             if (blockedUrls.any { stream.url.contains(it) } ||
-                blockedNames.any { key -> stream.name?.contains(key) == true }
+                blockedNames.any { key -> stream.name?.contains(key) == true } ||
                 blockedTitles.any { key -> stream.title?.contains(key) == true }
             ) {
                 return@forEach
