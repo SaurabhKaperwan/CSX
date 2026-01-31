@@ -131,7 +131,7 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private suspend fun extractNameAndTMDBId(imdbId: String? = null): Triple<String?, Int?, Int?> {
+    private suspend fun extractNameAndTMDBId(imdbId: String? = null): Triple<String?, Int?, Int?>? {
         return try {
             if (imdbId.isNullOrBlank()) return Triple(null, null, null)
 
@@ -152,7 +152,7 @@ class CineSimklProvider: MainAPI() {
 
             Triple(name, moviedbId, year)
         } catch (e: Exception) {
-            Triple(null, null, null)
+            null
         }
     }
 
@@ -328,7 +328,7 @@ class CineSimklProvider: MainAPI() {
                 json.title,
                 enTitle,
                 tvType,
-                simklId?.toIntOrNull(),
+                simklId.toIntOrNull(),
                 imdbId,
                 tmdbId,
                 json.year,
@@ -373,7 +373,7 @@ class CineSimklProvider: MainAPI() {
                         json.title,
                         enTitle,
                         tvType,
-                        simklId?.toIntOrNull(),
+                        simklId.toIntOrNull(),
                         imdbId,
                         tmdbId,
                         json.year,

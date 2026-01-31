@@ -31,27 +31,27 @@ data class AllLoadLinksData(
 
 //Kisskh
 data class KisskhResults(
-    @JsonProperty("id") val id: Int?,
-    @JsonProperty("title") val title: String?,
+    @param:JsonProperty("id") val id: Int?,
+    @param:JsonProperty("title") val title: String?,
 )
 
 data class KisskhDetail(
-    @JsonProperty("episodes") val episodes: ArrayList<KisskhEpisodes>? = arrayListOf(),
+    @param:JsonProperty("episodes") val episodes: ArrayList<KisskhEpisodes>? = arrayListOf(),
 )
 
 data class KisskhEpisodes(
-    @JsonProperty("id") val id: Int?,
-    @JsonProperty("number") val number: Int?,
+    @param:JsonProperty("id") val id: Int?,
+    @param:JsonProperty("number") val number: Int?,
 )
 
 data class KisskhSources(
-    @JsonProperty("Video") val video: String?,
-    @JsonProperty("ThirdParty") val thirdParty: String?,
+    @param:JsonProperty("Video") val video: String?,
+    @param:JsonProperty("ThirdParty") val thirdParty: String?,
 )
 
 data class KisskhSubtitle(
-    @JsonProperty("src") val src: String?,
-    @JsonProperty("label") val label: String?,
+    @param:JsonProperty("src") val src: String?,
+    @param:JsonProperty("label") val label: String?,
 )
 
 //Anilist

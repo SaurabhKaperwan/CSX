@@ -512,30 +512,28 @@ object CineStreamExtractors : CineStreamProvider() {
 
         if(season != null) return
 
-        val slugTitle = if(season == null) title.createSlug() else "${title.createSlug()}-season-$season"
+        val slugTitle = title.createSlug()
         val url = "$rtallyAPI/post/$slugTitle"
         val doc = app.get(url).document
 
-        if(season == null) {
-            val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
+        val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
 
-            linkPattern.findAll(doc.toString()).forEach { match ->
-                val quality = match.groupValues[1]
-                val durl = match.groupValues[2]
+        linkPattern.findAll(doc.toString()).forEach { match ->
+            val quality = match.groupValues[1]
+            val durl = match.groupValues[2]
 
-                loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
-            }
+            loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
+        }
 
-            val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
+        val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
 
-            streamPattern.findAll(doc.toString()).forEach { match ->
-                val service = match.groupValues[1]
-                val id = match.groupValues[2]
+        streamPattern.findAll(doc.toString()).forEach { match ->
+            val service = match.groupValues[1]
+            val id = match.groupValues[2]
 
-                if (id != "null") {
-                    val eurl = getStreamUrl(id, service) ?: return@forEach
-                    loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
-                }
+            if (id != "null") {
+                val eurl = getStreamUrl(id, service) ?: return@forEach
+                loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
             }
         }
     }

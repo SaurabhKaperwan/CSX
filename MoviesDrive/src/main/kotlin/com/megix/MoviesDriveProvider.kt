@@ -159,7 +159,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 val titleElement = button.parent() ?. previousElementSibling()
                 val mainTitle = titleElement ?. text() ?: ""
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(mainTitle.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
+                val realSeason = realSeasonRegex.find(mainTitle) ?. groupValues ?. get(1) ?.toInt() ?: 0
                 val episodeLink = button.attr("href")
 
                 val doc = app.get(episodeLink).document
