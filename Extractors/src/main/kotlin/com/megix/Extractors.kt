@@ -157,8 +157,8 @@ open class Driveleech : ExtractorApi() {
             app.get(url).document
         }
 
-        val fileName = document.select("ul > li.list-group-item:contains(Name)").text().substringAfter("Name : ") ?: ""
-        val fileSize = document.select("ul > li.list-group-item:contains(Size)").text().substringAfter("Size : ") ?: ""
+        val fileName = document.select("ul > li.list-group-item:contains(Name)").text().substringAfter("Name : ")
+        val fileSize = document.select("ul > li.list-group-item:contains(Size)").text().substringAfter("Size : ")
         val quality = getIndexQuality(fileName)
 
         document.select("div.text-center > a").amap { element ->
@@ -291,8 +291,8 @@ open class VCloud : ExtractorApi() {
         if (urlValue.isNotEmpty()) {
             val document = app.get(urlValue).document
             val div = document.selectFirst("div.card-body")
-            val header = document.select("div.card-header").text() ?: ""
-            val size = document.select("i#size").text() ?: ""
+            val header = document.select("div.card-header").text()
+            val size = document.select("i#size").text()
             val quality = getIndexQuality(header)
 
             div?.select("h2 a.btn")?.amap {
@@ -469,8 +469,8 @@ open class HubCloud : ExtractorApi() {
 
         val document = app.get(link).document
         val div = document.selectFirst("div.card-body")
-        val header = document.select("div.card-header").text() ?: ""
-        val size = document.select("i#size").text() ?: ""
+        val header = document.select("div.card-header").text()
+        val size = document.select("i#size").text()
         val quality = getIndexQuality(header)
 
         div?.select("h2 a.btn")?.amap {
@@ -671,24 +671,21 @@ open class GDFlix : ExtractorApi() {
 
         //Cloudflare backup links
         try {
-            val types = listOf("type=1", "type=2")
-            types.map { type ->
-                val source = app.get("${newUrl.replace("file", "wfile")}?$type")
-                    .document.select("a.btn-success").attr("href")
+            val source = app.get("${newUrl.replace("file", "wfile")}")
+                .document.select("a.btn-success").attr("href")
 
-                if (source.isNotEmpty()) {
-                    callback.invoke(
-                        newExtractorLink(
-                            "GDFlix[CF]",
-                            "GDFlix[CF] $fileName[$fileSize]",
-                            source,
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.quality = quality
-                            this.headers = VIDEO_HEADERS
-                        }
-                    )
-                }
+            if (source.isNotEmpty()) {
+                callback.invoke(
+                    newExtractorLink(
+                        "GDFlix[CF]",
+                        "GDFlix[CF] $fileName[$fileSize]",
+                        source,
+                        ExtractorLinkType.VIDEO
+                    ) {
+                        this.quality = quality
+                        this.headers = VIDEO_HEADERS
+                    }
+                )
             }
         } catch (e: Exception) {
             Log.d("CF", e.toString())

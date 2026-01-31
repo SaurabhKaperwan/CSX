@@ -26,6 +26,23 @@ import com.lagradost.cloudstream3.extractors.StreamTape
 import com.lagradost.cloudstream3.extractors.Vidguardto
 import com.lagradost.cloudstream3.extractors.Filesim
 import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.Vidmoly
+
+class Vidmolybiz : Vidmoly() {
+    override var mainUrl = "https://vidmoly.biz"
+}
+
+class Vidmolynet : Vidmoly() {
+    override var mainUrl = "https://vidmoly.net"
+}
+
+class Cybervynx : StreamWishExtractor() {
+    override var mainUrl = "https://cybervynx.com"
+}
+
+class Mivalyo : VidHidePro() {
+    override var mainUrl = "https://mivalyo.com"
+}
 
 class Multimoviesshg : Filesim() {
     override var mainUrl = "https://multimoviesshg.com"

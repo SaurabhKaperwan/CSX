@@ -109,7 +109,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
             cast = responseData.meta.cast ?: emptyList()
             title = responseData.meta.name ?: title
             genre = responseData.meta.genre ?: emptyList()
-            imdbRating = responseData.meta?.imdbRating ?: ""
+            imdbRating = responseData.meta.imdbRating ?: ""
             year = responseData.meta.year ?: ""
             posterUrl = responseData.meta.poster ?: posterUrl
             background = responseData.meta.background ?: background

@@ -159,7 +159,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 if (checkSeason == null) {
                     val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
                     if(seasonText != null) {
-                        title = title + " " + seasonText.toString()
+                        title = title + " " + seasonText
                     }
                 }
             }

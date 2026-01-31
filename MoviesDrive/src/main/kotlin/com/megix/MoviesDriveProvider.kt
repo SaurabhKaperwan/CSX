@@ -128,7 +128,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         if(responseData != null) {
             val meta = responseData.meta
             description = meta.description ?: description
-            cast = meta?.app_extras?.cast?.mapNotNull { castMember ->
+            cast = meta.app_extras?.cast?.mapNotNull { castMember ->
                 if (castMember.name != null) {
                     ActorData(
                         Actor(
@@ -160,7 +160,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 val mainTitle = titleElement ?. text() ?: ""
                 val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                 val realSeason = realSeasonRegex.find(mainTitle.toString()) ?. groupValues ?. get(1) ?.toInt() ?: 0
-                val episodeLink = button.attr("href") ?: ""
+                val episodeLink = button.attr("href")
 
                 val doc = app.get(episodeLink).document
                 var elements = doc.select("span:matches((?i)(Ep))")

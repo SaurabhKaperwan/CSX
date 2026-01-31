@@ -240,6 +240,8 @@ fun getLanguage(language: String?): String? {
         language.substringBefore("-")
     } else if(language.contains(" ")) {
         language.substringBefore(" ")
+    } else if(language.contains("CR_")) {
+        language.substringAfter("CR_")
     } else {
         language
     }
