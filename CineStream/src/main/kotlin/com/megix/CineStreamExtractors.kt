@@ -604,7 +604,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
                 .build()
 
-            val resp = client.newCall(request).execute().body.string() ?: "{}"
+            val resp = client.newCall(request).execute().body.string()
 
             return try {
                 JSONObject(resp)
@@ -2563,7 +2563,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val sTag = if (season == null) "" else "Season $season"
         val entries =
             res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
-                .filter { element -> !element.text().contains("Download", true) }?.takeLast(4)
+                .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
         entries?.map {
             val href = it.nextElementSibling()?.select("a")?.attr("href")
             val token = href?.substringAfter("id=")

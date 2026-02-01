@@ -220,7 +220,7 @@ class PrimeVideoProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$newUrl/tv/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$newUrl/home",
             cookies = cookies
@@ -232,7 +232,7 @@ class PrimeVideoProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         name,
-                        """$newUrl${it.file.replace("/tv/", "/")}""",
+                        """$newUrl${it.file}""",
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$newUrl/"
@@ -249,24 +249,16 @@ class PrimeVideoProvider : MainAPI() {
             }
 
             item.tracks?.filter { it.kind == "captions" }?.map { track ->
-
-                callback.invoke(
-                    newExtractorLink(
-                          track.label.toString(),
-                          track.label.toString(),
-                          httpsify(track.file.toString().replace("\\", ""))
-                    )
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        track.label.toString(),
+                        httpsify(track.file.toString().replace("\\", "")),
+                    ) {
+                        this.headers = mapOf(
+                            "Referer" to "$newUrl/"
+                        )
+                    }
                 )
-                // subtitleCallback.invoke(
-                //     newSubtitleFile(
-                //         track.label.toString(),
-                //         httpsify(track.file.toString().replace("\\", "")),
-                //     ) {
-                //         this.headers = mapOf(
-                //             "Referer" to "$newUrl/"
-                //         )
-                //     }
-                // )
             }
         }
 
