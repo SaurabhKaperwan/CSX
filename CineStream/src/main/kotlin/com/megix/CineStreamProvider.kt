@@ -67,7 +67,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidSrcApi = "https://api.rgshows.ru"
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
         const val dahmerMoviesAPI = "https://a.111477.xyz"
-        const val netflix2API = "https://net51.cc"
+        const val netflix2API = "https://net52.cc"
         const val hexaAPI = "https://themoviedb.hexa.su"
         const val videasyAPI = "https://api.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
