@@ -2557,7 +2557,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         var res1 = app.get("""$bollyflixAPI/search/${id ?: return} ${season ?: ""}""", interceptor = wpRedisInterceptor).document
-        val url = res1.selectFirst("div > article > a").attr("href") ?: return
+        val url = res1.selectFirst("div > article > a")?.attr("href") ?: return
         val res = app.get(url, interceptor = wpRedisInterceptor).document
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
