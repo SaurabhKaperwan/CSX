@@ -604,7 +604,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
                 .build()
 
-            val resp = client.newCall(request).execute().body?.string() ?: "{}"
+            val resp = client.newCall(request).execute().body.string() ?: "{}"
 
             return try {
                 JSONObject(resp)
@@ -2557,13 +2557,13 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         var res1 = app.get("""$bollyflixAPI/search/${id ?: return} ${season ?: ""}""", interceptor = wpRedisInterceptor).document
-        val url = res1.select("div > article > a").attr("href") ?: return
+        val url = res1.selectFirst("div > article > a").attr("href") ?: return
         val res = app.get(url, interceptor = wpRedisInterceptor).document
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
         val entries =
             res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
-                ?.filter { element -> !element.text().contains("Download", true) }?.takeLast(4)
+                .filter { element -> !element.text().contains("Download", true) }?.takeLast(4)
         entries?.map {
             val href = it.nextElementSibling()?.select("a")?.attr("href")
             val token = href?.substringAfter("id=")
@@ -3070,9 +3070,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 it.nextElementSibling()?.select("a.maxbutton:contains($aTag)")?.attr("href")
             val selector =
                 if (season == null) "a.maxbutton-5:contains(Server)" else "h3 a:matches(Episode $episode)"
-            if (href!!.isNotEmpty()) {
+            if (!href.isNullOrEmpty()) {
                 app.get(
-                    href ?: "",
+                    href,
                     headers = mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"),
                     interceptor = wpRedisInterceptor, timeout = 10L
                 ).document.selectFirst(selector)
@@ -3192,7 +3192,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
         val hiId = url?.substringAfterLast("/") ?: return
-        val id = hiId.substringAfterLast("-") ?: return
+        val id = hiId.substringAfterLast("-")
 
         val epId = app.get(
             "$hianimeAPI/ajax/v2/episode/list/$id",
@@ -3287,7 +3287,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             val sourcename = sourceUrl.getHost()
                             loadCustomExtractor(
                                 "Allanime [${i.uppercase()}] [$sourcename]",
-                                sourceUrl ?: "",
+                                sourceUrl,
                                 "",
                                 subtitleCallback,
                                 callback,
@@ -4107,7 +4107,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val searchResponseString = client.newCall(searchRequest).execute().use {
             if (!it.isSuccessful) throw IOException("Search failed: ${it.code}")
-            it.body?.string() ?: ""
+            it.body.string() ?: ""
         }
 
         val searchObj = JSONObject(searchResponseString)
@@ -4159,7 +4159,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 .build()
 
             val detailResponseString = client.newCall(detailRequest).execute().use {
-                it.body?.string() ?: ""
+                it.body.string() ?: ""
             }
 
             val detailObj = JSONObject(detailResponseString)
@@ -4184,7 +4184,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 .build()
 
             val downloadResponseString = client.newCall(downloadRequest).execute().use {
-                it.body?.string() ?: ""
+                it.body.string() ?: ""
             }
 
             val sourceObj = JSONObject(downloadResponseString)

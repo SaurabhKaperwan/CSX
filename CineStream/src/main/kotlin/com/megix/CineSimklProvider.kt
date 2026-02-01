@@ -265,7 +265,7 @@ class CineSimklProvider: MainAPI() {
         val simklId = getSimklId(url)
         val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth2&extended=full", headers = headers).text
         val json = parseJson<SimklResponse>(jsonString)
-        val genres = json.genres?.map { it.toString() }
+        val genres = json.genres?.map { it }
         val tvType = json.type.orEmpty()
         val country = json.country.orEmpty()
         val poster = getPosterUrl(json.poster, "poster")
@@ -306,14 +306,14 @@ class CineSimklProvider: MainAPI() {
 
         val users_recommendations = json.users_recommendations?.map {
             val rec_poster = getPosterUrl(it.poster, "poster")
-            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
+            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids.simkl}") {
                 this.posterUrl = rec_poster
             }
         } ?: emptyList()
 
         val relations = json.relations?.map {
             val rec_poster = getPosterUrl(it.poster, "poster")
-            newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
+            newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids.simkl}") {
                 this.posterUrl = rec_poster
             }
         } ?: emptyList()
