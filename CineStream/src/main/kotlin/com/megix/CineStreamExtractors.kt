@@ -4107,7 +4107,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val searchResponseString = client.newCall(searchRequest).execute().use {
             if (!it.isSuccessful) throw IOException("Search failed: ${it.code}")
-            it.body.string() ?: ""
+            it.body.string()
         }
 
         val searchObj = JSONObject(searchResponseString)
@@ -4159,7 +4159,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 .build()
 
             val detailResponseString = client.newCall(detailRequest).execute().use {
-                it.body.string() ?: ""
+                it.body.string()
             }
 
             val detailObj = JSONObject(detailResponseString)
@@ -4184,7 +4184,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 .build()
 
             val downloadResponseString = client.newCall(downloadRequest).execute().use {
-                it.body.string() ?: ""
+                it.body.string()
             }
 
             val sourceObj = JSONObject(downloadResponseString)

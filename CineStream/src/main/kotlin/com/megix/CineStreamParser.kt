@@ -232,7 +232,7 @@ data class AniPage(@param:JsonProperty("media") var media: java.util.ArrayList<A
 
 data class AniData(@param:JsonProperty("Page") var Page: AniPage? = AniPage())
 
-data class AniSearch(@JsonProperty("data") var data: AniData? = AniData())
+data class AniSearch(@param:JsonProperty("data") var data: AniData? = AniData())
 
 data class AniIds(var id: Int? = null, var idMal: Int? = null)
 

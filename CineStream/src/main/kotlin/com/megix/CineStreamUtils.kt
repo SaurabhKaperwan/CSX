@@ -466,8 +466,8 @@ suspend fun getHindMoviezLinks(
 ) {
     val response = app.get(url)
     val doc = response.document
-    val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ") ?: ""
-    val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ") ?: ""
+    val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ")
+    val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
     val extracted = extractSpecs(name)
     val extractedSpecs = buildExtractedTitle(extracted)
 
@@ -726,7 +726,7 @@ fun getAniListInfo(animeId: Int): AnimeInfo? {
     client.newCall(request).execute().use { response ->
         if (!response.isSuccessful) return null
 
-        val responseBody = response.body?.string() ?: return null
+        val responseBody = response.body.string()l
         val json = JSONObject(responseBody)
         val media = json.optJSONObject("data")?.optJSONObject("Media") ?: return null
         val rawBanner = media.optString("bannerImage")
@@ -900,7 +900,7 @@ suspend fun filepressExtractor(
         .build()
 
     val response = client.newCall(request).execute()
-    val responseBody = response.body?.string() ?: return
+    val responseBody = response.body.string()
     val json = JSONObject(responseBody)
     if(json.optBoolean("status") == false) return
     val data = json.optJSONObject("data")
@@ -934,7 +934,7 @@ suspend fun filepressExtractor(
         .build()
 
     val response1 = client.newCall(request1).execute()
-    val responseBody1 = response1.body?.string() ?: return
+    val responseBody1 = response1.body.string()
 
     val json1 = JSONObject(responseBody1)
     val status = json1.optBoolean("status")
@@ -954,7 +954,7 @@ suspend fun filepressExtractor(
             .build()
 
         val response2 = client.newCall(request2).execute()
-        val responseBody2 = response2.body?.string() ?: return
+        val responseBody2 = response2.body.string()
         val json2 = JSONObject(responseBody2)
         val finalLink = json2.optJSONArray("data")?.optString(0) ?: return
 

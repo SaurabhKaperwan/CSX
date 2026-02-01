@@ -249,16 +249,24 @@ class PrimeVideoProvider : MainAPI() {
             }
 
             item.tracks?.filter { it.kind == "captions" }?.map { track ->
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        track.label.toString(),
-                        httpsify(track.file.toString().replace("\\", "")),
-                    ) {
-                        this.headers = mapOf(
-                            "Referer" to "$newUrl/"
-                        )
-                    }
+
+                callback.invoke(
+                    newExtractorLink(
+                          track.label.toString(),
+                          track.label.toString(),
+                          httpsify(track.file.toString().replace("\\", ""))
+                    )
                 )
+                // subtitleCallback.invoke(
+                //     newSubtitleFile(
+                //         track.label.toString(),
+                //         httpsify(track.file.toString().replace("\\", "")),
+                //     ) {
+                //         this.headers = mapOf(
+                //             "Referer" to "$newUrl/"
+                //         )
+                //     }
+                // )
             }
         }
 

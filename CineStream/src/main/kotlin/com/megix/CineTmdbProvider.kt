@@ -349,131 +349,131 @@ class CineTmdbProvider: MainAPI() {
     )
 
     data class Results(
-        @JsonProperty("results") val results: ArrayList<Media>? = arrayListOf(),
+        @param:JsonProperty("results") val results: ArrayList<Media>? = arrayListOf(),
     )
 
     data class Media(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("original_title") val originalTitle: String? = null,
-        @JsonProperty("media_type") val mediaType: String? = null,
-        @JsonProperty("poster_path") val posterPath: String? = null,
-        @JsonProperty("vote_average") val voteAverage: Double? = null,
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("title") val title: String? = null,
+        @param:JsonProperty("original_title") val originalTitle: String? = null,
+        @param:JsonProperty("media_type") val mediaType: String? = null,
+        @param:JsonProperty("poster_path") val posterPath: String? = null,
+        @param:JsonProperty("vote_average") val voteAverage: Double? = null,
     )
 
     data class Genres(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("name") val name: String? = null,
     )
 
     data class Keywords(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("name") val name: String? = null,
     )
 
     data class KeywordResults(
-        @JsonProperty("results") val results: ArrayList<Keywords>? = arrayListOf(),
-        @JsonProperty("keywords") val keywords: ArrayList<Keywords>? = arrayListOf(),
+        @param:JsonProperty("results") val results: ArrayList<Keywords>? = arrayListOf(),
+        @param:JsonProperty("keywords") val keywords: ArrayList<Keywords>? = arrayListOf(),
     )
 
     data class LastEpisodeToAir(
-        @JsonProperty("episode_number") val episode_number: Int? = null,
-        @JsonProperty("season_number") val season_number: Int? = null,
+        @param:JsonProperty("episode_number") val episode_number: Int? = null,
+        @param:JsonProperty("season_number") val season_number: Int? = null,
     )
 
     data class Seasons(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("season_number") val seasonNumber: Int? = null,
-        @JsonProperty("air_date") val airDate: String? = null,
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("season_number") val seasonNumber: Int? = null,
+        @param:JsonProperty("air_date") val airDate: String? = null,
     )
 
     data class Trailers(
-        @JsonProperty("key") val key: String? = null,
-        @JsonProperty("type") val type: String? = null,
+        @param:JsonProperty("key") val key: String? = null,
+        @param:JsonProperty("type") val type: String? = null,
     )
 
     data class ResultsTrailer(
-        @JsonProperty("results") val results: ArrayList<Trailers>? = arrayListOf(),
+        @param:JsonProperty("results") val results: ArrayList<Trailers>? = arrayListOf(),
     )
 
     data class ExternalIds(
-        @JsonProperty("imdb_id") val imdb_id: String? = null,
-        @JsonProperty("tvdb_id") val tvdb_id: Int? = null,
+        @param:JsonProperty("imdb_id") val imdb_id: String? = null,
+        @param:JsonProperty("tvdb_id") val tvdb_id: Int? = null,
     )
 
     data class Credits(
-        @JsonProperty("cast") val cast: ArrayList<Cast>? = arrayListOf(),
+        @param:JsonProperty("cast") val cast: ArrayList<Cast>? = arrayListOf(),
     )
 
     data class Cast(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("original_name") val originalName: String? = null,
-        @JsonProperty("character") val character: String? = null,
-        @JsonProperty("known_for_department") val knownForDepartment: String? = null,
-        @JsonProperty("profile_path") val profilePath: String? = null,
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("original_name") val originalName: String? = null,
+        @param:JsonProperty("character") val character: String? = null,
+        @param:JsonProperty("known_for_department") val knownForDepartment: String? = null,
+        @param:JsonProperty("profile_path") val profilePath: String? = null,
     )
 
     data class ResultsRecommendations(
-        @JsonProperty("results") val results: ArrayList<Media>? = arrayListOf(),
+        @param:JsonProperty("results") val results: ArrayList<Media>? = arrayListOf(),
     )
 
     data class AltTitles(
-        @JsonProperty("iso_3166_1") val iso_3166_1: String? = null,
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("type") val type: String? = null,
+        @param:JsonProperty("iso_3166_1") val iso_3166_1: String? = null,
+        @param:JsonProperty("title") val title: String? = null,
+        @param:JsonProperty("type") val type: String? = null,
     )
 
     data class ResultsAltTitles(
-        @JsonProperty("results") val results: ArrayList<AltTitles>? = arrayListOf(),
+        @param:JsonProperty("results") val results: ArrayList<AltTitles>? = arrayListOf(),
     )
 
     data class ProductionCountries(
-        @JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("name") val name: String? = null,
     )
 
     data class MediaDetail(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("imdb_id") val imdbId: String? = null,
-        @JsonProperty("title") val title: String? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("original_title") val originalTitle: String? = null,
-        @JsonProperty("original_name") val originalName: String? = null,
-        @JsonProperty("poster_path") val posterPath: String? = null,
-        @JsonProperty("backdrop_path") val backdropPath: String? = null,
-        @JsonProperty("release_date") val releaseDate: String? = null,
-        @JsonProperty("first_air_date") val firstAirDate: String? = null,
-        @JsonProperty("overview") val overview: String? = null,
-        @JsonProperty("runtime") val runtime: Int? = null,
-        @JsonProperty("vote_average") val vote_average: Any? = null,
-        @JsonProperty("original_language") val original_language: String? = null,
-        @JsonProperty("status") val status: String? = null,
-        @JsonProperty("genres") val genres: ArrayList<Genres>? = arrayListOf(),
-        @JsonProperty("keywords") val keywords: KeywordResults? = null,
-        @JsonProperty("last_episode_to_air") val last_episode_to_air: LastEpisodeToAir? = null,
-        @JsonProperty("seasons") val seasons: ArrayList<Seasons>? = arrayListOf(),
-        @JsonProperty("videos") val videos: ResultsTrailer? = null,
-        @JsonProperty("external_ids") val external_ids: ExternalIds? = null,
-        @JsonProperty("credits") val credits: Credits? = null,
-        @JsonProperty("recommendations") val recommendations: ResultsRecommendations? = null,
-        @JsonProperty("alternative_titles") val alternative_titles: ResultsAltTitles? = null,
-        @JsonProperty("production_countries") val production_countries: ArrayList<ProductionCountries>? = arrayListOf(),
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("imdb_id") val imdbId: String? = null,
+        @param:JsonProperty("title") val title: String? = null,
+        @param:JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("original_title") val originalTitle: String? = null,
+        @param:JsonProperty("original_name") val originalName: String? = null,
+        @param:JsonProperty("poster_path") val posterPath: String? = null,
+        @param:JsonProperty("backdrop_path") val backdropPath: String? = null,
+        @param:JsonProperty("release_date") val releaseDate: String? = null,
+        @param:JsonProperty("first_air_date") val firstAirDate: String? = null,
+        @param:JsonProperty("overview") val overview: String? = null,
+        @param:JsonProperty("runtime") val runtime: Int? = null,
+        @param:JsonProperty("vote_average") val vote_average: Any? = null,
+        @param:JsonProperty("original_language") val original_language: String? = null,
+        @param:JsonProperty("status") val status: String? = null,
+        @param:JsonProperty("genres") val genres: ArrayList<Genres>? = arrayListOf(),
+        @param:JsonProperty("keywords") val keywords: KeywordResults? = null,
+        @param:JsonProperty("last_episode_to_air") val last_episode_to_air: LastEpisodeToAir? = null,
+        @param:JsonProperty("seasons") val seasons: ArrayList<Seasons>? = arrayListOf(),
+        @param:JsonProperty("videos") val videos: ResultsTrailer? = null,
+        @param:JsonProperty("external_ids") val external_ids: ExternalIds? = null,
+        @param:JsonProperty("credits") val credits: Credits? = null,
+        @param:JsonProperty("recommendations") val recommendations: ResultsRecommendations? = null,
+        @param:JsonProperty("alternative_titles") val alternative_titles: ResultsAltTitles? = null,
+        @param:JsonProperty("production_countries") val production_countries: ArrayList<ProductionCountries>? = arrayListOf(),
     )
 
     data class Episodes(
-        @JsonProperty("id") val id: Int? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("overview") val overview: String? = null,
-        @JsonProperty("air_date") val airDate: String? = null,
-        @JsonProperty("still_path") val stillPath: String? = null,
-        @JsonProperty("vote_average") val voteAverage: Double? = null,
-        @JsonProperty("episode_number") val episodeNumber: Int? = null,
-        @JsonProperty("season_number") val seasonNumber: Int? = null,
+        @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("overview") val overview: String? = null,
+        @param:JsonProperty("air_date") val airDate: String? = null,
+        @param:JsonProperty("still_path") val stillPath: String? = null,
+        @param:JsonProperty("vote_average") val voteAverage: Double? = null,
+        @param:JsonProperty("episode_number") val episodeNumber: Int? = null,
+        @param:JsonProperty("season_number") val seasonNumber: Int? = null,
     )
 
      data class MediaDetailEpisodes(
-        @JsonProperty("episodes") val episodes: ArrayList<Episodes>? = arrayListOf(),
+        @param:JsonProperty("episodes") val episodes: ArrayList<Episodes>? = arrayListOf(),
     )
 }
