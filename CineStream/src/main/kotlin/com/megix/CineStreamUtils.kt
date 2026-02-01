@@ -726,7 +726,7 @@ fun getAniListInfo(animeId: Int): AnimeInfo? {
     client.newCall(request).execute().use { response ->
         if (!response.isSuccessful) return null
 
-        val responseBody = response.body.string()l
+        val responseBody = response.body.string()
         val json = JSONObject(responseBody)
         val media = json.optJSONObject("data")?.optJSONObject("Media") ?: return null
         val rawBanner = media.optString("bannerImage")
