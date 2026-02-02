@@ -129,6 +129,7 @@ open class CineStreamProvider : MainAPI() {
         val hdmoviesflixAPI get() = api("hdmoviesflix")
         val hdmovie2API get() = api("hdmovie2")
         val netflixAPI get() = api("nfmirror")
+        val netflix2API get() = api("nfmirror2")
         val MovieDrive_API get() = api("moviesdrive")
         val gojoBaseAPI get() = api("gojo_base")
         val vegamoviesAPI get() = api("vegamovies")

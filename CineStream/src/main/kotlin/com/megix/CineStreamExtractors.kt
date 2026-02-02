@@ -2030,7 +2030,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflix2API/tv/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflix2API/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflix2API/",
@@ -2041,7 +2041,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "PrimeVideo",
                     "PrimeVideo",
-                    """$netflix2API${it.file?.replace("/tv/", "/")}""",
+                    "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = "$netflix2API/"
@@ -2105,7 +2105,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflix2API/tv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflix2API/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflix2API/",
@@ -2116,7 +2116,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Netflix",
                     "Netflix",
-                    """$netflix2API${it.file?.replace("/tv/", "/")}""",
+                    "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = "$netflix2API/"

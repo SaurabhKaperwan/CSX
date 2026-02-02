@@ -218,7 +218,7 @@ class NetflixProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$newUrl/tv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/home",
             cookies = cookies
@@ -230,7 +230,7 @@ class NetflixProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        """$newUrl${it.file.replace("/tv/", "/")}""",
+                        newUrl + it.file,
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$newUrl/"

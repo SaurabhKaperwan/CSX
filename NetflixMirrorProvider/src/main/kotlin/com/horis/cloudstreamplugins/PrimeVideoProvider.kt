@@ -232,7 +232,7 @@ class PrimeVideoProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         name,
-                        """$newUrl${it.file}""",
+                        "${newUrl}${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$newUrl/"
