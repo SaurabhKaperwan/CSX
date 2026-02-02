@@ -726,15 +726,15 @@ object CineStreamExtractors : CineStreamProvider() {
                     this.headers = headers
                 }
             )
-        }
 
-        data.streams.subtitles?.forEach { subtitle ->
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    getLanguage(subtitle.lang) ?: subtitle.lang,
-                    subtitle.url
+            stream.subtitles?.forEach { subtitle ->
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        getLanguage(subtitle.lang) ?: subtitle.lang,
+                        subtitle.url
+                    )
                 )
-            )
+            }
         }
     }
 
