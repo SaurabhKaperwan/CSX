@@ -109,6 +109,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -724,6 +725,15 @@ object CineStreamExtractors : CineStreamProvider() {
                     this.quality = getIndexQuality(title + name)
                     this.headers = headers
                 }
+            )
+        }
+
+        data.streams.subtitles?.forEach { subtitle ->
+            subtitleCallback.invoke(
+                newSubtitleFile(
+                    getLanguage(subtitle.lang) ?: subtitle.lang,
+                    subtitle.url
+                )
             )
         }
     }
@@ -2105,7 +2115,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflix2API/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
             cookies = cookies,
             referer = "$netflix2API/",

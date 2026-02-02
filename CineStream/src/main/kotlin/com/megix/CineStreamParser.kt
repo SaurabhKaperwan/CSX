@@ -448,11 +448,17 @@ data class StreamifyResponse(
     var streams: List<Streamify>
 )
 
+data class StreamifySubs(
+    var url  : String,
+    var lang : String
+)
+
 data class Streamify(
     var name: String? = null,
     var type: String? = null,
     var url: String,
     var title: String? = null,
+    var subtitles: List<StreamifySubs>? = null,
     @SerializedName("behaviorHints" ) var behaviorHints: StreamifyBehaviorHints? = StreamifyBehaviorHints()
 )
 
