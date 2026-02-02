@@ -523,7 +523,7 @@ data class Daum(
     val duration: String,
     val session: String,
     val filler: Long,
-    @JsonProperty("created_at")
+    @param:JsonProperty("created_at")
     val createdAt: String,
 )
 

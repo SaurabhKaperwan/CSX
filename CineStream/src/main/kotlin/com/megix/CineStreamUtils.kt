@@ -1069,7 +1069,8 @@ suspend fun getProtonEmbed(
             "Referer" to protonmoviesAPI
         )
         val json = app.get(protonmoviesAPI + url, headers = headers).text
-        JSONObject(json).getJSONObject("ppd")?.getJSONObject("mixdrop.ag")?.optString("link")?.let {
+
+        JSONObject(json).getJSONObject("ppd").optJSONObject("mixdrop.ag")?.optString("link")?.takeIf { it.isNotEmpty() }?.let {
             val source = it.replace("mxdrop.to", "mixdrop.ps")
             loadSourceNameExtractor("Protonmovies", source, "", subtitleCallback, callback)
         }
@@ -1121,12 +1122,12 @@ suspend fun getProtonStream(
 
             val ppd = JSONObject(idRes).getJSONObject("ppd")
 
-            ppd?.getJSONObject("gofile.io")?.optString("link")?.let {
+            ppd.optJSONObject("gofile.io")?.optString("link")?.takeIf { it.isNotEmpty() }?.let {
                 val source = it.replace("\\/", "/")
                 gofileExtractor("Protonmovies", source, "", subtitleCallback, callback)
             }
 
-            ppd?.getJSONObject("filepress")?.optString("link")?.let {
+            ppd.optJSONObject("filepress")?.optString("link")?.takeIf { it.isNotEmpty() }?.let {
                 filepressExtractor("Protonmovies", it, "", subtitleCallback, callback)
             }
         }
@@ -1273,7 +1274,7 @@ fun getGojoServers(jsonString: String): List<Pair<String, Boolean>> {
         val jsonArray = JSONArray(jsonString)
         for (i in 0 until jsonArray.length()) {
             val obj = jsonArray.optJSONObject(i) ?: continue
-            val id = obj.optString("id", null) ?: continue
+            val id = obj.optString("id").takeIf { it.isNotEmpty() } ?: continue
             val hasDub = obj.optBoolean("hasDub", false)
             result.add(Pair(id, hasDub))
         }
@@ -1304,7 +1305,7 @@ suspend fun getGojoStreams(
 
         for (i in 0 until sourcesArray.length()) {
             val source = sourcesArray.optJSONObject(i) ?: continue
-            val url = source.optString("url", null) ?: continue
+            val url = source.optString("url").takeIf { it.isNotEmpty() } ?: continue
             val videoType = source.optString("type", "m3u8")
             val quality = source.optString("quality").replace("p", "").toIntOrNull()
 
@@ -1326,8 +1327,9 @@ suspend fun getGojoStreams(
 
         for (i in 0 until subtitles.length()) {
             val item = subtitles.optJSONObject(i) ?: continue
-            val url = item.optString("url", null) ?: continue
-            val lang = item.optString("lang", null) ?: continue
+            val url = item.optString("url").takeIf { it.isNotEmpty() } ?: continue
+            val lang = item.optString("lang").takeIf { it.isNotEmpty() } ?: continue
+
             subtitleCallback.invoke(
                 newSubtitleFile(
                     getLanguage(lang) ?: lang,
@@ -1425,10 +1427,10 @@ fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest,isSeries: Boolean): String 
 private fun createContentString(info: CinemaOsSecretKeyRequest): String {
     val parts = mutableListOf<String>()
 
-    info.tmdbId?.let { parts.add("tmdbId:$it") }
-    info.imdbId?.let { parts.add("imdbId:$it") }
-    info.seasonId?.takeIf { it.isNotEmpty() }?.let { parts.add("seasonId:$it") }
-    info.episodeId?.takeIf { it.isNotEmpty() }?.let { parts.add("episodeId:$it") }
+    info.tmdbId.takeIf { it.isNotEmpty() }?.let { parts.add("tmdbId:$it") }
+    info.imdbId.takeIf { it.isNotEmpty() }?.let { parts.add("imdbId:$it") }
+    info.seasonId.takeIf { it.isNotEmpty() }?.let { parts.add("seasonId:$it") }
+    info.episodeId.takeIf { it.isNotEmpty() }?.let { parts.add("episodeId:$it") }
 
     return parts.joinToString("|")
 }

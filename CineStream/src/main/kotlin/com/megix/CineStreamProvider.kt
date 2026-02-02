@@ -76,7 +76,7 @@ open class CineStreamProvider : MainAPI() {
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
-        // const val mappleAPI = "https://mapple.uk"
+        const val mappleAPI = "https://mapple.uk"
         const val vidzeeApi = "https://player.vidzee.wtf"
         const val nodebridAPI = "https://nodebrid.fly.dev"
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
