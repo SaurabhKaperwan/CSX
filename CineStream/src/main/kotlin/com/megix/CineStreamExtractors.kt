@@ -113,7 +113,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Sooti", sootiAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Sooti", sootiAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Castle", base64Decode(castleAPI), res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Cine", base64Decode(cineAPI), res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
@@ -1983,7 +1983,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on")
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=hs; t_hash_t=$NfCookie")
                 }
             )
         }

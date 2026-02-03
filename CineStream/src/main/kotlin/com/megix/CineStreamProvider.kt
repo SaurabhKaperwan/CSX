@@ -469,23 +469,6 @@ open class CineStreamProvider : MainAPI() {
         }
     }
 
-    //For netmirror
-    @Suppress("ObjectLiteralToLambda")
-    override fun getVideoInterceptor(extractorLink: ExtractorLink): Interceptor? {
-        return object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                val request = chain.request()
-                if (request.url.toString().contains("net52.cc//mobile/")) {
-                    val newRequest = request.newBuilder()
-                        .header("Cookie", "hd=on")
-                        .build()
-                    return chain.proceed(newRequest)
-                }
-                return chain.proceed(request)
-            }
-        }
-    }
-
     data class LoadLinksData(
         val title: String,
         val id: String,
