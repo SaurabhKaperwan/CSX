@@ -2114,8 +2114,12 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
 
+        if(id == null || nfTitle == null) return
+
+        val token = getNfVideoToken(netflixAPI, netflix2API, id, cookies)
+
         app.get(
-            "$netflixAPI/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflixAPI/playlist.php?id=${id}&t=${nfTitle}&tm=${APIHolder.unixTime}&h=$token",
             headers = headers,
             cookies = cookies,
             referer = "$netflix2API/",
