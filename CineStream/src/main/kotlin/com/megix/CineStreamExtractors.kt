@@ -1968,9 +1968,9 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         app.get(
-            "$netflixAPI/mobile/hs/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
+            "$netflix2API/mobile/hs/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
             headers = headers,
-            referer = "$netflixAPI/",
+            referer = "$netflix2API/",
             cookies = cookies,
         ).text.let {
             tryParseJson<ArrayList<NetflixResponse>>(it)
