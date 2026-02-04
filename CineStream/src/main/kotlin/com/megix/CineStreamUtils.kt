@@ -153,7 +153,7 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
     val size = extracted["size"]?.firstOrNull()
 
     return if (size != null) {
-        "$specs [$size]"
+        "$specs 💾 [$size]"
     } else {
         specs
     }
