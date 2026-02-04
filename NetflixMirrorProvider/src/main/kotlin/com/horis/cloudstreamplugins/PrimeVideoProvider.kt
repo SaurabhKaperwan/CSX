@@ -29,7 +29,7 @@ class PrimeVideoProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net20.cc"
+    override var mainUrl = "https://net22.cc"
     private var newUrl = "https://net52.cc"
     override var name = "PrimeVideo"
 

@@ -4066,6 +4066,7 @@ object CineStreamExtractors : CineStreamProvider() {
             filesArray.forEach { element ->
                 val item = element.asJsonObject
                 val fileName = item.get("file_name").asString
+                if(fileName.contains(".$titleSlug")) return@forEach
                 val fileId = item.get("id").asString
                 // val size = item.get("file_size").asString
                 val res = app.get(
