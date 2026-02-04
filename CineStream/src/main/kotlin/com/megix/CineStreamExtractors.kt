@@ -297,7 +297,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "CineCity",
-                    "CineCity",
+                    "CineCity[Multi Audio]",
                     files,
                     INFER_TYPE
                 ) {
@@ -1978,12 +1978,15 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Hotstar",
-                    "Hotstar",
+                    "Hotstar[Multi Audio]",
                     "$netflix2API/${it.file}",
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=hs; t_hash_t=$NfCookie")
+                    this.headers = M3U8_HEADERS + mapOf(
+                        "Referer" to "$netflix2API/",
+                        "Cookie" to "hd=on; ott=hs; t_hash_t=$NfCookie"
+                    )
                 }
             )
         }
@@ -2050,13 +2053,16 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "PrimeVideo",
-                    "PrimeVideo",
+                    "PrimeVideo[Multi Audio]",
                     "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=pv; t_hash_t=$NfCookie")
+                    this.headers = M3U8_HEADERS + mapOf(
+                        "Referer" to "$netflix2API/",
+                        "Cookie" to "hd=on; ott=pv; t_hash_t=$NfCookie"
+                    )
                 }
             )
         }
@@ -2129,13 +2135,16 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Netflix",
-                    "Netflix",
+                    "Netflix[Multi Audio]",
                     "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=nf; t_hash_t=$NfCookie")
+                    this.headers = M3U8_HEADERS + mapOf(
+                        "Referer" to "$netflix2API/",
+                        "Cookie" to "hd=on; ott=nf; t_hash_t=$NfCookie"
+                    )
                 }
             )
         }
@@ -4241,7 +4250,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val resolution = d.optInt("resolution")
                     callback.invoke(
                         newExtractorLink(
-                            "MovieBox",
+                            "MovieBox [$language]",
                             "MovieBox [$language]",
                             dlink,
                         ) {
