@@ -60,7 +60,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
-            { if(!res.isAnime) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isAsian) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -109,7 +109,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -2056,7 +2056,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on")
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=pv; t_hash_t=$NfCookie")
                 }
             )
         }
@@ -2135,7 +2135,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on")
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=nf; t_hash_t=$NfCookie")
                 }
             )
         }
