@@ -3418,7 +3418,7 @@ object CineStreamExtractors : CineStreamProvider() {
         serverList?.servers?.forEach {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
-            loadSourceNameExtractor("""PrimeWire${if(it.fileName.isNullOrEmpty()) "" else " (${it.fileName}) "}""", jsonObject.optString("link",""),PrimeSrcApi, subtitleCallback, callback,null,it.fileSize?:"")
+            loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
 
     }
