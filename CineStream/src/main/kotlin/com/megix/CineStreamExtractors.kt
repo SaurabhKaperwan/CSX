@@ -2489,7 +2489,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "Torrentio 🧲 | ⬆️ $seeders " + getSimplifiedTitle(title + fileSize),
+                    "Torrentio 🧲 | $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2580,7 +2580,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "TorrentsDB 🧲 ⬆️ $seeders " + getSimplifiedTitle(title + fileSize),
+                    "TorrentsDB 🧲 | $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
