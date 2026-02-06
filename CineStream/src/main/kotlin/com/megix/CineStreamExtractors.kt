@@ -801,15 +801,16 @@ object CineStreamExtractors : CineStreamProvider() {
             val quality = getIndexQuality(it.first)
             val tags = getIndexQualityTags(it.first)
             val href = if (it.second.contains(dahmerMoviesAPI)) it.second else (dahmerMoviesAPI + it.second)
-
+            val videoLink = resolveFinalUrl(href)
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
                     "DahmerMovies $tags",
-                    url = href,
+                    videoLink,
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = quality
+                    this.referer = dahmerMoviesAPI
                 }
             )
         }
@@ -2478,15 +2479,17 @@ object CineStreamExtractors : CineStreamProvider() {
         val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
         res?.streams?.forEach { stream ->
             val title = stream.title ?: stream.name ?: ""
-            val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
+            val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
             val match = regex.find(title)
-            val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
+            val seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            val fileSize = match?.groupValues?.get(2) ?: ""
+
             if (seeders < 20) return@forEach
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "[Torrentio🧲] " + title,
+                    "Torrentio 🧲 | ⬆️ $seeders " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2531,7 +2534,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 "SUB"
             }
 
-            val displayTitle = "Animetosho [$type] 🧲 \n$title \n⬆️ $s | ⬇️ $l | 💾 $sizeStr"
+            val simplifiedTitle = getSimplifiedTitle(title + sizeStr)
+
+            val displayTitle = "Animetosho [$type] 🧲 \n⬆️ $s | ⬇️ $l $simplifiedTitle"
 
             callback.invoke(
                 newExtractorLink(
@@ -2565,15 +2570,17 @@ object CineStreamExtractors : CineStreamProvider() {
 
         res?.streams?.forEach { stream ->
             val title = stream.title ?: stream.name ?: ""
-            val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
+            val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
             val match = regex.find(title)
-            val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
+            val seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            val fileSize = match?.groupValues?.get(2) ?: ""
+
             if (seeders < 20) return@forEach
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "[TorrentsDB🧲] " + title,
+                    "TorrentsDB 🧲 ⬆️ $seeders " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -3883,7 +3890,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val url = if(season == null) "$multiEmbededApi/?video_id=$tmdbId&tmdb=1" else " $multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
-        val streamingUrl = app.get(url,allowRedirects = false).headers.get("Location")
+        val streamingUrl = app.get(url, allowRedirects = false).headers.get("Location")
         val mediaType = "application/x-www-form-urlencoded".toMediaType()
         val body = "button-click=ZEhKMVpTLVF0LVBTLVF0TnprekxTLVF5LVBEVXRMLTAtVjNOLTBjMU8tMEF5TmpneC1QRFUtNQ==&button-referer=".toRequestBody(mediaType)
         val sourcesDoc = app.post(streamingUrl.toString(), requestBody = body, timeout = 40).text
@@ -4061,7 +4068,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val fileName = item.get("file_name").asString
                 if(fileName.contains(".$titleSlug")) return@forEach
                 val fileId = item.get("id").asString
-                val size = item.get("file_size").asString
+                val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
                     referer = bollywoodBaseAPI
@@ -4070,13 +4077,12 @@ object CineStreamExtractors : CineStreamProvider() {
                 val linkJson = JsonParser.parseString(res).asJsonObject
                 if (linkJson.has("url")) {
                     val streamUrl = linkJson.get("url").asString
-                    val extracted = extractSpecs("$fileName $size")
-                    val extractedSpecs = buildExtractedTitle(extracted)
+                    val simplifiedTitle = getSimplifiedTitle("$fileName $size")
 
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "[Bollywood] $extractedSpecs",
+                            "Bollywood $simplifiedTitle",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
