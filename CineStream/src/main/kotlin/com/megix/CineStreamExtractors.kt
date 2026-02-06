@@ -109,7 +109,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            // { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -297,7 +297,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "CineCity",
-                    "CineCity [Multi Audio] 🌐",
+                    "CineCity Multi Audio 🌐",
                     files,
                     INFER_TYPE
                 ) {
@@ -717,7 +717,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "[$sourceName] " + " $title",
+                    "[$sourceName]" + " $title",
                     streamUrl,
                     type,
                 ) {
@@ -763,7 +763,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Vadapav",
-                "Vadapav[$text]",
+                "[Vadapav] $text",
                 vadapavAPI + dlink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -989,25 +989,12 @@ object CineStreamExtractors : CineStreamProvider() {
                     val streamUrl = data.optString("stream_url")
 
                     if (streamUrl.isNotEmpty()) {
-                        callback.invoke(
-                            newExtractorLink(
-                                "Mapple",
-                                "Mapple [${source.uppercase()}]",
-                                streamUrl,
-                                ExtractorLinkType.M3U8
-                            ) {
-                                this.quality = 1080
-                                this.headers = headers
-                            }
-                        )
-
-                        // Optional: If you want to parse M3U8 for multiple qualities
-                        // M3u8Helper.generateM3u8(
-                        //     "Mapple [${source.uppercase()}]",
-                        //     streamUrl,
-                        //     "$mappleAPI/",
-                        //     headers = headers
-                        // ).forEach(callback)
+                        M3u8Helper.generateM3u8(
+                            "Mapple [${source.uppercase()}]",
+                            streamUrl,
+                            "$mappleAPI/",
+                            headers = headers
+                        ).forEach(callback)
                     }
                 }
             } catch (e: Exception) {
@@ -1978,7 +1965,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Hotstar",
-                    "Hotstar [Multi Audio] 🌐",
+                    "Hotstar Multi Audio 🌐",
                     "$netflix2API/${it.file}",
                 ) {
                     this.referer = "$netflix2API/"
@@ -2052,7 +2039,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "PrimeVideo",
-                    "PrimeVideo [Multi Audio] 🌐",
+                    "PrimeVideo Multi Audio 🌐",
                     "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
@@ -2133,7 +2120,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Netflix",
-                    "Netflix [Multi Audio] 🌐",
+                    "Netflix Multi Audio 🌐",
                     "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
@@ -2544,7 +2531,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 "SUB"
             }
 
-            val displayTitle = "[Animetosho[$type]🧲] $title | ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
+            val displayTitle = "Animetosho [$type] 🧲 \n$title \n⬆️ $s | ⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(
                 newExtractorLink(
@@ -3220,8 +3207,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val source = document.select("media-player").attr("src")
         callback.invoke(
             newExtractorLink(
-                "Anizone[Multi Lang]",
-                "Anizone[Multi Lang]",
+                "Anizone",
+                "Anizone Multi Audio 🌐",
                 source,
                 type = ExtractorLinkType.M3U8,
             ) {
@@ -4074,7 +4061,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val fileName = item.get("file_name").asString
                 if(fileName.contains(".$titleSlug")) return@forEach
                 val fileId = item.get("id").asString
-                // val size = item.get("file_size").asString
+                val size = item.get("file_size").asString
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
                     referer = bollywoodBaseAPI
@@ -4083,11 +4070,13 @@ object CineStreamExtractors : CineStreamProvider() {
                 val linkJson = JsonParser.parseString(res).asJsonObject
                 if (linkJson.has("url")) {
                     val streamUrl = linkJson.get("url").asString
+                    val extracted = extractSpecs("$fileName $size")
+                    val extractedSpecs = buildExtractedTitle(extracted)
 
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood [$fileName]",
+                            "[Bollywood] $extractedSpecs",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {

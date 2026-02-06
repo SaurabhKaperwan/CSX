@@ -91,7 +91,7 @@ open class CineStreamProvider : MainAPI() {
         const val cinemacityAPI = "https://cinemacity.cc"
         const val castleAPI = "aHR0cHM6Ly9tZW93dHYudmZsaXguc2hvcA=="
         const val cineAPI = "aHR0cHM6Ly9oaWNpbmUudmZsaXguc2hvcC9zdHJlbWlv"
-        const val daramayoAPI = "aHR0cHM6Ly9kcmFtYXlvLnN0cmVhbS8xMDJhZWY0ZS1lMmFhLTRmNGEtYTQ3NS03NjFhMWFlZWQ1MGQvWWprM05qUmxORE0yTWpCa01XSmhOelkzT1RVM00yRmhOMlZqTkdNeE56YzZPVEV4TW1ZNE5UUTRNVGxqT1dGalpESTJZVFl3TnpWbFl6QmlNREptTnpZ"
+        const val daramayoAPI = "https://dramayo.stream"
         const val dramafullAPI = "https://dramafull.cc"
 
         var leviathanAPI = """

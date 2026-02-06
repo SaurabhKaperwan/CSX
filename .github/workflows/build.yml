@@ -1,29 +1,35 @@
 name: Build
 
-# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#concurrency
-concurrency: 
-  group: "build"
+#Concurrency scoped to the specific branch/ref, not global
+concurrency:
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 on:
+  #Allows you to manually trigger the workflow from the Actions tab
+  workflow_dispatch:
+
   push:
     branches:
-      # choose your default branch
       - master
       - main
     paths-ignore:
       - '*.md'
 
+#Grant permission to push changes back to the repo
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4.2.2
         with:
           path: "src"
 
-      - name: Checkout builds
+      - name: Checkout Builds Branch
         uses: actions/checkout@v4.2.2
         with:
           ref: "builds"
@@ -41,7 +47,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3.2.2
 
-      - name: Access Secrets
+      - name: Access Secrets & Create Properties
         env:
           CONSUMET_API: ${{ secrets.CONSUMET_API }}
           SIMKL_API: ${{ secrets.SIMKL_API }}
@@ -49,18 +55,22 @@ jobs:
           CC_COOKIE: ${{ secrets.CC_COOKIE }}
         run: |
           cd $GITHUB_WORKSPACE/src
-          echo CONSUMET_API=$CONSUMET_API >> local.properties
-          echo SIMKL_API=$SIMKL_API >> local.properties
-          echo TMDB_KEY=$TMDB_KEY >> local.properties
-          echo CC_COOKIE=$CC_COOKIE >> local.properties
+          # Create file if it doesn't exist
+          touch local.properties
+          echo "CONSUMET_API=$CONSUMET_API" >> local.properties
+          echo "SIMKL_API=$SIMKL_API" >> local.properties
+          echo "TMDB_KEY=$TMDB_KEY" >> local.properties
+          echo "CC_COOKIE=$CC_COOKIE" >> local.properties
 
       - name: Build Plugins
         run: |
           cd $GITHUB_WORKSPACE/src
           chmod +x gradlew
           ./gradlew make makePluginsJson
-          cp **/build/*.cs3 $GITHUB_WORKSPACE/builds
-          cp build/plugins.json $GITHUB_WORKSPACE/builds
+
+          # Copy files (fail safely if directory doesn't exist)
+          cp **/build/*.cs3 $GITHUB_WORKSPACE/builds/ || echo "No .cs3 files found"
+          cp build/plugins.json $GITHUB_WORKSPACE/builds/ || echo "No plugins.json found"
 
       - name: Push builds
         run: |
@@ -68,5 +78,11 @@ jobs:
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           git add .
-          git commit --amend -m "Build $GITHUB_SHA" || exit 0   # do not error if nothing to commit
-          git push --force
+
+          # Only commit/push if there are changes
+          if [[ -n $(git status -s) ]]; then
+            git commit --amend -m "Build $GITHUB_SHA" || git commit -m "Build $GITHUB_SHA"
+            git push --force
+          else
+            echo "No changes to push"
+          fi

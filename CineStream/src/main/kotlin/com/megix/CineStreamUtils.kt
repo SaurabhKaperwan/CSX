@@ -59,59 +59,127 @@ val M3U8_HEADERS = mapOf(
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
-        mapOf("value" to "BluRay", "label" to "BluRay"),
-        mapOf("value" to "BluRay REMUX", "label" to "BluRay REMUX"),
-        mapOf("value" to "BRRip", "label" to "BRRip"),
-        mapOf("value" to "BDRip", "label" to "BDRip"),
-        mapOf("value" to "WEB-DL", "label" to "WEB-DL"),
-        mapOf("value" to "HDRip", "label" to "HDRip"),
-        mapOf("value" to "DVDRip", "label" to "DVDRip"),
-        mapOf("value" to "HDTV", "label" to "HDTV"),
-        mapOf("value" to "CAM", "label" to "CAM"),
-        mapOf("value" to "TeleSync", "label" to "TeleSync"),
-        mapOf("value" to "SCR", "label" to "SCR"),
-        mapOf("value" to "10bit", "label" to "10bit"),
-        mapOf("value" to "8bit", "label" to "8bit"),
+        // -- Optical / Disk --
+        mapOf("value" to "UHD BluRay", "label" to "4K UHD BluRay 💿"),
+        mapOf("value" to "BluRay", "label" to "BluRay 💿"),
+        mapOf("value" to "BluRay REMUX", "label" to "BluRay REMUX 💾"),
+        mapOf("value" to "BDRip", "label" to "BDRip 💿"),
+        mapOf("value" to "BRRip", "label" to "BRRip 💿"),
+        mapOf("value" to "DVD", "label" to "DVD Full/ISO 📀"),
+        mapOf("value" to "DVDRip", "label" to "DVDRip 📀"),
+
+        // -- Web --
+        mapOf("value" to "WEB-DL", "label" to "WEB-DL ☁️"),
+        mapOf("value" to "WEBRip", "label" to "WEBRip 🌐"),
+        mapOf("value" to "WEB", "label" to "WEB 🕸️"),
+        mapOf("value" to "HDRip", "label" to "HDRip ✨"),
+
+        // -- TV / Broadcast --
+        mapOf("value" to "HDTV", "label" to "HDTV 📺"),
+        mapOf("value" to "PDTV", "label" to "PDTV 📺"),
+        mapOf("value" to "PPV", "label" to "PPV 🎫"),
+
+        // -- Low Quality / Pre-release --
+        mapOf("value" to "CAM", "label" to "CAM 📹"),
+        mapOf("value" to "TeleSync", "label" to "TeleSync 📹"),
+        mapOf("value" to "TS", "label" to "TS 🚫"),
+        mapOf("value" to "TC", "label" to "TeleCine 🎞️"),
+        mapOf("value" to "SCR", "label" to "SCR 📼"),
+        mapOf("value" to "R5", "label" to "R5 ⁵"),
+
+        // -- Bit Depth / Tech --
+        mapOf("value" to "10bit", "label" to "10bit 🎨"),
+        mapOf("value" to "8bit", "label" to "8bit 🖍️"),
+        mapOf("value" to "12bit", "label" to "12bit 🌈"),
+        mapOf("value" to "3D", "label" to "3D 👓"),
+        mapOf("value" to "IMAX", "label" to "IMAX 🏟️")
     ),
     "codec" to listOf(
-        mapOf("value" to "x264", "label" to "x264"),
-        mapOf("value" to "x265", "label" to "x265 (HEVC)"),
-        mapOf("value" to "h.264", "label" to "H.264 (AVC)"),
-        mapOf("value" to "h.265", "label" to "H.265 (HEVC)"),
-        mapOf("value" to "hevc", "label" to "HEVC"),
-        mapOf("value" to "avc", "label" to "AVC"),
-        mapOf("value" to "mpeg-2", "label" to "MPEG-2"),
-        mapOf("value" to "mpeg-4", "label" to "MPEG-4"),
-        mapOf("value" to "vp9", "label" to "VP9")
+        // -- Modern --
+        mapOf("value" to "av1", "label" to "AV1 🚀"),
+        mapOf("value" to "x265", "label" to "x265 ⚡"),
+        mapOf("value" to "h.265", "label" to "H.265 (HEVC) ⚡"),
+        mapOf("value" to "hevc", "label" to "HEVC ⚡"),
+        mapOf("value" to "vp9", "label" to "VP9 🧪"),
+
+        // -- Standard --
+        mapOf("value" to "x264", "label" to "x264 📦"),
+        mapOf("value" to "h.264", "label" to "H.264 (AVC) 📦"),
+        mapOf("value" to "avc", "label" to "AVC 📦"),
+
+        // -- Legacy --
+        mapOf("value" to "vc-1", "label" to "VC-1 📼"),
+        mapOf("value" to "mpeg-2", "label" to "MPEG-2 🎞️"),
+        mapOf("value" to "mpeg-4", "label" to "MPEG-4 🎞️"),
+        mapOf("value" to "xvid", "label" to "XviD 🧩"),
+        mapOf("value" to "divx", "label" to "DivX 🧩")
     ),
     "audio" to listOf(
-        mapOf("value" to "AAC", "label" to "AAC"),
-        mapOf("value" to "AC3", "label" to "AC3 (Dolby Digital)"),
-        mapOf("value" to "DTS", "label" to "DTS"),
-        mapOf("value" to "DTS-HD MA", "label" to "DTS-HD MA"),
-        mapOf("value" to "TrueHD", "label" to "Dolby TrueHD"),
-        mapOf("value" to "Atmos", "label" to "Dolby Atmos"),
-        mapOf("value" to "DD+", "label" to "DD+"),
-        mapOf("value" to "Dolby Digital Plus", "label" to "Dolby Digital Plus"),
-        mapOf("value" to "DTS Lossless", "label" to "DTS Lossless")
+        // -- Surround / Lossless --
+        mapOf("value" to "TrueHD", "label" to "Dolby TrueHD 🔊"),
+        mapOf("value" to "Atmos", "label" to "Dolby Atmos 🌌"),
+        mapOf("value" to "DTS-HD MA", "label" to "DTS-HD MA 🔊"),
+        mapOf("value" to "DTS:X", "label" to "DTS:X 🔊"),
+        mapOf("value" to "DTS Lossless", "label" to "DTS Lossless 🎼"),
+        mapOf("value" to "FLAC", "label" to "FLAC 🎹"),
+        mapOf("value" to "PCM", "label" to "LPCM/PCM 💿"),
+
+        // -- Standard --
+        mapOf("value" to "E-AC3", "label" to "E-AC3 (DD+) 🔉"),
+        mapOf("value" to "DD+", "label" to "DD+ 🔉"),
+        mapOf("value" to "Dolby Digital Plus", "label" to "Dolby Digital Plus 🔉"),
+        mapOf("value" to "AC3", "label" to "AC3 (Dolby Digital) 🔈"),
+        mapOf("value" to "DTS", "label" to "DTS 🔈"),
+        mapOf("value" to "AAC", "label" to "AAC 🎧"),
+        mapOf("value" to "OPUS", "label" to "Opus 🎙️"),
+        mapOf("value" to "MP3", "label" to "MP3 🎵"),
+        mapOf("value" to "WMA", "label" to "WMA 🎵")
     ),
     "hdr" to listOf(
-        mapOf("value" to "DV", "label" to "Dolby Vision"),
-        mapOf("value" to "HDR10+", "label" to "HDR10+"),
-        mapOf("value" to "HDR", "label" to "HDR"),
-        mapOf("value" to "SDR", "label" to "SDR")
+        mapOf("value" to "DV", "label" to "Dolby Vision 👁️"),
+        mapOf("value" to "DoVi", "label" to "Dolby Vision 👁️"),
+        mapOf("value" to "HDR10+", "label" to "HDR10+ 🔆"),
+        mapOf("value" to "HDR10", "label" to "HDR10 🔆"),
+        mapOf("value" to "HLG", "label" to "HLG 📡"),
+        mapOf("value" to "HDR", "label" to "HDR 🔆"),
+        mapOf("value" to "SDR", "label" to "SDR 🔅")
     ),
     "language" to listOf(
-        mapOf("value" to "HIN", "label" to "Hindi🇮🇳"),
-        mapOf("value" to "Hindi", "label" to "Hindi🇮🇳"),
-        mapOf("value" to "Tamil", "label" to "Tamil🇮🇳"),
-        mapOf("value" to "ENG", "label" to "English🇺🇸"),
-        mapOf("value" to "English", "label" to "English🇺🇸"),
-        mapOf("value" to "Korean", "label" to "Korean🇰🇷"),
-        mapOf("value" to "KOR", "label" to "Korean🇰🇷"),
-        mapOf("value" to "Japanese", "label" to "Japanese🇯🇵"),
-        mapOf("value" to "Chinese", "label" to "Chinese🇨🇳"),
-        mapOf("value" to "Telugu", "label" to "Telugu🇮🇳"),
+        // -- Indian --
+        mapOf("value" to "HIN", "label" to "Hindi 🇮🇳"),
+        mapOf("value" to "Hindi", "label" to "Hindi 🇮🇳"),
+        mapOf("value" to "TAM", "label" to "Tamil 🇮🇳"),
+        mapOf("value" to "Tamil", "label" to "Tamil 🇮🇳"),
+        mapOf("value" to "TEL", "label" to "Telugu 🇮🇳"),
+        mapOf("value" to "Telugu", "label" to "Telugu 🇮🇳"),
+        mapOf("value" to "MAL", "label" to "Malayalam 🇮🇳"),
+        mapOf("value" to "Malayalam", "label" to "Malayalam 🇮🇳"),
+        mapOf("value" to "KAN", "label" to "Kannada 🇮🇳"),
+        mapOf("value" to "Kannada", "label" to "Kannada 🇮🇳"),
+        mapOf("value" to "BEN", "label" to "Bengali 🇮🇳"),
+        mapOf("value" to "PUN", "label" to "Punjabi 🇮🇳"),
+
+        // -- Global --
+        mapOf("value" to "ENG", "label" to "English 🇺🇸"),
+        mapOf("value" to "English", "label" to "English 🇺🇸"),
+        mapOf("value" to "KOR", "label" to "Korean 🇰🇷"),
+        mapOf("value" to "Korean", "label" to "Korean 🇰🇷"),
+        mapOf("value" to "JPN", "label" to "Japanese 🇯🇵"),
+        mapOf("value" to "Japanese", "label" to "Japanese 🇯🇵"),
+        mapOf("value" to "CHN", "label" to "Chinese 🇨🇳"),
+        mapOf("value" to "Chinese", "label" to "Chinese 🇨🇳"),
+        mapOf("value" to "SPA", "label" to "Spanish 🇪🇸"),
+        mapOf("value" to "Spanish", "label" to "Spanish 🇪🇸"),
+        mapOf("value" to "FRE", "label" to "French 🇫🇷"),
+        mapOf("value" to "French", "label" to "French 🇫🇷"),
+        mapOf("value" to "GER", "label" to "German 🇩🇪"),
+        mapOf("value" to "German", "label" to "German 🇩🇪"),
+        mapOf("value" to "RUS", "label" to "Russian 🇷🇺"),
+        mapOf("value" to "ITA", "label" to "Italian 🇮🇹"),
+        mapOf("value" to "POR", "label" to "Portuguese 🇵🇹"),
+        mapOf("value" to "ARA", "label" to "Arabic 🇸🇦"),
+        mapOf("value" to "THA", "label" to "Thai 🇹🇭"),
+        mapOf("value" to "Multi", "label" to "Multi-Audio 🌍")
     )
 )
 
@@ -153,7 +221,7 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
     val size = extracted["size"]?.firstOrNull()
 
     return if (size != null) {
-        "$specs 💾 [$size]"
+        "$specs 💾 $size"
     } else {
         specs
     }
@@ -369,7 +437,6 @@ fun buildMagnetString(stream: TorrentioStream): String {
     return "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$trackersString&index=${stream.fileIdx}"
 }
 
-
 fun getFirstCharacterOrZero(input: String): String {
     val firstChar = input[0]
     return if (!firstChar.isLetter()) {
@@ -512,7 +579,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "$source $extractedSpecs[$fileSize]",
+                        "$source $extractedSpecs 💾 $fileSize",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -526,7 +593,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "$source[HCloud] $extractedSpecs[$fileSize]",
+                    "$source[HCloud] $extractedSpecs 💾 $fileSize",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -562,40 +629,12 @@ suspend fun loadSourceNameExtractor(
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source[${link.source}$fixSize] $extractedSpecs",
+                "$source [${link.source}] \n$extractedSpecs $fixSize",
                 link.url,
                 type = link.type
             ) {
                 this.referer = link.referer
                 this.quality = quality ?: link.quality
-                this.headers = link.headers
-                this.extractorData = link.extractorData
-            }
-            callback.invoke(newLink)
-        }
-    }
-}
-
-suspend fun loadCustomTagExtractor(
-    tag: String? = null,
-    url: String,
-    referer: String? = null,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
-    quality: Int? = null,
-) {
-    val scope = CoroutineScope(Dispatchers.Default + Job())
-
-    loadExtractor(url, referer, subtitleCallback) { link ->
-        scope.launch {
-            val newLink = newExtractorLink(
-                link.source,
-                "${link.name} $tag",
-                link.url,
-                link.type
-            ) {
-                this.quality = quality ?: link.quality
-                this.referer = link.referer
                 this.headers = link.headers
                 this.extractorData = link.extractorData
             }
@@ -993,7 +1032,7 @@ suspend fun filepressExtractor(
         callback.invoke(
             newExtractorLink(
                 "Filepress",
-                "$source[Filepress] $extractedSpecs[$formattedSize]",
+                "$source[Filepress] \n$extractedSpecs 💾$formattedSize",
                 finalLink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -1057,7 +1096,7 @@ suspend fun gofileExtractor(
         callback.invoke(
             newExtractorLink(
                 "Gofile",
-                "$source[Gofile] $extractedSpecs[$formattedSize]",
+                "$source[Gofile] \n$extractedSpecs 💾 $formattedSize",
                 link,
                 ExtractorLinkType.VIDEO
             ) {
