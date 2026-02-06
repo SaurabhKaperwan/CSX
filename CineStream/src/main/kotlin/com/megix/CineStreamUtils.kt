@@ -220,10 +220,14 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
 
     val size = extracted["size"]?.firstOrNull()
 
-    return if (size != null) {
-        "$specs 💾 $size"
+    return if (size != null && specs.isNotEmpty()) {
+        "\n$specs $size 💾"
+    } else if(size != null) {
+        "$size 💾"
+    } else if(specs.isNotEmpty()) {
+        "\n$specs"
     } else {
-        specs
+        ""
     }
 }
 
@@ -579,7 +583,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "$source $extractedSpecs 💾 $fileSize",
+                        "$source $extractedSpecs $fileSize 💾",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -593,7 +597,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "$source[HCloud] $extractedSpecs 💾 $fileSize",
+                    "$source[HCloud] $extractedSpecs $fileSize 💾",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -629,7 +633,7 @@ suspend fun loadSourceNameExtractor(
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source [${link.source}] \n$extractedSpecs $fixSize",
+                "$source [${link.source}] $extractedSpecs $fixSize",
                 link.url,
                 type = link.type
             ) {
@@ -1032,7 +1036,7 @@ suspend fun filepressExtractor(
         callback.invoke(
             newExtractorLink(
                 "Filepress",
-                "$source[Filepress] \n$extractedSpecs 💾$formattedSize",
+                "$source [Filepress] $extractedSpecs $formattedSize 💾",
                 finalLink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -1096,7 +1100,7 @@ suspend fun gofileExtractor(
         callback.invoke(
             newExtractorLink(
                 "Gofile",
-                "$source[Gofile] \n$extractedSpecs 💾 $formattedSize",
+                "$source [Gofile] $extractedSpecs $formattedSize 💾",
                 link,
                 ExtractorLinkType.VIDEO
             ) {
