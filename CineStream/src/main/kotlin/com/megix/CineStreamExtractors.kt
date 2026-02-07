@@ -66,6 +66,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
+            { invokeAk(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -173,6 +174,85 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
+        )
+    }
+
+    suspend fun invokeAk(
+        imdbId: String? = null,
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        suspend fun getLink(url: String) : String? {
+            val link = app.get(url, referer = "$akAPI/")
+            .document
+            .selectFirst("a.link-download")
+            ?.attr("href")
+            ?: return null
+
+            val link2 = app.get(link, referer = "$akAPI/")
+                .document
+                .selectFirst("a.download-link")
+                ?.attr("href")
+                ?: return null
+
+            val source = app.get(link2, referer = "$akAPI/")
+                .document
+                .selectFirst("a.link")
+                ?.attr("href")
+                ?: return null
+
+            return source
+        }
+
+        if(imdbId == null || title == null || year == null) return
+
+        val type = if(season == null) "movie" else "series"
+        val searchUrl = "$akAPI/search?q=${title.replace(" ", "+")}&section=$type&year=$year&rating=0&formats=0&quality=0"
+        val url = app.get(searchUrl, referer = "$akAPI/")
+            .document
+            .selectFirst("a.box")
+            ?.attr("href")
+            ?: return
+        val document = app.get(url, referer = "$akAPI/").document
+        val imdb = document.selectFirst("a[href*='imdb.com']")
+            ?.attr("href")
+            ?.substringAfter("title/")
+            ?.substringBefore("/")
+            ?: return
+
+        if(imdbId != imdb) return
+
+        val source = if(season == null) {
+            getLink(url)
+        } else {
+            val episodeLinks = document.select("h2 > a.text-white")
+
+            val match = episodeLinks.find { element ->
+                val text = element.text()
+                val regex = "(?:حلقة|Episode)\\s+$episode(?!\\d)".toRegex(RegexOption.IGNORE_CASE)
+                regex.containsMatchIn(text)
+            }
+
+            if(match == null) return
+            getLink(match.attr("href"))
+        }
+
+        if(source == null) return
+
+        callback.invoke(
+            newExtractorLink(
+                "Ak 🇸🇦",
+                "Ak 🇸🇦",
+                source,
+                ExtractorLinkType.VIDEO
+            ) {
+                this.referer = "$akAPI/"
+            }
         )
     }
 
