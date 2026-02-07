@@ -49,6 +49,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
+import java.util.regex.Pattern
 
 val M3U8_HEADERS = mapOf(
     "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
@@ -57,145 +58,153 @@ val M3U8_HEADERS = mapOf(
     "Connection" to "keep-alive",
 )
 
+data class SpecOption(val value: String, val label: String)
+
+// 2. Define Options
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
         // -- Optical / Disk --
-        mapOf("value" to "UHD BluRay", "label" to "4K UHD BluRay 💿"),
-        mapOf("value" to "BluRay", "label" to "BluRay 💿"),
-        mapOf("value" to "BluRay REMUX", "label" to "BluRay REMUX 💾"),
-        mapOf("value" to "BDRip", "label" to "BDRip 💿"),
-        mapOf("value" to "BRRip", "label" to "BRRip 💿"),
-        mapOf("value" to "DVD", "label" to "DVD Full/ISO 📀"),
-        mapOf("value" to "DVDRip", "label" to "DVDRip 📀"),
+        SpecOption("UHD BluRay", "4K UHD BluRay 💿"),
+        SpecOption("BluRay", "BluRay 💿"),
+        SpecOption("BluRay REMUX", "BluRay REMUX 💾"),
+        SpecOption("BDRip", "BDRip 💿"),
+        SpecOption("BRRip", "BRRip 💿"),
+        SpecOption("DVD", "DVD Full/ISO 📀"),
+        SpecOption("DVDRip", "DVDRip 📀"),
 
         // -- Web --
-        mapOf("value" to "WEB-DL", "label" to "WEB-DL ☁️"),
-        mapOf("value" to "WEBRip", "label" to "WEBRip 🌐"),
-        mapOf("value" to "WEB", "label" to "WEB 🕸️"),
-        mapOf("value" to "HDRip", "label" to "HDRip ✨"),
+        SpecOption("WEB-DL", "WEB-DL ☁️"),
+        SpecOption("WEBRip", "WEBRip 🌐"),
+        SpecOption("WEB", "WEB 🕸️"),
+        SpecOption("HDRip", "HDRip ✨"),
 
         // -- TV / Broadcast --
-        mapOf("value" to "HDTV", "label" to "HDTV 📺"),
-        mapOf("value" to "PDTV", "label" to "PDTV 📺"),
-        mapOf("value" to "PPV", "label" to "PPV 🎫"),
+        SpecOption("HDTV", "HDTV 📺"),
+        SpecOption("PDTV", "PDTV 📺"),
+        SpecOption("PPV", "PPV 🎫"),
 
         // -- Low Quality / Pre-release --
-        mapOf("value" to "CAM", "label" to "CAM 📹"),
-        mapOf("value" to "TeleSync", "label" to "TeleSync 📹"),
-        mapOf("value" to "TS", "label" to "TS 🚫"),
-        mapOf("value" to "TC", "label" to "TeleCine 🎞️"),
-        mapOf("value" to "SCR", "label" to "SCR 📼"),
-        mapOf("value" to "R5", "label" to "R5 ⁵"),
-
-        // -- Bit Depth / Tech --
-        mapOf("value" to "10bit", "label" to "10bit 🎨"),
-        mapOf("value" to "8bit", "label" to "8bit 🖍️"),
-        mapOf("value" to "12bit", "label" to "12bit 🌈"),
-        mapOf("value" to "3D", "label" to "3D 👓"),
-        mapOf("value" to "IMAX", "label" to "IMAX 🏟️")
+        SpecOption("CAM", "CAM 📹"),
+        SpecOption("TeleSync", "TeleSync 📹"),
+        SpecOption("TS", "TS 🚫"),
+        SpecOption("TC", "TeleCine 🎞️"),
+        SpecOption("SCR", "SCR 📼"),
+        SpecOption("R5", "R5 ⁵")
     ),
     "codec" to listOf(
         // -- Modern --
-        mapOf("value" to "av1", "label" to "AV1 🚀"),
-        mapOf("value" to "x265", "label" to "x265 ⚡"),
-        mapOf("value" to "h.265", "label" to "H.265 (HEVC) ⚡"),
-        mapOf("value" to "hevc", "label" to "HEVC ⚡"),
-        mapOf("value" to "vp9", "label" to "VP9 🧪"),
+        SpecOption("av1", "AV1 🚀"),
+        SpecOption("x265", "x265 ⚡"),
+        SpecOption("h.265", "H.265 (HEVC) ⚡"),
+        SpecOption("hevc", "HEVC ⚡"),
+        SpecOption("vp9", "VP9 🧪"),
 
         // -- Standard --
-        mapOf("value" to "x264", "label" to "x264 📦"),
-        mapOf("value" to "h.264", "label" to "H.264 (AVC) 📦"),
-        mapOf("value" to "avc", "label" to "AVC 📦"),
+        SpecOption("x264", "x264 📦"),
+        SpecOption("h.264", "H.264 (AVC) 📦"),
+        SpecOption("avc", "AVC 📦"),
 
         // -- Legacy --
-        mapOf("value" to "vc-1", "label" to "VC-1 📼"),
-        mapOf("value" to "mpeg-2", "label" to "MPEG-2 🎞️"),
-        mapOf("value" to "mpeg-4", "label" to "MPEG-4 🎞️"),
-        mapOf("value" to "xvid", "label" to "XviD 🧩"),
-        mapOf("value" to "divx", "label" to "DivX 🧩")
+        SpecOption("vc-1", "VC-1 📼"),
+        SpecOption("mpeg-2", "MPEG-2 🎞️"),
+        SpecOption("mpeg-4", "MPEG-4 🎞️"),
+        SpecOption("xvid", "XviD 🧩"),
+        SpecOption("divx", "DivX 🧩")
+    ),
+    "bitdepth" to listOf(
+         SpecOption("10bit", "10bit 🎨"),
+         SpecOption("8bit", "8bit 🖍️"),
+         SpecOption("12bit", "12bit 🌈"),
+         SpecOption("3D", "3D 👓"),
+         SpecOption("IMAX", "IMAX 🏟️")
     ),
     "audio" to listOf(
         // -- Surround / Lossless --
-        mapOf("value" to "TrueHD", "label" to "Dolby TrueHD 🔊"),
-        mapOf("value" to "Atmos", "label" to "Dolby Atmos 🌌"),
-        mapOf("value" to "DTS-HD MA", "label" to "DTS-HD MA 🔊"),
-        mapOf("value" to "DTS:X", "label" to "DTS:X 🔊"),
-        mapOf("value" to "DTS Lossless", "label" to "DTS Lossless 🎼"),
-        mapOf("value" to "FLAC", "label" to "FLAC 🎹"),
-        mapOf("value" to "PCM", "label" to "LPCM/PCM 💿"),
+        SpecOption("TrueHD", "Dolby TrueHD 🔊"),
+        SpecOption("Atmos", "Dolby Atmos 🌌"),
+        SpecOption("DTS-HD MA", "DTS-HD MA 🔊"),
+        SpecOption("DTS:X", "DTS:X 🔊"),
+        SpecOption("DTS Lossless", "DTS Lossless 🎼"),
+        SpecOption("FLAC", "FLAC 🎹"),
+        SpecOption("PCM", "LPCM/PCM 💿"),
 
         // -- Standard --
-        mapOf("value" to "E-AC3", "label" to "E-AC3 (DD+) 🔉"),
-        mapOf("value" to "DD+", "label" to "DD+ 🔉"),
-        mapOf("value" to "Dolby Digital Plus", "label" to "Dolby Digital Plus 🔉"),
-        mapOf("value" to "AC3", "label" to "AC3 (Dolby Digital) 🔈"),
-        mapOf("value" to "DTS", "label" to "DTS 🔈"),
-        mapOf("value" to "AAC", "label" to "AAC 🎧"),
-        mapOf("value" to "OPUS", "label" to "Opus 🎙️"),
-        mapOf("value" to "MP3", "label" to "MP3 🎵"),
-        mapOf("value" to "WMA", "label" to "WMA 🎵")
+        SpecOption("E-AC3", "E-AC3 (DD+) 🔉"),
+        SpecOption("DD+", "DD+ 🔉"),
+        SpecOption("Dolby Digital Plus", "Dolby Digital Plus 🔉"),
+        SpecOption("AC3", "AC3 (Dolby Digital) 🔈"),
+        SpecOption("DTS", "DTS 🔈"),
+        SpecOption("AAC", "AAC 🎧"),
+        SpecOption("OPUS", "Opus 🎙️"),
+        SpecOption("MP3", "MP3 🎵"),
+        SpecOption("WMA", "WMA 🎵")
     ),
     "hdr" to listOf(
-        mapOf("value" to "DV", "label" to "Dolby Vision 👁️"),
-        mapOf("value" to "DoVi", "label" to "Dolby Vision 👁️"),
-        mapOf("value" to "HDR10+", "label" to "HDR10+ 🔆"),
-        mapOf("value" to "HDR10", "label" to "HDR10 🔆"),
-        mapOf("value" to "HLG", "label" to "HLG 📡"),
-        mapOf("value" to "HDR", "label" to "HDR 🔆"),
-        mapOf("value" to "SDR", "label" to "SDR 🔅")
+        SpecOption("DV", "Dolby Vision 👁️"),
+        SpecOption("DoVi", "Dolby Vision 👁️"),
+        SpecOption("HDR10+", "HDR10+ 🔆"),
+        SpecOption("HDR10", "HDR10 🔆"),
+        SpecOption("HLG", "HLG 📡"),
+        SpecOption("HDR", "HDR 🔆"),
+        SpecOption("SDR", "SDR 🔅")
     ),
     "language" to listOf(
         // -- Indian --
-        mapOf("value" to "HIN", "label" to "Hindi 🇮🇳"),
-        mapOf("value" to "Hindi", "label" to "Hindi 🇮🇳"),
-        mapOf("value" to "TAM", "label" to "Tamil 🇮🇳"),
-        mapOf("value" to "Tamil", "label" to "Tamil 🇮🇳"),
-        mapOf("value" to "TEL", "label" to "Telugu 🇮🇳"),
-        mapOf("value" to "Telugu", "label" to "Telugu 🇮🇳"),
-        mapOf("value" to "MAL", "label" to "Malayalam 🇮🇳"),
-        mapOf("value" to "Malayalam", "label" to "Malayalam 🇮🇳"),
-        mapOf("value" to "KAN", "label" to "Kannada 🇮🇳"),
-        mapOf("value" to "Kannada", "label" to "Kannada 🇮🇳"),
-        mapOf("value" to "BEN", "label" to "Bengali 🇮🇳"),
-        mapOf("value" to "PUN", "label" to "Punjabi 🇮🇳"),
+        SpecOption("HIN", "Hindi 🇮🇳"),
+        SpecOption("Hindi", "Hindi 🇮🇳"),
+        SpecOption("TAM", "Tamil 🇮🇳"),
+        SpecOption("Tamil", "Tamil 🇮🇳"),
+        SpecOption("TEL", "Telugu 🇮🇳"),
+        SpecOption("Telugu", "Telugu 🇮🇳"),
+        SpecOption("MAL", "Malayalam 🇮🇳"),
+        SpecOption("Malayalam", "Malayalam 🇮🇳"),
+        SpecOption("KAN", "Kannada 🇮🇳"),
+        SpecOption("Kannada", "Kannada 🇮🇳"),
+        SpecOption("BEN", "Bengali 🇮🇳"),
+        SpecOption("PUN", "Punjabi 🇮🇳"),
 
         // -- Global --
-        mapOf("value" to "ENG", "label" to "English 🇺🇸"),
-        mapOf("value" to "English", "label" to "English 🇺🇸"),
-        mapOf("value" to "KOR", "label" to "Korean 🇰🇷"),
-        mapOf("value" to "Korean", "label" to "Korean 🇰🇷"),
-        mapOf("value" to "JPN", "label" to "Japanese 🇯🇵"),
-        mapOf("value" to "Japanese", "label" to "Japanese 🇯🇵"),
-        mapOf("value" to "CHN", "label" to "Chinese 🇨🇳"),
-        mapOf("value" to "Chinese", "label" to "Chinese 🇨🇳"),
-        mapOf("value" to "SPA", "label" to "Spanish 🇪🇸"),
-        mapOf("value" to "Spanish", "label" to "Spanish 🇪🇸"),
-        mapOf("value" to "FRE", "label" to "French 🇫🇷"),
-        mapOf("value" to "French", "label" to "French 🇫🇷"),
-        mapOf("value" to "GER", "label" to "German 🇩🇪"),
-        mapOf("value" to "German", "label" to "German 🇩🇪"),
-        mapOf("value" to "RUS", "label" to "Russian 🇷🇺"),
-        mapOf("value" to "ITA", "label" to "Italian 🇮🇹"),
-        mapOf("value" to "POR", "label" to "Portuguese 🇵🇹"),
-        mapOf("value" to "ARA", "label" to "Arabic 🇸🇦"),
-        mapOf("value" to "THA", "label" to "Thai 🇹🇭"),
-        mapOf("value" to "Multi", "label" to "Multi-Audio 🌍")
+        SpecOption("ENG", "English 🇺🇸"),
+        SpecOption("English", "English 🇺🇸"),
+        SpecOption("KOR", "Korean 🇰🇷"),
+        SpecOption("Korean", "Korean 🇰🇷"),
+        SpecOption("JPN", "Japanese 🇯🇵"),
+        SpecOption("Japanese", "Japanese 🇯🇵"),
+        SpecOption("CHN", "Chinese 🇨🇳"),
+        SpecOption("Chinese", "Chinese 🇨🇳"),
+        SpecOption("SPA", "Spanish 🇪🇸"),
+        SpecOption("Spanish", "Spanish 🇪🇸"),
+        SpecOption("FRE", "French 🇫🇷"),
+        SpecOption("French", "French 🇫🇷"),
+        SpecOption("GER", "German 🇩🇪"),
+        SpecOption("German", "German 🇩🇪"),
+        SpecOption("RUS", "Russian 🇷🇺"),
+        SpecOption("ITA", "Italian 🇮🇹"),
+        SpecOption("POR", "Portuguese 🇵🇹"),
+        SpecOption("ARA", "Arabic 🇸🇦"),
+        SpecOption("THA", "Thai 🇹🇭"),
+        SpecOption("Multi", "Multi-Audio 🌍")
     )
 )
 
+// 3. Extraction Logic
 fun extractSpecs(inputString: String): Map<String, List<String>> {
     val results = mutableMapOf<String, List<String>>()
 
     SPEC_OPTIONS.forEach { (category, options) ->
         val matches = options.filter { option ->
-            val value = option["value"] as String
-            val regexPattern = "\\b${Regex.escape(value)}\\b".toRegex(RegexOption.IGNORE_CASE)
+            // Escape special chars (like dots in "h.264") and use word boundaries (\b)
+            val escapedValue = Pattern.quote(option.value)
+            val regexPattern = "\\b$escapedValue\\b".toRegex(RegexOption.IGNORE_CASE)
             regexPattern.containsMatchIn(inputString)
-        }.map { it["label"] as String }
+        }.map { it.label }
 
-        results[category] = matches
+        if (matches.isNotEmpty()) {
+            results[category] = matches
+        }
     }
 
+    // Regex for file size (e.g. 1.4GB, 500MB)
     val fileSizeRegex = """(\d+(?:\.\d+)?\s?(?:MB|GB))""".toRegex(RegexOption.IGNORE_CASE)
     val sizeMatch = fileSizeRegex.find(inputString)
     if (sizeMatch != null) {
@@ -205,29 +214,31 @@ fun extractSpecs(inputString: String): Map<String, List<String>> {
     return results.toMap()
 }
 
-// Helper function to escape regex special characters
-fun Regex.escape(input: String): String {
-    return input.replace(Regex("[.\\+*?^$()\\[\\]{}|\\\\]"), "\\\\$0")
-}
-
+// 4. Formatting Logic (Using Pipe Separator)
 fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
-    val orderedCategories = listOf("quality", "codec", "audio", "hdr", "language")
+    // Define preferred order of categories
+    val orderedCategories = listOf("quality", "codec", "bitdepth", "audio", "hdr", "language")
 
+    // Flatten lists, remove duplicates, join with " | "
     val specs = orderedCategories
         .flatMap { extracted[it] ?: emptyList() }
         .distinct()
-        .joinToString(" ")
+        .joinToString(" | ")
 
     val size = extracted["size"]?.firstOrNull()
 
-    return if (size != null && specs.isNotEmpty()) {
-        "\n$specs $size 💾"
-    } else if(size != null) {
-        "$size 💾"
-    } else if(specs.isNotEmpty()) {
-        "\n$specs"
-    } else {
-        ""
+    return when {
+        // If both specs and size exist, separate them with " | "
+        size != null && specs.isNotEmpty() -> "\n$specs | $size 💾"
+
+        // Only size
+        size != null -> "$size 💾"
+
+        // Only specs
+        specs.isNotEmpty() -> "\n$specs"
+
+        // Nothing found
+        else -> ""
     }
 }
 

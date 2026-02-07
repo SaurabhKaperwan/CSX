@@ -65,6 +65,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -85,7 +86,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeVideasy(res.title ,res.tmdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
@@ -173,6 +174,44 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
+    }
+
+    suspend fun invokeProjectfreetv(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val query = if(season == null) {
+            "$title".replace(" ", "+")
+        } else {
+            "${title?.replace(" ", "+")}+-+season+$season"
+        }
+
+        val seacrhUrl = "$projectfreetvAPI/data/browse/?lang=3&keyword=$query&year=$year&networks=&rating=&votes=&genre=&country=&cast=&directors=&type=&order_by=&page=1&limit=1"
+        val searchJson = app.get(seacrhUrl, referer = projectfreetvAPI, timeout = 60L).text
+        val searchObject = JSONObject(searchJson)
+        val moviesArray = searchObject.getJSONArray("movies")
+        if (moviesArray.length() == 0) return
+        val id = moviesArray.getJSONObject(0).getString("_id")
+        if(id.isEmpty()) return
+        val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 60L).text
+        val rootObject = JSONObject(jsonString)
+
+        if (rootObject.has("streams")) {
+            val streamsArray = rootObject.getJSONArray("streams")
+
+            for (i in 0 until streamsArray.length()) {
+                val item = streamsArray.getJSONObject(i)
+                val currentEpisode = item.optString("e").toIntOrNull() ?: -1
+                if (episode == null || currentEpisode == episode) {
+                    val source = item.optString("stream")
+                    loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
+                }
+            }
+        }
     }
 
     suspend fun invokeDramafull(
@@ -819,6 +858,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeVideasy(
         title: String? = null,
         tmdbId: Int? = null,
+        imdbId: String? = null,
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -826,9 +866,15 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
 
+        fun quote(text: String): String {
+            return URLEncoder.encode(text, StandardCharsets.UTF_8.toString())
+                .replace("+", "%20")
+        }
+
         var headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
+            "Origin" to "https://player.videasy.net",
         )
 
         val servers = listOf(
@@ -836,17 +882,22 @@ object CineStreamExtractors : CineStreamProvider() {
             "1movies",
             "moviebox",
             "primewire",
-            "onionplay",
             "m4uhd",
             "hdmovie",
-            "cdn"
+            "cdn",
+            "primesrcme"
         )
+
+        if(title == null) return
+
+        val firstPass = quote(title)
+        val encTitle = quote(firstPass)
 
         servers.amap { server ->
             val url = if (season == null) {
-                "$videasyAPI/$server/sources-with-title?title=${URLEncoder.encode(title, "UTF-8")}&mediaType=movie&year=$year&tmdbId=$tmdbId"
+                "$videasyAPI/$server/sources-with-title?title=$encTitle&mediaType=movie&year=$year&tmdbId=$tmdbId&imdbId=$imdbId"
             } else {
-                "$videasyAPI/$server/sources-with-title?title=${URLEncoder.encode(title, "UTF-8")}&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season"
+                "$videasyAPI/$server/sources-with-title?title=$encTitle&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season&imdbId=$imdbId"
             }
 
             val enc_data = app.get(url, headers = headers).text
@@ -2489,7 +2540,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "Torrentio 🧲 | $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
+                    "Torrentio 🧲  |  👤 $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2580,7 +2631,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "TorrentsDB 🧲 | $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
+                    "TorrentsDB 🧲  | 👤 $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
