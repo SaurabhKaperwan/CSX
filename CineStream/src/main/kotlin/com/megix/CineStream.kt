@@ -41,5 +41,9 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Vidmolynet())
         registerExtractorAPI(Cybervynx())
         registerExtractorAPI(Mivalyo())
+        registerExtractorAPI(Mdy())
+        registerExtractorAPI(Dsvplay())
+        registerExtractorAPI(Luluvdoo())
+        registerExtractorAPI(Doodspro())
     }
 }

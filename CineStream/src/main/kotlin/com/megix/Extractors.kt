@@ -27,6 +27,20 @@ import com.lagradost.cloudstream3.extractors.Vidguardto
 import com.lagradost.cloudstream3.extractors.Filesim
 import com.lagradost.cloudstream3.extractors.VidHidePro
 import com.lagradost.cloudstream3.extractors.Vidmoly
+import com.lagradost.cloudstream3.extractors.DoodLaExtractor
+import com.lagradost.cloudstream3.extractors.LuluStream
+
+class Luluvdoo : LuluStream() {
+    override var mainUrl = "https://luluvdoo.com"
+}
+
+class Doodspro : DoodLaExtractor() {
+    override var mainUrl = "https://doods.pro"
+}
+
+class Dsvplay : DoodLaExtractor() {
+    override var mainUrl = "https://dsvplay.com"
+}
 
 class Vidmolybiz : Vidmoly() {
     override var mainUrl = "https://vidmoly.biz"
@@ -268,6 +282,10 @@ class Dhcplay: VidhideExtractor() {
 
 class MixDropPs : MixDrop() {
     override var mainUrl = "https://mixdrop.ps"
+}
+
+class Mdy : MixDrop() {
+    override var mainUrl = "https://mdy48tn97.com"
 }
 
 class MixDropTo : MixDrop() {
