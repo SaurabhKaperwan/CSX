@@ -397,7 +397,6 @@ suspend fun NFBypass(mainUrl: String): String {
         throw e
     }
 
-
     // Persist the new cookie
     if (newCookie.isNotEmpty()) {
         CineStreamStorage.saveCookie(newCookie)
@@ -571,18 +570,16 @@ suspend fun resolveFinalUrl(startUrl: String): String? {
     val maxRedirects = 5
 
     while (loopCount < maxRedirects) {
-        val res = app.head(currentUrl, allowRedirects = false)
-
-        if (!res.isSuccessful) return null
-
-        val location = res.headers.get("Location")
-
-        if(location.isNullOrEmpty()) break
-
-        currentUrl = location
+        val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
+        if (res.code == 200 || res.code == 302 || res.code == 307) {
+            val location = res.headers.get("Location")
+            if(location.isNullOrEmpty()) break
+            currentUrl = location
+        } else {
+            return null
+        }
         loopCount++
     }
-
     return currentUrl
 }
 
