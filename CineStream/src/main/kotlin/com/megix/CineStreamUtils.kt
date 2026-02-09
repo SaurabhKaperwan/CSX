@@ -58,9 +58,6 @@ val M3U8_HEADERS = mapOf(
     "Connection" to "keep-alive",
 )
 
-data class SpecOption(val value: String, val label: String)
-
-// 2. Define Options
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
         // -- Optical / Disk --
@@ -568,17 +565,20 @@ fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
         ?.replace(".", " ")?.trim() ?: str ?: ""
 }
 
-suspend fun resolveFinalUrl(startUrl: String): String {
+suspend fun resolveFinalUrl(startUrl: String): String? {
     var currentUrl = startUrl
     var loopCount = 0
     val maxRedirects = 5
 
     while (loopCount < maxRedirects) {
-        val location = app.head(currentUrl, allowRedirects = false).headers.get("Location")
+        val res = app.head(currentUrl, allowRedirects = false)
 
-        if(location.isNullOrEmpty()) {
-            break
-        }
+        if (!res.isSuccessful) return null
+
+        val location = res.headers.get("Location")
+
+        if(location.isNullOrEmpty()) break
+
         currentUrl = location
         loopCount++
     }
