@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 316
+version = 317
 
 android {
     defaultConfig {
@@ -11,6 +11,7 @@ android {
         buildConfigField("String", "SIMKL_API", "\"${properties.getProperty("SIMKL_API")}\"")
         buildConfigField("String", "TMDB_KEY", "\"${properties.getProperty("TMDB_KEY")}\"")
         buildConfigField("String", "CC_COOKIE", "\"${properties.getProperty("CC_COOKIE")}\"")
+        buildConfigField("String", "METEOR_API", "\"${properties.getProperty("METEOR_API")}\"")
     }
 }
 

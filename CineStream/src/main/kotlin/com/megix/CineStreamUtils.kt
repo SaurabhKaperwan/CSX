@@ -68,17 +68,27 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("BRRip", "BRRip 💿"),
         SpecOption("DVD", "DVD Full/ISO 📀"),
         SpecOption("DVDRip", "DVDRip 📀"),
+        SpecOption("DVD5", "DVD5 📀"),
+        SpecOption("DVD9", "DVD9 📀"),
+        SpecOption("HD-DVD", "HD-DVD 📀"),
 
         // -- Web --
         SpecOption("WEB-DL", "WEB-DL ☁️"),
         SpecOption("WEBRip", "WEBRip 🌐"),
         SpecOption("WEB", "WEB 🕸️"),
         SpecOption("HDRip", "HDRip ✨"),
+        SpecOption("AmazonHD", "Amazon HD 🛒"),
+        SpecOption("NetflixUHD", "Netflix UHD 🟥"),
+        SpecOption("iTunes", "iTunes 🍏"),
 
         // -- TV / Broadcast --
         SpecOption("HDTV", "HDTV 📺"),
         SpecOption("PDTV", "PDTV 📺"),
+        SpecOption("SDTV", "SDTV 📺"),
         SpecOption("PPV", "PPV 🎫"),
+        SpecOption("SATRip", "SATRip 📡"),
+        SpecOption("DSR", "DSRip 📡"),
+        SpecOption("TVRip", "TVRip 📺"),
 
         // -- Low Quality / Pre-release --
         SpecOption("CAM", "CAM 📹"),
@@ -86,7 +96,10 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("TS", "TS 🚫"),
         SpecOption("TC", "TeleCine 🎞️"),
         SpecOption("SCR", "SCR 📼"),
-        SpecOption("R5", "R5 ⁵")
+        SpecOption("DVDScr", "DVDScr 📼"),
+        SpecOption("R5", "R5 ⁵"),
+        SpecOption("VHS", "VHS 📼"),
+        SpecOption("LaserDisc", "LaserDisc 💿")
     ),
     "codec" to listOf(
         // -- Modern --
@@ -95,6 +108,7 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("h.265", "H.265 (HEVC) ⚡"),
         SpecOption("hevc", "HEVC ⚡"),
         SpecOption("vp9", "VP9 🧪"),
+        SpecOption("vp8", "VP8 🧪"),
 
         // -- Standard --
         SpecOption("x264", "x264 📦"),
@@ -106,35 +120,53 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("mpeg-2", "MPEG-2 🎞️"),
         SpecOption("mpeg-4", "MPEG-4 🎞️"),
         SpecOption("xvid", "XviD 🧩"),
-        SpecOption("divx", "DivX 🧩")
+        SpecOption("divx", "DivX 🧩"),
+        SpecOption("wmv", "WMV 🪟"),
+        SpecOption("theora", "Theora 🦦"),
+        SpecOption("realvideo", "RealVideo 🎥"),
+        SpecOption("h.263", "H.263 📱")
     ),
     "bitdepth" to listOf(
-         SpecOption("10bit", "10bit 🎨"),
-         SpecOption("8bit", "8bit 🖍️"),
-         SpecOption("12bit", "12bit 🌈"),
-         SpecOption("3D", "3D 👓"),
-         SpecOption("IMAX", "IMAX 🏟️")
+        SpecOption("12bit", "12bit 🌈"),
+        SpecOption("10bit", "10bit 🎨"),
+        SpecOption("Hi10P", "Hi10P (10bit) 🎨"),
+        SpecOption("8bit", "8bit 🖍️"),
+        SpecOption("3D", "3D 👓"),
+        SpecOption("SBS", "3D SBS ↔️"),
+        SpecOption("OU", "3D Over/Under ↕️"),
+        SpecOption("IMAX", "IMAX 🏟️")
     ),
     "audio" to listOf(
         // -- Surround / Lossless --
         SpecOption("TrueHD", "Dolby TrueHD 🔊"),
         SpecOption("Atmos", "Dolby Atmos 🌌"),
         SpecOption("DTS-HD MA", "DTS-HD MA 🔊"),
+        SpecOption("DTS-HD", "DTS-HD 🔊"),
         SpecOption("DTS:X", "DTS:X 🔊"),
         SpecOption("DTS Lossless", "DTS Lossless 🎼"),
-        SpecOption("FLAC", "FLAC 🎹"),
+        SpecOption("DTS-ES", "DTS-ES 🔉"),
         SpecOption("PCM", "LPCM/PCM 💿"),
+        SpecOption("FLAC", "FLAC 🎹"),
+        SpecOption("ALAC", "ALAC 🍏"),
+        SpecOption("WAV", "WAV 🌊"),
+        SpecOption("AIFF", "AIFF 🎼"),
+        SpecOption("APE", "Monkey's Audio 🐵"),
 
         // -- Standard --
         SpecOption("E-AC3", "E-AC3 (DD+) 🔉"),
         SpecOption("DD+", "DD+ 🔉"),
         SpecOption("Dolby Digital Plus", "Dolby Digital Plus 🔉"),
         SpecOption("AC3", "AC3 (Dolby Digital) 🔈"),
+        SpecOption("DD5.1", "Dolby Digital 5.1 🔈"),
         SpecOption("DTS", "DTS 🔈"),
         SpecOption("AAC", "AAC 🎧"),
+        SpecOption("HE-AAC", "HE-AAC 🎧"),
         SpecOption("OPUS", "Opus 🎙️"),
+        SpecOption("VORBIS", "Vorbis 🌀"),
         SpecOption("MP3", "MP3 🎵"),
-        SpecOption("WMA", "WMA 🎵")
+        SpecOption("WMA", "WMA 🎵"),
+        SpecOption("OGG", "OGG 🌀"),
+        SpecOption("MP2", "MP2 📻")
     ),
     "hdr" to listOf(
         SpecOption("DV", "Dolby Vision 👁️"),
@@ -158,7 +190,15 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("KAN", "Kannada 🇮🇳"),
         SpecOption("Kannada", "Kannada 🇮🇳"),
         SpecOption("BEN", "Bengali 🇮🇳"),
+        SpecOption("Bengali", "Bengali 🇮🇳"),
         SpecOption("PUN", "Punjabi 🇮🇳"),
+        SpecOption("Punjabi", "Punjabi 🇮🇳"),
+        SpecOption("MAR", "Marathi 🇮🇳"),
+        SpecOption("Marathi", "Marathi 🇮🇳"),
+        SpecOption("GUJ", "Gujarati 🇮🇳"),
+        SpecOption("Gujarati", "Gujarati 🇮🇳"),
+        SpecOption("ORI", "Odia 🇮🇳"),
+        SpecOption("BHO", "Bhojpuri 🇮🇳"),
 
         // -- Global --
         SpecOption("ENG", "English 🇺🇸"),
@@ -169,18 +209,43 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("Japanese", "Japanese 🇯🇵"),
         SpecOption("CHN", "Chinese 🇨🇳"),
         SpecOption("Chinese", "Chinese 🇨🇳"),
+        SpecOption("CAN", "Cantonese 🇭🇰"),
+        SpecOption("MAN", "Mandarin 🇨🇳"),
         SpecOption("SPA", "Spanish 🇪🇸"),
         SpecOption("Spanish", "Spanish 🇪🇸"),
+        SpecOption("LAT", "Latin Spanish 🇲🇽"),
         SpecOption("FRE", "French 🇫🇷"),
         SpecOption("French", "French 🇫🇷"),
         SpecOption("GER", "German 🇩🇪"),
         SpecOption("German", "German 🇩🇪"),
-        SpecOption("RUS", "Russian 🇷🇺"),
         SpecOption("ITA", "Italian 🇮🇹"),
+        SpecOption("Italian", "Italian 🇮🇹"),
+        SpecOption("RUS", "Russian 🇷🇺"),
+        SpecOption("Russian", "Russian 🇷🇺"),
         SpecOption("POR", "Portuguese 🇵🇹"),
+        SpecOption("Portuguese", "Portuguese 🇵🇹"),
+        SpecOption("PT-BR", "Brazilian Port. 🇧🇷"),
         SpecOption("ARA", "Arabic 🇸🇦"),
+        SpecOption("Arabic", "Arabic 🇸🇦"),
         SpecOption("THA", "Thai 🇹🇭"),
-        SpecOption("Multi", "Multi-Audio 🌍")
+        SpecOption("VIE", "Vietnamese 🇻🇳"),
+        SpecOption("IND", "Indonesian 🇮🇩"),
+        SpecOption("MAL", "Malay 🇲🇾"),
+        SpecOption("TUR", "Turkish 🇹🇷"),
+        SpecOption("PER", "Persian 🇮🇷"),
+        SpecOption("POL", "Polish 🇵🇱"),
+        SpecOption("UKR", "Ukrainian 🇺🇦"),
+        SpecOption("DUT", "Dutch 🇳🇱"),
+        SpecOption("SWE", "Swedish 🇸🇪"),
+        SpecOption("NOR", "Norwegian 🇳🇴"),
+        SpecOption("DAN", "Danish 🇩🇰"),
+        SpecOption("FIN", "Finnish 🇫🇮"),
+        SpecOption("HEB", "Hebrew 🇮🇱"),
+        SpecOption("CZE", "Czech 🇨🇿"),
+        SpecOption("HUN", "Hungarian 🇭🇺"),
+        SpecOption("GRE", "Greek 🇬🇷"),
+        SpecOption("Multi", "Multi-Audio 🌍"),
+        SpecOption("Dual", "Dual-Audio 🌗")
     )
 )
 
