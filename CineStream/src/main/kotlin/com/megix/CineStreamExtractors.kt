@@ -78,6 +78,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
             { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -585,6 +586,48 @@ object CineStreamExtractors : CineStreamProvider() {
             m3u8,
             "",
         ).forEach(callback)
+    }
+
+    suspend fun invokeVidflix(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "https://madplay.site/api/movies/holly?id=${tmdbId}&token=direct"
+        } else {
+            "https://madplay.site/api/movies/holly?id=${tmdbId}&season=${season}&episode=${episode}&token=direct"
+        }
+
+        val jsonString = app.get(url).text
+        val jsonArray = JSONArray(jsonString)
+
+        for (i in 0 until jsonArray.length()) {
+            val item: JSONObject = jsonArray.getJSONObject(i)
+            val file = item.getString("file")
+            var referer = ""
+            var origin = ""
+
+            if (item.has("headers")) {
+                val headers: JSONObject = item.getJSONObject("headers")
+                referer = headers.optString("Referer", "")
+                origin = headers.optString("Origin", "")
+            }
+
+            callback.invoke(
+                newExtractorLink(
+                    "Vidflix",
+                    "Vidflix",
+                    file,
+                ) {
+                    this.headers = mapOf(
+                        "Referer" to referer,
+                        "Origin" to origin
+                    )
+                }
+            )
+        }
     }
 
     suspend fun invokeXpass(
