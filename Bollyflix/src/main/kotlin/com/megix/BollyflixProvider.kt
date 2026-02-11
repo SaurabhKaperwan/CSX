@@ -17,11 +17,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
 class BollyflixProvider : MainAPI() {
-    override var mainUrl = "https://bollyflix.do"
+    override var mainUrl = "https://bollyflix.sarl"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
-    val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -57,7 +57,6 @@ class BollyflixProvider : MainAPI() {
         "" to "Home",
         "/movies/bollywood/" to "Bollywood Movies",
         "/movies/hollywood/" to "Hollywood Movies",
-        "/web-series/ongoing-series/" to "Ongoing Series",
         "/anime/" to "Anime"
     )
 
@@ -152,13 +151,14 @@ class BollyflixProvider : MainAPI() {
             coroutineScope {
                 buttons.map { button ->
                     async {
-                        val id = button.attr("href").substringAfterLast("id=")
+                        val link = button.attr("href")
+                        // val id = button.attr("href").substringAfterLast("id=")
                         val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
                         val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                         val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
 
-                        val decodeUrl = bypass(id)
-                        val seasonDoc = app.get(decodeUrl).document
+                        // val decodeUrl = bypass(id)
+                        val seasonDoc = app.get(link).document
                         val epLinks = seasonDoc.select("h3 > a")
                             .filter { !it.text().contains("Zip", ignoreCase = true) }
 
@@ -209,9 +209,9 @@ class BollyflixProvider : MainAPI() {
             val data = coroutineScope {
                 document.select("a.dl").map { link ->
                     async {
-                        val id = link.attr("href").substringAfterLast("id=")
-                        val decodeUrl = bypass(id)
-                        EpisodeLink(decodeUrl)
+                        // val id = link.attr("href").substringAfterLast("id=")
+                        // val decodeUrl = bypass(id)
+                        EpisodeLink(link.attr("href"))
                     }
                 }.awaitAll()
             }

@@ -2768,7 +2768,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeBollyflix(
         id: String? = null,
         season: Int? = null,
@@ -2782,22 +2781,22 @@ object CineStreamExtractors : CineStreamProvider() {
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
         val entries =
-            res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
+            res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
                 .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
-        entries.map {
-            val href = it.nextElementSibling()?.select("a")?.attr("href")
-            val token = href?.substringAfter("id=")
-            val encodedurl =
-                app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
-                    .substringBefore("\"};")
-            val decodedurl = base64Decode(encodedurl.replace("\\/", "/"))
+        entries.amap {
+            val href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@amap
+            // val token = href?.substringAfter("id=")
+            // val encodedurl =
+            //     app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
+            //         .substringBefore("\"};")
+            // val decodedurl = base64Decode(encodedurl.replace("\\/", "/"))
 
             if (season == null) {
-                loadSourceNameExtractor("Bollyflix", decodedurl , "", subtitleCallback, callback)
+                loadSourceNameExtractor("Bollyflix", href , "", subtitleCallback, callback)
             } else {
                 val episodeText = "Episode " + episode.toString().padStart(2, '0')
                 val link =
-                    app.get(decodedurl).document.selectFirst("article h3 a:contains($episodeText)")!!
+                    app.get(href).document.selectFirst("article h3 a:contains($episodeText)")!!
                         .attr("href")
                 loadSourceNameExtractor("Bollyflix", link , "", subtitleCallback, callback)
             }

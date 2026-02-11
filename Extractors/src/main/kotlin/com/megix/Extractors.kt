@@ -618,6 +618,26 @@ open class HubCloud : ExtractorApi() {
     }
 }
 
+class Linksmod : ExtractorApi() {
+    override val name = "Linksmod"
+    override var mainUrl = "https://linksmod.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get(url).document
+
+        document.select("div .view-well > a").amap {
+            val link = it.attr("href")
+            loadExtractor(link, "", subtitleCallback, callback)
+        }
+    }
+}
+
 open class fastdlserver : ExtractorApi() {
     override val name = "fastdlserver"
     override var mainUrl = "https://fastdlserver.*"
@@ -645,7 +665,7 @@ class GDFlixApp: GDFlix() {
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new12.gdflix.*"
+    override var mainUrl = "https://new13.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
@@ -696,6 +716,40 @@ open class GDFlix : ExtractorApi() {
             val link = anchor.attr("href")
 
             when {
+                text.contains("FSL V2") -> {
+                    callback.invoke(
+                        newExtractorLink(
+                            "GDFlix[FSL V2]",
+                            "GDFlix[FSL V2] $fileName[$fileSize]",
+                            link,
+                            ExtractorLinkType.VIDEO
+                        ) {
+                            this.quality = quality
+                            this.headers = VIDEO_HEADERS
+                        }
+                    )
+                }
+
+                text.contains("FAST CLOUD") -> {
+
+                    val dlink = app.get(latestUrl + link)
+                        .document
+                        .select("div.card-body a")
+                        .attr("href")
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "GDFlix[FAST CLOUD]",
+                            "GDFlix[FAST CLOUD] $fileName[$fileSize]",
+                            dlink,
+                            ExtractorLinkType.VIDEO
+                        ) {
+                            this.quality = quality
+                            this.headers = VIDEO_HEADERS
+                        }
+                    )
+                }
+
                 text.contains("DIRECT DL") -> {
                     callback.invoke(
                         newExtractorLink(
