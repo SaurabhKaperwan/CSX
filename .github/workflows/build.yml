@@ -53,7 +53,6 @@ jobs:
           SIMKL_API: ${{ secrets.SIMKL_API }}
           TMDB_KEY: ${{ secrets.TMDB_KEY }}
           CC_COOKIE: ${{ secrets.CC_COOKIE }}
-          METEOR_API: ${{ secrets.METEOR_API }}
         run: |
           cd $GITHUB_WORKSPACE/src
           # Create file if it doesn't exist
@@ -62,7 +61,6 @@ jobs:
           echo "SIMKL_API=$SIMKL_API" >> local.properties
           echo "TMDB_KEY=$TMDB_KEY" >> local.properties
           echo "CC_COOKIE=$CC_COOKIE" >> local.properties
-          echo "METEOR_API=$METEOR_API" >> local.properties
 
       - name: Build Plugins
         run: |

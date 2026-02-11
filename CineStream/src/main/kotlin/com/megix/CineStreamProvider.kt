@@ -5,7 +5,6 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
-// import com.lagradost.cloudstream3.LoadResponse.Companion.addKitsuId
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
@@ -42,7 +41,6 @@ open class CineStreamProvider : MainAPI() {
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val CC_COOKIE = BuildConfig.CC_COOKIE
-        const val meteorAPI = BuildConfig.METEOR_API
         const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.io"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -72,7 +70,6 @@ open class CineStreamProvider : MainAPI() {
         const val videasyAPI = "https://api2.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
-        const val sootiAPI = """https://sooti.info/{"DebridServices":[{"provider":"httpstreaming","httpHDHub4u":true,"httpCineDoze":true}],"Languages":[],"Scrapers":["knaben","extto","torrentdownload"],"IndexerScrapers":["zilean","stremthru"],"minSize":0,"maxSize":200,"ShowCatalog":true,"DebridProvider":"httpstreaming"}"""
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
@@ -96,7 +93,6 @@ open class CineStreamProvider : MainAPI() {
         const val dramafullAPI = "https://dramafull.cc"
         const val projectfreetvAPI = "https://projectfreetv.sx"
         const val akwamAPI = "https://ak.sv"
-        const val succcbots = "aHR0cHM6Ly91c2VuZXQuc3VjY2Nib3RzLndvcmtlcnMuZGV2"
 
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
