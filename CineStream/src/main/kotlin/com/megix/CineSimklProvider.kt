@@ -7,7 +7,6 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
-// import com.lagradost.cloudstream3.LoadResponse.Companion.addKitsuId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.SyncRepo
@@ -350,7 +349,7 @@ class CineSimklProvider: MainAPI() {
                 this.plot = plot
                 this.tags = genres
                 this.comingSoon = isUpcoming(json.released)
-                this.duration = json.runtime?.toIntOrNull()
+                // this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
@@ -360,7 +359,6 @@ class CineSimklProvider: MainAPI() {
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
-                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
                 this.addTrailer(trailerLink)
             }
         } else {
@@ -405,7 +403,7 @@ class CineSimklProvider: MainAPI() {
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = plot
                 this.tags = genres
-                this.duration = json.runtime?.toIntOrNull()
+                // this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
                 try { this.logoUrl = logo} catch(_:Throwable){}
@@ -416,7 +414,6 @@ class CineSimklProvider: MainAPI() {
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
-                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
                 this.addTrailer(trailerLink)
             }
         }

@@ -350,17 +350,18 @@ open class CineStreamProvider : MainAPI() {
                 this.year = year ?.toIntOrNull() ?: releaseInfo?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
                 try { this.logoUrl = logo} catch(_:Throwable){}
-                this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
+                // this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
                 addAniListId(anilistId)
                 addMalId(malId)
                 addImdbId(id)
-                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
             }
         }
         else {
-            val episodes = movieData?.videos?.map { ep ->
+            val episodes = movieData?.videos
+                ?.filter { it.season != 0 }
+                ?.map { ep ->
                 newEpisode(
                     LoadLinksData(
                         title,
@@ -401,14 +402,13 @@ open class CineStreamProvider : MainAPI() {
                 this.plot = description
                 this.tags = genre
                 try { this.logoUrl = logo} catch(_:Throwable){}
-                this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
+                // this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.score = Score.from10(imdbRating)
                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
                 addAniListId(anilistId)
                 addMalId(malId)
                 addImdbId(id)
-                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
             }
         }
     }

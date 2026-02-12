@@ -166,7 +166,7 @@ class CineTmdbProvider: MainAPI() {
 
          if (type == TvType.TvSeries) {
             val lastSeason = res.last_episode_to_air?.season_number
-            val episodes = res.seasons?.mapNotNull { season ->
+            val episodes = res.seasons?.filter { it.seasonNumber != 0 }?.mapNotNull { season ->
                 app.get("$apiUrl/${data.type}/${data.id}/season/${season.seasonNumber}?api_key=$apiKey")
                     .parsedSafe<MediaDetailEpisodes>()?.episodes?.map { eps ->
                         newEpisode(
@@ -195,8 +195,8 @@ class CineTmdbProvider: MainAPI() {
                                 nametitle = res.name
                             ).toJson()
                         ) {
-                            this.name =
-                                eps.name + if (isUpcoming(eps.airDate)) " • [UPCOMING]" else ""
+                            this.name = eps.name
+                            // eps.name + if (isUpcoming(eps.airDate)) " • [UPCOMING]" else ""
                             this.season = eps.seasonNumber
                             this.episode = eps.episodeNumber
                             this.posterUrl = getImageUrl(eps.stillPath) ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
@@ -248,7 +248,7 @@ class CineTmdbProvider: MainAPI() {
             ) {
                 this.posterUrl = poster
                 this.backgroundPosterUrl = bgPoster
-                this.comingSoon = isUpcoming(releaseDate)
+                // this.comingSoon = isUpcoming(releaseDate)
                 this.year = year
                 this.plot = res.overview
                 this.duration = res.runtime
