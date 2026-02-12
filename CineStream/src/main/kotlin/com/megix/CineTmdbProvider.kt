@@ -119,7 +119,7 @@ class CineTmdbProvider: MainAPI() {
 
         val res = app.get(resUrl).parsedSafe<MediaDetail>()
             ?: throw ErrorLoadingException("Invalid Json Response")
-        var title = res.title ?: res.name ?: return null
+        val title = res.title ?: res.name ?: return null
         val poster = getOriImageUrl(res.posterPath)
         val bgPoster = getOriImageUrl(res.backdropPath)
         val orgTitle = res.originalTitle ?: res.originalName
@@ -130,10 +130,7 @@ class CineTmdbProvider: MainAPI() {
         val isCartoon = genres?.contains("Animation") ?: false
         val isAnime = isCartoon && (res.original_language == "zh" || res.original_language == "ja" || res.original_language == "ko")
         val isAsian = !isAnime && (res.original_language == "zh" || res.original_language == "ko")
-        val isTurkish = res.original_language == "tr"
         val isBollywood = res.production_countries?.any { it.name == "India" } ?: false
-
-        if(isTurkish) title = orgTitle ?: title
 
         val keywords = res.keywords?.results?.mapNotNull { it.name }.orEmpty()
             .ifEmpty { res.keywords?.keywords?.mapNotNull { it.name } }

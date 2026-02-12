@@ -388,7 +388,7 @@ class CineSimklProvider: MainAPI() {
                         isCartoon
                     ).toJson()
                 ) {
-                    this.name = it.title + if(it.aired == false) " • [UPCOMING]" else ""
+                    this.name = it.title //+ if(it.aired == false) " • [UPCOMING]" else ""
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
@@ -408,7 +408,7 @@ class CineSimklProvider: MainAPI() {
                 this.year = json.year
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.actors = cast
-                this.showStatus = getStatus(json.status)
+                // this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
