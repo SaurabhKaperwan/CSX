@@ -77,9 +77,6 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("WEBRip", "WEBRip 🌐"),
         SpecOption("WEB", "WEB 🕸️"),
         SpecOption("HDRip", "HDRip ✨"),
-        SpecOption("AmazonHD", "Amazon HD 🛒"),
-        SpecOption("NetflixUHD", "Netflix UHD 🟥"),
-        SpecOption("iTunes", "iTunes 🍏"),
 
         // -- TV / Broadcast --
         SpecOption("HDTV", "HDTV 📺"),
@@ -716,7 +713,7 @@ suspend fun loadSourceNameExtractor(
                 || link.url.contains("video-downloads.googleusercontent")
             ){ true } else { false }
 
-            if(isDownload) return@launch
+            // if(isDownload) return@launch
 
             val simplifiedTitle = getSimplifiedTitle(link.name)
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""

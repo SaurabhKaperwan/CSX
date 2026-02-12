@@ -1291,11 +1291,15 @@ object CineStreamExtractors : CineStreamProvider() {
         ).parsedSafe<XDMoviesSearchResponse>() ?: return
 
         val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
-        val document = app.get(XDmoviesAPI + matched.path).document
+        val document = app.get(XDmoviesAPI + matched.path).documentLarge
 
         if(season == null) {
-            document.select("div.download-item a").amap {
-                loadSourceNameExtractor("XDmovies", it.attr("href"), "", subtitleCallback, callback)
+            document.select("div.download-item a").amap { source ->
+                var link = source.attr("href")
+                if(!link.contains("hubcloud")) {
+                    link = app.get(link, allowRedirects = false, timeout = 600L).headers["location"] ?: return@amap
+                }
+                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
             val epRegex = Regex(
@@ -1308,8 +1312,11 @@ object CineStreamExtractors : CineStreamProvider() {
                 epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
             }
 
-            episodeCards.amap {
-                val link = it.selectFirst("a")?.attr("href") ?: return@amap
+            episodeCards.amap { episodeCard ->
+                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
+                if(!link.contains("hubcloud")) {
+                    link = app.get(link, allowRedirects = false, timeout = 600L).headers["location"] ?: return@amap
+                }
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }

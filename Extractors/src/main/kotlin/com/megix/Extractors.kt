@@ -54,7 +54,7 @@ class Smoothpre : VidHidePro() {
 
 class Howblogs : ExtractorApi() {
     override val name: String = "Howblogs"
-    override val mainUrl: String = "https://howblogs.*"
+    override val mainUrl: String = "https://howblogs."
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -69,39 +69,26 @@ class Howblogs : ExtractorApi() {
     }
 }
 
-open class XDmovies: ExtractorApi() {
-    override val name: String = "XDmovies"
-    override val mainUrl: String = "https://link.xdmovies.site"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val location = app.get(url, allowRedirects = false).headers["location"]
-        if(location != null) {
-            loadExtractor(location, "", subtitleCallback, callback)
-        }
-
-    }
-}
-
 class Driveseed : Driveleech() {
     override val name: String = "Driveseed"
-    override val mainUrl: String = "https://driveseed.*"
+    override val mainUrl: String = "https://driveseed."
 }
 
 open class Driveleech : ExtractorApi() {
     override val name: String = "Driveleech"
-    override val mainUrl: String = "https://driveleech.*"
+    override val mainUrl: String = "https://driveleech."
     override val requiresReferer = false
 
-    private suspend fun CFType1(url: String): List<String> {
-        val document = app.get(url+"?type=1").document
-        val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
-        return links
+    private suspend fun CFType(url: String): List<String> {
+        val types = listOf("1", "2")
+        val downloadLinks = mutableListOf<String>()
+
+        types.map { t ->
+            val document = app.get(url + "?type=$t").document
+            val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+            downloadLinks.addAll(links)
+        }
+        return downloadLinks
     }
 
     private suspend fun resumeCloudLink(baseUrl: String, url: String): String? {
@@ -222,11 +209,11 @@ open class Driveleech : ExtractorApi() {
                 text.contains("Direct Links") -> {
                     try {
                         val link = baseUrl + href
-                        CFType1(link).forEach {
+                        CFType(link).forEach {
                             callback.invoke(
                                 newExtractorLink(
-                                    "$name CF Type1",
-                                    "$name[CF Type1] $fileName[$fileSize]",
+                                    "$name CF",
+                                    "$name[CF] $fileName[$fileSize]",
                                     it,
                                     ExtractorLinkType.VIDEO
                                 ) {
@@ -271,8 +258,27 @@ open class Driveleech : ExtractorApi() {
 
 open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
-    override val mainUrl: String = "https://vcloud.*"
+    override val mainUrl: String = "https://vcloud."
     override val requiresReferer = false
+
+    suspend fun resolveFinalUrl(startUrl: String): String? {
+        var currentUrl = startUrl
+        var loopCount = 0
+        val maxRedirects = 10
+
+        while (loopCount < maxRedirects) {
+            val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
+            if (res.code == 200 || res.code == 302 || res.code == 307 || res.code == 301) {
+                val location = res.headers.get("Location")
+                if(location.isNullOrEmpty()) break
+                currentUrl = location
+            } else {
+                return null
+            }
+            loopCount++
+        }
+        return currentUrl
+    }
 
     override suspend fun getUrl(
         url: String,
@@ -371,52 +377,39 @@ open class VCloud : ExtractorApi() {
                         }
                     )
                 }
-                // else if (text.contains("Server : 10Gbps")) {
-                //     var currentLink = link
-                //     var redirectUrl: String?
-                //     var redirectCount = 0
-                //     val maxRedirects = 3
+                else if (text.contains("Server : 10Gbps")) {
+                    var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
-                //     while (redirectCount < maxRedirects) {
-                //         val response = app.get(currentLink, allowRedirects = false)
-                //         redirectUrl = response.headers["location"]
+                    if(redirectUrl.contains("link=")) {
+                        redirectUrl = redirectUrl.substringAfter("link=")
+                    }
 
-                //         if (redirectUrl == null) {
-                //             return@forEach
-                //         }
-
-                //         if ("link=" in redirectUrl) {
-                //             val finalLink = redirectUrl.substringAfter("link=")
-                //             callback.invoke(
-                //                 newExtractorLink(
-                //                     "$name[Download]",
-                //                     "$name[Download] $header[$size]",
-                //                     finalLink
-                //                 ) {
-                //                     this.quality = quality
-                //                     this.headers = VIDEO_HEADERS
-                //                 }
-                //             )
-                //         }
-
-                //         currentLink = redirectUrl
-                //         redirectCount++
-                //     }
-                // }
+                    callback.invoke(
+                        newExtractorLink(
+                            "$name[Download]",
+                            "$name[Download] $header[$size]",
+                            redirectUrl,
+                            ExtractorLinkType.VIDEO
+                        ) {
+                            this.quality = quality
+                            this.headers = VIDEO_HEADERS
+                        }
+                    )
+                }
                 else
                 {
-                    // if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
-                    //     callback.invoke(
-                    //         newExtractorLink(
-                    //             "$name",
-                    //             "$name $header[$size]",
-                    //             link,
-                    //         ) {
-                    //             this.quality = quality
-                    //             this.headers = VIDEO_HEADERS
-                    //         }
-                    //     )
-                    // }
+                    if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
+                        callback.invoke(
+                            newExtractorLink(
+                                "$name",
+                                "$name $header[$size]",
+                                link,
+                            ) {
+                                this.quality = quality
+                                this.headers = VIDEO_HEADERS
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -425,7 +418,7 @@ open class VCloud : ExtractorApi() {
 
 open class Hubdrive : ExtractorApi() {
     override val name = "Hubdrive"
-    override val mainUrl = "https://hubdrive.*"
+    override val mainUrl = "https://hubdrive."
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -439,11 +432,29 @@ open class Hubdrive : ExtractorApi() {
     }
 }
 
-
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.*"
+    override val mainUrl: String = "https://hubcloud."
     override val requiresReferer = false
+
+    suspend fun resolveFinalUrl(startUrl: String): String? {
+        var currentUrl = startUrl
+        var loopCount = 0
+        val maxRedirects = 10
+
+        while (loopCount < maxRedirects) {
+            val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
+            if (res.code == 200 || res.code == 302 || res.code == 307 || res.code == 301) {
+                val location = res.headers.get("Location")
+                if(location.isNullOrEmpty()) break
+                currentUrl = location
+            } else {
+                return null
+            }
+            loopCount++
+        }
+        return currentUrl
+    }
 
     override suspend fun getUrl(
         url: String,
@@ -549,7 +560,6 @@ open class HubCloud : ExtractorApi() {
                     )
                 }
             }
-
             else if (link.contains("pixeldra")) {
                 val baseUrlLink = getBaseUrl(link)
                 val finalURL = if (link.contains("download", true)) link
@@ -567,52 +577,39 @@ open class HubCloud : ExtractorApi() {
                     }
                 )
             }
-            // else if (text.contains("Server : 10Gbps")) {
-            //     var currentLink = link
-            //     var redirectUrl: String?
-            //     var redirectCount = 0
-            //     val maxRedirects = 3
+            else if (text.contains("Server : 10Gbps")) {
+                var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
-            //     while (redirectCount < maxRedirects) {
-            //         val response = app.get(currentLink, allowRedirects = false)
-            //         redirectUrl = response.headers["location"]
+                if(redirectUrl.contains("link=")) {
+                    redirectUrl = redirectUrl.substringAfter("link=")
+                }
 
-            //         if (redirectUrl == null) {
-            //             return@forEach
-            //         }
-
-            //         if ("link=" in redirectUrl) {
-            //             val finalLink = redirectUrl.substringAfter("link=")
-            //             callback.invoke(
-            //                 newExtractorLink(
-            //                     "$name[Download]",
-            //                     "$name[Download] $header[$size]",
-            //                     finalLink
-            //                 ) {
-            //                     this.quality = quality
-            //                     this.headers = VIDEO_HEADERS
-            //                 }
-            //             )
-            //         }
-
-            //         currentLink = redirectUrl
-            //         redirectCount++
-            //     }
-            // }
+                callback.invoke(
+                    newExtractorLink(
+                        "$name[Download]",
+                        "$name[Download] $header[$size]",
+                        redirectUrl,
+                        ExtractorLinkType.VIDEO
+                    ) {
+                        this.quality = quality
+                        this.headers = VIDEO_HEADERS
+                    }
+                )
+            }
             else
             {
-                // if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
-                //     callback.invoke(
-                //         newExtractorLink(
-                //             "$name",
-                //             "$name $header[$size]",
-                //             link,
-                //         ) {
-                //             this.quality = quality
-                //             this.headers = VIDEO_HEADERS
-                //         }
-                //     )
-                // }
+                if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
+                    callback.invoke(
+                        newExtractorLink(
+                            "$name",
+                            "$name $header[$size]",
+                            link,
+                        ) {
+                            this.quality = quality
+                            this.headers = VIDEO_HEADERS
+                        }
+                    )
+                }
             }
         }
     }
@@ -620,7 +617,7 @@ open class HubCloud : ExtractorApi() {
 
 class Linksmod : ExtractorApi() {
     override val name = "Linksmod"
-    override var mainUrl = "https://linksmod.*"
+    override var mainUrl = "https://linksmod."
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -657,21 +654,33 @@ open class fastdlserver : ExtractorApi() {
 }
 
 class GDLink : GDFlix() {
-    override var mainUrl = "https://gdlink.*"
+    override var mainUrl = "https://gdlink."
 }
 
 class GDFlixApp: GDFlix() {
-    override var mainUrl = "https://new.gdflix.*"
+    override var mainUrl = "https://new.gdflix."
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new13.gdflix.*"
+    override var mainUrl = "https://new13.gdflix."
 }
 
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://gdflix.*"
+    override val mainUrl = "https://gdflix."
     override val requiresReferer = false
+
+    private suspend fun CFType(url: String): List<String> {
+        val types = listOf("1", "2")
+        val downloadLinks = mutableListOf<String>()
+
+        types.map { t ->
+            val document = app.get(url + "?type=$t").document
+            val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+            downloadLinks.addAll(links)
+        }
+        return downloadLinks
+    }
 
     override suspend fun getUrl(
         url: String,
@@ -691,10 +700,9 @@ open class GDFlix : ExtractorApi() {
 
         //Cloudflare backup links
         try {
-            val source = app.get("${newUrl.replace("file", "wfile")}")
-                .document.select("a.btn-success").attr("href")
+            val sources = CFType(newUrl.replace("file", "wfile"))
 
-            if (source.isNotEmpty()) {
+            sources.forEach { source ->
                 callback.invoke(
                     newExtractorLink(
                         "GDFlix[CF]",
