@@ -366,6 +366,7 @@ class CineSimklProvider: MainAPI() {
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 val ep_poster = getPosterUrl(it.img, "episode")
+                val ep_rating = it.ratings?.mal?.rating ?: it.ratings?.imdb?.rating
                 newEpisode(
                     LoadLinksData(
                         json.title,
@@ -391,6 +392,7 @@ class CineSimklProvider: MainAPI() {
                     this.name = it.title //+ if(it.aired == false) " • [UPCOMING]" else ""
                     this.season = it.season
                     this.episode = it.episode
+                    this.score = Score.from10(ep_rating)
                     this.description = it.description
                     this.posterUrl = ep_poster ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                     addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
@@ -605,6 +607,7 @@ class CineSimklProvider: MainAPI() {
         var aired       : Boolean  = false,
         var img         : String?  = null,
         var date        : String?  = null,
+        var ratings     : Ratings? = Ratings(),
     )
     data class LoadLinksData(
         val title       : String? = null,
