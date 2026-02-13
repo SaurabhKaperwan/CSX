@@ -621,8 +621,21 @@ fun getEpisodeSlug(
 
 //Dahmer
 fun getIndexQuality(str: String?): Int {
-    return Regex("""(\d{3,4})[pP]""").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
-        ?: Qualities.Unknown.value
+    if (str.isNullOrBlank()) return Qualities.Unknown.value
+
+    val lowerStr = str.lowercase()
+
+    return when {
+        lowerStr.contains("8k") -> 4320
+        lowerStr.contains("4k") -> 2160
+        lowerStr.contains("2k") -> 1440
+        else -> {
+            Regex("""(\d{3,4})[pP]""").find(str)
+                ?.groupValues?.getOrNull(1)
+                ?.toIntOrNull()
+                ?: Qualities.Unknown.value
+        }
+    }
 }
 
 fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
