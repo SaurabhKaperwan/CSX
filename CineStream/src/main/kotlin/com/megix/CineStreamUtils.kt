@@ -75,7 +75,6 @@ val SPEC_OPTIONS = mapOf(
         // -- Web --
         SpecOption("WEB-DL", "WEB-DL ☁️"),
         SpecOption("WEBRip", "WEBRip 🌐"),
-        SpecOption("WEB", "WEB 🕸️"),
         SpecOption("HDRip", "HDRip ✨"),
 
         // -- TV / Broadcast --
@@ -101,16 +100,16 @@ val SPEC_OPTIONS = mapOf(
     "codec" to listOf(
         // -- Modern --
         SpecOption("av1", "AV1 🚀"),
-        SpecOption("x265", "x265 ⚡"),
-        SpecOption("h.265", "H.265 (HEVC) ⚡"),
+        SpecOption("x265", "HEVC ⚡"),
+        SpecOption("h.265", "HEVC ⚡"),
         SpecOption("hevc", "HEVC ⚡"),
         SpecOption("vp9", "VP9 🧪"),
         SpecOption("vp8", "VP8 🧪"),
 
         // -- Standard --
-        SpecOption("x264", "x264 📦"),
-        SpecOption("h.264", "H.264 (AVC) 📦"),
-        SpecOption("avc", "AVC 📦"),
+        SpecOption("x264", "H.264 📦"),
+        SpecOption("h.264", "H.264 📦"),
+        SpecOption("avc", "H.264 📦"),
 
         // -- Legacy --
         SpecOption("vc-1", "VC-1 📼"),
@@ -137,6 +136,10 @@ val SPEC_OPTIONS = mapOf(
         // -- Surround / Lossless --
         SpecOption("TrueHD", "Dolby TrueHD 🔊"),
         SpecOption("Atmos", "Dolby Atmos 🌌"),
+        SpecOption("DDP5.1", "DD+ 5.1 🔉"),
+        SpecOption("DDP 5.1", "DD+ 5.1 🔉"),
+        SpecOption("7.1", "7.1 Ch 🔊"),
+        SpecOption("5.1", "5.1 Ch 🔉"),
         SpecOption("DTS-HD MA", "DTS-HD MA 🔊"),
         SpecOption("DTS-HD", "DTS-HD 🔊"),
         SpecOption("DTS:X", "DTS:X 🔊"),
@@ -147,7 +150,11 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("ALAC", "ALAC 🍏"),
         SpecOption("WAV", "WAV 🌊"),
         SpecOption("AIFF", "AIFF 🎼"),
-        SpecOption("APE", "Monkey's Audio 🐵"),
+
+        // -- Stereo / 2.0 Channels --
+        SpecOption("AAC2.0", "AAC 2.0 🎧"),
+        SpecOption("AAC 2.0", "AAC 2.0 🎧"),
+        SpecOption("DD2.0", "DD 2.0 🎧"),
 
         // -- Standard --
         SpecOption("E-AC3", "E-AC3 (DD+) 🔉"),

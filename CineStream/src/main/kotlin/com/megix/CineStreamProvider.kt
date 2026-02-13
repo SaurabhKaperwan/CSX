@@ -67,7 +67,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
         const val dahmerMoviesAPI = "https://a.111477.xyz"
         const val hexaAPI = "https://themoviedb.hexa.su"
-        const val videasyAPI = "https://api2.videasy.net"
+        const val videasyAPI = "https://api.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
@@ -292,7 +292,12 @@ open class CineStreamProvider : MainAPI() {
         val releaseInfo = movieData?.releaseInfo
         val tmdbId = movieData?.moviedb_id
         id = if(!isKitsu) movieData?.imdb_id.toString() else id
-        var description = movieData?.description
+
+        val description = if(movieData?.awards != null) {
+            movieData?.awards + "\n" + movieData?.description
+        } else {
+            movieData?.description
+        }
 
         var actors = if(isKitsu) {
             null
@@ -499,6 +504,7 @@ open class CineStreamProvider : MainAPI() {
     data class Meta(
         val id: String?,
         val imdb_id: String?,
+        val awards: String?,
         val type: String?,
         val aliases: ArrayList<String>?,
         val poster: String?,
