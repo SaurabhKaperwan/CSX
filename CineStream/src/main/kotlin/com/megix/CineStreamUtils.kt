@@ -629,18 +629,22 @@ fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
 suspend fun resolveFinalUrl(startUrl: String): String? {
     var currentUrl = startUrl
     var loopCount = 0
-    val maxRedirects = 5
+    val maxRedirects = 7
 
     while (loopCount < maxRedirects) {
-        val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
-        if (res.code == 200 || res.code == 302 || res.code == 307) {
-            val location = res.headers.get("Location")
-            if(location.isNullOrEmpty()) break
-            currentUrl = location
-        } else {
+        try {
+            val res = app.head(currentUrl, allowRedirects = false, timeout = 2500L)
+            if (res.code == 200 || res.code in 300..399) {
+                val location = res.headers.get("Location")
+                if(location.isNullOrEmpty()) break
+                currentUrl = location
+            } else {
+                return null
+            }
+            loopCount++
+        } catch (e: Exception) {
             return null
         }
-        loopCount++
     }
     return currentUrl
 }
