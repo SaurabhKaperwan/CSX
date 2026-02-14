@@ -10,6 +10,7 @@ class ExtractorsPlugin: Plugin() {
         // All providers should be added in this manner. Please don't edit the providers list directly.
         registerExtractorAPI(VCloud())
         registerExtractorAPI(GDFlix())
+        registerExtractorAPI(GdFlix1())
         registerExtractorAPI(GDFlixApp())
         registerExtractorAPI(GDLink())
         registerExtractorAPI(GDFlixNet())
