@@ -472,10 +472,14 @@ open class GDFlix : ExtractorApi() {
         val types = listOf("1", "2")
         val downloadLinks = mutableListOf<String>()
 
-        types.map { t ->
-            val document = app.get(url + "?type=$t").document
-            val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
-            downloadLinks.addAll(links)
+        types.amap { t ->
+            try {
+                val document = app.get(url + "?type=$t").document
+                val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+                downloadLinks.addAll(links)
+            } catch (e: Exception) {
+                Log.d("Error", e.toString())
+            }
         }
         return downloadLinks
     }
@@ -508,17 +512,6 @@ open class GDFlix : ExtractorApi() {
                     this.headers = VIDEO_HEADERS
                 }
             )
-        }
-
-        //Cloudflare backup links
-        try {
-            val sources = CFType(newUrl.replace("file", "wfile"))
-
-            sources.forEach { source ->
-                myCallback(source, "[CF]")
-            }
-        } catch (e: Exception) {
-            Log.d("CF", e.toString())
         }
 
         document.select("div.text-center a").amap { anchor ->
@@ -580,6 +573,18 @@ open class GDFlix : ExtractorApi() {
                     Log.d("Error", "No Server matched")
                 }
             }
+        }
+
+        //Cloudflare backup links
+        try {
+            val sources = CFType(newUrl.replace("file", "wfile"))
+
+            sources.amap { source ->
+                val redirectUrl = resolveFinalUrl(source) ?: return@amap
+                myCallback(redirectUrl, "[CF]")
+            }
+        } catch (e: Exception) {
+            Log.d("CF", e.toString())
         }
     }
 }

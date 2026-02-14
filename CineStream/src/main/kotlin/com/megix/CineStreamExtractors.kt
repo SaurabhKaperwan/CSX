@@ -115,8 +115,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Castle", base64Decode(castleAPI), res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Cine", base64Decode(cineAPI), res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeMoviesflix("Hdmoviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -156,7 +157,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Castle", base64Decode(castleAPI), res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
@@ -790,7 +791,11 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season == null) {
+        val url = if(season == null && sourceName == "Hdmovielover") {
+            "$api/movie?imdbid=$imdbId"
+        } else if(sourceName == "Hdmovielover") {
+            "$api/series?imdbid=$imdbId&s=$season&e=$episode"
+        } else if(season == null) {
             "$api/stream/movie/$imdbId.json"
         } else {
             "$api/stream/series/$imdbId:$season:$episode.json"
@@ -838,6 +843,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 stream.url
             }
 
+            var quality = getIndexQuality(title + name)
+
+            if(quality == null && sourceName.contains("Castle")) quality = Qualities.P1080.value
+
             callback.invoke(
                 newExtractorLink(
                     sourceName,
@@ -846,7 +855,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     type,
                 ) {
                     this.referer = stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
-                    this.quality = getIndexQuality(title + name)
+                    this.quality = quality
                     this.headers = headers
                 }
             )

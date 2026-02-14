@@ -11,6 +11,9 @@ android {
         buildConfigField("String", "SIMKL_API", "\"${properties.getProperty("SIMKL_API")}\"")
         buildConfigField("String", "TMDB_KEY", "\"${properties.getProperty("TMDB_KEY")}\"")
         buildConfigField("String", "CC_COOKIE", "\"${properties.getProperty("CC_COOKIE")}\"")
+        buildConfigField("String", "CINE_API", "\"${properties.getProperty("CINE_API")}\"")
+        buildConfigField("String", "CASTLE_API", "\"${properties.getProperty("CASTLE_API")}\"")
+        buildConfigField("String", "HDMOVIELOVER_API", "\"${properties.getProperty("HDMOVIELOVER_API")}\"")
     }
 }
 

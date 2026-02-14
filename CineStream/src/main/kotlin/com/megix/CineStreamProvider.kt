@@ -41,6 +41,9 @@ open class CineStreamProvider : MainAPI() {
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val CC_COOKIE = BuildConfig.CC_COOKIE
+        const val CINE_API = BuildConfig.CINE_API
+        const val CASTLE_API = BuildConfig.CASTLE_API
+        const val HDMOVIELOVER_API = BuildConfig.HDMOVIELOVER_API
         const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.io"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -87,11 +90,8 @@ open class CineStreamProvider : MainAPI() {
         const val notorrentAPI = "https://addon-osvh.onrender.com"
         const val xpassAPI = "https://play.xpass.top"
         const val cinemacityAPI = "https://cinemacity.cc"
-        const val castleAPI = "aHR0cHM6Ly9tZW93dHYudmZsaXguc2hvcA=="
-        const val cineAPI = "aHR0cHM6Ly9oaWNpbmUudmZsaXguc2hvcC9zdHJlbWlv"
         const val daramayoAPI = "https://dramayo.stream"
         const val dramafullAPI = "https://dramafull.cc"
-        const val projectfreetvAPI = "https://projectfreetv.sx"
         const val akwamAPI = "https://ak.sv"
 
         var leviathanAPI = """
