@@ -90,7 +90,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
-            { invokeVadapav(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -164,7 +163,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Anime World[Multi]", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
@@ -861,40 +860,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         }
-    }
-
-    suspend fun invokeVadapav(
-        title: String? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
-        val url = if(season == null) {
-            "$vadapavAPI/movies/$title ($year)/"
-        } else {
-            "$vadapavAPI/shows/$title ($year)/Season $seasonSlug/"
-        }
-
-        val selector = if(episode != null) "a.wrap.directory-entry:contains(E$episodeSlug)" else "a.wrap.directory-entry"
-
-        val aTag = app.get(url).document.selectFirst(selector) ?: return
-        val dlink = aTag.attr("href")
-        val text = aTag.text()
-
-        if(dlink.isNullOrEmpty()) return
-
-        callback.invoke(
-            newExtractorLink(
-                "Vadapav",
-                "[Vadapav] $text",
-                vadapavAPI + dlink,
-                ExtractorLinkType.VIDEO
-            ) {
-                this.quality = getIndexQuality(text)
-            }
-        )
     }
 
     suspend fun invokeDahmerMovies(
@@ -2050,6 +2015,83 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeNetmirror(
+        title: String?,
+        year: Int?,
+        season: Int?,
+        episode: Int?,
+        callback: (ExtractorLink) -> Unit,
+        serviceName: String,
+        ottCode: String,
+        urlPrefix: String,
+        epPrefix: String = "E",
+        ignoreYear: Boolean = false,
+        requiresToken: Boolean = false
+    ) {
+        if (netflixAPI.isEmpty()) return
+        val nfCookie = NFBypass(netflixAPI)
+        val cookies = mapOf("t_hash_t" to nfCookie, "ott" to ottCode, "hd" to "on")
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+
+        // 1. Search
+        val searchUrl = "$netflixAPI$urlPrefix/search.php?s=$title&t=${APIHolder.unixTime}"
+        val searchData = app.get(searchUrl, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
+        val netflixId = searchData?.searchResult?.firstOrNull { it.t.equals("${title?.trim()}", true) }?.id ?: return
+
+        // 2. Get Metadata (Post)
+        val postUrl = "$netflixAPI$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
+        val (nfTitle, finalId) = app.get(postUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/")
+            .parsedSafe<NetflixResponse>().let { media ->
+                // Year check logic
+                if (!ignoreYear && year != null && media?.year.toString() != year.toString()) return@let null to null
+
+                if (season == null) {
+                    media?.title to netflixId
+                } else {
+                    val seasonId = media?.season?.find { it.s == "$season" }?.id
+                    var episodeId: String? = null
+                    var page = 1
+
+                    // Loop for episodes
+                    while (episodeId == null && page < 10) {
+                        val epUrl = "$netflixAPI$urlPrefix/episodes.php?s=$seasonId&series=$netflixId&t=${APIHolder.unixTime}&page=$page"
+                        val data = app.get(epUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/").parsedSafe<NetflixResponse>()
+                        episodeId = data?.episodes?.find { it.ep == "$epPrefix$episode" }?.id
+                        if ((data?.nextPageShow ?: 0) != 1) break
+                        page++
+                    }
+                    media?.title to episodeId
+                }
+            }
+
+        if (finalId == null || nfTitle == null) return
+
+        // 3. Get Playlist
+        // Handle Token for Netflix
+        val tokenParam = if (requiresToken) {
+            "&h=${getNfVideoToken(netflixAPI, netflix2API, finalId, cookies)}"
+        } else ""
+
+        val playlistUrl = "$netflix2API$urlPrefix/playlist.php?id=$finalId&t=$nfTitle&tm=${APIHolder.unixTime}$tokenParam"
+
+        app.get(playlistUrl, headers = headers, cookies = cookies, referer = "$netflix2API/").text.let {
+            tryParseJson<ArrayList<NetflixResponse>>(it)
+        }?.firstOrNull()?.sources?.map { source ->
+            callback.invoke(
+                newExtractorLink(
+                    serviceName,
+                    "$serviceName Multi Audio 🌐",
+                    "$netflix2API${source.file}",
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.referer = "$netflix2API/"
+                    this.quality = getQualityFromName(source.file?.substringAfter("q=")?.substringBefore("&in"))
+                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=$ottCode; t_hash_t=$nfCookie")
+                }
+            )
+        }
+    }
+
     suspend fun invokeDisney(
         title: String? = null,
         year: Int? = null,
@@ -2058,70 +2100,12 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        if(netflixAPI.isEmpty()) return
-        val NfCookie = NFBypass(netflixAPI)
-        val cookies = mapOf(
-            "t_hash_t" to NfCookie,
-            "ott" to "hs",
-            "hd" to "on"
+        invokeNetmirror(title, year, season, episode, callback,
+            serviceName = "Hotstar",
+            ottCode = "hs",
+            urlPrefix = "/mobile/hs",
+            ignoreYear = true
         )
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/mobile/hs/search.php?s=$title&t=${APIHolder.unixTime}"
-        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
-        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals("${title?.trim()}", ignoreCase = true) }?.id
-
-        val (nfTitle, id) = app.get(
-            "$netflixAPI/mobile/hs/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/",
-        ).parsedSafe<NetflixResponse>().let { media ->
-            //provides wrong year
-            if (season == null) {
-                media?.title to netflixId
-            } else {
-                val seasonId = media?.season?.find { it.s == "$season" }?.id
-                var episodeId : String? = null
-                var page = 1
-
-                while(episodeId == null && page < 10) {
-                    val data = app.get(
-                        "$netflixAPI/mobile/hs/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
-                        headers = headers,
-                        cookies = cookies,
-                        referer = "$netflixAPI/",
-                    ).parsedSafe<NetflixResponse>()
-                    episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
-                    if(data?.nextPageShow != 1) { break }
-                    page++
-                }
-
-                media?.title to episodeId
-            }
-        }
-
-        app.get(
-            "$netflix2API/mobile/hs/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
-            headers = headers,
-            referer = "$netflix2API/",
-            cookies = cookies,
-        ).text.let {
-            tryParseJson<ArrayList<NetflixResponse>>(it)
-        }?.firstOrNull()?.sources?.map {
-            callback.invoke(
-                newExtractorLink(
-                    "Hotstar",
-                    "Hotstar Multi Audio 🌐",
-                    "$netflix2API/${it.file}",
-                ) {
-                    this.referer = "$netflix2API/"
-                    this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf(
-                        "Cookie" to "hd=on; ott=hs; t_hash_t=$NfCookie"
-                    )
-                }
-            )
-        }
     }
 
     suspend fun invokePrimeVideo(
@@ -2132,71 +2116,11 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        if(netflixAPI.isEmpty()) return
-        val NfCookie = NFBypass(netflixAPI)
-        val cookies = mapOf(
-            "t_hash_t" to NfCookie,
-            "ott" to "pv",
-            "hd" to "on"
+        invokeNetmirror(title, year, season, episode, callback,
+            serviceName = "PrimeVideo",
+            ottCode = "pv",
+            urlPrefix = "/pv"
         )
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/pv/search.php?s=$title&t=${APIHolder.unixTime}"
-        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
-        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals("${title?.trim()}", ignoreCase = true) }?.id
-
-        val (nfTitle, id) = app.get(
-            "$netflixAPI/pv/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/",
-        ).parsedSafe<NetflixResponse>().let { media ->
-            if (season == null && year.toString() == media?.year.toString()) {
-                media?.title to netflixId
-            } else if(year.toString() == media?.year.toString()) {
-                val seasonId = media?.season?.find { it.s == "$season" }?.id
-                var episodeId : String? = null
-                var page = 1
-
-                while(episodeId == null && page < 10) {
-                    val data = app.get(
-                        "$netflixAPI/pv/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
-                        headers = headers,
-                        cookies = cookies,
-                        referer = "$netflixAPI/",
-                    ).parsedSafe<NetflixResponse>()
-                    episodeId = data?.episodes?.find { it.ep == "E$episode" }?.id
-                    if(data?.nextPageShow != 1) { break }
-                    page++
-                }
-                media?.title to episodeId
-            } else {
-                null to null
-            }
-        }
-
-        app.get(
-            "$netflix2API/pv/playlist.php?id=${id ?: return}&t=${nfTitle ?: return}&tm=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflix2API/",
-        ).text.let {
-            tryParseJson<ArrayList<NetflixResponse>>(it)
-        }?.firstOrNull()?.sources?.map {
-            callback.invoke(
-                newExtractorLink(
-                    "PrimeVideo",
-                    "PrimeVideo Multi Audio 🌐",
-                    "${netflix2API}${it.file}",
-                    type = ExtractorLinkType.M3U8
-                ) {
-                    this.referer = "$netflix2API/"
-                    this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf(
-                        "Cookie" to "hd=on; ott=pv; t_hash_t=$NfCookie"
-                    )
-                }
-            )
-        }
     }
 
     suspend fun invokeNetflix(
@@ -2207,77 +2131,13 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        if(netflixAPI.isEmpty()) return
-
-        val NfCookie = NFBypass(netflixAPI)
-
-        val cookies = mapOf(
-            "t_hash_t" to NfCookie,
-            "hd" to "on",
-            "ott" to "nf"
+        invokeNetmirror(title, year, season, episode, callback,
+            serviceName = "Netflix",
+            ottCode = "nf",
+            urlPrefix = "",
+            epPrefix = "",
+            requiresToken = true
         )
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val url = "$netflixAPI/search.php?s=$title&t=${APIHolder.unixTime}"
-        val data = app.get(url, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
-        val netflixId = data ?.searchResult ?.firstOrNull { it.t.equals("${title?.trim()}", ignoreCase = true) }?.id
-
-        val (nfTitle, id) = app.get(
-            "$netflixAPI/post.php?id=${netflixId ?: return}&t=${APIHolder.unixTime}",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflixAPI/",
-        ).parsedSafe<NetflixResponse>().let { media ->
-            if (season == null && year.toString() == media?.year.toString()) {
-                media?.title to netflixId
-            } else if(year.toString() == media?.year.toString()) {
-                val seasonId = media?.season?.find { it.s == "$season" }?.id
-                var episodeId : String? = null
-                var page = 1
-                while(episodeId == null && page < 10) {
-                    val data = app.get(
-                        "$netflixAPI/episodes.php?s=${seasonId}&series=$netflixId&t=${APIHolder.unixTime}&page=$page",
-                        headers = headers,
-                        cookies = cookies,
-                        referer = "$netflixAPI/",
-                    ).parsedSafe<NetflixResponse>()
-                    episodeId = data?.episodes?.find { it.ep == "$episode" }?.id
-                    if(data?.nextPageShow != 1) { break }
-                    page++
-                }
-                media?.title to episodeId
-            }
-            else {
-                null to null
-            }
-        }
-
-        if(id == null || nfTitle == null) return
-
-        val token = getNfVideoToken(netflixAPI, netflix2API, id, cookies)
-
-        app.get(
-            "$netflix2API/playlist.php?id=${id}&t=${nfTitle}&tm=${APIHolder.unixTime}&h=$token",
-            headers = headers,
-            cookies = cookies,
-            referer = "$netflix2API/",
-        ).text.let {
-            tryParseJson<ArrayList<NetflixResponse>>(it)
-        }?.firstOrNull()?.sources?.map {
-            callback.invoke(
-                newExtractorLink(
-                    "Netflix",
-                    "Netflix Multi Audio 🌐",
-                    "${netflix2API}${it.file}",
-                    type = ExtractorLinkType.M3U8
-                ) {
-                    this.referer = "$netflix2API/"
-                    this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf(
-                        "Cookie" to "hd=on; ott=nf; t_hash_t=$NfCookie"
-                    )
-                }
-            )
-        }
     }
 
     suspend fun invokeHdmovie2(
