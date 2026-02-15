@@ -462,6 +462,7 @@ suspend fun NFBypass(mainUrl: String): String {
             if (count > 5) {
                 throw Exception("Failed to verify cookie")
             }
+            count++
         } while (!verifyCheck.contains("\"r\":\"n\""))
         verifyResponse.cookies["t_hash_t"].orEmpty()
     } catch (e: Exception) {
