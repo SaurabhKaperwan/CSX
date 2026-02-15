@@ -845,7 +845,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
             var quality = getIndexQuality(title + name)
 
-            if(quality == null && sourceName.contains("Castle")) quality = Qualities.P1080.value
+            if(quality == Qualities.Unknown.value
+             && sourceName.contains("Castle")
+            ) { quality = Qualities.P1080.value }
 
             callback.invoke(
                 newExtractorLink(

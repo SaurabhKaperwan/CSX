@@ -38,7 +38,7 @@ class NetflixProvider : MainAPI() {
         private var cookie_value: String = ""
     }
 
-    private suspend fun getCookie(): mapOf<String, String> {
+    private suspend fun getCookie(): Map<String, String> {
         if (cookie_value.isEmpty()) {
             cookie_value = bypass(newUrl)
         }
@@ -208,7 +208,7 @@ class NetflixProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
 
-        val token = getVideoToken(mainUrl, newUrl, id, cookies)
+        val token = getVideoToken(mainUrl, newUrl, id, getCookie())
         val playlist = app.get(
             "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,

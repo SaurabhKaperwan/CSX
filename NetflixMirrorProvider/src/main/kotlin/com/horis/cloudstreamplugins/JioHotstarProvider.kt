@@ -38,7 +38,7 @@ class JioHotstarProvider : MainAPI() {
         private var cookie_value: String = ""
     }
 
-    private suspend fun getCookie(): mapOf<String, String> {
+    private suspend fun getCookie(): Map<String, String> {
         if (cookie_value.isEmpty()) {
             cookie_value = bypass(newUrl)
         }
