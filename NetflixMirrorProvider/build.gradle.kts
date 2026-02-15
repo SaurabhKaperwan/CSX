@@ -1,11 +1,11 @@
 // use an integer for version numbers
-version = 44
+version = 45
 
 cloudstream {
     //language = "en"
     // All of these properties are optional, you can safely remove them
 
-    description = "Netflix, PrimeVideo, JioHotstar(Hotstar, Disney, Paramount, HBO, Peacock) Content in Multiple Languages"
+    description = "Netflix, PrimeVideo(Lionsgate), JioHotstar(Hotstar, Disney, Paramount, HBO, Peacock) Content in Multiple Languages"
     authors = listOf("megix")
 
     /**
