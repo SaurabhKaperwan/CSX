@@ -38,7 +38,7 @@ class NetflixProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "user_token" to "233123f803cf02184bf6c67e149cdd50",
@@ -75,7 +75,7 @@ class NetflixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "hd" to "on",
@@ -97,7 +97,7 @@ class NetflixProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val id = parseJson<Id>(url).id
         val cookies = mapOf(
             "t_hash_t" to cookie_value,

@@ -91,9 +91,14 @@ suspend fun bypass(mainUrl: String): String {
     val newCookie = try {
         var verifyCheck: String
         var verifyResponse: NiceResponse
+        var count = 0
         do {
             verifyResponse = app.post("$mainUrl/tv/p.php")
             verifyCheck = verifyResponse.text
+            count++
+            if (count > 5) {
+                throw Exception("Failed to verify cookie")
+            }
         } while (!verifyCheck.contains("\"r\":\"n\""))
         verifyResponse.cookies["t_hash_t"].orEmpty()
     } catch (e: Exception) {

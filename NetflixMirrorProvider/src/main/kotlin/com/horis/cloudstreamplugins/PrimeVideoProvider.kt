@@ -29,7 +29,7 @@ class PrimeVideoProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net22.cc"
+    override var mainUrl = "https://net52.cc"
     private var newUrl = "https://net52.cc"
     override var name = "PrimeVideo"
 
@@ -40,7 +40,7 @@ class PrimeVideoProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
@@ -79,7 +79,7 @@ class PrimeVideoProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",
@@ -98,7 +98,7 @@ class PrimeVideoProvider : MainAPI() {
 
     override suspend fun load(url: String): LoadResponse? {
         val id = parseJson<Id>(url).id
-        cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
             "ott" to "pv",

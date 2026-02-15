@@ -2038,7 +2038,7 @@ object CineStreamExtractors : CineStreamProvider() {
         requiresToken: Boolean = false
     ) {
         if (netflixAPI.isEmpty()) return
-        val nfCookie = NFBypass(netflixAPI)
+        val nfCookie = NFBypass(netflix2API)
         val cookies = mapOf("t_hash_t" to nfCookie, "ott" to ottCode, "hd" to "on")
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
 
