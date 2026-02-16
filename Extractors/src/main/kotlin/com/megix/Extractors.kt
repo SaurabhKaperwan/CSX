@@ -521,21 +521,21 @@ open class GDFlix : ExtractorApi() {
             when {
                 text.contains("FSL V2") -> { myCallback(link, "[FSL V2]") }
 
+                text.contains("DIRECT DL") -> { myCallback(link, "[Direct]") }
+
+                text.contains("DIRECT SERVER") -> { myCallback(link, "[Direct]") }
+
+                text.contains("CLOUD DOWNLOAD [R2]") -> { myCallback(link, "[Cloud]") }
+
                 text.contains("FAST CLOUD") -> {
 
                     val dlink = app.get(latestUrl + link)
                         .document
                         .select("div.card-body a")
                         .attr("href")
-
+                    if(dlink == "") return@amap
                     myCallback(dlink, "[FAST CLOUD]")
                 }
-
-                text.contains("DIRECT DL") -> { myCallback(link, "[Direct]") }
-
-                text.contains("DIRECT SERVER") -> { myCallback(link, "[Direct]") }
-
-                text.contains("CLOUD DOWNLOAD [R2]") -> { myCallback(link, "[Cloud]") }
 
                 link.contains("pixeldra") -> {
                     val baseUrlLink = getBaseUrl(link)

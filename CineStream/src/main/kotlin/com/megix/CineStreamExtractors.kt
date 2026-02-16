@@ -54,6 +54,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
+            { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -66,11 +67,11 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
@@ -131,6 +132,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         runAllAsync(
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
+            { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -171,6 +173,52 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
+    }
+
+    suspend fun invokeFlixIndia(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(title == null) return
+        val res = app.get(flixIndiaAPI)
+        val sessionId = res.cookies["PHPSESSID"] ?: return
+        val csrfToken = Regex(
+            """window\.CSRF_TOKEN\s*=\s*['"]([a-f0-9]{64})['"]"""
+        ).find(res.text)?.groupValues?.get(1) ?: return
+
+        val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+
+        val searchTitle = if (season == null) "${title.replace(":","")} $year" else "${title.replace(":","")} S${seasonSlug}E${episodeSlug}"
+
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Accept" to "*/*",
+            "Referer" to "$flixIndiaAPI/",
+            "Origin" to flixIndiaAPI.removeSuffix("/"),
+            "X-Requested-With" to "XMLHttpRequest",
+            "Cookie" to "PHPSESSID=$sessionId"
+        )
+
+        val body = mapOf(
+            "action" to "search",
+            "csrf_token" to csrfToken,
+            "q" to searchTitle
+        )
+
+        val results = app.post(
+            url = "$flixIndiaAPI/",
+            data = body,
+            headers = headers,
+            timeout = 30
+        ).parsedSafe<Flixindia>()?.results.orEmpty()
+
+        results.amap { item ->
+            loadSourceNameExtractor("FlixIndia", item.url, "", subtitleCallback, callback)
+        }
     }
 
     suspend fun invokeAkwam(

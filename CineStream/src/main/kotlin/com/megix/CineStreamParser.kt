@@ -3,8 +3,8 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
-//year => for movie : release year for movie : season 1 release year
-//airedYear => for movie : release year for movie : episode release year
+//year => for movie : release year for series : season 1 release year
+//airedYear => for movie : release year for series : episode release year
 //imdbTitle, imdbSeason, imdbEpisode, imdbYear => for kitsu providers
 
 data class AllLoadLinksData(
@@ -166,6 +166,15 @@ data class StremioSubtitle(
     val lang: String? = null,
     val title: String? = null,
     val url: String? = null,
+)
+
+//FlixIndia
+data class Flixindia(
+    val results: List<FlixindiaResult>
+)
+
+data class FlixindiaResult(
+    val url: String
 )
 
 //Madplay

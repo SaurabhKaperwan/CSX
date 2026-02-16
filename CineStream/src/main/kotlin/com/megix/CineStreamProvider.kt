@@ -83,7 +83,6 @@ open class CineStreamProvider : MainAPI() {
         const val kissKhAPI = "https://kisskh.ws"
         const val bollywoodAPI = "https://tga-hd.api.hashhackers.com"
         const val bollywoodBaseAPI = "https://bollywood.eu.org"
-        const val vadapavAPI = "https://vadapav.mov"
         const val YflixAPI = "https://solarmovie.fi"
         const val vidstackAPI = "https://api.smashystream.top/api/v1"
         const val vidstackBaseAPI = "https://smashyplayer.top"
@@ -93,6 +92,7 @@ open class CineStreamProvider : MainAPI() {
         const val daramayoAPI = "https://dramayo.stream"
         const val dramafullAPI = "https://dramafull.cc"
         const val akwamAPI = "https://ak.sv"
+        const val flixIndiaAPI = "https://m.flixindia.xyz"
 
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
