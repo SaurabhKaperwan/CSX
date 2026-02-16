@@ -124,8 +124,6 @@ open class CineStreamProvider : MainAPI() {
         val movies4uAPI get() = api("movies4u")
         val skymoviesAPI get() = api("skymovies")
         val hindMoviezAPI get() = api("hindmoviez")
-        val moviesflixAPI get() = api("moviesflix")
-        val hdmoviesflixAPI get() = api("hdmoviesflix")
         val hdmovie2API get() = api("hdmovie2")
         val netflixAPI get() = api("nfmirror")
         val netflix2API get() = api("nfmirror2")
@@ -136,8 +134,6 @@ open class CineStreamProvider : MainAPI() {
         val uhdmoviesAPI get() = api("uhdmovies")
         val MoviesmodAPI get() = api("moviesmod")
         val topmoviesAPI get() = api("topmovies")
-        val katmoviehdAPI get() = api("katmoviehd")
-        val moviesBabaAPI get() = api("moviesbaba")
         val toonStreamAPI get() = api("toonstream")
         val hianimeAPI get() = api("hianime")
         val nuvioStreamsAPI get() = api("nuvio")
@@ -145,6 +141,7 @@ open class CineStreamProvider : MainAPI() {
         val animekaiAPI get() = api("animekai")
         val rtallyAPI get() = api("rtally")
     }
+
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
     override val supportedTypes = setOf(

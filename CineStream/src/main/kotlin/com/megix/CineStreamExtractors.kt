@@ -62,7 +62,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
@@ -96,8 +96,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
-            { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
-            { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
@@ -119,8 +117,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-            { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeMoviesflix("Hdmoviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
         )
     }
 
@@ -1345,47 +1341,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeKatMovieHd(
-        sourceName: String,
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val api = if(sourceName == "KatMovieHd") katmoviehdAPI else moviesBabaAPI
-        val url = "$api/?s=$imdbId"
-        val headers = mapOf(
-            "Referer" to api,
-            "Origin" to api,
-            "User-Agent" to USER_AGENT
-        )
-        val doc = app.get(url, headers).document
-        val link = if (season == null) {
-            doc.selectFirst("div.post-thumb > a")?.attr("href")
-        } else {
-            doc.select("div.post-thumb > a")
-                .firstOrNull { it.attr("title").contains("Season $season", ignoreCase = true) }
-                ?.attr("href")
-        } ?: return
-
-        val div = app.get(link, headers).document.selectFirst("div.entry-content") ?: return
-        val pattern = """<(?:a|iframe)\s[^>]*(?:href|src)="(https:\/\/links\.kmhd\.net\/play\?id=[^"]+)"[^>]*>""".toRegex()
-        val match = pattern.find(div.toString())
-        val watchUrl = match?.groupValues?.get(1) ?: return
-        val watchDoc = app.get(watchUrl, headers).toString()
-        val linksmap = extractKatStreamingLinks(watchDoc, episode)
-        linksmap.amap { (key, value) ->
-            loadSourceNameExtractor(
-                sourceName,
-                value,
-                watchUrl,
-                subtitleCallback,
-                callback
-            )
-        }
-    }
-
     suspend fun invokeSudatchi(
         aniId: Int? = null,
         episode: Int? = null,
@@ -2330,73 +2285,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeMoviesflix(
-        sourceName: String,
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val api = if(sourceName == "Moviesflix") moviesflixAPI else hdmoviesflixAPI
-
-        app.get("$api/?s=$id").document.select("a.post-image").amap {
-            val doc = app.get(it.attr("href")).document
-            if(episode == null) {
-                doc.select("a.maxbutton").amap { button ->
-                    val document = app.get(button.attr("href")).document
-                    document.select("a.maxbutton").amap { source ->
-                        val linkText = source.text()
-                        if (!linkText.contains("Google Drive", ignoreCase = true) &&
-                            !linkText.contains("Other Download Links", ignoreCase = true) &&
-                            !linkText.contains("G-Direct", ignoreCase = true)
-                        ) {
-                            loadSourceNameExtractor(
-                                sourceName,
-                                source.attr("href"),
-                                "",
-                                subtitleCallback,
-                                callback,
-                            )
-                        }
-                    }
-                }
-            }
-            else {
-                doc.select("p:has(a.maxbutton)").amap { p ->
-                    val possibleMatches = listOf(
-                        "Season $season",
-                        "Season 0$season",
-                        "S$season",
-                        "S0$season"
-                    )
-                    if(possibleMatches.any {
-                        p.previousElementSibling()?.previousElementSibling()?.text()?.contains(it) == true
-                    }) {
-                        p.select("a.maxbutton").amap { button ->
-                            val buttonText = button.text()
-                            if(!buttonText.contains("G-Direct", ignoreCase = true) &&
-                                !buttonText.contains("Drop Galaxy", ignoreCase = true) &&
-                                !buttonText.contains("G-Drive", ignoreCase = true) &&
-                                !buttonText.contains("Mega.nz", ignoreCase = true)
-                            ) {
-                                app.get(button.attr("href")).document.select("h3 > strong > a").getOrNull(episode-1)?.let { source ->
-                                    loadSourceNameExtractor(
-                                        sourceName,
-                                        source.attr("href"),
-                                        "",
-                                        subtitleCallback,
-                                        callback,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     suspend fun invokeMovies4u(
         id: String? = null,
         title: String? = null,
@@ -3065,59 +2953,47 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeTopMovies(
-        title: String? = null,
-        year: Int? = null,
+        imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val fixTitle = title?.replace("-", " ")?.substringBefore(":")
-        var url = ""
-        val searchtitle = title?.replace("-", " ")?.substringBefore(":").createSlug()
-        if (season == null) {
-            url = "$topmoviesAPI/search/$fixTitle $year"
-        } else {
-            url = "$topmoviesAPI/search/$fixTitle Season $season $year"
-        }
-        var res1 =
-            app.get(url).document.select("#content_box article")
-                .toString()
-        val hrefpattern =
-            Regex("""(?i)<article[^>]*>\s*<a\s+href="([^"]*$searchtitle[^"]*)\"""").find(res1)?.groupValues?.get(
-                1
-            )
         val hTag = if (season == null) "h3" else "div.single_post h3"
         val aTag = if (season == null) "Download" else "G-Drive"
         val sTag = if (season == null) "" else "(Season $season)"
-        //val media =res.selectFirst("div.post-cards article:has(h2.title.front-view-title:matches((?i)$title.*$match)) a")?.attr("href")
-        val res = app.get(
-            hrefpattern ?: return,
-            headers = mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"),
-            interceptor = wpRedisInterceptor
-        ).document
-        val entries = if (season == null) {
-            res.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
-                .filter { element -> !element.text().contains("Batch/Zip", true) && !element.text().contains("Info:", true) }.reversed()
-        } else {
-            res.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
-                .filter { element -> !element.text().contains("Batch/Zip", true) || !element.text().contains("720p & 480p", true) || !element.text().contains("Series Info", true)}
-        }
-        entries.amap {
-            val href =
-                it.nextElementSibling()?.select("a.maxbutton:contains($aTag)")?.attr("href")
-            val selector =
-                if (season == null) "a.maxbutton-5:contains(Server)" else "h3 a:matches(Episode $episode)"
-            if (!href.isNullOrEmpty()) {
-                app.get(
-                    href,
-                    headers = mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"),
-                    interceptor = wpRedisInterceptor, timeout = 10L
-                ).document.selectFirst(selector)
-                    ?.attr("href")?.let {
-                        val link = bypassHrefli(it).toString()
-                        loadSourceNameExtractor("Topmovies", link, referer = "", subtitleCallback, callback)
-                    }
+
+        app.get("$topmoviesAPI/search/$imdbId").document.select("#content_box article > a").amap { element ->
+            val res = app.get(
+                element.attr("href"),
+                headers = mapOf("User-Agent" to USER_AGENT),
+                interceptor = wpRedisInterceptor
+            ).document
+
+            val entries = if (season == null) {
+                res.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
+                    .filter { element -> !element.text().contains("Batch/Zip", true) && !element.text().contains("Info:", true) }.reversed()
+            } else {
+                res.select("$hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p|4K))")
+                    .filter { element -> !element.text().contains("Batch/Zip", true) || !element.text().contains("720p & 480p", true) || !element.text().contains("Series Info", true)}
+            }
+
+            entries.amap {
+                val source =
+                    it.nextElementSibling()?.select("a.maxbutton:contains($aTag)")?.attr("href")
+                val selector =
+                    if (season == null) "a.maxbutton-5:contains(Server)" else "h3 a:matches(Episode $episode)"
+                if (!source.isNullOrEmpty()) {
+                    app.get(
+                        source,
+                        headers = mapOf("User-Agent" to USER_AGENT),
+                        interceptor = wpRedisInterceptor
+                    ).document.selectFirst(selector)
+                        ?.attr("href")?.let {
+                            val link = bypassHrefli(it).toString()
+                            loadSourceNameExtractor("Topmovies", link, referer = "", subtitleCallback, callback)
+                        }
+                }
             }
         }
     }
