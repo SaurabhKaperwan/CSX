@@ -459,10 +459,10 @@ suspend fun NFBypass(mainUrl: String): String {
         do {
             verifyResponse = app.post("$mainUrl/tv/p.php")
             verifyCheck = verifyResponse.text
-            if (count > 5) {
-                throw Exception("Failed to verify cookie")
-            }
             count++
+            if (count > 5) {
+                throw Exception("Failed to get cookie")
+            }
         } while (!verifyCheck.contains("\"r\":\"n\""))
         verifyResponse.cookies["t_hash_t"].orEmpty()
     } catch (e: Exception) {
@@ -624,25 +624,29 @@ fun getEpisodeSlug(
     }
 }
 
-//Dahmer
 fun getIndexQuality(str: String?): Int {
     if (str.isNullOrBlank()) return Qualities.Unknown.value
 
-    val lowerStr = str.lowercase()
+    // Check for explicit "1080p" like style formats
+    val exactResolution = Regex("""(\d{3,4})[pP]""").find(str)
+        ?.groupValues?.getOrNull(1)
+        ?.toIntOrNull()
 
+    if (exactResolution != null) {
+        return exactResolution
+    }
+
+    // Check for marketing keywords if no specific number found
+    val lowerStr = str.lowercase()
     return when {
         lowerStr.contains("8k") -> 4320
         lowerStr.contains("4k") -> 2160
         lowerStr.contains("2k") -> 1440
-        else -> {
-            Regex("""(\d{3,4})[pP]""").find(str)
-                ?.groupValues?.getOrNull(1)
-                ?.toIntOrNull()
-                ?: Qualities.Unknown.value
-        }
+        else -> Qualities.Unknown.value
     }
 }
 
+//Dahmer
 fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
     return if (fullTag) Regex("(?i)(.*)\\.(?:mkv|mp4|avi)").find(str ?: "")?.groupValues?.get(1)
         ?.trim() ?: str ?: "" else Regex("(?i)\\d{3,4}[pP]\\.?(.*?)\\.(mkv|mp4|avi)").find(

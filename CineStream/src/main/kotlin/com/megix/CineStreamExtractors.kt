@@ -783,93 +783,37 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeStremioStreams(
-        sourceName: String,
-        api: String,
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+        sourceName: String, api: String, imdbId: String? = null,
+        season: Int? = null, episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season == null && sourceName == "Hdmovielover") {
-            "$api/movie?imdbid=$imdbId"
-        } else if(sourceName == "Hdmovielover") {
-            "$api/series?imdbid=$imdbId&s=$season&e=$episode"
-        } else if(season == null) {
-            "$api/stream/movie/$imdbId.json"
-        } else {
-            "$api/stream/series/$imdbId:$season:$episode.json"
-        }
+        val isMovie = season == null
+        val url = if (sourceName == "Hdmovielover") "$api/${if (isMovie) "movie?imdbid=$imdbId" else "series?imdbid=$imdbId&s=$season&e=$episode"}"
+                else "$api/stream/${if (isMovie) "movie/$imdbId" else "series/$imdbId:$season:$episode"}.json"
 
-        val json = app.get(url).text
-        val gson = Gson()
-        val data = gson.fromJson(json, StreamifyResponse::class.java)
+        Gson().fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
+            val title = s.title ?: ""
+            val name = s.name?.replace(" (SLOW) -", "") ?: title
 
-        data.streams.forEach { stream ->
-            val title = stream.title ?: ""
-            val name = stream.name?.replace(" (SLOW) -", "") ?: stream.title ?: ""
-            val type = if(
-                title.contains("hls") ||
-                title.contains("m3u8") ||
-                name.contains("Vixsrc") ||
-                sourceName.contains("Castle")
-            ) {
-                ExtractorLinkType.M3U8
-            } else {
-                INFER_TYPE
-            }
+            // Block filters
+            if (s.url.contains("github.com") || s.url.contains("googleusercontent") ||
+                listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM").any { name.contains(it) } ||
+                title.contains("redirecting")) return@forEach
 
-            val headers = mapOf(
-                "User-Agent" to (stream.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
-                "Referer"    to (stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
-                "Origin"     to (stream.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
-            )
+            val type = if (sourceName.contains("Castle") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
+            val req = s.behaviorHints?.proxyHeaders?.request
+            val streamUrl = if (sourceName == "Nodebrid") URLDecoder.decode(s.url.substringAfter("url=").substringBefore("&"), "UTF-8") else s.url
 
-            val blockedUrls = listOf("https://github.com", "video-downloads.googleusercontent")
-            val blockedNames = listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM")
-            val blockedTitles = listOf("redirecting")
+            // Quality fallback
+            val quality = getIndexQuality(title + name).takeIf { it != Qualities.Unknown.value }
+                ?: if (sourceName.contains("Castle")) Qualities.P1080.value else Qualities.Unknown.value
 
-            if (blockedUrls.any { stream.url.contains(it) } ||
-                blockedNames.any { key -> stream.name?.contains(key) == true } ||
-                blockedTitles.any { key -> stream.title?.contains(key) == true }
-            ) {
-                return@forEach
-            }
-
-            val streamUrl = if(sourceName == "Nodebrid") {
-                stream.url.substringAfter("url=").substringBefore("&")
-                .let { URLDecoder.decode(it, StandardCharsets.UTF_8.name()) }
-            } else {
-                stream.url
-            }
-
-            var quality = getIndexQuality(title + name)
-
-            if(quality == Qualities.Unknown.value
-             && sourceName.contains("Castle")
-            ) { quality = Qualities.P1080.value }
-
-            callback.invoke(
-                newExtractorLink(
-                    sourceName,
-                    "[$sourceName] $title",
-                    streamUrl,
-                    type,
-                ) {
-                    this.referer = stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
-                    this.quality = quality
-                    this.headers = headers
-                }
-            )
-
-            stream.subtitles?.forEach { subtitle ->
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        getLanguage(subtitle.lang) ?: subtitle.lang,
-                        subtitle.url
-                    )
-                )
-            }
+            callback(newExtractorLink(sourceName, "[$sourceName] ${if (sourceName == "Hdmovielover") getSimplifiedTitle(title) else title}", streamUrl, type) {
+                this.referer = req?.Referer ?: ""
+                this.quality = quality
+                this.headers = mapOf("User-Agent" to (req?.userAgent ?: USER_AGENT), "Referer" to (req?.Referer ?: ""), "Origin" to (req?.Origin ?: ""))
+            })
+            s.subtitles?.forEach { subtitleCallback(newSubtitleFile(getLanguage(it.lang) ?: it.lang, it.url)) }
         }
     }
 
