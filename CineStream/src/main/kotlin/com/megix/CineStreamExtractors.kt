@@ -113,7 +113,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -165,7 +164,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -2911,37 +2909,28 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val headers = mapOf(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "cookie" to "xla=s4t",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "sec-ch-ua" to "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Microsoft Edge\";v=\"120\"",
-            "sec-ch-ua-mobile" to "?0",
-            "sec-ch-ua-platform" to "\"Linux\"",
-            "Sec-Fetch-Dest" to "document",
-            "Sec-Fetch-Mode" to "navigate",
-            "Sec-Fetch-Site" to "none",
-            "Sec-Fetch-User" to "?1",
-            "Upgrade-Insecure-Requests" to "1",
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-        )
-        val api = if(sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
+        val query = id ?: return
+        val api = if (sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
 
-        val url = "$api/?s=${id ?: return}"
-        app.get(
-            url,
-            referer = api,
-            headers = headers
-        ).document.select("article h2 a,article h3 a").amap {
-            val res = app.get(
-                it.attr("href"),
-                referer = api,
-                headers = headers
-            ).document
+        val movieUrls = if (sourceName == "VegaMovies") {
+            val searchUrl = "$api/search.php?q=$query"
+            val json = app.get(searchUrl).text
+            tryParseJson<VegaSearchResponse>(json)?.hits?.map { hit ->
+                val permalink = hit.document.permalink
+                api + permalink
+            } ?: emptyList()
+        } else {
+            val searchUrl = "$api/?s=$query"
+            val doc = app.get(searchUrl).document
+            doc.select("article h2 a, article h3 a").map { it.attr("href") }
+        }
+
+        movieUrls.amap { pageUrl ->
+            val res = app.get(pageUrl).document
             if(season == null) {
                 res.select("button.dwd-button").amap {
                     val link = it.parent()?.attr("href") ?: return@amap
-                    val doc = app.get(link, referer = api, headers = headers).document
+                    val doc = app.get(link).document
                     val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud))")
                         ?.parent()
                         ?.attr("href")
@@ -2952,7 +2941,7 @@ object CineStreamExtractors : CineStreamProvider() {
             else {
                 res.select("h4:matches((?i)(Season $season)), h3:matches((?i)(Season $season))").amap { h4 ->
                     h4.nextElementSibling()?.select("a:matches((?i)(V-Cloud|Single|Episode|G-Direct))")?.amap {
-                        val doc = app.get(it.attr("href"), referer = api, headers = headers).document
+                        val doc = app.get(it.attr("href")).document
                         val epLink = doc.selectFirst("h4:contains(Episodes):contains($episode)")
                             ?.nextElementSibling()
                             ?.selectFirst("a:matches((?i)(V-Cloud))")

@@ -11,14 +11,15 @@ import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import java.net.URI
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://m.vegamovies.cricket"
+    override var mainUrl = "https://vegamovies.cologne"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
     override val hasDownloadSupport = true
-    val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
+    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
 
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -50,89 +51,68 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
     }
 
-    open val headers = mapOf(
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "cookie" to "xla=s4t",
-        "Accept-Language" to "en-US,en;q=0.9",
-        "sec-ch-ua" to "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Microsoft Edge\";v=\"120\"",
-        "sec-ch-ua-mobile" to "?0",
-        "sec-ch-ua-platform" to "\"Linux\"",
-        "Sec-Fetch-Dest" to "document",
-        "Sec-Fetch-Mode" to "navigate",
-        "Sec-Fetch-Site" to "none",
-        "Sec-Fetch-User" to "?1",
-        "Upgrade-Insecure-Requests" to "1",
-        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-    )
-
     override val mainPage = mainPageOf(
         "$mainUrl/page/%d/" to "Home",
-        "$mainUrl/web-series/netflix/page/%d/" to "Netflix",
-        "$mainUrl/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
-        "$mainUrl/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
-        "$mainUrl/web-series/mx-original/page/%d/" to "MX Original",
-        "$mainUrl/anime-series/page/%d/" to "Anime Series",
-        "$mainUrl/korean-series/page/%d/" to "Korean Series"
+        "$mainUrl/category/web-series/netflix/page/%d/" to "Netflix",
+        "$mainUrl/category/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
+        "$mainUrl/category/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
+        "$mainUrl/category/web-series/mx-original/page/%d/" to "MX Original",
+        "$mainUrl/category/anime-series/page/%d/" to "Anime Series",
+        "$mainUrl/category/korean-series/page/%d/" to "Korean Series"
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(
-            request.data.format(page),
-            referer = mainUrl,
-            headers = headers
-        ).document
-        val home = document.select("article.entry").mapNotNull { it.toSearchResult() }
+        val document = app.get(request.data.format(page)).document
+        val home = document.select("div.movies-grid > a").mapNotNull { it.toSearchResult() }
         return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.select("h2 > a").text().replace("Download ", "")
-        val href = this.select("a").attr("href")
+        val title = this.select("img").attr("alt").replace("Download ", "")
+        val href = this.attr("href")
         val posterUrl = httpsify(this.select("img").attr("src"))
 
-        return newMovieSearchResponse(title, href, TvType.Movie) {
+        return newMovieSearchResponse(title, URI(href).path, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get(
-            "$mainUrl/page/$page/?s=$query",
-            referer = mainUrl,
-            headers = headers
-        ).document
-
-        val results = document.select("article.entry")
-            .mapNotNull { it.toSearchResult() }
-        val hasNext = if(results.isEmpty()) false else true
-        return newSearchResponseList(results, hasNext)
+        val json = app.get("$mainUrl/search.php?q=$query&page=$page").text
+        val response = tryParseJson<VegaSearchResponse>(json) ?: return null
+        val results = response.hits.map { hit ->
+            val doc = hit.document
+            newMovieSearchResponse(doc.post_title.replace("Download ", ""), doc.permalink, TvType.Movie) {
+                this.posterUrl = doc.post_thumbnail
+            }
+        }
+        return newSearchResponseList(results)
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(
-            url,
-            referer = mainUrl,
-            headers = headers
-        ).document
-        var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
-        val ogTitle = title
-        var posterUrl = document.select("meta[property=og:image]").attr("content")
-        val div = document.selectFirst(".entry-content, .entry-inner")
-        var description = div?.selectFirst("h3:matches((?i)(SYNOPSIS|PLOT)), h4:matches((?i)(SYNOPSIS|PLOT))")?.nextElementSibling()?.text()
-        val imdbUrl = div?.selectFirst("a:matches((?i)(Rating))")?.attr("href")
-        val heading = div?.selectFirst("h3 > strong > span")
+        val document = app.get(fixUrl(url)).document
+        var title = document.select("header.post-header > h1").text().replace("Download ", "")
+        var posterUrl = document.select("p > img").attr("src")
+        val imdbUrl =  document.select("a[href*=\"imdb\"]").attr("href")
+        val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
 
-        val tvtype = if (heading?.text()
-            ?.let { it.contains("Series") || it.contains("SHOW") } == true) {
-                "series"
-        }   else {
+        val tvtype = if(
+            document
+            .selectFirst("h3:has(span:contains(Series-SYNOPSIS/PLOT))") != null
+        ) {
+            "series"
+        } else {
             "movie"
         }
 
-        val imdbId = imdbUrl?.substringAfter("title/")?.substringBefore("/")
+        var description = document
+            .selectFirst("h3:has(span:contains(SYNOPSIS/PLOT))")
+            ?.nextElementSibling()
+            ?.text()
+
         val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
         val responseData = tryParseJson<ResponseData>(jsonResponse)
 
@@ -154,17 +134,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         if (tvtype == "series") {
-            if(title != ogTitle) {
-                val checkSeason = Regex("""Season\s*\d*1|S\s*\d*1""").find(ogTitle)
-                if (checkSeason == null) {
-                    val seasonText = Regex("""Season\s*\d+|S\s*\d+""").find(ogTitle)?.value
-                    if(seasonText != null) {
-                        title = title + " " + seasonText
-                    }
-                }
-            }
-            val hTags = div?.select("h3:matches((?i)(4K|[0-9]*0p)),h5:matches((?i)(4K|[0-9]*0p))")
-                ?.filter { element -> !element.text().contains("Zip", true) } ?: emptyList()
+            val hTags = document.select("main > h3:matches((?i)(4K|[0-9]*0p)),main > h5:matches((?i)(4K|[0-9]*0p))")
+                .filter { element -> !element.text().contains("Zip", true) } ?: emptyList()
 
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
@@ -194,7 +165,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
                 val Eurl = unilink?.attr("href")
                 Eurl?.let { eurl ->
-                    val document2 = app.get(eurl, headers = headers).document
+                    val document2 = app.get(eurl).document
                     val vcloudLinks = document2.select("p > a").mapNotNull {
                         if(it.attr("href").contains("vcloud", true)) {
                             it.attr("href")
@@ -246,11 +217,11 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 addImdbUrl(imdbUrl)
             }
         } else {
-            val buttons = document.select("p > a:has(button)")
+            val buttons = document.select("a:has(button.dwd-button)")
             val data = buttons.mapNotNull { button ->
                 val link = fixUrl(button.attr("href"))
-                val doc = app.get(link, headers = headers).document
-                val source = doc.selectFirst("a:contains(V-Cloud)")?.attr("href").toString()
+                val doc = app.get(link).document
+                val source = doc.select("a:contains(V-Cloud)").attr("href")
                 EpisodeLink(source)
             }
             return newMovieLoadResponse(title, url, TvType.Movie, data) {
@@ -324,5 +295,21 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     data class EpisodeLink(
         val source: String
+    )
+
+    data class VegaSearchResponse(
+        val hits: List<VegaHit>
+    )
+
+    data class VegaHit(
+        val document: VegaDocument
+    )
+
+    data class VegaDocument(
+        val id: String,
+        val imdb_id: String?,
+        val post_title: String,
+        val permalink: String,
+        val post_thumbnail: String
     )
 }

@@ -78,7 +78,6 @@ open class CineStreamProvider : MainAPI() {
         const val anizipAPI = "https://api.ani.zip"
         const val mappleAPI = "https://mapple.uk"
         const val vidzeeApi = "https://player.vidzee.wtf"
-        const val nodebridAPI = "https://nodebrid.fly.dev"
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
         const val kissKhAPI = "https://kisskh.ws"
         const val bollywoodAPI = "https://tga-hd.api.hashhackers.com"

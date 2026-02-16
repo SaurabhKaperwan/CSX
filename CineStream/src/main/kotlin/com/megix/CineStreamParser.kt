@@ -331,6 +331,23 @@ data class StreamAsiaSubtitle (
   var url  : String? = null
 )
 
+//Vega
+data class VegaSearchResponse(
+    val hits: List<VegaHit>
+)
+
+data class VegaHit(
+    val document: VegaDocument
+)
+
+data class VegaDocument(
+    val id: String,
+    val imdb_id: String?,
+    val post_title: String,
+    val permalink: String,
+    val post_thumbnail: String
+)
+
 //Anichi
 
 data class AkIframe(
