@@ -136,7 +136,6 @@ open class CineStreamProvider : MainAPI() {
         val topmoviesAPI get() = api("topmovies")
         val toonStreamAPI get() = api("toonstream")
         val hianimeAPI get() = api("hianime")
-        val nuvioStreamsAPI get() = api("nuvio")
         val XDmoviesAPI get() = api("xdmovies")
         val animekaiAPI get() = api("animekai")
         val rtallyAPI get() = api("rtally")

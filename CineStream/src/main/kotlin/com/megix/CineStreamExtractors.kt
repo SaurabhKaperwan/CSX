@@ -159,7 +159,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -1403,7 +1402,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val episodeNumber = episode ?: 1
         val gojoAPI = gojoBaseAPI.replace("https://", "https://b.")
         val headers = mapOf(
-            "Referer" to gojoBaseAPI,
+            "Referer" to "$gojoBaseAPI/",
             "Origin" to gojoBaseAPI
         )
 
@@ -1419,12 +1418,16 @@ object CineStreamExtractors : CineStreamProvider() {
                     try {
                         val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=sub", headers = headers).text
                         getGojoStreams(json, "sub", server, gojoBaseAPI, subtitleCallback ,callback)
+                    } catch (e: Exception) {
+                        println("Error Gojo Sub: $e")
                     }
                 },
                 {
                     try {
                         val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=dub", headers = headers).text
                         getGojoStreams(json, "dub", server, gojoBaseAPI, subtitleCallback ,callback)
+                    } catch (e: Exception) {
+                        println("Error Gojo Dub: $e")
                     }
                 }
             )
