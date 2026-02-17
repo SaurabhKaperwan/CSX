@@ -11,7 +11,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import java.net.URI
 
 class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://luxmovies.tax"
+    override var mainUrl = "https://luxmovies.cash"
     override var name = "LuxMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -226,50 +226,4 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
             }
         }
     }
-
-    data class Meta(
-        val id: String?,
-        val imdb_id: String?,
-        val type: String?,
-        val poster: String?,
-        val background: String?,
-        val moviedb_id: Int?,
-        val name: String?,
-        val description: String?,
-        val genre: List<String>?,
-        val genres: List<String>?,
-        val releaseInfo: String?,
-        val status: String?,
-        val runtime: String?,
-        val cast: List<String>?,
-        val language: String?,
-        val country: String?,
-        val imdbRating: String?,
-        val year: String?,
-        val videos: List<EpisodeDetails>?,
-    )
-
-    data class EpisodeDetails(
-        val id: String?,
-        val name: String?,
-        val title: String?,
-        val season: Int,
-        val episode: Int,
-        val released: String?,
-        val firstAired: String?,
-        val overview: String?,
-        val thumbnail: String?,
-        val moviedb_id: Int?,
-        val imdb_id: String?,
-        val imdbSeason: Int?,
-        val imdbEpisode: Int?,
-    )
-
-    data class ResponseData(
-        val meta: Meta,
-    )
-
-    data class EpisodeLink(
-        val source: String
-    )
 }

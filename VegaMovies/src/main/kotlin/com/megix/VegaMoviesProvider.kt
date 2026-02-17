@@ -99,9 +99,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val imdbUrl =  document.select("a[href*=\"imdb\"]").attr("href")
         val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
 
-        val tvtype = if(
-            document
-            .selectFirst("h3:has(span:contains(Series-SYNOPSIS/PLOT))") != null
+        val tvtype = if (
+            document.selectFirst("h3:matches((?i).*Series-SYNOPSIS/PLOT.*)") != null
         ) {
             "series"
         } else {
@@ -109,7 +108,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         var description = document
-            .selectFirst("h3:has(span:contains(SYNOPSIS/PLOT))")
+            .selectFirst("h3:has(span:matches((?i)SYNOPSIS/PLOT))")
             ?.nextElementSibling()
             ?.text()
 

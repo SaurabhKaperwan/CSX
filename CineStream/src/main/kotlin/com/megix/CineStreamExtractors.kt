@@ -2799,19 +2799,12 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val query = id ?: return
         val api = if (sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
-
-        val movieUrls = if (sourceName == "VegaMovies") {
-            val searchUrl = "$api/search.php?q=$query"
-            val json = app.get(searchUrl).text
-            tryParseJson<VegaSearchResponse>(json)?.hits?.map { hit ->
-                val permalink = hit.document.permalink
-                api + permalink
-            } ?: emptyList()
-        } else {
-            val searchUrl = "$api/?s=$query"
-            val doc = app.get(searchUrl).document
-            doc.select("article h2 a, article h3 a").map { it.attr("href") }
-        }
+        val searchUrl = "$api/search.php?q=$query"
+        val json = app.get(searchUrl).text
+        val movieUrls = tryParseJson<VegaSearchResponse>(json)?.hits?.map { hit ->
+            val permalink = hit.document.permalink
+            api + permalink
+        } ?: emptyList()
 
         movieUrls.amap { pageUrl ->
             val res = app.get(pageUrl).document
