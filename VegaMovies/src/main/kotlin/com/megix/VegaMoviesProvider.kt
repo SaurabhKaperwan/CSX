@@ -94,13 +94,15 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(fixUrl(url)).document
-        var title = document.select("header.post-header > h1").text().replace("Download ", "")
+        var title = document.select("title").text().replace("Download ", "")
         var posterUrl = document.select("p > img").attr("src")
         val imdbUrl =  document.select("a[href*=\"imdb\"]").attr("href")
         val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
 
         val tvtype = if (
-            document.selectFirst("h3:matches((?i).*Series-SYNOPSIS/PLOT.*)") != null
+            document.selectFirst("h3:matches((?i)Series-SYNOPSIS/PLOT)") != null ||
+            document.selectFirst("h3:matches((?i)Series Info)") != null ||
+            document.selectFirst("h3:matches((?i)Series synopsis/PLOT)") != null
         ) {
             "series"
         } else {
