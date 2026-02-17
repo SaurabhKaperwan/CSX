@@ -143,7 +143,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
+            { invokeGojo(res.title, res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
@@ -1385,7 +1385,14 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    //https://ani.metsu.site/proxy/oppai/pahe/Fw8cARFZQkFuChkMER0eWl4OHkYeEQYWFC1KX1ddSUJbT1VWWwhcTUIWcFFZVUtJEUwSVQgKC1ESQUQiV1ZUR0sRTB8CDwheU0AQQnlSXAJFTBZNGVIIWFQHEUQWJAQNB10KFRNHBAAdQFRFXgNxSA9SXBMAEw
+    //https://b.animetsu.live/api/anime/search/?query=juju
+    //https://b.animetsu.live/api/anime/oppai/6989b8a329cf95f4eb03b524/1?server=default&source_type=dub
+    //https://b.animetsu.live/api/anime/servers/6989b8a329cf95f4eb03b524/1
+    //https://animetsu.live/
+
     suspend fun invokeGojo(
+        title: String? = null,
         aniId: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -1394,55 +1401,30 @@ object CineStreamExtractors : CineStreamProvider() {
         if (aniId == null) return
 
         val episodeNumber = episode ?: 1
-        val gojoAPI = gojoBaseAPI.replace("https://", "https://backend.")
+        val gojoAPI = gojoBaseAPI.replace("https://", "https://b.")
         val headers = mapOf(
             "Referer" to gojoBaseAPI,
             "Origin" to gojoBaseAPI
         )
 
-        val epDetailsJson = try {
-            app.get(
-                "$gojoAPI/api/anime/servers?id=$aniId&num=$episodeNumber",
-                headers = headers
-            ).text
-        } catch (e: Exception) {
-            return
-        }
+        val searchJson = app.get("$gojoAPI/api/anime/search/?query=$title", headers = headers).text
+        val id = getGojoId(searchJson, aniId) ?: return
+        val epDetailsJson = app.get("$gojoAPI/api/anime/servers/$id/$episodeNumber", headers = headers).text
+        val servers = getGojoServers(epDetailsJson)
+        if (servers.isEmpty()) return
 
-        val servers = try {
-            getGojoServers(epDetailsJson)
-        } catch (e: Exception) {
-            return
-        }
-
-        if (servers.isEmpty()) {
-            return
-        }
-
-        for ((provider, hasDub) in servers) {
-            runAllAsync(
+        servers.amap { server ->
+            runAllAsync (
                 {
                     try {
-                        val json = app.get(
-                            "$gojoAPI/api/anime/tiddies?server=$provider&id=$aniId&num=$episodeNumber&subType=sub",
-                            headers = headers
-                        ).text
-                        getGojoStreams(json, "sub", provider, gojoBaseAPI, subtitleCallback ,callback)
-                    } catch (e: Exception) {
-                        println("Error fetching sub stream for $provider: ${e.message}")
+                        val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=sub", headers = headers).text
+                        getGojoStreams(json, "sub", server, gojoBaseAPI, subtitleCallback ,callback)
                     }
                 },
                 {
-                    if (hasDub) {
-                        try {
-                            val json = app.get(
-                                "$gojoAPI/api/anime/tiddies?server=$provider&id=$aniId&num=$episodeNumber&subType=dub",
-                                headers = headers
-                            ).text
-                            getGojoStreams(json, "dub", provider, gojoBaseAPI, subtitleCallback ,callback)
-                        } catch (e: Exception) {
-                            println("Error fetching dub stream for $provider: ${e.message}")
-                        }
+                    try {
+                        val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=dub", headers = headers).text
+                        getGojoStreams(json, "dub", server, gojoBaseAPI, subtitleCallback ,callback)
                     }
                 }
             )
@@ -2624,6 +2606,7 @@ object CineStreamExtractors : CineStreamProvider() {
             },
             {
                 if(origin == "imdb") invokeGojo(
+                    title,
                     aniId,
                     episode,
                     subtitleCallback,
@@ -3323,7 +3306,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //                                 "Mp4Moviez [${cleanName}]",
     //                                 url = link,
     //                             ) {
-    //                                 quality = getVideoQuality(link)
+    //                                 quality = getIndexQuality(link)
     //                             }
     //                         )
     //                     } else if (link.contains("links4mad.online")) {

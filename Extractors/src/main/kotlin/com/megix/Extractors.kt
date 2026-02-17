@@ -589,7 +589,6 @@ open class GDFlix : ExtractorApi() {
     }
 }
 
-
 class Gofile : ExtractorApi() {
     override val name = "Gofile"
     override val mainUrl = "https://gofile.io"

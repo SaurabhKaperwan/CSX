@@ -1106,163 +1106,6 @@ suspend fun fetchTmdbLogoUrl(
     return null
 }
 
-suspend fun filepressExtractor(
-    source: String,
-    filepressID : String,
-    referer: String?,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-) {
-    val filepressBaseUrl = JSONObject(
-        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-    ).optString("filepress")
-
-    if(filepressBaseUrl.isNullOrEmpty()) return
-
-    val client = OkHttpClient()
-    val request = Request.Builder()
-        .url("$filepressBaseUrl/api/file/get/$filepressID")
-        .addHeader("Referer", filepressBaseUrl)
-        .get()
-        .build()
-
-    val response = client.newCall(request).execute()
-    val responseBody = response.body.string()
-    val json = JSONObject(responseBody)
-    if(json.optBoolean("status") == false) return
-    val data = json.optJSONObject("data")
-
-    val size = data?.optString("size")?.toLongOrNull() ?: 0
-
-    val formattedSize = if (size < 1024L * 1024 * 1024) {
-        val sizeInMB = size.toDouble() / (1024 * 1024)
-        "%.2f MB".format(sizeInMB)
-    } else {
-        val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
-        "%.2f GB".format(sizeInGB)
-    }
-
-    val fileName = data?.optString("name") ?: ""
-    val simplifiedTitle = getSimplifiedTitle(fileName + formattedSize)
-
-    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
-
-    val payload1 = JSONObject().apply {
-        put("id", filepressID)
-        put("method", "indexDownlaod")
-        put("captchaValue", JSONObject.NULL)
-    }
-
-    val request1 = Request.Builder()
-        .url("$filepressBaseUrl/api/file/downlaod/")
-        .post(payload1.toString().toRequestBody(jsonMediaType))
-        .addHeader("Referer", filepressBaseUrl)
-        .build()
-
-    val response1 = client.newCall(request1).execute()
-    val responseBody1 = response1.body.string()
-
-    val json1 = JSONObject(responseBody1)
-    val status = json1.optBoolean("status")
-
-    if (status) {
-        val filepressToken = json1.optJSONObject("data")?.toString() ?: json1.optString("data")
-        val payload2 = JSONObject().apply {
-            put("id", filepressToken)
-            put("method", "indexDownlaod")
-            put("captchaValue", JSONObject.NULL)
-        }
-
-        val request2 = Request.Builder()
-            .url("$filepressBaseUrl/api/file/downlaod2/")
-            .post(payload2.toString().toRequestBody(jsonMediaType))
-            .addHeader("Referer", filepressBaseUrl)
-            .build()
-
-        val response2 = client.newCall(request2).execute()
-        val responseBody2 = response2.body.string()
-        val json2 = JSONObject(responseBody2)
-        val finalLink = json2.optJSONArray("data")?.optString(0) ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "Filepress",
-                "$source [Filepress] $simplifiedTitle",
-                finalLink,
-                ExtractorLinkType.VIDEO
-            ) {
-                this.quality = getIndexQuality(fileName)
-                this.referer = filepressBaseUrl
-            }
-        )
-    }
-}
-
-suspend fun gofileExtractor(
-    source: String,
-    url: String,
-    referer: String?,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-) {
-    val mainUrl = "https://gofile.io"
-    val mainApi = "https://api.gofile.io"
-    val headers = mapOf(
-        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-        "Origin" to mainUrl,
-        "Referer" to mainUrl,
-    )
-    val id = url.substringAfter("d/").substringBefore("/")
-
-    val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
-    val jsonResp = JSONObject(genAccountRes)
-    val token = jsonResp.getJSONObject("data").getString("token") ?: return
-    val globalRes = app.get("$mainUrl/dist/js/config.js", headers = headers).text
-    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
-
-    val response = app.get("$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
-        headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Origin" to mainUrl,
-            "Referer" to mainUrl,
-            "Authorization" to "Bearer $token",
-            "X-Website-Token" to wt
-        )
-    ).text
-
-    val jsonResponse = JSONObject(response)
-    val data = jsonResponse.getJSONObject("data")
-    val children = data.getJSONObject("children")
-    val oId = children.keys().next()
-    val link = children.getJSONObject(oId).getString("link")
-    val fileName = children.getJSONObject(oId).getString("name")
-    val size = children.getJSONObject(oId).getLong("size")
-    val formattedSize = if (size < 1024L * 1024 * 1024) {
-        val sizeInMB = size.toDouble() / (1024 * 1024)
-        "%.2f MB".format(sizeInMB)
-    } else {
-        val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
-        "%.2f GB".format(sizeInGB)
-    }
-
-    if(link != null) {
-        val simplifiedTitle = getSimplifiedTitle(fileName + formattedSize)
-        callback.invoke(
-            newExtractorLink(
-                "Gofile",
-                "$source [Gofile] $simplifiedTitle",
-                link,
-                ExtractorLinkType.VIDEO
-            ) {
-                this.quality = getIndexQuality(fileName)
-                this.headers = mapOf(
-                    "Cookie" to "accountToken=$token"
-                )
-            }
-        )
-    }
-}
-
 suspend fun generateMagnetLink(url: String, hash: String?): String {
     val response = app.get(url)
     val trackerList = response.text.trim().split("\n")
@@ -1349,11 +1192,7 @@ suspend fun getProtonStream(
 
             ppd.optJSONObject("gofile.io")?.optString("link")?.takeIf { it.isNotEmpty() }?.let {
                 val source = it.replace("\\/", "/")
-                gofileExtractor("Protonmovies", source, "", subtitleCallback, callback)
-            }
-
-            ppd.optJSONObject("filepress")?.optString("link")?.takeIf { it.isNotEmpty() }?.let {
-                filepressExtractor("Protonmovies", it, "", subtitleCallback, callback)
+                loadSourceNameExtractor("Protonmovies", source, "", subtitleCallback, callback)
             }
         }
     }
@@ -1459,55 +1298,29 @@ fun fixSourceUrls(url: String, source: String?): String? {
     }
 }
 
-fun extractKatStreamingLinks(html: String, episode: Int? = null): Map<String, String> {
-    val result = mutableMapOf<String, String>()
+fun getGojoId(jsonString: String, aniId: Int): String? {
+    val results = JSONObject(jsonString).getJSONArray("results")
 
-    fun getMatch(pattern: String): String? {
-        val matches = pattern.toRegex().findAll(html).toList()
-        return when {
-            episode != null && matches.size >= episode -> matches[episode - 1].groupValues[1]
-            matches.isNotEmpty() -> matches[0].groupValues[1]
-            else -> null
+    for (i in 0 until results.length()) {
+        val item = results.getJSONObject(i)
+        if (item.optInt("anilist_id") == aniId) {
+            return item.getString("id")
         }
     }
-
-    val streamtapeId = getMatch("""streamtape_res:"([^"]+)\"""")
-    val streamwishId = getMatch("""streamwish_res:"([^"]+)\"""")
-    val vgembedId = getMatch("""vgembedstream_res:"([^"]+)\"""")
-
-    val streamtapeBase = """streamtape_res:\{link:"([^"]+)\"""".toRegex().find(html)?.groupValues?.get(1)
-    val streamwishBase = """streamwish_res:\{link:"([^"]+)\"""".toRegex().find(html)?.groupValues?.get(1)
-    val vgembedBase = """vgembedstream_res:\{link:"([^"]+)\"""".toRegex().find(html)?.groupValues?.get(1)
-
-    if (streamtapeId != null && streamtapeBase != null) {
-        result["streamtape"] = streamtapeBase + streamtapeId
-    }
-    if (streamwishId != null && streamwishBase != null) {
-        result["streamwish"] = streamwishBase + streamwishId
-    }
-    if (vgembedId != null && vgembedBase != null) {
-        result["vgembedstream"] = vgembedBase + vgembedId
-    }
-
-    return result
+    return null
 }
 
-fun getGojoServers(jsonString: String): List<Pair<String, Boolean>> {
-    val result = mutableListOf<Pair<String, Boolean>>()
+fun getGojoServers(jsonString: String): List<String> {
+    val jsonArray = JSONArray(jsonString)
+    val ids = mutableListOf<String>()
 
-    try {
-        val jsonArray = JSONArray(jsonString)
-        for (i in 0 until jsonArray.length()) {
-            val obj = jsonArray.optJSONObject(i) ?: continue
-            val id = obj.optString("id").takeIf { it.isNotEmpty() } ?: continue
-            val hasDub = obj.optBoolean("hasDub", false)
-            result.add(Pair(id, hasDub))
+    for (i in 0 until jsonArray.length()) {
+        val id = jsonArray.getJSONObject(i).optString("id")
+        if (id.isNotEmpty()) {
+            ids.add(id)
         }
-    } catch (e: Exception) {
-        println("Error parsing Gojo servers: ${e.message}")
     }
-
-    return result
+    return ids
 }
 
 suspend fun getGojoStreams(
@@ -1526,6 +1339,8 @@ suspend fun getGojoStreams(
         )
 
         val jsonObject = JSONObject(json)
+        val serverName = jsonObject.optString("server", "")
+        if(serverName != provider) return
         val sourcesArray = jsonObject.optJSONArray("sources") ?: return
 
         for (i in 0 until sourcesArray.length()) {
@@ -1538,8 +1353,8 @@ suspend fun getGojoStreams(
                 newExtractorLink(
                     "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
                     "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
-                    url,
-                    type = if (videoType == "mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
+                    fixUrl(url, "https://ani.metsu.site/proxy"),
+                    type = if (videoType == "video/mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
                 ) {
                     this.quality = quality ?: Qualities.P1080.value
                     this.referer = gojoBaseAPI
@@ -1608,12 +1423,6 @@ suspend fun getRedirectLinks(url: String): String {
     }
 }
 
-
-fun getVideoQuality(string: String?): Int {
-    return Regex("(\\d{3,4})[pP]").find(string ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
-        ?: Qualities.Unknown.value
-}
-
 // fun generateHashedString(): String {
 //     val s = "a8f7e9c2d4b6a1f3e8c9d2t4a7f6e9c2d4z6a1f3e8c9d2b4a7f5e9c2d4b6a1f3"
 //     val a = "2"
@@ -1636,7 +1445,6 @@ fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest,isSeries: Boolean): String 
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
     val secondary = "d3f8a5b2c9e6d1f7a4b8c5e2d9f3a6b1c7e4d8f2a9b5c3e7d4f1a8b6c2e9d5f3"
 
-
     // Create content identifier string
     val contentString = createContentString(t)
 
@@ -1645,9 +1453,7 @@ fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest,isSeries: Boolean): String 
 
     // Second HMAC with secondary key
     return calculateHmacSha256(firstHash, secondary)
-
 }
-
 
 private fun createContentString(info: CinemaOsSecretKeyRequest): String {
     val parts = mutableListOf<String>()
