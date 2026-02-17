@@ -110,7 +110,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -1309,7 +1309,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val gson = Gson()
         val subsUrls = listOf(
             "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true",
-            """https://subsense.nepiraw.com/gpqq9k22-{"languages":["en","hi","ta","es","ar"],"maxSubtitles":10}"""
+            """https://subsense.nepiraw.com/n0tcjfba-{"languages":["en","hi","ta","es","ar"],"maxSubtitles":10}"""
         )
 
         subsUrls.amap { subUrl ->
@@ -2799,11 +2799,11 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val query = id ?: return
         val api = if (sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
-        val searchUrl = "$api/search.php?q=$query"
+        val searchUrl = "$api/search.php?q=$query&page=1"
         val json = app.get(searchUrl).text
         val movieUrls = tryParseJson<VegaSearchResponse>(json)?.hits?.map { hit ->
             val permalink = hit.document.permalink
-            api + permalink
+            fixUrl(permalink, api)
         } ?: emptyList()
 
         movieUrls.amap { pageUrl ->
@@ -2812,11 +2812,9 @@ object CineStreamExtractors : CineStreamProvider() {
                 res.select("button.dwd-button").amap {
                     val link = it.parent()?.attr("href") ?: return@amap
                     val doc = app.get(link).document
-                    val source = doc.selectFirst("button.btn:matches((?i)(V-Cloud))")
-                        ?.parent()
-                        ?.attr("href")
-                        ?: return@amap
-                    loadSourceNameExtractor(sourceName, source, referer = "", subtitleCallback, callback)
+                    doc.select("p > a").amap { source ->
+                        loadSourceNameExtractor(sourceName, source.attr("href"), referer = "", subtitleCallback, callback)
+                    }
                 }
             }
             else {
@@ -3946,8 +3944,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
                     callback.invoke(
                         newExtractorLink(
-                            "Bollywood",
-                            "[Bollywood] ${simplifiedTitle.replace("\n", "")}",
+                            "GramCinema",
+                            "[GramCinema] ${simplifiedTitle.replace("\n", "")}",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
