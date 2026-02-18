@@ -892,7 +892,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
-                    "[DahmerMovies] $tags",
+                    "[DahmerMovies]".toSansSerifBold() + " $tags",
                     videoLink,
                     ExtractorLinkType.VIDEO
                 ) {
@@ -2362,7 +2362,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "Torrentio 🧲  | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
+                    "Torrentio".toSansSerifBold() + " 🧲 | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2409,7 +2409,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val simplifiedTitle = getSimplifiedTitle(title + sizeStr)
 
-            val displayTitle = "Animetosho [$type] 🧲 \n⬆️ $s | ⬇️ $l | $simplifiedTitle"
+            val displayTitle = "Animetosho [$type]".toSansSerifBold() + " 🧲 \n⬆️ $s | ⬇️ $l | $simplifiedTitle"
 
             callback.invoke(
                 newExtractorLink(
@@ -2453,7 +2453,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "TorrentsDB 🧲  | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
+                    "TorrentsDB".toSansSerifBold() + " 🧲  | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -3925,7 +3925,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "GramCinema",
-                            "[GramCinema] ${simplifiedTitle.replace("\n", "")}",
+                            "[GramCinema]".toSansSerifBold() + " ${simplifiedTitle}",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {

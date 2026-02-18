@@ -665,7 +665,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "$source $simplifiedTitle",
+                        source.toSansSerifBold() +" $simplifiedTitle",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -679,7 +679,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "$source[HCloud] $simplifiedTitle",
+                    "$source[HCloud]".toSansSerifBold() + " $simplifiedTitle",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -688,6 +688,21 @@ suspend fun getHindMoviezLinks(
             )
         },
     )
+}
+
+fun String.toSansSerifBold(): String {
+    val builder = StringBuilder()
+    for (char in this) {
+        val codePoint = when (char) {
+            // Mathematical Sans-Serif Bold ranges
+            in 'A'..'Z' -> 0x1D5D4 + (char - 'A')
+            in 'a'..'z' -> 0x1D5EE + (char - 'a')
+            in '0'..'9' -> 0x1D7EC + (char - '0')
+            else -> char.code
+        }
+        builder.append(Character.toChars(codePoint))
+    }
+    return builder.toString()
 }
 
 suspend fun loadSourceNameExtractor(
@@ -712,9 +727,10 @@ suspend fun loadSourceNameExtractor(
             val simplifiedTitle = getSimplifiedTitle(link.name)
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
             val fixSize = if(size.isNotEmpty()) " $size" else ""
+            val sourceBold = "$source [${link.source}]".toSansSerifBold()
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source [${link.source}] $simplifiedTitle $fixSize",
+                "$sourceBold $simplifiedTitle $fixSize",
                 link.url,
                 type = link.type
             ) {
