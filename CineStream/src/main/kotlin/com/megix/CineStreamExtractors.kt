@@ -695,12 +695,12 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
 
-        streamPattern.findAll(doc.toString()).amap { match ->
+        streamPattern.findAll(doc.toString()).forEach { match ->
             val service = match.groupValues[1]
             val id = match.groupValues[2]
 
             if (id != "null") {
-                val eurl = getStreamUrl(id, service) ?: return@amap
+                val eurl = getStreamUrl(id, service) ?: return@forEach
                 loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
             }
         }
@@ -1644,7 +1644,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val fullRegex = Regex("""\"number\"\s*:\s*${episode ?: 1}\b[\s\S]*?\"streamUrls\"\s*:\s*(\[[\s\S]*?])""")
             val epJson = fullRegex.find(scriptText)?.groupValues?.get(1) ?: return
             val urlRegex = Regex("""\"url\"\s*:\s*\"(.*?)\"""")
-            urlRegex.findAll(epJson).amap { match ->
+            urlRegex.findAll(epJson).forEach { match ->
                 val source =  httpsify(match.groupValues[1])
                 loadSourceNameExtractor("Asiaflix", source, episodeUrl, subtitleCallback, callback)
             }
@@ -3906,10 +3906,10 @@ object CineStreamExtractors : CineStreamProvider() {
         if (jsonObject.has("files")) {
             val filesArray = jsonObject.getAsJsonArray("files")
 
-            filesArray.amap { element ->
+            filesArray.forEach { element ->
                 val item = element.asJsonObject
                 val fileName = item.get("file_name").asString
-                if(fileName.contains(".$titleSlug")) return@amap
+                if(fileName.contains(".$titleSlug")) return@forEach
                 val fileId = item.get("id").asString
                 val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(
