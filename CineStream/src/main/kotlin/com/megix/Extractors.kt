@@ -19,52 +19,6 @@ import com.lagradost.cloudstream3.utils.M3u8Helper
 import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
-import com.lagradost.cloudstream3.extractors.StreamWishExtractor
-import com.lagradost.cloudstream3.extractors.VidhideExtractor
-import com.lagradost.cloudstream3.extractors.MixDrop
-import com.lagradost.cloudstream3.extractors.StreamTape
-import com.lagradost.cloudstream3.extractors.Vidguardto
-import com.lagradost.cloudstream3.extractors.Filesim
-import com.lagradost.cloudstream3.extractors.VidHidePro
-import com.lagradost.cloudstream3.extractors.Vidmoly
-import com.lagradost.cloudstream3.extractors.DoodLaExtractor
-import com.lagradost.cloudstream3.extractors.LuluStream
-
-class Luluvdoo : LuluStream() {
-    override var mainUrl = "https://luluvdoo.com"
-}
-
-class Doodspro : DoodLaExtractor() {
-    override var mainUrl = "https://doods.pro"
-}
-
-class Dsvplay : DoodLaExtractor() {
-    override var mainUrl = "https://dsvplay.com"
-}
-
-class Vidmolybiz : Vidmoly() {
-    override var mainUrl = "https://vidmoly.biz"
-}
-
-class Vidmolynet : Vidmoly() {
-    override var mainUrl = "https://vidmoly.net"
-}
-
-class Cybervynx : StreamWishExtractor() {
-    override var mainUrl = "https://cybervynx.com"
-}
-
-class Mivalyo : VidHidePro() {
-    override var mainUrl = "https://mivalyo.com"
-}
-
-class Multimoviesshg : Filesim() {
-    override var mainUrl = "https://multimoviesshg.com"
-}
-
-class Watchadsontape : StreamTape() {
-    override var mainUrl = "https://watchadsontape.com"
-}
 
 open class SuperVideo : ExtractorApi() {
     override val name = "SuperVideo"
@@ -88,61 +42,6 @@ open class SuperVideo : ExtractorApi() {
             referer = "$mainUrl/",
         ).forEach(callback)
     }
-}
-
-class Ryderjet: VidhideExtractor() {
-    override var mainUrl = "https://ryderjet.com"
-}
-
-class Smoothpre: VidhideExtractor() {
-    override var mainUrl = "https://smoothpre.com"
-}
-
-class MultimoviesAIO: StreamWishExtractor() {
-    override var name = "Multimovies Cloud AIO"
-    override var mainUrl = "https://allinonedownloader.fun"
-    override var requiresReferer = true
-}
-
-class Multimovies: StreamWishExtractor() {
-    override var name = "Multimovies Cloud"
-    override var mainUrl = "https://multimovies.cloud"
-    override var requiresReferer = true
-}
-
-class Animezia : VidhideExtractor() {
-    override var name = "Animezia"
-    override var mainUrl = "https://animezia.cloud"
-    override var requiresReferer = true
-}
-
-class server2 : VidhideExtractor() {
-    override var name = "Multimovies Vidhide"
-    override var mainUrl = "https://server2.shop"
-    override var requiresReferer = true
-}
-
-
-class Dlions : VidhideExtractor() {
-    override var mainUrl = "https://dlions.pro"
-}
-
-class Asnwish : StreamWishExtractor() {
-    override val name = "Streanwish Asn"
-    override val mainUrl = "https://asnwish.com"
-    override val requiresReferer = true
-}
-
-class CdnwishCom : StreamWishExtractor() {
-    override val name = "Cdnwish"
-    override val mainUrl = "https://cdnwish.com"
-    override val requiresReferer = true
-}
-
-class Strwishcom : StreamWishExtractor() {
-    override val name = "Strwish"
-    override val mainUrl = "https://strwish.com"
-    override val requiresReferer = true
 }
 
 class Kwik : ExtractorApi() {
@@ -274,39 +173,9 @@ class Pahe : ExtractorApi() {
     }
 }
 
-class Dhcplay: VidhideExtractor() {
-    override var name = "DHC Play"
-    override var mainUrl = "https://dhcplay.com"
-    override var requiresReferer = true
-}
-
-class MixDropPs : MixDrop() {
-    override var mainUrl = "https://mixdrop.ps"
-}
-
-class Mdy : MixDrop() {
-    override var mainUrl = "https://mdy48tn97.com"
-}
-
-class MixDropTo : MixDrop() {
-    override var mainUrl = "https://mxdrop.to"
-}
-
-class MixDropSi : MixDrop() {
-    override var mainUrl = "https://mixdrop.si"
-}
-
-class Vembed : Vidguardto() {
-    override var mainUrl = "https://vembed.net"
-}
-
-class VidHideHub : VidHidePro() {
-    override var mainUrl = "https://vidhidehub.com"
-}
-
 class Akamaicdn : ExtractorApi() {
     override val name = "Akamaicdn"
-    override val mainUrl = "https://molop.art"
+    override val mainUrl = "https://molop."
     override val requiresReferer = true
 
     override suspend fun getUrl(

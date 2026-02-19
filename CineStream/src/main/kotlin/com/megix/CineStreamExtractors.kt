@@ -143,7 +143,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeGojo(res.title, res.anilistId, res.episode, subtitleCallback ,callback) },
+            { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
@@ -2409,7 +2409,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val simplifiedTitle = getSimplifiedTitle(title + sizeStr)
 
-            val displayTitle = "Animetosho [$type]".toSansSerifBold() + " 🧲 \n⬆️ $s | ⬇️ $l | $simplifiedTitle"
+            val displayTitle = "Animetosho [$type]".toSansSerifBold() + " 🧲 \n| ⬆️ $s | ⬇️ $l | $simplifiedTitle"
 
             callback.invoke(
                 newExtractorLink(

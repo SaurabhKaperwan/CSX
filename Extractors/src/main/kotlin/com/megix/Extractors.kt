@@ -9,8 +9,6 @@ import java.net.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.api.Log
-import com.lagradost.cloudstream3.extractors.StreamTape
-import com.lagradost.cloudstream3.extractors.VidHidePro
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -78,14 +76,6 @@ suspend fun resolveFinalUrl(startUrl: String): String? {
     }
 
     return currentUrl
-}
-
-class Watchadsontape : StreamTape() {
-    override var mainUrl: String = "https://watchadsontape.com"
-}
-
-class Smoothpre : VidHidePro() {
-    override var mainUrl: String = "https://smoothpre.com"
 }
 
 class Howblogs : ExtractorApi() {

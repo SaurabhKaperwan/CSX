@@ -20,9 +20,7 @@ class ExtractorsPlugin: Plugin() {
         registerExtractorAPI(Linksmod())
         registerExtractorAPI(Driveleech())
         registerExtractorAPI(Driveseed())
-        registerExtractorAPI(Watchadsontape())
         registerExtractorAPI(Howblogs())
-        registerExtractorAPI(Smoothpre())
         registerExtractorAPI(Gofile())
     }
 }
