@@ -57,6 +57,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
+            { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -110,7 +111,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -147,7 +148,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -833,7 +833,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         Gson().fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.title ?: ""
-            val name = s.name?.replace(" (SLOW) -", "") ?: title
+            val name = s.name ?: title
 
             // Block filters
             if (s.url.contains("github.com") || s.url.contains("googleusercontent") ||
@@ -842,7 +842,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val type = if (sourceName.contains("Castle") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
             val req = s.behaviorHints?.proxyHeaders?.request
-            val streamUrl = if (sourceName == "Nodebrid") URLDecoder.decode(s.url.substringAfter("url=").substringBefore("&"), "UTF-8") else s.url
+            val streamUrl =  s.url
 
             // Quality fallback
             val quality = getIndexQuality(title + name).takeIf { it != Qualities.Unknown.value }
@@ -2423,45 +2423,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeTorrentsDB(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if(season == null) {
-            "$torrentsDBAPI/stream/movie/$id.json"
-        } else {
-            "$torrentsDBAPI/stream/series/$id:$season:$episode.json"
-        }
-        val headers = mapOf(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        )
-        val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
-
-        res?.streams?.forEach { stream ->
-            val title = stream.title ?: stream.name ?: ""
-            val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
-            val match = regex.find(title)
-            val seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
-            val fileSize = match?.groupValues?.get(2) ?: ""
-
-            if (seeders < 20) return@forEach
-            val magnet = buildMagnetString(stream)
-            callback.invoke(
-                newExtractorLink(
-                    "TorrentsDB🧲",
-                    "TorrentsDB".toSansSerifBold() + " 🧲  | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
-                    magnet,
-                    ExtractorLinkType.MAGNET,
-                ) {
-                    this.quality = getIndexQuality(stream.name)
-                }
-            )
-        }
-    }
-
     suspend fun invokeBollyflix(
         id: String? = null,
         season: Int? = null,
@@ -2820,7 +2781,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$MovieDrive_API/searchapi.php?q=$imdbId"
+        val url = "$moviesdriveAPI/searchapi.php?q=$imdbId"
         val jsonString = app.get(url, interceptor = wpRedisInterceptor).text
         val root = JSONObject(jsonString)
         if (!root.has("hits")) return
@@ -2831,7 +2792,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val doc = hit.getJSONObject("document")
             val currentImdbId = doc.optString("imdb_id")
             if(imdbId == currentImdbId) {
-                val document = app.get(MovieDrive_API + doc.optString("permalink"), interceptor = wpRedisInterceptor).document
+                val document = app.get(moviesdriveAPI + doc.optString("permalink"), interceptor = wpRedisInterceptor).document
                 if (season == null) {
                     document.select("h5 > a").amap {
                         val href = it.attr("href")
@@ -2841,8 +2802,9 @@ object CineStreamExtractors : CineStreamProvider() {
                         }
                     }
                 } else {
-                    val stag = "Season $season|S0$season"
-                    val sep = "Ep0$episode|Ep$episode"
+                    val (sSlug, eSlug) = getEpisodeSlug(season, episode)
+                    val stag = "Season $season|S$sSlug"
+                    val sep = "Ep$eSlug|Ep$episode"
                     val entries = document.select("h5:matches((?i)$stag)")
                     entries.amap { entry ->
                         val href = entry.nextElementSibling()?.selectFirst("a")?.attr("href") ?: ""

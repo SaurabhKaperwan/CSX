@@ -73,7 +73,6 @@ open class CineStreamProvider : MainAPI() {
         const val videasyAPI = "https://api.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
-        const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
         const val mappleAPI = "https://mapple.uk"
@@ -116,7 +115,7 @@ open class CineStreamProvider : MainAPI() {
         val hdmovie2API get() = api("hdmovie2")
         val netflixAPI get() = api("nfmirror")
         val netflix2API get() = api("nfmirror2")
-        val MovieDrive_API get() = api("moviesdrive")
+        val moviesdriveAPI get() = api("moviesdrive")
         val gojoBaseAPI get() = api("gojo_base")
         val vegamoviesAPI get() = api("vegamovies")
         val rogmoviesAPI get() = api("rogmovies")
