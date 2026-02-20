@@ -648,15 +648,7 @@ fun String.toSansSerifBold(): String {
             in 'A'..'Z' -> 0x1D5D4 + (char - 'A')
             in 'a'..'z' -> 0x1D5EE + (char - 'a')
             in '0'..'9' -> 0x1D7EC + (char - '0')
-
-            '(' -> 0x2768 // ❨ Medium Flattened Parenthesis
-            ')' -> 0x2769 // ❩
-            '{' -> 0x2774 // ❴ Medium Curly Bracket
-            '}' -> 0x2775 // ❵
-            '[' -> 0x3010 // 【 Black Lenticular Bracket
-            ']' -> 0x3011 // 】
-            '-' -> 0x2501 // ━ Box Drawings Heavy Horizontal (Thick Hyphen)
-
+            '-' -> 0x2014
             else -> char.code
         }
         builder.append(Character.toChars(codePoint))
