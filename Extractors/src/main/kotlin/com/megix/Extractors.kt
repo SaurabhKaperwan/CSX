@@ -11,6 +11,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.api.Log
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.lagradost.cloudstream3.USER_AGENT
 
 val VIDEO_HEADERS = mapOf(
     "User-Agent" to "VLC/3.6.0 LibVLC/3.0.18 (Android)",
@@ -44,15 +45,15 @@ fun getBaseUrl(url: String): String {
     }
 }
 
-suspend fun getLatestUrl(url: String, source: String): String {
-    val link = JSONObject(
-        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-    ).optString(source)
-    if(link.isNullOrEmpty()) {
-        return getBaseUrl(url)
-    }
-    return link
-}
+// suspend fun getLatestUrl(url: String, source: String): String {
+//     val link = JSONObject(
+//         app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+//     ).optString(source)
+//     if(link.isNullOrEmpty()) {
+//         return getBaseUrl(url)
+//     }
+//     return link
+// }
 
 suspend fun resolveFinalUrl(startUrl: String): String? {
     var currentUrl = startUrl
@@ -240,7 +241,7 @@ open class Driveleech : ExtractorApi() {
     }
 }
 
-open class VCloud : ExtractorApi() {
+class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
     override val mainUrl: String = "https://vcloud."
     override val requiresReferer = false
@@ -258,53 +259,51 @@ open class VCloud : ExtractorApi() {
         }
         val doc = app.get(href).document
         val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?:""
-        val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
-        if (urlValue.isNotEmpty()) {
-            val document = app.get(urlValue).document
-            val div = document.selectFirst("div.card-body")
-            val header = document.select("div.card-header").text()
-            val size = document.select("i#size").text()
-            val quality = getIndexQuality(header)
+        val urlValue = Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: return
+        val document = app.get(urlValue).document
+        val div = document.selectFirst("div.card-body")
+        val header = document.select("div.card-header").text()
+        val size = document.select("i#size").text()
+        val quality = getIndexQuality(header)
 
-            suspend fun myCallback(link: String, server: String = "") {
-                callback.invoke(
-                    newExtractorLink(
-                        "${name}${server}",
-                        "${name}${server} ${header}[${size}]",
-                        link,
-                        ExtractorLinkType.VIDEO
-                    ) {
-                        this.quality = quality
-                        this.headers = VIDEO_HEADERS
-                    }
-                )
+        suspend fun myCallback(link: String, server: String = "") {
+            callback.invoke(
+                newExtractorLink(
+                    "${name}${server}",
+                    "${name}${server} ${header}[${size}]",
+                    link,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = quality
+                    this.headers = VIDEO_HEADERS
+                }
+            )
+        }
+
+        div?.select("h2 a.btn")?.amap {
+            val link = it.attr("href")
+            val text = it.text()
+
+            if(text.contains("FSL Server")) myCallback(link, "[FSL Server]")
+            else if (text.contains("FSLv2")) myCallback(link, "[FSLv2]")
+            else if (text.contains("[Server : 1]")) myCallback(link, "[Server : 1]")
+            else if(text.contains("BuzzServer")) {
+                val dlink = app.get("$link/download", referer = link, allowRedirects = false).headers["hx-redirect"] ?: ""
+                val baseUrl = getBaseUrl(link)
+                if(!dlink.isNullOrBlank()) myCallback(baseUrl + dlink, "[BuzzServer]")
             }
-
-            div?.select("h2 a.btn")?.amap {
-                val link = it.attr("href")
-                val text = it.text()
-
-                if(text.contains("FSL Server")) myCallback(link, "[FSL Server]")
-                else if (text.contains("FSLv2")) myCallback(link, "[FSLv2]")
-                else if (text.contains("[Server : 1]")) myCallback(link, "[Server : 1]")
-                else if(text.contains("BuzzServer")) {
-                    val dlink = app.get("$link/download", referer = link, allowRedirects = false).headers["hx-redirect"] ?: ""
-                    val baseUrl = getBaseUrl(link)
-                    if(dlink != "") myCallback(baseUrl + dlink, "[BuzzServer]")
-                }
-                else if (link.contains("pixeldra")) {
-                    val baseUrlLink = getBaseUrl(link)
-                    val finalURL = if (link.contains("download", true)) link
-                    else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
-                    myCallback(finalURL, "[Pixeldrain]")
-                }
-                else if (text.contains("Server : 10Gbps")) {
-                    var redirectUrl = resolveFinalUrl(link) ?: return@amap
-                    if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
-                    myCallback(redirectUrl, "[Download]")
-                }
-                else { Log.d("Error", "No Server matched") }
+            else if (link.contains("pixeldra")) {
+                val baseUrlLink = getBaseUrl(link)
+                val finalURL = if (link.contains("download", true)) link
+                else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+                myCallback(finalURL, "[Pixeldrain]")
             }
+            else if (text.contains("Server : 10Gbps")) {
+                var redirectUrl = resolveFinalUrl(link) ?: return@amap
+                if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
+                myCallback(redirectUrl, "[Download]")
+            }
+            else { Log.d("Error", "No Server matched") }
         }
     }
 }
@@ -336,9 +335,8 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val latestUrl = getLatestUrl(url, "hubcloud")
-        val baseUrl = getBaseUrl(url)
-        val newUrl = url.replace(baseUrl, latestUrl)
+        val newUrl = resolveFinalUrl(url.replace(".ink", ".foo")) ?: return
+        val baseUrl = getBaseUrl(newUrl)
         val doc = app.get(newUrl).document
         var link = if(newUrl.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
@@ -480,9 +478,8 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val latestUrl = getLatestUrl(url, "gdflix")
-        val baseUrl = getBaseUrl(url)
-        val newUrl = url.replace(baseUrl, latestUrl)
+        val newUrl = resolveFinalUrl(url) ?: return
+        val baseUrl = getBaseUrl(newUrl)
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
@@ -591,48 +588,49 @@ class Gofile : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        val commonHeaders = mapOf(
+            "User-Agent" to USER_AGENT,
             "Origin" to mainUrl,
             "Referer" to mainUrl,
         )
+
         val id = url.substringAfter("d/").substringBefore("/")
-        val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
-        val jsonResp = JSONObject(genAccountRes)
-        val token = jsonResp.getJSONObject("data").getString("token") ?: return
-        val globalRes = app.get("$mainUrl/dist/js/config.js", headers = headers).text
+        if (id.isEmpty() || id == url) return
+
+        val genAccountRes = app.post("$mainApi/accounts", headers = commonHeaders).text
+        val token = JSONObject(genAccountRes).optJSONObject("data")?.optString("token") ?: return
+
+        val globalRes = app.get("$mainUrl/dist/js/config.js", headers = commonHeaders).text
         val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
-        val response = app.get("$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
-            headers = mapOf(
-                "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-                "Origin" to mainUrl,
-                "Referer" to mainUrl,
-                "Authorization" to "Bearer $token",
-                "X-Website-Token" to wt
-            )
+        val contentHeaders = commonHeaders + mapOf(
+            "Authorization" to "Bearer $token",
+            "X-Website-Token" to wt
+        )
+
+        val response = app.get(
+            "$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
+            headers = contentHeaders
         ).text
 
-        val jsonResponse = JSONObject(response)
-        val data = jsonResponse.getJSONObject("data")
-        val children = data.getJSONObject("children")
-        val oId = children.keys().next()
-        val link = children.getJSONObject(oId).getString("link")
-        val fileName = children.getJSONObject(oId).getString("name")
-        val size = children.getJSONObject(oId).getLong("size")
-        val formattedSize = if (size < 1024L * 1024 * 1024) {
-                val sizeInMB = size.toDouble() / (1024 * 1024)
-                "%.2f MB".format(sizeInMB)
-        } else {
-            val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
-            "%.2f GB".format(sizeInGB)
-        }
+        val data = JSONObject(response).optJSONObject("data") ?: return
+        val children = data.optJSONObject("children") ?: return
 
-        if(link != null) {
+        val keys = children.keys()
+        while (keys.hasNext()) {
+            val oId = keys.next()
+            val fileObj = children.optJSONObject(oId) ?: continue
+
+            val link = fileObj.optString("link").takeIf { it.isNotEmpty() } ?: continue
+
+            val fileName = fileObj.optString("name", "")
+            val size = fileObj.optLong("size", 0L)
+            val formattedSize = formatBytes(size)
+
             callback.invoke(
                 newExtractorLink(
                     "Gofile",
-                    "Gofile $fileName[$formattedSize]",
+                    "Gofile $fileName [$formattedSize]",
                     link,
                     ExtractorLinkType.VIDEO
                 ) {
@@ -642,6 +640,13 @@ class Gofile : ExtractorApi() {
                     )
                 }
             )
+        }
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        return when {
+            bytes < 1024L * 1024 * 1024 -> "%.2f MB".format(bytes.toDouble() / (1024 * 1024))
+            else -> "%.2f GB".format(bytes.toDouble() / (1024 * 1024 * 1024))
         }
     }
 }

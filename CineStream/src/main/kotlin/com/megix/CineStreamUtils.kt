@@ -58,9 +58,21 @@ val M3U8_HEADERS = mapOf(
     "Connection" to "keep-alive",
 )
 
+class SpecOption(searchTerms: List<String>, val label: String) {
+    // Secondary constructor: keeps all single-string entries working
+    constructor(term: String, label: String) : this(listOf(term), label)
+
+    // Combines all terms into one ultra-fast OR (|) regex
+    // e.g. (?i)(?<=^|\W)(?:Multi-Audio|Multi Audio|Multi\.Audio)(?=\W|$)
+    val regex = Regex(
+        searchTerms.joinToString(separator = "|", prefix = "(?i)(?<=^|\\W)(?:", postfix = ")(?=\\W|$)") {
+            Regex.escape(it)
+        }
+    )
+}
+
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
-        // -- Optical / Disk --
         SpecOption("UHD BluRay", "4K UHD BluRay 💿"),
         SpecOption("BluRay", "BluRay 💿"),
         SpecOption("BluRay REMUX", "BluRay REMUX 💾"),
@@ -71,13 +83,9 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("DVD5", "DVD5 📀"),
         SpecOption("DVD9", "DVD9 📀"),
         SpecOption("HD-DVD", "HD-DVD 📀"),
-
-        // -- Web --
         SpecOption("WEB-DL", "WEB-DL ☁️"),
         SpecOption("WEBRip", "WEBRip 🌐"),
         SpecOption("HDRip", "HDRip ✨"),
-
-        // -- TV / Broadcast --
         SpecOption("HDTV", "HDTV 📺"),
         SpecOption("PDTV", "PDTV 📺"),
         SpecOption("SDTV", "SDTV 📺"),
@@ -85,8 +93,6 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("SATRip", "SATRip 📡"),
         SpecOption("DSR", "DSRip 📡"),
         SpecOption("TVRip", "TVRip 📺"),
-
-        // -- Low Quality / Pre-release --
         SpecOption("CAM", "CAM 📹"),
         SpecOption("TeleSync", "TeleSync 📹"),
         SpecOption("TS", "TS 🚫"),
@@ -98,20 +104,11 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("LaserDisc", "LaserDisc 💿")
     ),
     "codec" to listOf(
-        // -- Modern --
         SpecOption("av1", "AV1 🚀"),
-        SpecOption("x265", "HEVC ⚡"),
-        SpecOption("h.265", "HEVC ⚡"),
-        SpecOption("hevc", "HEVC ⚡"),
+        SpecOption(listOf("x265", "h.265", "hevc"), "HEVC ⚡"),
         SpecOption("vp9", "VP9 🧪"),
         SpecOption("vp8", "VP8 🧪"),
-
-        // -- Standard --
-        SpecOption("x264", "H.264 📦"),
-        SpecOption("h.264", "H.264 📦"),
-        SpecOption("avc", "H.264 📦"),
-
-        // -- Legacy --
+        SpecOption(listOf("x264", "h.264", "H264", "avc"), "H.264 📦"),
         SpecOption("vc-1", "VC-1 📼"),
         SpecOption("mpeg-2", "MPEG-2 🎞️"),
         SpecOption("mpeg-4", "MPEG-4 🎞️"),
@@ -133,11 +130,9 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("IMAX", "IMAX 🏟️")
     ),
     "audio" to listOf(
-        // -- Surround / Lossless --
         SpecOption("TrueHD", "Dolby TrueHD 🔊"),
         SpecOption("Atmos", "Dolby Atmos 🌌"),
-        SpecOption("DDP5.1", "DD+ 5.1 🔉"),
-        SpecOption("DDP 5.1", "DD+ 5.1 🔉"),
+        SpecOption(listOf("DDP5.1", "DDP 5.1"), "DD+ 5.1 🔉"),
         SpecOption("7.1", "7.1 Ch 🔊"),
         SpecOption("5.1", "5.1 Ch 🔉"),
         SpecOption("DTS-HD MA", "DTS-HD MA 🔊"),
@@ -150,16 +145,9 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("ALAC", "ALAC 🍏"),
         SpecOption("WAV", "WAV 🌊"),
         SpecOption("AIFF", "AIFF 🎼"),
-
-        // -- Stereo / 2.0 Channels --
-        SpecOption("AAC2.0", "AAC 2.0 🎧"),
-        SpecOption("AAC 2.0", "AAC 2.0 🎧"),
+        SpecOption(listOf("AAC2.0", "AAC 2.0"), "AAC 2.0 🎧"),
         SpecOption("DD2.0", "DD 2.0 🎧"),
-
-        // -- Standard --
-        SpecOption("E-AC3", "E-AC3 (DD+) 🔉"),
-        SpecOption("DD+", "DD+ 🔉"),
-        SpecOption("Dolby Digital Plus", "Dolby Digital Plus 🔉"),
+        SpecOption(listOf("E-AC3", "DD+", "Dolby Digital Plus"), "DD+ 🔉"),
         SpecOption("AC3", "AC3 (Dolby Digital) 🔈"),
         SpecOption("DD5.1", "Dolby Digital 5.1 🔈"),
         SpecOption("DTS", "DTS 🔈"),
@@ -173,9 +161,7 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("MP2", "MP2 📻")
     ),
     "hdr" to listOf(
-        SpecOption("DV", "Dolby Vision 👁️"),
-        SpecOption("DoVi", "Dolby Vision 👁️"),
-        SpecOption("DOLBYVISION", "Dolby Vision 👁️"),
+        SpecOption(listOf("DV", "DoVi", "DOLBYVISION", "Dolby Vision"), "Dolby Vision 👁️"),
         SpecOption("HDR10+", "HDR10+ 🔆"),
         SpecOption("HDR10", "HDR10 🔆"),
         SpecOption("HLG", "HLG 📡"),
@@ -183,90 +169,53 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("SDR", "SDR 🔅")
     ),
     "language" to listOf(
-        // -- Indian --
-        SpecOption("HIN", "Hindi 🇮🇳"),
-        SpecOption("Hindi", "Hindi 🇮🇳"),
+        SpecOption(listOf("HIN", "Hindi"), "Hindi 🇮🇳"),
         SpecOption("Tamil", "Tamil 🇮🇳"),
         SpecOption("Telugu", "Telugu 🇮🇳"),
         SpecOption("Malayalam", "Malayalam 🇮🇳"),
         SpecOption("Kannada", "Kannada 🇮🇳"),
         SpecOption("Bengali", "Bengali 🇮🇳"),
         SpecOption("Punjabi", "Punjabi 🇮🇳"),
-
-        // -- Global --
-        SpecOption("ENG", "English 🇺🇸"),
-        SpecOption("English", "English 🇺🇸"),
-        SpecOption("KOR", "Korean 🇰🇷"),
-        SpecOption("Korean", "Korean 🇰🇷"),
-        SpecOption("JPN", "Japanese 🇯🇵"),
-        SpecOption("Japanese", "Japanese 🇯🇵"),
-        SpecOption("CHN", "Chinese 🇨🇳"),
-        SpecOption("Chinese", "Chinese 🇨🇳"),
+        SpecOption(listOf("ENG", "English"), "English 🇺🇸"),
+        SpecOption(listOf("KOR", "Korean"), "Korean 🇰🇷"),
+        SpecOption(listOf("JPN", "Japanese"), "Japanese 🇯🇵"),
+        SpecOption(listOf("CHN", "Chinese"), "Chinese 🇨🇳"),
         SpecOption("Spanish", "Spanish 🇪🇸"),
         SpecOption("French", "French 🇫🇷"),
         SpecOption("German", "German 🇩🇪"),
         SpecOption("Italian", "Italian 🇮🇹"),
         SpecOption("Russian", "Russian 🇷🇺"),
-        SpecOption("Portuguese", "Portuguese 🇵🇹"),
         SpecOption("Arabic", "Arabic 🇸🇦"),
-        SpecOption("Multi", "Multi-Audio 🌍"),
-        SpecOption("Dual", "Dual-Audio 🌗")
+        SpecOption(listOf("Multi-Audio", "Multi Audio", "Multi.Audio"), "Multi Audio 🌍"),
+        SpecOption(listOf("Dual.Audio", "Dual Audio", "Dual"), "Dual Audio 🌗"),
+        SpecOption(listOf("Multi-Sub", "MultiSub", "Multi Sub"), "Multi Subs 💬"),
+        SpecOption("ESub", "English Subs 🇺🇸")
     )
 )
 
-// 3. Extraction Logic
-fun extractSpecs(inputString: String): Map<String, List<String>> {
-    val results = mutableMapOf<String, List<String>>()
+private val SIZE_REGEX = """(\d+(?:\.\d+)?\s?(?:MB|GB))""".toRegex(RegexOption.IGNORE_CASE)
+private val CATEGORY_ORDER = listOf("quality", "codec", "bitdepth", "audio", "hdr", "language")
 
-    SPEC_OPTIONS.forEach { (category, options) ->
-        val matches = options.filter { option ->
-            // Escape special chars (like dots in "h.264") and use word boundaries (\b)
-            val escapedValue = Pattern.quote(option.value)
-            val regexPattern = "\\b$escapedValue\\b".toRegex(RegexOption.IGNORE_CASE)
-            regexPattern.containsMatchIn(inputString)
-        }.map { it.label }
-
-        if (matches.isNotEmpty()) {
-            results[category] = matches
-        }
-    }
-
-    // Regex for file size (e.g. 1.4GB, 500MB)
-    val fileSizeRegex = """(\d+(?:\.\d+)?\s?(?:MB|GB))""".toRegex(RegexOption.IGNORE_CASE)
-    val sizeMatch = fileSizeRegex.find(inputString)
-    if (sizeMatch != null) {
-        results["size"] = listOf(sizeMatch.groupValues[1])
-    }
-
-    return results.toMap()
-}
-
-// 4. Formatting Logic (Using Pipe Separator)
-fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
-    // Define preferred order of categories
-    val orderedCategories = listOf("quality", "codec", "bitdepth", "audio", "hdr", "language")
-
-    // Flatten lists, remove duplicates, join with " | "
-    val specs = orderedCategories
-        .flatMap { extracted[it] ?: emptyList() }
+fun getSimplifiedTitle(title: String): String {
+    // Get all matching specs in order, flatten, and remove duplicates
+    val specs = CATEGORY_ORDER
+        .flatMap { SPEC_OPTIONS[it].orEmpty() }
+        .filter { it.regex.containsMatchIn(title) }
+        .map { it.label }
         .distinct()
         .joinToString(" | ")
 
-    val size = extracted["size"]?.firstOrNull()
+    // Extract file size
+    val sizeMatch = SIZE_REGEX.find(title)?.value?.uppercase()
+    val size = sizeMatch?.let { "$it 💾" }
 
-    return when {
-        // If both specs and size exist, separate them with " | "
-        size != null && specs.isNotEmpty() -> "\n$specs | $size 💾"
+    // Combine specs and size safely, ignoring nulls/empties
+    val result = listOfNotNull(
+        specs.takeIf { it.isNotEmpty() },
+        size
+    ).joinToString(" | ")
 
-        // Only size
-        size != null -> "$size 💾"
-
-        // Only specs
-        specs.isNotEmpty() -> "\n$specs"
-
-        // Nothing found
-        else -> ""
-    }
+    return if (result.isEmpty()) "" else "\n$result"
 }
 
 val languageMap = mapOf(
@@ -690,6 +639,7 @@ suspend fun getHindMoviezLinks(
     )
 }
 
+//Bold String
 fun String.toSansSerifBold(): String {
     val builder = StringBuilder()
     for (char in this) {
@@ -698,6 +648,15 @@ fun String.toSansSerifBold(): String {
             in 'A'..'Z' -> 0x1D5D4 + (char - 'A')
             in 'a'..'z' -> 0x1D5EE + (char - 'a')
             in '0'..'9' -> 0x1D7EC + (char - '0')
+
+            '(' -> 0x2768 // ❨ Medium Flattened Parenthesis
+            ')' -> 0x2769 // ❩
+            '{' -> 0x2774 // ❴ Medium Curly Bracket
+            '}' -> 0x2775 // ❵
+            '[' -> 0x3010 // 【 Black Lenticular Bracket
+            ']' -> 0x3011 // 】
+            '-' -> 0x2501 // ━ Box Drawings Heavy Horizontal (Thick Hyphen)
+
             else -> char.code
         }
         builder.append(Character.toChars(codePoint))
@@ -742,11 +701,6 @@ suspend fun loadSourceNameExtractor(
             callback.invoke(newLink)
         }
     }
-}
-
-fun getSimplifiedTitle(title: String) : String {
-    val extracted = extractSpecs(title)
-    return buildExtractedTitle(extracted)
 }
 
 suspend fun loadCustomExtractor(

@@ -29,8 +29,6 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
-data class SpecOption(val value: String, val label: String)
-
 //Kisskh
 data class KisskhResults(
     @param:JsonProperty("id") val id: Int?,
