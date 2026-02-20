@@ -346,7 +346,7 @@ open class HubCloud : ExtractorApi() {
             doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
         }
 
-        if(!link.startsWith("https://")) link = latestUrl + link
+        if(!link.startsWith("https://")) link = baseUrl + link
 
         val document = app.get(link).document
         val div = document.selectFirst("div.card-body")
@@ -516,7 +516,7 @@ open class GDFlix : ExtractorApi() {
 
                 text.contains("FAST CLOUD") -> {
 
-                    val dlink = app.get(latestUrl + link)
+                    val dlink = app.get(baseUrl + link)
                         .document
                         .select("div.card-body a")
                         .attr("href")
