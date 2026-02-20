@@ -580,7 +580,7 @@ class Gofile : ExtractorApi() {
 
         val token = app.post(
             "$mainApi/accounts",
-        ).parsedSafe<AccountResponse>().data?.token ?: return
+        ).parsedSafe<AccountResponse>()?.data?.token ?: return
 
         val headers = mapOf("Authorization" to "Bearer $token")
 
@@ -592,6 +592,7 @@ class Gofile : ExtractorApi() {
         val childrenMap = parsedResponse?.data?.children ?: return
 
         for ((_, file) in childrenMap) {
+            if (file.type != "file" || file.link.isNullOrEmpty()) continue
             val fileName = file.name ?: ""
             val size = file.size ?: 0L
             val formattedSize = formatBytes(size)
@@ -604,7 +605,7 @@ class Gofile : ExtractorApi() {
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = getIndexQuality(fileName)
-                    this.headers = headers
+                    this.headers = mapOf("Cookie" to "accountToken=$token")
                 }
             )
         }
@@ -634,6 +635,7 @@ class Gofile : ExtractorApi() {
     )
 
     data class GofileFile(
+        @JsonProperty("type") val type: String? = null,
         @JsonProperty("name") val name: String? = null,
         @JsonProperty("link") val link: String? = null,
         @JsonProperty("size") val size: Long? = 0L
