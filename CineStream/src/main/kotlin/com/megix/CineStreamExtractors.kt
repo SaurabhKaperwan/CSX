@@ -2020,7 +2020,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = "$netflix2API/"
                     this.quality = getQualityFromName(source.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = M3U8_HEADERS + mapOf("Cookie" to "hd=on; ott=$ottCode; t_hash_t=$nfCookie")
+                    this.headers = mapOf("Cookie" to "hd=on; ott=$ottCode; t_hash_t=$nfCookie")
                 }
             )
         }
@@ -3491,7 +3491,6 @@ object CineStreamExtractors : CineStreamProvider() {
     //             )
     //             {
     //                 this.quality = Qualities.P1080.value
-    //                 this.headers = M3U8_HEADERS
     //             }
     //         )
     //     }

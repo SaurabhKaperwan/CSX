@@ -12,15 +12,7 @@ import com.lagradost.api.Log
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import com.lagradost.cloudstream3.USER_AGENT
-
-val VIDEO_HEADERS = mapOf(
-    "User-Agent" to "VLC/3.6.0 LibVLC/3.0.18 (Android)",
-    "Accept" to "*/*",
-    "Accept-Encoding" to "identity",
-    "Connection" to "keep-alive",
-    "Range" to "bytes=0-",
-    "Icy-MetaData" to "1"
-)
+import com.fasterxml.jackson.annotation.JsonProperty
 
 fun getIndexQuality(str: String?): Int {
     if (str.isNullOrBlank()) return Qualities.Unknown.value
@@ -184,7 +176,6 @@ open class Driveleech : ExtractorApi() {
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = quality
-                    this.headers = VIDEO_HEADERS
                 }
             )
         }
@@ -275,7 +266,6 @@ class VCloud : ExtractorApi() {
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = quality
-                    this.headers = VIDEO_HEADERS
                 }
             )
         }
@@ -363,7 +353,6 @@ open class HubCloud : ExtractorApi() {
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = quality
-                    this.headers = VIDEO_HEADERS
                 }
             )
         }
@@ -496,7 +485,6 @@ open class GDFlix : ExtractorApi() {
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = quality
-                    this.headers = VIDEO_HEADERS
                 }
             )
         }
@@ -588,56 +576,35 @@ class Gofile : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val commonHeaders = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Origin" to mainUrl,
-            "Referer" to mainUrl,
-        )
+        val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
 
-        val id = url.substringAfter("d/").substringBefore("/")
-        if (id.isEmpty() || id == url) return
+        val token = app.post(
+            "$mainApi/accounts",
+        ).parsedSafe<AccountResponse>().data?.token ?: return
 
-        val genAccountRes = app.post("$mainApi/accounts", headers = commonHeaders).text
-        val token = JSONObject(genAccountRes).optJSONObject("data")?.optString("token") ?: return
+        val headers = mapOf("Authorization" to "Bearer $token")
 
-        val globalRes = app.get("$mainUrl/dist/js/config.js", headers = commonHeaders).text
-        val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+        val parsedResponse = app.get(
+            "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
+            headers = headers
+        ).parsedSafe<GofileResponse>()
 
-        val contentHeaders = commonHeaders + mapOf(
-            "Authorization" to "Bearer $token",
-            "X-Website-Token" to wt
-        )
+        val childrenMap = parsedResponse?.data?.children ?: return
 
-        val response = app.get(
-            "$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
-            headers = contentHeaders
-        ).text
-
-        val data = JSONObject(response).optJSONObject("data") ?: return
-        val children = data.optJSONObject("children") ?: return
-
-        val keys = children.keys()
-        while (keys.hasNext()) {
-            val oId = keys.next()
-            val fileObj = children.optJSONObject(oId) ?: continue
-
-            val link = fileObj.optString("link").takeIf { it.isNotEmpty() } ?: continue
-
-            val fileName = fileObj.optString("name", "")
-            val size = fileObj.optLong("size", 0L)
+        for ((_, file) in childrenMap) {
+            val fileName = file.name ?: ""
+            val size = file.size ?: 0L
             val formattedSize = formatBytes(size)
 
             callback.invoke(
                 newExtractorLink(
                     "Gofile",
                     "Gofile $fileName [$formattedSize]",
-                    link,
+                    file.link,
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = getIndexQuality(fileName)
-                    this.headers = VIDEO_HEADERS + mapOf(
-                        "Cookie" to "accountToken=$token"
-                    )
+                    this.headers = headers
                 }
             )
         }
@@ -649,5 +616,27 @@ class Gofile : ExtractorApi() {
             else -> "%.2f GB".format(bytes.toDouble() / (1024 * 1024 * 1024))
         }
     }
+
+    data class AccountResponse(
+        @JsonProperty("data") val data: AccountData? = null
+    )
+
+    data class AccountData(
+        @JsonProperty("token") val token: String? = null
+    )
+
+    data class GofileResponse(
+        @JsonProperty("data") val data: GofileData? = null
+    )
+
+    data class GofileData(
+        @JsonProperty("children") val children: Map<String, GofileFile>? = null
+    )
+
+    data class GofileFile(
+        @JsonProperty("name") val name: String? = null,
+        @JsonProperty("link") val link: String? = null,
+        @JsonProperty("size") val size: Long? = 0L
+    )
 }
 
