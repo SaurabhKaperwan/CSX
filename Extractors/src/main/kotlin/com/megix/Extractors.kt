@@ -582,7 +582,13 @@ class Gofile : ExtractorApi() {
             "$mainApi/accounts",
         ).parsedSafe<AccountResponse>()?.data?.token ?: return
 
-        val headers = mapOf("Authorization" to "Bearer $token")
+        val globalRes = app.get("$mainUrl/dist/js/config.js").text
+        val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+        val headers = mapOf(
+            "Authorization" to "Bearer $token",
+            "X-Website-Token" to wt
+        )
 
         val parsedResponse = app.get(
             "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",

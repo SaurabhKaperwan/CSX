@@ -848,7 +848,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val quality = getIndexQuality(title + name).takeIf { it != Qualities.Unknown.value }
                 ?: if (sourceName.contains("Castle")) Qualities.P1080.value else Qualities.Unknown.value
 
-            callback(newExtractorLink(sourceName, "[$sourceName] ${if (sourceName == "Hdmovielover") getSimplifiedTitle(title) else title}", streamUrl, type) {
+            callback(newExtractorLink(sourceName, "[$sourceName]".toSansSerifBold() + " ${if (sourceName == "Hdmovielover") getSimplifiedTitle(title) else title}", streamUrl, type) {
                 this.referer = req?.Referer ?: ""
                 this.quality = quality
                 this.headers = mapOf("User-Agent" to (req?.userAgent ?: USER_AGENT), "Referer" to (req?.Referer ?: ""), "Origin" to (req?.Origin ?: ""))
