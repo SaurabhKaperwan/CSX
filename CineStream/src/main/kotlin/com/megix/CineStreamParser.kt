@@ -60,6 +60,25 @@ data class AnimeInfo(
     val posterUrl: String?
 )
 
+// --- Data Classes for AniList ---
+data class AniListResponse(
+    @param:JsonProperty("data") val data: AniListData? = null
+)
+
+data class AniListData(
+    @param:JsonProperty("Media") val media: AniListMedia? = null
+)
+
+data class AniListMedia(
+    @param:JsonProperty("title") val title: AniListTitle? = null,
+    @param:JsonProperty("bannerImage") val bannerImage: String? = null
+)
+
+data class AniListTitle(
+    @param:JsonProperty("english") val english: String? = null,
+    @param:JsonProperty("romaji") val romaji: String? = null
+)
+
 //XDmovies
 class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {
     data class SearchDataItem(

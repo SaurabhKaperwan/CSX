@@ -15,7 +15,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
 import com.megix.CineStreamExtractors.invokeAnimes
@@ -60,7 +59,6 @@ open class CineStreamProvider : MainAPI() {
         const val animezAPI = "https://animeyy.com"
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on","disableExtractor_hubdrive":"on"}"""
         // const val mp4MoviezAPI = "https://www.mp4moviez.talk"
-        const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.tech"
         // const val tripleOneMoviesApi = "https://111movies.com"
         // const val vidfastProApi = "https://vidfast.pro"
@@ -128,8 +126,6 @@ open class CineStreamProvider : MainAPI() {
         val animekaiAPI get() = api("animekai")
         val rtallyAPI get() = api("rtally")
     }
-
-    val wpRedisInterceptor by lazy { CloudflareKiller() }
 
     override val supportedTypes = setOf(
         TvType.Movie,

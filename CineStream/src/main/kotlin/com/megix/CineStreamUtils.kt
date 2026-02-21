@@ -6,18 +6,13 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
 import java.util.Base64
-import okhttp3.*
-import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import java.net.*
 import com.lagradost.api.Log
 import com.lagradost.nicehttp.NiceResponse
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.nicehttp.RequestBodyTypes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -382,12 +377,17 @@ suspend fun NFBypass(mainUrl: String): String {
 }
 
 suspend fun getNfVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
-    val requestBody = FormBody.Builder().add("id", id).build()
     val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest",
         "Referer" to "$mainUrl/",
     )
-    val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
+
+    val json = app.post(
+        "$mainUrl/play.php",
+        headers = headers,
+        cookies = cookies,
+        data = mapOf("id" to id)
+    ).text
     val h = JSONObject(json).getString("h")
 
     val headers2 = mapOf(
@@ -767,13 +767,14 @@ fun formatSize(bytes: Long): String {
 //         "Accept-Language" to "en-US,en;q=0.9'",
 //     )
 
-//     val jsonBody = """{"text":"$text"}"""
-//     val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+//     val jsonBody = mapOf(
+//         "text" to text
+//     )
 
 //     val response = app.post(
 //         "https://enc-dec.app/api/$source",
 //         headers = headers,
-//         requestBody = requestBody
+//         json = jsonBody
 //     )
 
 //     if(response.isSuccessful) {
@@ -815,12 +816,47 @@ suspend fun bypassHrefli(url: String): String? {
     return fixUrl(path, getBaseUrl(driveUrl))
 }
 
-fun getAniListInfo(animeId: Int): AnimeInfo? {
-    val client = OkHttpClient()
+//XDM
+suspend fun bypassXDM(url: String): String? {
+    val link = app.get(
+        url,
+        allowRedirects = false,
+        timeout = 600L
+    ).headers["location"] ?: return null
 
+    val baseUrl = getBaseUrl(link)
+    val id = link.substringAfterLast("/")
+
+    if (id.isEmpty()) return null
+
+    val responseText = app.post(
+        "$baseUrl/api/session",
+        json = mapOf("code" to id)
+    ).text
+
+    val json = try {
+        JSONObject(responseText)
+    } catch (e: Exception) {
+        return null
+    }
+    val sessionId = json.optString("sessionId")
+    val token = json.optString("token")
+
+    if (sessionId.isEmpty() || token.isEmpty()) return null
+
+    val source = app.get(
+        "$baseUrl/go/$sessionId?t=$token",
+        timeout = 600L,
+        allowRedirects = false
+    ).headers["location"] ?: return null
+
+    return source
+}
+
+suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val query = """
-        query (${"$"}id: Int) {
-            Media (id: ${"$"}id, type: ANIME) {
+        query (${'$'}id: Int) {
+            Media (id: ${'$'}id, type: ANIME) {
                 title {
                     english
                     romaji
@@ -830,29 +866,22 @@ fun getAniListInfo(animeId: Int): AnimeInfo? {
         }
     """.trimIndent()
 
-    val jsonBody = JSONObject()
-    jsonBody.put("query", query)
-    jsonBody.put("variables", JSONObject().put("id", animeId))
+    val requestData = mapOf(
+        "query" to query,
+        "variables" to mapOf("id" to animeId)
+    )
 
-    val request = Request.Builder()
-        .url("https://graphql.anilist.co")
-        .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
-        .build()
+    val response = app.post(
+        "https://graphql.anilist.co",
+        json = requestData
+    ).parsedSafe<AniListResponse>()
 
-    client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) return null
+    val media = response?.data?.media ?: return null
 
-        val responseBody = response.body.string()
-        val json = JSONObject(responseBody)
-        val media = json.optJSONObject("data")?.optJSONObject("Media") ?: return null
-        val rawBanner = media.optString("bannerImage")
-        val finalBanner = rawBanner.takeUnless { it.isBlank() || it == "null" }
-        val titleObj = media.optJSONObject("title")
-        val english = titleObj?.optString("english")
-        //val romaji = titleObj?.optString("romaji")
-        val finalTitle = english?.takeUnless { it.isBlank() || it == "null" }
-        return AnimeInfo(finalTitle, finalBanner)
-    }
+    val finalBanner = media.bannerImage?.takeUnless { it.isBlank() || it == "null" }
+    val finalTitle = media.title?.english?.takeUnless { it.isBlank() || it == "null" }
+
+    return AnimeInfo(finalTitle, finalBanner)
 }
 
 suspend fun convertTmdbToAnimeId(
@@ -919,7 +948,7 @@ suspend fun tmdbToAnimeId(title: String?, year: Int?, season: String?, type: TvT
             }
           }
         }
-    """.trimIndent().trim()
+    """.trimIndent()
 
     val variables = mapOf(
         "search" to title,
@@ -928,16 +957,18 @@ suspend fun tmdbToAnimeId(title: String?, year: Int?, season: String?, type: TvT
         "season" to season?.uppercase(),
         "seasonYear" to year,
         "format" to listOf(if (type == TvType.AnimeMovie) "MOVIE" else "TV", "ONA")
-    ).filterValues { value -> value != null && value.toString().isNotEmpty() }
-    val data = mapOf(
-        "query" to query,
-        "variables" to variables
-    ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
-    val res = app.post(anilistAPI, requestBody = data)
-        .parsedSafe<AniSearch>()?.data?.Page?.media?.firstOrNull()
+    ).filterValues { it != null && it.toString().isNotEmpty() }
+
+    val res = app.post(
+        url = anilistAPI,
+        json = mapOf(
+            "query" to query,
+            "variables" to variables
+        )
+    ).parsedSafe<AniSearch>()?.data?.Page?.media?.firstOrNull()
+
     return AniIds(res?.id, res?.idMal)
 }
-
 
 fun getSeason(month: Int?): String? {
     val seasons = arrayOf(
@@ -1077,21 +1108,20 @@ suspend fun getProtonStream(
                 .padStart(9, '0')
             }"
 
-            val requestBody = FormBody.Builder()
-                .add("downloadid", id)
-                .add("token", "ok")
-                .add("uid", uid)
-                .build()
-
             val postHeaders = mapOf(
                 "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI,
                 "Content-Type" to "multipart/form-data",
             )
+
             val idData = app.post(
                 "$protonmoviesAPI/ppd.php",
                 headers = postHeaders,
-                requestBody = requestBody
+                data = mapOf(
+                    "downloadid" to id,
+                    "token" to "ok",
+                    "uid" to uid
+                )
             ).text
 
             val headers = mapOf(
