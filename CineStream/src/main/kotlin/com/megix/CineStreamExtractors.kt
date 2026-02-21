@@ -1357,7 +1357,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Sudatchi",
-                "Sudatchi",
+                "Sudatchi Multi Audio 🌐",
                 url,
                 type = ExtractorLinkType.M3U8
             ) {
