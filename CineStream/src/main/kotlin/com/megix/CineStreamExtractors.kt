@@ -2119,7 +2119,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
         }
 
-        val (sSlug, eSlug) = getEpisodeSlug(season, episode)
+        val (sSlug, eSlug) = getEpisodeSlug(1, episode)
 
         if (link.isEmpty()) {
             document.select("a[href*=dwo]").amap { anchor ->
