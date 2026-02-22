@@ -827,6 +827,8 @@ suspend fun bypassXDM(url: String): String? {
         timeout = 600L
     ).headers["location"] ?: return null
 
+    if(link.contains("hubcloud")) return link
+
     val baseUrl = getBaseUrl(link)
     val id = link.substringAfterLast("/")
 

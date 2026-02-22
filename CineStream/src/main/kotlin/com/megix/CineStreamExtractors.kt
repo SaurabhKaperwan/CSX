@@ -2119,17 +2119,30 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
         }
 
+        val (sSlug, eSlug) = getEpisodeSlug(season, episode)
+
         if (link.isEmpty()) {
-            val type = if (episode != null) "(Combined)" else ""
-            document.select("a[href*=dwo]").forEach { anchor ->
+            document.select("a[href*=dwo]").amap { anchor ->
+                val anchorText = anchor.text()
+
+                val type = if (episode != null && !anchorText.contains("ep", ignoreCase = true)) {
+                    " (Combined)"
+                } else {
+                    ""
+                }
+
+                if (episode != null && type == "" && !anchorText.contains("ep$eSlug", ignoreCase = true)) {
+                    return@amap
+                }
+
                 val innerDoc = app.get(anchor.attr("href")).document
-                innerDoc.select("div > p > a").forEach {
+                innerDoc.select("div > p > a").amap {
                     loadSourceNameExtractor(
                         "Hdmovie2$type",
                         it.attr("href"),
                         "",
                         subtitleCallback,
-                        callback,
+                        callback
                     )
                 }
             }
