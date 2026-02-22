@@ -47,13 +47,14 @@ import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.util.regex.Pattern
 
 class SpecOption(searchTerms: List<String>, val label: String) {
-    // Secondary constructor: keeps all single-string entries working
     constructor(term: String, label: String) : this(listOf(term), label)
 
-    // Combines all terms into one ultra-fast OR (|) regex
-    // e.g. (?i)(?<=^|\W)(?:Multi-Audio|Multi Audio|Multi\.Audio)(?=\W|$)
     val regex = Regex(
-        searchTerms.joinToString(separator = "|", prefix = "(?i)(?<=^|\\W)(?:", postfix = ")(?=\\W|$)") {
+        searchTerms.joinToString(
+            separator = "|",
+            prefix = "(?i)(?<=^|\\W)(?:",
+            postfix = ")(?=[^a-zA-Z0-9_+]|$)"
+        ) {
             Regex.escape(it)
         }
     )
@@ -185,21 +186,23 @@ private val SIZE_REGEX = """(\d+(?:\.\d+)?\s?(?:MB|GB))""".toRegex(RegexOption.I
 private val CATEGORY_ORDER = listOf("quality", "codec", "bitdepth", "audio", "hdr", "language")
 
 fun getSimplifiedTitle(title: String): String {
-    // Get all matching specs in order, flatten, and remove duplicates
-    val specs = CATEGORY_ORDER
-        .flatMap { SPEC_OPTIONS[it].orEmpty() }
-        .filter { it.regex.containsMatchIn(title) }
-        .map { it.label }
-        .distinct()
-        .joinToString(" | ")
+    var remainingTitle = title
+    val matchedLabels = mutableListOf<String>()
 
-    // Extract file size
+    CATEGORY_ORDER.forEach { category ->
+        SPEC_OPTIONS[category].orEmpty().forEach { spec ->
+            if (spec.regex.containsMatchIn(remainingTitle)) {
+                matchedLabels.add(spec.label)
+                remainingTitle = spec.regex.replace(remainingTitle, " ")
+            }
+        }
+    }
+
     val sizeMatch = SIZE_REGEX.find(title)?.value?.uppercase()
     val size = sizeMatch?.let { "$it 💾" }
 
-    // Combine specs and size safely, ignoring nulls/empties
     val result = listOfNotNull(
-        specs.takeIf { it.isNotEmpty() },
+        matchedLabels.distinct().joinToString(" | ").takeIf { it.isNotEmpty() },
         size
     ).joinToString(" | ")
 

@@ -3849,7 +3849,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val HOST = "h5.aoneroom.com"
         val BASE_URL = "https://$HOST"
-        val SEASON_SUFFIX_REGEX = Regex("\\sS\\d+$")
+        val SEASON_SUFFIX_REGEX = """\sS\d+(?:-S?\d+)*$""".toRegex(RegexOption.IGNORE_CASE)
 
         val baseHeaders = mapOf(
             "X-Client-Info" to "{\"timezone\":\"Africa/Nairobi\"}",
@@ -3954,7 +3954,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if (slink.isNotEmpty()) {
                         val lan = s.optString("lan")
                         subtitleCallback.invoke(
-                            SubtitleFile(
+                            newSubtitleFile(
                                 getLanguage(lan) ?: lan,
                                 slink
                             )
