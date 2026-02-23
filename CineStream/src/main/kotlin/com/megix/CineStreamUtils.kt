@@ -546,16 +546,10 @@ fun getEpisodeSlug(
 fun getIndexQuality(str: String?): Int {
     if (str.isNullOrBlank()) return Qualities.Unknown.value
 
-    // Check for explicit "1080p" like style formats
-    val exactResolution = Regex("""(\d{3,4})[pP]""").find(str)
-        ?.groupValues?.getOrNull(1)
-        ?.toIntOrNull()
-
-    if (exactResolution != null) {
-        return exactResolution
+    Regex("""(\d{3,4})[pP]""").find(str)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let {
+        return it
     }
 
-    // Check for marketing keywords if no specific number found
     val lowerStr = str.lowercase()
     return when {
         lowerStr.contains("8k") -> 4320
@@ -564,6 +558,7 @@ fun getIndexQuality(str: String?): Int {
         else -> Qualities.Unknown.value
     }
 }
+
 
 //Dahmer
 fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {

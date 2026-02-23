@@ -16,18 +16,17 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 fun getIndexQuality(str: String?): Int {
     if (str.isNullOrBlank()) return Qualities.Unknown.value
-    val lowerStr = str.lowercase()
 
+    Regex("""(\d{3,4})[pP]""").find(str)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let {
+        return it
+    }
+
+    val lowerStr = str.lowercase()
     return when {
         lowerStr.contains("8k") -> 4320
         lowerStr.contains("4k") -> 2160
         lowerStr.contains("2k") -> 1440
-        else -> {
-            Regex("""(\d{3,4})[pP]""").find(str)
-                ?.groupValues?.getOrNull(1)
-                ?.toIntOrNull()
-                ?: Qualities.Unknown.value
-        }
+        else -> Qualities.Unknown.value
     }
 }
 

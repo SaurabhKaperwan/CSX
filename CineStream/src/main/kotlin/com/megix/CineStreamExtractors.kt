@@ -142,7 +142,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
@@ -1742,7 +1742,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "User-Agent" to USER_AGENT,
             "Connection" to "keep-alive",
         )
 
@@ -1778,7 +1778,6 @@ object CineStreamExtractors : CineStreamProvider() {
             }
             return servers
         }
-
 
         suspend fun decrypt(text: String): String {
             val jsonBody = mapOf("text" to text)
@@ -2537,14 +2536,14 @@ object CineStreamExtractors : CineStreamProvider() {
                     invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback)
             },
             {
-                invokeAnimez(zorotitle, episode, callback)
+                invokeAnimez(title ?: zorotitle, episode, callback)
             },
             {
-                invokeAnimekai(title, episode, subtitleCallback, callback)
+                invokeAnimekai(zorotitle ?: title, episode, subtitleCallback, callback)
             },
             {
                 if(origin == "imdb" && title != null) invokeTokyoInsider(
-                    zorotitle,
+                    zorotitle ?: title,
                     episode,
                     subtitleCallback,
                     callback
@@ -2552,7 +2551,7 @@ object CineStreamExtractors : CineStreamProvider() {
             },
             {
                 if(origin == "imdb" && title != null) invokeAllanime(
-                    zorotitle,
+                    zorotitle ?: title,
                     year,
                     episode,
                     subtitleCallback,
@@ -2561,7 +2560,7 @@ object CineStreamExtractors : CineStreamProvider() {
             },
             {
                 if(origin == "imdb" && title!= null) invokeAnizone(
-                    zorotitle,
+                    zorotitle ?: title,
                     episode,
                     subtitleCallback,
                     callback
