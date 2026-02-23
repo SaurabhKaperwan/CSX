@@ -23,7 +23,7 @@ class CineTmdbProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = true
-    override val providerType = ProviderType.MetaProvider
+    // override val providerType = ProviderType.MetaProvider
     private val apiUrl = "https://api.themoviedb.org/3"
     private val image_proxy = "https://wsrv.nl/?url="
 
@@ -199,6 +199,7 @@ class CineTmdbProvider: MainAPI() {
                             this.posterUrl = getImageUrl(eps.stillPath) ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                             this.score = Score.from10(eps.voteAverage)
                             this.description = eps.overview
+                            this.runTime = eps.runtime
                         }.apply {
                             this.addDate(eps.airDate)
                         }
@@ -216,6 +217,7 @@ class CineTmdbProvider: MainAPI() {
                     ?.takeIf { it.isNotEmpty() } ?: genres
                 this.score = Score.from10(res.vote_average.toString())
                 this.showStatus = getStatus(res.status)
+                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -254,6 +256,7 @@ class CineTmdbProvider: MainAPI() {
                     ?.takeIf { it.isNotEmpty() } ?: genres
 
                 this.score = Score.from10(res.vote_average.toString())
+                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -433,6 +436,7 @@ class CineTmdbProvider: MainAPI() {
 
     data class MediaDetail(
         @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("adult") val adult: Boolean = false,
         @param:JsonProperty("imdb_id") val imdbId: String? = null,
         @param:JsonProperty("title") val title: String? = null,
         @param:JsonProperty("name") val name: String? = null,
@@ -468,6 +472,7 @@ class CineTmdbProvider: MainAPI() {
         @param:JsonProperty("vote_average") val voteAverage: Double? = null,
         @param:JsonProperty("episode_number") val episodeNumber: Int? = null,
         @param:JsonProperty("season_number") val seasonNumber: Int? = null,
+        @param:JsonProperty("runtime") val runtime: Int? = null,
     )
 
      data class MediaDetailEpisodes(
