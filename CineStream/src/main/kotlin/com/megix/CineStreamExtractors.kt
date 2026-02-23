@@ -86,7 +86,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
+            { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
+            { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
@@ -135,7 +136,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
-            { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeStremioTorrents("Meteor", meteorAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
             { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -2336,37 +2338,48 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeTorrentio(
+    suspend fun invokeStremioTorrents(
+        sourceName: String,
+        api: String,
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit,
     ) {
         val url = if(season == null) {
-            "$torrentioAPI/$torrentioCONFIG/stream/movie/$id.json"
+            "$api/stream/movie/$id.json"
         } else if(id?.contains("kitsu") == true) {
-            "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$episode.json"
+            "$api/stream/series/$id:$episode.json"
         } else {
-            "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$season:$episode.json"
+            "$api/stream/series/$id:$season:$episode.json"
         }
-        val headers = mapOf(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        )
-        val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
+
+        val res = app.get(url, timeout = 200L).parsedSafe<TorrentioResponse>()
+
         res?.streams?.forEach { stream ->
-            val title = stream.title ?: stream.name ?: ""
+
+            val title = if(sourceName == "Meteor") {
+                stream.description ?: stream.title ?: stream.name ?: ""
+            } else {
+                stream.title ?: stream.name ?: ""
+            }
+
             val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
             val match = regex.find(title)
-            val seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            var seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
             val fileSize = match?.groupValues?.get(2) ?: ""
 
-            if (seeders < 20) return@forEach
+            if (seeders < 25 && sourceName != "Meteor") return@forEach
+
+            if(sourceName == "Meteor") seeders = 25
+
+            val seedersText = if(sourceName == "Meteor") "25+" else "$seeders"
+
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "Torrentio🧲",
-                    "Torrentio".toSansSerifBold() + " 🧲 | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
+                    "$sourceName🧲",
+                    sourceName.toSansSerifBold() + " 🧲 | 👤 $seedersText ⬆️ | " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {

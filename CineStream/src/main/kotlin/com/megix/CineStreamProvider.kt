@@ -45,10 +45,9 @@ open class CineStreamProvider : MainAPI() {
         const val HDMOVIELOVER_API = BuildConfig.HDMOVIELOVER_API
         const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.io"
-        const val torrentioAPI = "https://torrentio.strem.fun"
+        const val torrentioAPI = "https://torrentio.strem.fun/sort=seeders"
         const val anizoneAPI = "https://anizone.to"
         const val AllanimeAPI = "https://api.allanime.day/api"
-        const val torrentioCONFIG = "sort=seeders"
         const val PrimeSrcApi = "https://primesrc.me"
         const val asiaflixAPI = "https://asiaflix.net"
         const val twoembedAPI = "https://2embed.cc"
@@ -89,6 +88,7 @@ open class CineStreamProvider : MainAPI() {
         const val dramafullAPI = "https://dramafull.cc"
         const val akwamAPI = "https://ak.sv"
         const val flixIndiaAPI = "https://m.flixindia.xyz"
+        const val meteorAPI = "https://meteorfortheweebs.midnightignite.me/eyJkZWJyaWRTZXJ2aWNlIjoidG9ycmVudCIsImRlYnJpZEFwaUtleSI6IiIsImNhY2hlZE9ubHkiOmZhbHNlLCJyZW1vdmVUcmFzaCI6dHJ1ZSwicmVtb3ZlU2FtcGxlcyI6dHJ1ZSwicmVtb3ZlQWR1bHQiOmZhbHNlLCJleGNsdWRlM0QiOnRydWUsImVuYWJsZVNlYURleCI6dHJ1ZSwibWluU2VlZGVycyI6MjUsIm1heFJlc3VsdHMiOjE1LCJtYXhSZXN1bHRzUGVyUmVzIjozLCJtYXhTaXplIjowLCJyZXNvbHV0aW9ucyI6W10sImxhbmd1YWdlcyI6eyJwcmVmZXJyZWQiOlsiZW4iLCJtdWx0aSJdLCJyZXF1aXJlZCI6W10sImV4Y2x1ZGUiOltdfSwicmVzdWx0Rm9ybWF0IjpbInRpdGxlIiwicXVhbGl0eSIsInNpemUiLCJhdWRpbyJdLCJzb3J0T3JkZXIiOlsicGFjayIsImNhY2hlZCIsInNlYWRleCIsInJlc29sdXRpb24iLCJzaXplIiwicXVhbGl0eSIsInNlZWRlcnMiLCJsYW5ndWFnZSJdfQ"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

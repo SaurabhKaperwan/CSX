@@ -481,11 +481,11 @@ data class AnimiaResponse(
 data class TorrentioResponse(val streams: List<TorrentioStream>)
 
 data class TorrentioStream(
-    val name: String?,
-    val title: String?,
-    val infoHash: String?,
-    val fileIdx: Int?,
-    val description: String?,
+    val name: String? = null,
+    val title: String? = null,
+    val infoHash: String? = null,
+    val fileIdx: Int? = null,
+    val description: String? = null,
     val sources: List<String>? = null,
 )
 
