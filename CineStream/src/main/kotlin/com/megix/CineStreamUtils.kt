@@ -14,9 +14,7 @@ import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.json.JSONArray
@@ -665,36 +663,40 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = "",
 ) {
-    val scope = CoroutineScope(Dispatchers.Default + Job())
+    coroutineScope {
+        val scope = this
 
-    loadExtractor(url, referer, subtitleCallback) { link ->
-        scope.launch {
-            val isDownload = if(link.source.contains("Download")
-                || link.url.contains("video-downloads.googleusercontent")
-            ){ true } else { false }
+        loadExtractor(url, referer, subtitleCallback) { link ->
+            scope.launch {
+                val isDownload = link.source.contains("Download") ||
+                                 link.url.contains("video-downloads.googleusercontent")
 
-            // if(isDownload) return@launch
+                val simplifiedTitle = getSimplifiedTitle(link.name)
+                val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+                val fixSize = if (size.isNotEmpty()) " $size" else ""
+                val sourceBold = "$source [${link.source}]".toSansSerifBold()
 
-            val simplifiedTitle = getSimplifiedTitle(link.name)
-            val combined = if(source.contains("(Combined)")) " (Combined)" else ""
-            val fixSize = if(size.isNotEmpty()) " $size" else ""
-            val sourceBold = "$source [${link.source}]".toSansSerifBold()
-            val newLink = newExtractorLink(
-                if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$sourceBold $simplifiedTitle $fixSize",
-                link.url,
-                type = link.type
-            ) {
-                this.referer = link.referer
-                this.quality = quality ?: link.quality
-                this.headers = link.headers
-                this.extractorData = link.extractorData
+                val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+                val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
+
+                val newLink = newExtractorLink(
+                    newSourceName,
+                    newName,
+                    link.url,
+                    type = link.type
+                ) {
+                    this.referer = link.referer
+                    this.quality = quality ?: link.quality
+                    this.headers = link.headers
+                    this.extractorData = link.extractorData
+                }
+
+                callback.invoke(newLink)
             }
-            callback.invoke(newLink)
         }
     }
 }
@@ -704,26 +706,28 @@ suspend fun loadCustomExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
-    // Define a scope for the coroutine
-    val scope = CoroutineScope(Dispatchers.Default + Job())
+    coroutineScope {
+        val scope = this
 
-    loadExtractor(url, referer, subtitleCallback) { link ->
-        scope.launch {
-            val newLink = newExtractorLink(
-                name ?: link.source,
-                name ?: link.name,
-                link.url,
-                type = link.type
-            ) {
-                this.quality = quality ?: link.quality
-                this.referer = link.referer
-                this.headers = link.headers
-                this.extractorData = link.extractorData
+        loadExtractor(url, referer, subtitleCallback) { link ->
+            scope.launch {
+                val newLink = newExtractorLink(
+                    name ?: link.source,
+                    name ?: link.name,
+                    link.url,
+                    type = link.type
+                ) {
+                    this.quality = quality ?: link.quality
+                    this.referer = link.referer
+                    this.headers = link.headers
+                    this.extractorData = link.extractorData
+                }
+
+                callback.invoke(newLink)
             }
-            callback.invoke(newLink)
         }
     }
 }

@@ -36,15 +36,15 @@ fun getBaseUrl(url: String): String {
     }
 }
 
-// suspend fun getLatestUrl(url: String, source: String): String {
-//     val link = JSONObject(
-//         app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-//     ).optString(source)
-//     if(link.isNullOrEmpty()) {
-//         return getBaseUrl(url)
-//     }
-//     return link
-// }
+suspend fun getLatestUrl(baseUrl: String, source: String): String {
+    val link = JSONObject(
+        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+    ).optString(source)
+    if(link.isNullOrEmpty()) {
+        return baseUrl
+    }
+    return link
+}
 
 suspend fun resolveFinalUrl(startUrl: String): String? {
     var currentUrl = startUrl
@@ -72,7 +72,7 @@ suspend fun resolveFinalUrl(startUrl: String): String? {
 
 class Howblogs : ExtractorApi() {
     override val name: String = "Howblogs"
-    override val mainUrl: String = "https://howblogs."
+    override val mainUrl: String = "https://howblogs.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -89,12 +89,12 @@ class Howblogs : ExtractorApi() {
 
 class Driveseed : Driveleech() {
     override val name: String = "Driveseed"
-    override val mainUrl: String = "https://driveseed."
+    override val mainUrl: String = "https://driveseed.*"
 }
 
 open class Driveleech : ExtractorApi() {
     override val name: String = "Driveleech"
-    override val mainUrl: String = "https://driveleech."
+    override val mainUrl: String = "https://driveleech.*"
     override val requiresReferer = false
 
     private suspend fun CFType(url: String): List<String> {
@@ -233,7 +233,7 @@ open class Driveleech : ExtractorApi() {
 
 open class Hubdrive : ExtractorApi() {
     override val name = "Hubdrive"
-    override val mainUrl = "https://hubdrive."
+    override val mainUrl = "https://hubdrive.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -249,12 +249,12 @@ open class Hubdrive : ExtractorApi() {
 
 class VCloud : HubCloud() {
     override val name: String = "V-Cloud"
-    override val mainUrl: String = "https://vcloud."
+    override val mainUrl: String = "https://vcloud.*"
 }
 
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud."
+    override val mainUrl: String = "https://hubcloud.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -263,8 +263,14 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = resolveFinalUrl(url.replace("https://hubcloud.ink", "https://hubcloud.foo")) ?: return
-        val baseUrl = getBaseUrl(newUrl)
+        var baseUrl = getBaseUrl(url)
+        val latestUrl = if(url.contains("hubcloud")) {
+            getLatestUrl(baseUrl, "hubcloud")
+        } else {
+            getLatestUrl(baseUrl, "vcloud")
+        }
+        val newUrl = url.replace(baseUrl, latestUrl)
+        baseUrl = getBaseUrl(newUrl)
         val doc = app.get(newUrl).document
 
         var link = if(newUrl.contains("/video/")) {
@@ -326,7 +332,7 @@ open class HubCloud : ExtractorApi() {
 
 class Linksmod : ExtractorApi() {
     override val name = "Linksmod"
-    override var mainUrl = "https://linksmod."
+    override var mainUrl = "https://linksmod.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -346,7 +352,7 @@ class Linksmod : ExtractorApi() {
 
 open class fastdlserver : ExtractorApi() {
     override val name = "fastdlserver"
-    override var mainUrl = "https://fastdlserver."
+    override var mainUrl = "https://fastdlserver.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -363,24 +369,28 @@ open class fastdlserver : ExtractorApi() {
 }
 
 class GDLink : GDFlix() {
-    override var mainUrl = "https://gdlink."
+    override var mainUrl = "https://gdlink.*"
 }
 
 class GDFlixApp: GDFlix() {
-    override var mainUrl = "https://new.gdflix."
+    override var mainUrl = "https://new.gdflix.*"
 }
 
 class GdFlix1: GDFlix() {
-    override var mainUrl = "https://new1.gdflix."
+    override var mainUrl = "https://new1.gdflix.*"
+}
+
+class GdFlix2: GDFlix() {
+    override var mainUrl = "https://*.gdflix.*"
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new14.gdflix."
+    override var mainUrl = "https://new14.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
     override val name = "GDFlix"
-    override val mainUrl = "https://gdflix."
+    override val mainUrl = "https://gdflix.*"
     override val requiresReferer = false
 
     private suspend fun CFType(url: String): List<String> {
@@ -405,8 +415,10 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = resolveFinalUrl(url) ?: return
-        val baseUrl = getBaseUrl(newUrl)
+        var baseUrl = getBaseUrl(url)
+        val latestUrl = getLatestUrl(baseUrl, "gdflix")
+        val newUrl = url.replace(baseUrl, latestUrl)
+        baseUrl = getBaseUrl(newUrl)
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()

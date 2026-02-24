@@ -175,7 +175,7 @@ class Pahe : ExtractorApi() {
 
 class Akamaicdn : ExtractorApi() {
     override val name = "Akamaicdn"
-    override val mainUrl = "https://molop."
+    override val mainUrl = "https://molop.art"
     override val requiresReferer = true
 
     override suspend fun getUrl(

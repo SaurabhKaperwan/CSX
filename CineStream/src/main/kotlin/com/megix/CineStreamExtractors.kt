@@ -1185,7 +1185,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "User-Agent" to USER_AGENT,
             "Referer" to "$XDmoviesAPI/",
             "x-requested-with" to "XMLHttpRequest",
             "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
@@ -1206,7 +1206,7 @@ object CineStreamExtractors : CineStreamProvider() {
             else it
         }
 
-        val document = response.documentLarge
+        val document = response.document
 
         if(season == null) {
             document.select("div.download-item a").amap { source ->
@@ -1214,6 +1214,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
+                link = link.replace("hubcloud.ink", "hubcloud.foo").replace("hubcloud.one", "hubcloud.foo")
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
@@ -1232,6 +1233,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
+                link = link.replace("hubcloud.ink", "hubcloud.foo").replace("hubcloud.one", "hubcloud.foo")
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
@@ -3646,7 +3648,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
+        val headers = mapOf("User-Agent" to USER_AGENT)
         val url = if (season == null) {
             "$multiEmbededApi/?video_id=$tmdbId&tmdb=1"
         } else {
