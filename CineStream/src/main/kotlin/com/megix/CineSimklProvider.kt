@@ -37,6 +37,7 @@ class CineSimklProvider: MainAPI() {
     // override val providerType = ProviderType.MetaProvider
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
+    private val simklDataAPI = "https://data.simkl.in"
     private final val mediaLimit = 10
     private val auth = com.lagradost.cloudstream3.BuildConfig.SIMKL_CLIENT_ID
     private val auth2 = BuildConfig.SIMKL_API
@@ -49,9 +50,9 @@ class CineSimklProvider: MainAPI() {
     // private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
-        "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
-        "/tv/trending/today?limit=$mediaLimit&extended=overview" to "Trending Shows Today",
-        "/anime/trending/today?limit=$mediaLimit&extended=overview" to "Trending Anime",
+        "/discover/trending/movies/today_100.json" to "Trending Movies Today",
+        "/discover/trending/tv/today_100.json" to "Trending Shows Today",
+        "/discover/trending/anime/today_100.json" to "Trending Anime",
         "/anime/airing?today?sort=rank" to "Airing Anime Today",
         "/tv/genres/all/all-types/kr/all-networks/this-year/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
         "/movies/genres/all/all-types/all-countries/this-year/rank?limit=$mediaLimit" to "Top Rated Movies This Year",
@@ -70,10 +71,18 @@ class CineSimklProvider: MainAPI() {
         "Personal" to "Personal",
     )
 
-    private fun getSimklId(url: String): String {
-        return url.split('/')
+    private fun getSimklIdAndType(url: String): Pair<String, String> {
+        val id =  url.split('/')
             .filter { part -> part.toIntOrNull() != null } // Keep only numeric parts
             .firstOrNull() ?: "" // Take the first numeric ID found
+
+        val type = when {
+            url.contains("/movies/") -> "movies"
+            url.contains("/anime/") -> "anime"
+            else -> "tv"
+        }
+
+        return Pair(id, type)
     }
 
     private fun getStatus(status: String?): ShowStatus? {
@@ -137,10 +146,12 @@ class CineSimklProvider: MainAPI() {
         suspend fun fetchResults(type: String): List<SearchResponse> {
             val result = runCatching {
                 val json = app.get("$apiUrl/search/$type?q=$query&page=$page&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
-                parseJson<Array<SimklResponse>>(json).map {
+                parseJson<Array<SimklResponse>>(json).mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
+                    val title = it.title_en ?: it.title ?: return@mapNotNull null
+                    val cleanTitle = title.replace("\\'", "'").replace("\\\"", "\"")
+                    newMovieSearchResponse(cleanTitle, "${mainUrl}${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -188,12 +199,17 @@ class CineSimklProvider: MainAPI() {
                             ?: return null
             return newHomePageResponse(homePageList, false)
         } else {
-
-             val data = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers)
+            val url = if(request.data.contains(".json")) {
+                simklDataAPI + request.data
+            } else  {
+                apiUrl + request.data + "&client_id=$auth&page=$page"
+            }
+             val data = app.get(url, headers = headers)
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
+                    val title = it.title?.replace("\\'", "'")?.replace("\\\"", "\"") ?: return@mapNotNull null
+                    newMovieSearchResponse(title, "${mainUrl}${it.url?.replace("movie", "movies")}") {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -209,9 +225,23 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-     override suspend fun load(url: String): LoadResponse {
-        val simklId = getSimklId(url)
-        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth2&extended=full", headers = headers).text
+    override suspend fun load(url: String): LoadResponse {
+        val (simklId, simklType) = getSimklIdAndType(url)
+        var res = app.get(
+            "$apiUrl/$simklType/$simklId?client_id=$auth2&extended=full",
+            headers = headers,
+            allowRedirects = false
+        )
+
+        if(res.code in 300..399) {
+            var location = res.headers["Location"]
+            if(location != null) {
+                if(!location.contains("extended=full")) location += "&extended=full"
+                res = app.get(fixUrl(location, apiUrl), headers = headers)
+            }
+        }
+
+        val jsonString = res.text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it }
         val tvType = json.type.orEmpty()
@@ -232,10 +262,12 @@ class CineSimklProvider: MainAPI() {
 
         val anilist_meta = if(anilistId != null) getAniListInfo(anilistId) else null
 
-        val enTitle =
+        var enTitle =
             anilist_meta?.title
             ?: json.en_title
             ?: json.title
+
+        enTitle = enTitle?.replace("\\'", "'")?.replace("\\\"", "\"")
 
         val plot = if(anilistId != null) {
             null
@@ -247,9 +279,9 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
-            anilist_meta?.posterUrl
+            getPosterUrl(json.fanart, "fanart")
+            ?: anilist_meta?.posterUrl
             ?: getPosterUrl(imdbId, "imdb:bg")
-            ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
@@ -267,6 +299,7 @@ class CineSimklProvider: MainAPI() {
         } ?: emptyList()
 
         val recommendations = relations + users_recommendations
+        val duration = json.runtimeInMinutes?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
 
         val imdbType = if (tvType == "show") "series" else tvType
         val cast = parseCastData(imdbType, imdbId)
@@ -297,7 +330,7 @@ class CineSimklProvider: MainAPI() {
                 this.plot = plot
                 this.tags = genres
                 this.comingSoon = isUpcoming(json.released)
-                this.duration = json.runtime?.toIntOrNull()
+                this.duration = duration
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
@@ -351,7 +384,7 @@ class CineSimklProvider: MainAPI() {
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = plot
                 this.tags = genres
-                this.duration = json.runtime?.toIntOrNull()
+                this.duration = duration
                 this.score = Score.from10(rating)
                 this.year = json.year
                 try { this.logoUrl = logo} catch(_:Throwable){}
@@ -451,7 +484,7 @@ class CineSimklProvider: MainAPI() {
         var ratings               : Ratings?                         = Ratings(),
         var country               : String?                          = null,
         var certification         : String?                          = null,
-        var runtime               : String?                          = null,
+        var runtime               : Any?                             = null,
         var status                : String?                          = null,
         var total_episodes        : Int?                             = null,
         var network               : String?                          = null,
@@ -463,7 +496,11 @@ class CineSimklProvider: MainAPI() {
         var users_recommendations : ArrayList<UsersRecommendations>? = null,
         var relations             : ArrayList<Relations>?            = null,
         var trailers              : ArrayList<Trailers>?             = null,
-    )
+    ) {
+        //Strip everything except the numbers!
+        val runtimeInMinutes: Int?
+        get() = runtime?.toString()?.filter { it.isDigit() }?.toIntOrNull()
+    }
 
     data class Trailers (
         var name    : String? = null,

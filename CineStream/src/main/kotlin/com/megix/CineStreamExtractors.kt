@@ -3646,8 +3646,21 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season == null) "$multiEmbededApi/?video_id=$tmdbId&tmdb=1" else " $multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
-        val streamingUrl = app.get(url, allowRedirects = false).headers.get("Location") ?: return
+        val headers = mapOf("User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
+        val url = if (season == null) {
+            "$multiEmbededApi/?video_id=$tmdbId&tmdb=1"
+        } else {
+            "$multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
+        }
+
+        val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
+            if (response.text.contains("Just a moment", ignoreCase = true)) {
+                app.get(url, allowRedirects = false, interceptor = CloudflareKiller(), headers = headers).headers["Location"]
+            } else {
+                response.headers["Location"]
+            }
+        } ?: return
+
         val sourcesDoc = app.post(
             url = streamingUrl,
             data = mapOf(

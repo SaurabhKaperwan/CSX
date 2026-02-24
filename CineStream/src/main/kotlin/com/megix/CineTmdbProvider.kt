@@ -109,7 +109,8 @@ class CineTmdbProvider: MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val data = parseJson<Data>(url)
         val type = getType(data.type)
-        val append = "alternative_titles,credits,external_ids,videos,recommendations"
+
+        val append = "alternative_titles,credits,external_ids,videos,recommendations,content_ratings,release_dates"
 
         val resUrl = if (type == TvType.Movie) {
             "$apiUrl/movie/${data.id}?api_key=$apiKey&append_to_response=$append"
@@ -122,6 +123,7 @@ class CineTmdbProvider: MainAPI() {
         val title = res.title ?: res.name ?: return null
         val poster = getOriImageUrl(res.posterPath)
         val bgPoster = getOriImageUrl(res.backdropPath)
+        val ageRating = res.usAgeRating
         val orgTitle = res.originalTitle ?: res.originalName
         val releaseDate = res.releaseDate ?: res.firstAirDate
         val year = releaseDate?.split("-")?.first()?.toIntOrNull()
@@ -212,12 +214,12 @@ class CineTmdbProvider: MainAPI() {
                 this.backgroundPosterUrl = bgPoster
                 this.year = year
                 this.plot = res.overview
+                this.contentRating = ageRating
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.tags = keywords?.map { word -> word.replaceFirstChar { it.titlecase() } }
                     ?.takeIf { it.isNotEmpty() } ?: genres
                 this.score = Score.from10(res.vote_average.toString())
                 this.showStatus = getStatus(res.status)
-                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -251,12 +253,12 @@ class CineTmdbProvider: MainAPI() {
                 this.year = year
                 this.plot = res.overview
                 this.duration = res.runtime
+                this.contentRating = ageRating
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.tags = keywords?.map { word -> word.replaceFirstChar { it.titlecase() } }
                     ?.takeIf { it.isNotEmpty() } ?: genres
 
                 this.score = Score.from10(res.vote_average.toString())
-                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -314,7 +316,7 @@ class CineTmdbProvider: MainAPI() {
         return true
     }
 
-     data class LinkData(
+    data class LinkData(
         val id: Int? = null,
         val imdbId: String? = null,
         val tvdbId: Int? = null,
@@ -461,7 +463,17 @@ class CineTmdbProvider: MainAPI() {
         @param:JsonProperty("recommendations") val recommendations: ResultsRecommendations? = null,
         @param:JsonProperty("alternative_titles") val alternative_titles: ResultsAltTitles? = null,
         @param:JsonProperty("production_countries") val production_countries: ArrayList<ProductionCountries>? = arrayListOf(),
-    )
+        @param:JsonProperty("content_ratings") val contentRatings: ContentRatings? = null,
+        @param:JsonProperty("release_dates") val releaseDates: ReleaseDates? = null
+    ) {
+        // HELPER PROPERTY: Instantly grabs the US Rating for both Movies and TV
+        val usAgeRating: String?
+            get() {
+                contentRatings?.results?.firstOrNull { it.iso3166_1 == "US" }?.rating?.takeIf { it.isNotBlank() }?.let { return it }
+                releaseDates?.results?.firstOrNull { it.iso3166_1 == "US" }?.releaseDates?.firstOrNull { !it.certification.isNullOrBlank() }?.certification?.let { return it }
+                return null
+            }
+    }
 
     data class Episodes(
         @param:JsonProperty("id") val id: Int? = null,
@@ -477,5 +489,27 @@ class CineTmdbProvider: MainAPI() {
 
      data class MediaDetailEpisodes(
         @param:JsonProperty("episodes") val episodes: ArrayList<Episodes>? = arrayListOf(),
+    )
+
+    data class ContentRatings(
+        @param:JsonProperty("results") val results: ArrayList<ContentRatingResult>? = arrayListOf()
+    )
+
+    data class ContentRatingResult(
+        @param:JsonProperty("iso_3166_1") val iso3166_1: String? = null,
+        @param:JsonProperty("rating") val rating: String? = null
+    )
+
+    data class ReleaseDates(
+        @param:JsonProperty("results") val results: ArrayList<ReleaseDatesResult>? = arrayListOf()
+    )
+
+    data class ReleaseDatesResult(
+        @param:JsonProperty("iso_3166_1") val iso3166_1: String? = null,
+        @param:JsonProperty("release_dates") val releaseDates: ArrayList<ReleaseDateItem>? = arrayListOf()
+    )
+
+    data class ReleaseDateItem(
+        @param:JsonProperty("certification") val certification: String? = null
     )
 }
