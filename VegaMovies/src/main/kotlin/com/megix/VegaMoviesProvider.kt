@@ -247,7 +247,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
         sources.amap {
             val source = it.source
-            loadExtractor(source, subtitleCallback, callback)
+            if(source.contains("vcloud")) VCloud().getUrl(url, "", subtitleCallback, callback)
+            else loadExtractor(source, "", subtitleCallback, callback)
         }
         return true
     }

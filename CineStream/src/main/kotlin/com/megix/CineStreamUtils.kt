@@ -16,8 +16,6 @@ import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.supervisorScope
 import org.json.JSONObject
 import org.json.JSONArray
 import org.jsoup.Jsoup
@@ -325,12 +323,6 @@ fun convertToLocalTime(isoString: String? = null): String? {
 
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
-}
-
-suspend fun parallelScrape(vararg scrapers: suspend () -> Unit) = supervisorScope {
-    scrapers.forEach { scraper ->
-        launch(Dispatchers.IO) { scraper() }
-    }
 }
 
 //get Cast Data

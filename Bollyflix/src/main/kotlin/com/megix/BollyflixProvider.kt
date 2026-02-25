@@ -238,7 +238,13 @@ class BollyflixProvider : MainAPI() {
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
         sources.amap {
             val source = it.source
-            loadExtractor(source, subtitleCallback, callback)
+            if(source.contains("gdflix") || source.contains("gdflix")) {
+                GDFlix().getUrl(source, subtitleCallback, callback)
+            } else if(source.contains("fastdlserver")) {
+                fastdlserver().getUrl(source, subtitleCallback, callback)
+            } else {
+                loadExtractor(source, subtitleCallback, callback)
+            }
         }
         return true
     }
