@@ -449,8 +449,12 @@ fun getFirstCharacterOrZero(input: String): String {
 }
 
 fun getBaseUrl(url: String): String {
-    return URI(url).let {
-        "${it.scheme}://${it.host}"
+    try {
+        return URI(url).let {
+            "${it.scheme}://${it.host}"
+        }
+    } catch (e: Exception) {
+        return url
     }
 }
 
@@ -641,6 +645,18 @@ suspend fun getHindMoviezLinks(
     )
 }
 
+//For Extractor new domain
+suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
+    return try {
+        val dynamicUrls = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+            .parsedSafe<Map<String, String>>()
+        dynamicUrls?.get(source)?.takeIf { it.isNotBlank() } ?: baseUrl
+    } catch (e: Exception) {
+        baseUrl
+    }
+}
+
+
 //Bold String
 fun String.toSansSerifBold(): String {
     val builder = StringBuilder()
@@ -650,7 +666,6 @@ fun String.toSansSerifBold(): String {
             in 'A'..'Z' -> 0x1D5D4 + (char - 'A')
             in 'a'..'z' -> 0x1D5EE + (char - 'a')
             in '0'..'9' -> 0x1D7EC + (char - '0')
-            '-' -> 0x2014
             else -> char.code
         }
         builder.append(Character.toChars(codePoint))
@@ -663,14 +678,16 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
-    size: String = "",
+    size: String = ""
 ) {
+    // 1. Anchor the entire extraction process to the Cloudstream lifecycle
     coroutineScope {
         val scope = this
 
-        loadExtractor(url, referer, subtitleCallback) { link ->
+        val processLink: (ExtractorLink) -> Unit = { link ->
+            // 2. Launch inside the anchored scope, NOT a detached IO thread!
             scope.launch {
                 val isDownload = link.source.contains("Download") ||
                                  link.url.contains("video-downloads.googleusercontent")
@@ -689,7 +706,8 @@ suspend fun loadSourceNameExtractor(
                     link.url,
                     type = link.type
                 ) {
-                    this.referer = link.referer
+                    // Added a fallback to the original referer just in case the link dropped it!
+                    this.referer = link.referer ?: referer ?: ""
                     this.quality = quality ?: link.quality
                     this.headers = link.headers
                     this.extractorData = link.extractorData
@@ -697,6 +715,26 @@ suspend fun loadSourceNameExtractor(
 
                 callback.invoke(newLink)
             }
+        }
+
+        if (url.contains("hubcloud.") || url.contains("vcloud.")) {
+            HubCloud().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("gofile.")) {
+            Gofile().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("gdflix.") || url.contains("gdlink.")) {
+            GDFlix().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("fastdlserver.")) {
+            fastdlserver().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("linksmod.")) {
+            Linksmod().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("hubdrive.")) {
+            Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("driveleech.") || url.contains("driveseed.")) {
+            Driveleech().getUrl(url, referer, subtitleCallback, processLink)
+        } else if(url.contains("howblogs")) {
+            Howblogs().getUrl(url, referer, subtitleCallback, processLink)
+        } else {
+            loadExtractor(url, referer, subtitleCallback, processLink)
         }
     }
 }
@@ -706,7 +744,7 @@ suspend fun loadCustomExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
     coroutineScope {
@@ -721,7 +759,7 @@ suspend fun loadCustomExtractor(
                     type = link.type
                 ) {
                     this.quality = quality ?: link.quality
-                    this.referer = link.referer
+                    this.referer = link.referer ?: referer ?: ""
                     this.headers = link.headers
                     this.extractorData = link.extractorData
                 }

@@ -20,6 +20,547 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
+open class Gofile : ExtractorApi() {
+    override val name = "Gofile"
+    override val mainUrl = "https://gofile.io"
+    override val requiresReferer = false
+    private val mainApi = "https://api.gofile.io"
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+
+        val token = app.post(
+            "$mainApi/accounts",
+        ).parsedSafe<AccountResponse>()?.data?.token ?: return
+
+        val globalRes = app.get("$mainUrl/dist/js/config.js").text
+        val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+        val headers = mapOf(
+            "Authorization" to "Bearer $token",
+            "X-Website-Token" to wt
+        )
+
+        val parsedResponse = app.get(
+            "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
+            headers = headers
+        ).parsedSafe<GofileResponse>()
+
+        val childrenMap = parsedResponse?.data?.children ?: return
+
+        for ((_, file) in childrenMap) {
+            if (file.type != "file" || file.link.isNullOrEmpty()) continue
+            val fileName = file.name ?: ""
+            val size = file.size ?: 0L
+            val formattedSize = formatBytes(size)
+
+            callback.invoke(
+                newExtractorLink(
+                    "Gofile",
+                    "Gofile $fileName [$formattedSize]",
+                    file.link,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = getIndexQuality(fileName)
+                    this.headers = mapOf("Cookie" to "accountToken=$token")
+                }
+            )
+        }
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        return when {
+            bytes < 1024L * 1024 * 1024 -> "%.2f MB".format(bytes.toDouble() / (1024 * 1024))
+            else -> "%.2f GB".format(bytes.toDouble() / (1024 * 1024 * 1024))
+        }
+    }
+
+    data class AccountResponse(
+        @JsonProperty("data") val data: AccountData? = null
+    )
+
+    data class AccountData(
+        @JsonProperty("token") val token: String? = null
+    )
+
+    data class GofileResponse(
+        @JsonProperty("data") val data: GofileData? = null
+    )
+
+    data class GofileData(
+        @JsonProperty("children") val children: Map<String, GofileFile>? = null
+    )
+
+    data class GofileFile(
+        @JsonProperty("type") val type: String? = null,
+        @JsonProperty("name") val name: String? = null,
+        @JsonProperty("link") val link: String? = null,
+        @JsonProperty("size") val size: Long? = 0L
+    )
+}
+
+class GDLink : GDFlix() {
+    override var mainUrl = "https://gdlink.*"
+}
+
+class GDFlixApp: GDFlix() {
+    override var mainUrl = "https://new.gdflix.*"
+}
+
+class GdFlix1: GDFlix() {
+    override var mainUrl = "https://new1.gdflix.*"
+}
+
+class GdFlix2: GDFlix() {
+    override var mainUrl = "https://*.gdflix.*"
+}
+
+class GDFlixNet : GDFlix() {
+    override var mainUrl = "https://new14.gdflix.*"
+}
+
+open class GDFlix : ExtractorApi() {
+    override val name = "GDFlix"
+    override val mainUrl = "https://gdflix.*"
+    override val requiresReferer = false
+
+    private suspend fun CFType(url: String): List<String> {
+        val types = listOf("1", "2")
+        val downloadLinks = mutableListOf<String>()
+
+        types.amap { t ->
+            try {
+                val document = app.get(url + "?type=$t").document
+                val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+                downloadLinks.addAll(links)
+            } catch (e: Exception) {
+                Log.d("Error", e.toString())
+            }
+        }
+        return downloadLinks
+    }
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        var baseUrl = getBaseUrl(url)
+        val latestBaseUrl = getLatestBaseUrl(baseUrl, "gdflix")
+
+        var newUrl = url
+
+        if(baseUrl != latestBaseUrl) {
+            newUrl = url.replace(baseUrl, latestBaseUrl)
+            baseUrl = latestBaseUrl
+        }
+
+        val document = app.get(newUrl).document
+        val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
+            .substringAfter("Name : ").orEmpty()
+        val fileSize = document.select("ul > li.list-group-item:contains(Size)").text()
+            .substringAfter("Size : ").orEmpty()
+        val quality = getIndexQuality(fileName)
+
+        suspend fun myCallback(link: String, server: String = "") {
+            callback.invoke(
+                newExtractorLink(
+                    "${name}${server}",
+                    "${name}${server} ${fileName}[${fileSize}]",
+                    link,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = quality
+                }
+            )
+        }
+
+        document.select("div.text-center a").amap { anchor ->
+            val text = anchor.select("a").text()
+            val link = anchor.attr("href")
+
+            when {
+                text.contains("FSL V2") -> { myCallback(link, "[FSL V2]") }
+
+                text.contains("DIRECT DL") -> { myCallback(link, "[Direct]") }
+
+                text.contains("DIRECT SERVER") -> { myCallback(link, "[Direct]") }
+
+                text.contains("CLOUD DOWNLOAD [R2]") -> { myCallback(link, "[Cloud]") }
+
+                text.contains("FAST CLOUD") -> {
+
+                    val dlink = app.get(baseUrl + link)
+                        .document
+                        .select("div.card-body a")
+                        .attr("href")
+                    if(dlink == "") return@amap
+                    myCallback(dlink, "[FAST CLOUD]")
+                }
+
+                link.contains("pixeldra") -> {
+                    val baseUrlLink = getBaseUrl(link)
+                    val finalURL = if (link.contains("download", true)) link
+                    else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+                    myCallback(finalURL, "[Pixeldrain]")
+                }
+
+                text.contains("Instant DL") -> {
+                    try {
+                        val instantLink = app.get(link, allowRedirects = false)
+                            .headers["location"]?.substringAfter("url=").orEmpty()
+                        myCallback(instantLink, "[Instant Download]")
+
+                    } catch (e: Exception) {
+                        Log.d("Instant DL", e.toString())
+                    }
+                }
+
+                text.contains("GoFile") -> {
+                    try {
+                        app.get(link).document
+                            .select(".row .row a").amap { gofileAnchor ->
+                                val link = gofileAnchor.attr("href")
+                                if (link.contains("gofile")) {
+                                    Gofile().getUrl(link, "", subtitleCallback, callback)
+                                }
+                            }
+                    } catch (e: Exception) {
+                        Log.d("Gofile", e.toString())
+                    }
+                }
+
+                else -> {
+                    Log.d("Error", "No Server matched")
+                }
+            }
+        }
+
+        //Cloudflare backup links
+        try {
+            val sources = CFType(newUrl.replace("file", "wfile"))
+
+            sources.amap { source ->
+                val redirectUrl = resolveFinalUrl(source) ?: return@amap
+                myCallback(redirectUrl, "[CF]")
+            }
+        } catch (e: Exception) {
+            Log.d("CF", e.toString())
+        }
+    }
+}
+
+open class fastdlserver : ExtractorApi() {
+    override val name = "fastdlserver"
+    override var mainUrl = "https://fastdlserver.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val location = app.get(url, allowRedirects = false).headers["location"]
+        if (location != null) {
+            loadExtractor(location, "", subtitleCallback, callback)
+        }
+    }
+}
+
+class Linksmod : ExtractorApi() {
+    override val name = "Linksmod"
+    override var mainUrl = "https://linksmod.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val document = app.get(url).document
+
+        document.select("div .view-well > a").amap {
+            val link = it.attr("href")
+            loadExtractor(link, "", subtitleCallback, callback)
+        }
+    }
+}
+
+open class Hubdrive : ExtractorApi() {
+    override val name = "Hubdrive"
+    override val mainUrl = "https://hubdrive.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val href = app.get(url).document.select(".btn.btn-primary.btn-user.btn-success1.m-1").attr("href")
+        loadExtractor(href, "", subtitleCallback, callback)
+    }
+}
+
+class Driveseed : Driveleech() {
+    override val name: String = "Driveseed"
+    override val mainUrl: String = "https://driveseed.*"
+}
+
+open class Driveleech : ExtractorApi() {
+    override val name: String = "Driveleech"
+    override val mainUrl: String = "https://driveleech.*"
+    override val requiresReferer = false
+
+    private suspend fun CFType(url: String): List<String> {
+        val types = listOf("1", "2")
+        val downloadLinks = mutableListOf<String>()
+
+        types.map { t ->
+            val document = app.get(url + "?type=$t").document
+            val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+            downloadLinks.addAll(links)
+        }
+        return downloadLinks
+    }
+
+    private suspend fun resumeCloudLink(baseUrl: String, url: String): String? {
+        val resumeCloudUrl = baseUrl + url
+        val document = app.get(resumeCloudUrl).document
+        val link = document.selectFirst("a.btn-success")?.attr("href")
+        return link
+    }
+
+    private suspend fun resumeBot(url : String): String {
+        val resumeBotResponse = app.get(url)
+        val resumeBotDoc = resumeBotResponse.document.toString()
+        val ssid = resumeBotResponse.cookies["PHPSESSID"]
+        val resumeBotToken = Regex("formData\\.append\\('token', '([a-f0-9]+)'\\)").find(resumeBotDoc)?.groups?.get(1)?.value
+        val resumeBotPath = Regex("fetch\\('/download\\?id=([a-zA-Z0-9/+]+)'").find(resumeBotDoc)?.groups?.get(1)?.value
+        val resumeBotBaseUrl = url.split("/download")[0]
+        val requestBody = FormBody.Builder()
+            .addEncoded("token", "$resumeBotToken")
+            .build()
+
+        val jsonResponse = app.post(resumeBotBaseUrl + "/download?id=" + resumeBotPath,
+            requestBody = requestBody,
+            headers = mapOf(
+                "Accept" to "*/*",
+                "Origin" to resumeBotBaseUrl,
+                "Sec-Fetch-Site" to "same-origin"
+            ),
+            cookies = mapOf("PHPSESSID" to "$ssid"),
+            referer = url
+        ).text
+        val jsonObject = JSONObject(jsonResponse)
+        val link = jsonObject.getString("url")
+        return link
+    }
+
+    private suspend fun instantLink(finallink: String): String? {
+        val link = app.get(finallink, allowRedirects = false).headers["location"]
+        return link?.substringAfter("?url=")
+    }
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val baseUrl = getBaseUrl(url)
+        val document = if(url.contains("r?key=")) {
+            val temp = app.get(url).document.selectFirst("script")?.data()?.substringAfter("replace(\"")?.substringBefore("\")") ?: ""
+            app.get(baseUrl + temp).document
+        }
+        else {
+            app.get(url).document
+        }
+
+        val fileName = document.select("ul > li.list-group-item:contains(Name)").text().substringAfter("Name : ")
+        val fileSize = document.select("ul > li.list-group-item:contains(Size)").text().substringAfter("Size : ")
+        val quality = getIndexQuality(fileName)
+
+        suspend fun myCallback(link: String, server: String = "") {
+            callback.invoke(
+                newExtractorLink(
+                    "${name}${server}",
+                    "${name}${server} ${fileName}[${fileSize}]",
+                    link,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = quality
+                }
+            )
+        }
+
+        document.select("div.text-center > a").amap { element ->
+            val text = element.text()
+            val href = element.attr("href")
+            when {
+                text.contains("Cloud Download") -> { myCallback(href, "[Cloud]") }
+                text.contains("Instant Download") -> {
+                    try{
+                        val instant = instantLink(href) ?: return@amap
+                        myCallback(instant, "[Instant(Download)]")
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+                }
+                text.contains("Resume Worker Bot") -> {
+                    try{
+                        val resumeLink = resumeBot(href)
+                        myCallback(resumeLink, "[ResumeBot]")
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+
+                }
+                text.contains("Direct Links") -> {
+                    try {
+                        val link = baseUrl + href
+                        CFType(link).forEach {
+                            myCallback(it, "[CF]")
+                        }
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+                }
+                text.contains("Resume Cloud") -> {
+                    try {
+                        val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@amap
+                        myCallback(resumeCloud, "[ResumeCloud]")
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+                }
+
+                text.contains("gofile") -> {
+                    Gofile().getUrl(href, "", subtitleCallback, callback)
+                }
+                else -> {
+                    Log.d("Error", "No Server matched")
+                }
+            }
+        }
+    }
+}
+
+class Howblogs : ExtractorApi() {
+    override val name: String = "Howblogs"
+    override val mainUrl: String = "https://howblogs.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        app.get(url).document.select("div.center_it a").amap {
+            loadExtractor(it.attr("href"), referer, subtitleCallback, callback)
+        }
+    }
+}
+
+class VCloud : HubCloud() {
+    override val name: String = "V-Cloud"
+    override val mainUrl: String = "https://vcloud.*"
+}
+
+open class HubCloud : ExtractorApi() {
+    override val name: String = "Hub-Cloud"
+    override val mainUrl: String = "https://hubcloud.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        var baseUrl = getBaseUrl(url)
+
+        val latestBaseUrl = if(url.contains("hubcloud")) {
+            getLatestBaseUrl(baseUrl, "hubcloud")
+        } else {
+            getLatestBaseUrl(baseUrl, "vcloud")
+        }
+
+        var newUrl = url
+
+        if(baseUrl != latestBaseUrl) {
+            newUrl = url.replace(baseUrl, latestBaseUrl)
+            baseUrl = latestBaseUrl
+        }
+
+        val doc = app.get(newUrl).document
+
+        var link = if(newUrl.contains("/video/")) {
+            doc.selectFirst("div.vd > center > a") ?. attr("href") ?: ""
+        }
+        else {
+            val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
+            Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+        }
+
+        if(!link.startsWith("https://")) link = baseUrl + link
+
+        val document = app.get(link).document
+        val header = document.select("div.card-header").text()
+        val size = document.select("i#size").text()
+        val quality = getIndexQuality(header)
+
+        suspend fun myCallback( link: String, server: String = "") {
+            callback.invoke(
+                newExtractorLink(
+                    "${name}${server}",
+                    "${name}${server} ${header}[${size}]",
+                    link,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = quality
+                }
+            )
+        }
+
+        document.select("h2 a.btn").amap {
+            val link = it.attr("href")
+            val text = it.text()
+
+            if (text.contains("FSL Server")) myCallback(link, "[FSL Server]")
+            else if (text.contains("FSLv2")) myCallback(link, "[FSLv2 Server]")
+            else if (text.contains("Mega Server")) myCallback(link, "[Mega Server]")
+            else if (text.contains("Download File")) myCallback(link)
+            else if (text.contains("BuzzServer")) {
+                val dlink = app.get("$link/download", referer = link, allowRedirects = false).headers["hx-redirect"] ?: ""
+                val baseUrl = getBaseUrl(link)
+                if(dlink != "") myCallback( baseUrl + dlink, "[BuzzServer]")
+            }
+            else if (link.contains("pixeldra")) {
+                val baseUrlLink = getBaseUrl(link)
+                val finalURL = if (link.contains("download", true)) link
+                else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+                myCallback(finalURL, "[Pixeldrain]")
+            }
+            else if (text.contains("Server : 10Gbps")) {
+                var redirectUrl = resolveFinalUrl(link) ?: return@amap
+                if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
+                myCallback(redirectUrl, "[Download]")
+            }
+            else { Log.d("Error", "No Server matched") }
+        }
+    }
+}
+
 open class SuperVideo : ExtractorApi() {
     override val name = "SuperVideo"
     override val mainUrl = "https://supervideo.cc"

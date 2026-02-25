@@ -38,15 +38,14 @@ import java.io.IOException
 
 object CineStreamExtractors : CineStreamProvider() {
 
-    //Call all providers here
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
-            { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -97,7 +96,7 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidFastPro(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
-            { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -106,7 +105,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
+            { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) }
         )
     }
 
@@ -116,9 +115,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
+            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -152,9 +151,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
-            // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
+            // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)} },
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
+            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) }
         )
     }
 
@@ -1214,7 +1213,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
-                link = link.replace("hubcloud.ink", "hubcloud.foo").replace("hubcloud.one", "hubcloud.foo")
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
@@ -1230,10 +1229,11 @@ object CineStreamExtractors : CineStreamProvider() {
 
             episodeCards.amap { episodeCard ->
                 var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
+
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
-                link = link.replace("hubcloud.ink", "hubcloud.foo").replace("hubcloud.one", "hubcloud.foo")
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
@@ -1819,7 +1819,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
             val encrypted = JSONObject(embed_resp).getString("result")
             val embed_url = decrypt(encrypted)
-            loadExtractor(embed_url, "Animekai[$type]" ,subtitleCallback, callback)
+            MegaUp().getUrl(embed_url, "Animekai[$type]", subtitleCallback, callback)
         }
     }
 
