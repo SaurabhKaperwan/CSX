@@ -43,8 +43,13 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        try{
+            invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback)
+        } catch (e: Exception){
+            Log.d("XDmovies", e.toString())
+        }
         runAllAsync(
-            { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -86,7 +91,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
-            { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
+            // { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
@@ -114,8 +119,14 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        try{
+            invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
+        } catch (e: Exception){
+            Log.d("XDmovies", e.toString())
+        }
+
         runAllAsync(
-            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -136,7 +147,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            { invokeStremioTorrents("Meteor", meteorAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            // { invokeStremioTorrents("Meteor", meteorAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
             { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
