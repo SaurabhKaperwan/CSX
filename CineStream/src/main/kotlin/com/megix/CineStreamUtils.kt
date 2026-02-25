@@ -14,8 +14,16 @@ import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+
 import org.json.JSONObject
 import org.json.JSONArray
 import org.jsoup.Jsoup
@@ -323,6 +331,26 @@ fun convertToLocalTime(isoString: String? = null): String? {
 
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
+}
+
+suspend fun runLimitedAsync(
+    concurrency: Int = 5,
+    vararg tasks: suspend () -> Unit
+) = coroutineScope {
+    val semaphore = Semaphore(concurrency)
+
+    tasks.map { task ->
+        async(Dispatchers.IO) {
+            semaphore.withPermit {
+                try {
+                    task()
+                } catch (e: Exception) {
+                    // Log error but continue
+                    Log.e("runLimitedAsync", "Task failed: ${e.message}")
+                }
+            }
+        }
+    }.awaitAll()
 }
 
 //get Cast Data
