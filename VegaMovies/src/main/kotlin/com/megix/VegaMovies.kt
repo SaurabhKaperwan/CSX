@@ -11,5 +11,6 @@ class VegaMovies: Plugin() {
         registerMainAPI(VegaMoviesProvider())
         registerMainAPI(LuxMoviesProvider())
         registerMainAPI(RogmoviesProvider())
+        registerExtractorAPI(VCloud())
     }
 }
