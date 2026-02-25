@@ -6,7 +6,7 @@ import java.net.URI
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import com.lagradost.api.Log
-import com.google.gson.JsonObject
+import org.json.JSONObject
 
 class Driveseed : Driveleech() {
     override val name: String = "Driveseed"
