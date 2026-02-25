@@ -3,6 +3,30 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import java.net.URI
+import com.lagradost.api.Log
+
+suspend fun resolveFinalUrl(startUrl: String): String? {
+    var currentUrl = startUrl
+    var loopCount = 0
+    val maxRedirects = 7
+
+    while (loopCount < maxRedirects) {
+        try {
+            val res = app.head(currentUrl, allowRedirects = false, timeout = 2500L)
+            if (res.code == 200 || res.code in 300..399) {
+                val location = res.headers.get("Location")
+                if(location.isNullOrEmpty()) break
+                currentUrl = location
+            } else {
+                return null
+            }
+            loopCount++
+        } catch (e: Exception) {
+            return null
+        }
+    }
+    return currentUrl
+}
 
 fun getBaseUrl(url: String): String {
     try {
