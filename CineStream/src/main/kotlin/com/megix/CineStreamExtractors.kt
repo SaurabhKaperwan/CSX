@@ -7,6 +7,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.jsoup.Jsoup
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
@@ -80,6 +81,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
             { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
+            { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -557,6 +559,50 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokePlaysrc(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        data class VideoResponse(
+            @JsonProperty("file") val file: String?,
+            @JsonProperty("headers") val headers: Map<String, String>?
+        )
+
+        val url = if(season == null) {
+            "https://api.madplay.site/api/playsrc?id=$tmdbId&token=direct"
+        } else {
+            "https://madplay.site/api/movies/holly?id=${tmdbId}&season=${season}&episode=${episode}&token=direct"
+        }
+
+        val jsonText = app.get(url).text
+
+        val parsedList = try {
+            parseJson<List<VideoResponse>>(jsonText)
+        } catch (e: Exception) {
+            println("Failed to parse JSON: ${e.message}")
+            return
+        }
+
+        val firstItem = parsedList.firstOrNull() ?: return
+
+        val videoUrl = firstItem.file ?: return
+        val headerMap = firstItem.headers ?: emptyMap()
+
+        callback.invoke(
+            newExtractorLink(
+                "Playsrc",
+                "Playsrc",
+                videoUrl,
+                ExtractorLinkType.M3U8
+            ) {
+                headers = headerMap
+            }
+        )
+    }
+
     suspend fun invokeMadplayCDN(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -608,6 +654,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     "Vidflix",
                     "Vidflix",
                     file,
+                    ExtractorLinkType.M3U8
                 ) {
                     this.headers = mapOf(
                         "Referer" to referer,
