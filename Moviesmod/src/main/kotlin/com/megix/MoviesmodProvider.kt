@@ -228,7 +228,12 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
             if(source.contains("unblocked")) {
                 source = bypass(source).toString()
             }
-            loadExtractor(source, subtitleCallback, callback)
+
+            if(source.contains("driveseed") || source.contains("driveleech")) {
+                Driveleech().getUrl(source, "", subtitleCallback, callback)
+            } else {
+                loadExtractor(source, "", subtitleCallback, callback)
+            }
         }
         return true
     }

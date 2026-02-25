@@ -279,7 +279,13 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val sources = parseJson<ArrayList<EpisodeLink>>(data)
         sources.amap {
             val source = it.source
-            loadExtractor(source, subtitleCallback, callback)
+            if(source.contains("gdflix") || source.contains("gdlink")) {
+                GDFlix().getUrl(source, "", subtitleCallback, callback)
+            } else if(source.contains("hubcloud")) {
+                HubCloud().getUrl(source, "", subtitleCallback, callback)
+            } else {
+                loadExtractor(source, "", subtitleCallback, callback)
+            }
         }
         return true   
     }
