@@ -88,7 +88,7 @@ open class CineStreamProvider : MainAPI() {
         const val dramafullAPI = "https://dramafull.cc"
         const val akwamAPI = "https://ak.sv"
         const val flixIndiaAPI = "https://m.flixindia.xyz"
-        const val meteorAPI = "https://meteorfortheweebs.midnightignite.me/eyJkZWJyaWRTZXJ2aWNlIjoidG9ycmVudCIsImRlYnJpZEFwaUtleSI6IiIsImNhY2hlZE9ubHkiOmZhbHNlLCJyZW1vdmVUcmFzaCI6dHJ1ZSwicmVtb3ZlU2FtcGxlcyI6dHJ1ZSwicmVtb3ZlQWR1bHQiOmZhbHNlLCJleGNsdWRlM0QiOnRydWUsImVuYWJsZVNlYURleCI6dHJ1ZSwibWluU2VlZGVycyI6MjUsIm1heFJlc3VsdHMiOjE1LCJtYXhSZXN1bHRzUGVyUmVzIjozLCJtYXhTaXplIjowLCJyZXNvbHV0aW9ucyI6W10sImxhbmd1YWdlcyI6eyJwcmVmZXJyZWQiOlsiZW4iLCJtdWx0aSJdLCJyZXF1aXJlZCI6W10sImV4Y2x1ZGUiOltdfSwicmVzdWx0Rm9ybWF0IjpbInRpdGxlIiwicXVhbGl0eSIsInNpemUiLCJhdWRpbyJdLCJzb3J0T3JkZXIiOlsicGFjayIsImNhY2hlZCIsInNlYWRleCIsInJlc29sdXRpb24iLCJzaXplIiwicXVhbGl0eSIsInNlZWRlcnMiLCJsYW5ndWFnZSJdfQ"
+        const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

@@ -50,10 +50,12 @@ class CineSimklProvider: MainAPI() {
     // private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
+        "/trending/today_100.json" to "Trending Today",
         "/discover/trending/movies/today_100.json" to "Trending Movies Today",
         "/discover/trending/tv/today_100.json" to "Trending Shows Today",
-        "/discover/trending/anime/today_100.json" to "Trending Anime",
+        "/discover/trending/anime/today_100.json" to "Trending Anime Today",
         "/anime/airing?today?sort=rank" to "Airing Anime Today",
+        "/discover/dvd/releases_100.json" to "Trending DVD Releases",
         "/tv/genres/all/all-types/kr/all-networks/this-year/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
         "/movies/genres/all/all-types/all-countries/this-year/rank?limit=$mediaLimit" to "Top Rated Movies This Year",
         "/tv/genres/all/all-types/all-countries/all-networks/this-year/rank?limit=$mediaLimit" to "Top Rated Shows This Year",
@@ -374,7 +376,7 @@ class CineSimklProvider: MainAPI() {
                     this.episode = it.episode
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
-                    addDate(convertToLocalTime(it.date), "yyyy-MM-dd'T'HH:mm:ss")
+                    addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
                 }
             }
 
