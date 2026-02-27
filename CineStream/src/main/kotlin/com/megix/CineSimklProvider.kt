@@ -240,7 +240,7 @@ class CineSimklProvider: MainAPI() {
         )
 
         if(res.code in 300..399) {
-            var location = res.headers["Location"]
+            var location = res.headers["Location"] ?: res.headers["location"]
             if(location != null) {
                 if(!location.contains("extended=full")) location += "&extended=full"
                 res = app.get(fixUrl(location, apiUrl), headers = headers)
@@ -265,18 +265,20 @@ class CineSimklProvider: MainAPI() {
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
+        val anilist_meta = anilistId?.let { getAniListInfo(it) }
+        val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
 
-        val anilist_meta = if(anilistId != null) getAniListInfo(anilistId) else null
+        val plot = if (anilistId != null) {
+            val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
+                .filter { it.isNotBlank() }
+                .distinct()
+                .takeIf { it.isNotEmpty() }
+                ?.joinToString(", ", prefix = "[Alt Titles: ", postfix = "]")
 
-        var enTitle =
-            anilist_meta?.title
-            ?: json.en_title
-            ?: json.title
+            val description = anilist_meta?.description?.takeIf { it.isNotBlank() } ?: json.overview
 
-        enTitle = enTitle?.replace("\\'", "'")?.replace("\\\"", "\"")
-
-        val plot = if(anilistId != null) {
-            null
+            listOfNotNull(description?.takeIf { it.isNotBlank() }, altTitles)
+                .joinToString("\n\n")
         } else {
             json.overview
         }
@@ -286,25 +288,26 @@ class CineSimklProvider: MainAPI() {
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
             getPosterUrl(imdbId, "imdb:bg")
-            ?: anilist_meta?.posterUrl
+            ?: anilist_meta?.banner
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
-        val users_recommendations = json.users_recommendations?.map {
-            val rec_poster = getPosterUrl(it.poster, "poster")
-            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids.simkl}") {
-                this.posterUrl = rec_poster
-            }
-        } ?: emptyList()
+        val recommendations = buildList {
+            json.relations?.forEach {
+                val prefix = it.relation_type?.replaceFirstChar { c -> c.uppercase() }?.let { "($it) " } ?: ""
 
-        val relations = json.relations?.map {
-            val rec_poster = getPosterUrl(it.poster, "poster")
-            newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids.simkl}") {
-                this.posterUrl = rec_poster
+                add(newMovieSearchResponse("$prefix${it.en_title ?: it.title}", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
+                    posterUrl = getPosterUrl(it.poster, "poster")
+                })
             }
-        } ?: emptyList()
 
-        val recommendations = relations + users_recommendations
+            json.users_recommendations?.forEach {
+                add(newMovieSearchResponse(it.en_title ?: it.title ?: "", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
+                    posterUrl = getPosterUrl(it.poster, "poster")
+                })
+            }
+        }
+
         val duration = json.runtimeInMinutes?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
 
         val imdbType = if (tvType == "show") "series" else tvType
