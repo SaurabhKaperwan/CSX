@@ -46,29 +46,45 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         runLimitedAsync( concurrency = 7,
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
-            { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeSucccbots(res.title, res.season, res.episode, callback) },
+            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
+            { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
+            { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
+            { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
+            { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
+            { invokeLevidia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
+            { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
+            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
+            { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
+            { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
+            { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
+            { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
+            { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
+            { if (res.isAsian) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
+            { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
-            { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAkwam(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
@@ -78,37 +94,22 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
-            { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
-            { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
-            { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
-            { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
-            { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
             // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidFastPro(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
-            { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
+            // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeSucccbots(res.title, res.season, res.episode, callback) },
-            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) }
+            { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
         )
     }
 
@@ -119,28 +120,30 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         runLimitedAsync( concurrency = 7,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
-            { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
-            { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
-            { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
-            { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
+            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeSucccbots(res.imdbTitle, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
+            { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
+            { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
+            { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
+            { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
+            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
+            { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
+            { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -148,16 +151,15 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeLevidia(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeSucccbots(res.imdbTitle, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)} },
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) }
+            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
     }
 
@@ -290,6 +292,91 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         )
+    }
+
+    suspend fun invokeLevidia(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(title == null || year == null) return
+
+        val safeTitle = URLEncoder.encode(title, "utf-8")
+
+        val url = if(season == null) {
+            "$levidiaAPI/search.php?q=$safeTitle+$year&v=movies"
+        } else {
+            "$levidiaAPI/search.php?q=$safeTitle+$year&v=episodes"
+        }
+
+        val res = app.get(url)
+        val sessionId = res.cookies["PHPSESSID"] ?: return
+        val regex = Regex("""_3chk\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\)""")
+        val match = regex.find(res.text)
+
+        if(match == null) return
+
+        val value1 = match.groupValues[1]
+        val value2 = match.groupValues[2]
+        val document = res.document
+
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to "$levidiaAPI/",
+            "Cookie" to "PHPSESSID=$sessionId;$value1=$value2"
+        )
+
+        val href = document.select("li.mlist div.mainlink a").firstNotNullOfOrNull { aTag ->
+            val parsedTitle = aTag.selectFirst("strong")?.text()?.trim()
+            ?: return@firstNotNullOfOrNull null
+            val parsedYear = aTag.ownText().replace(Regex("""[^\d]"""), "").toIntOrNull()
+
+            if (parsedTitle.equals(title, ignoreCase = true) && parsedYear == year) {
+                aTag.attr("href")
+            } else {
+                null
+            }
+        } ?: return
+
+        val doc = app.get(href, headers = headers).document
+
+        if(season == null) {
+            doc.select("a.xxx").amap {
+                val embedUrl = app.get(
+                    it.attr("href"),
+                    headers = headers,
+                    allowRedirects = false
+                ).headers["Location"] ?: return@amap
+
+                loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
+            }
+        } else {
+            val epRegex = Regex("""(?i)[^a-z]s0?${season}e0?${episode}[^0-9]""")
+
+            val episodePath = doc.select("li.mlist.links b a").firstNotNullOfOrNull { aTag ->
+                val href = aTag.attr("href")
+                if (epRegex.containsMatchIn(href)) {
+                    href
+                } else {
+                    null
+                }
+            } ?: return
+
+            val doc2 = app.get("$levidiaAPI/" + episodePath, headers = headers).document
+
+            doc2.select("a.xxx").amap {
+                val embedUrl = app.get(
+                    it.attr("href"),
+                    headers = headers,
+                    allowRedirects = false
+                ).headers["Location"] ?: return@amap
+
+                loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
+            }
+        }
     }
 
     suspend fun invokeDramafull(

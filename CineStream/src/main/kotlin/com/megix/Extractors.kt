@@ -20,6 +20,70 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
+open class Wootly : ExtractorApi() {
+    override val name = "Wootly"
+    override val mainUrl = "https://www.wootly.ch"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val res1 = app.get(url)
+
+        val iframeUrl = Regex("""<iframe.+?src="([^"]+)\"""").find(res1.text)?.groupValues?.get(1) ?: return
+        val cookie = res1.headers.firstOrNull { it.first.equals("set-cookie", true) }?.second?.substringBefore(";") ?: ""
+        val postHeaders = mapOf(
+            "Referer" to url,
+            "Cookie" to cookie,
+            "Origin" to mainUrl
+        )
+
+        val res2 = app.post(
+            iframeUrl,
+            headers = postHeaders,
+            data = mapOf("qdfx" to "1")
+        )
+
+        val html2 = res2.text
+
+        val tk = Regex("""tk="([^"]+)\"""").find(html2)?.groupValues?.get(1)
+        val vd = Regex("""vd="([^"]+)\"""").find(html2)?.groupValues?.get(1)
+        val c = Regex(""",\s*c="([^"]+)\"""").find(html2)?.groupValues?.get(1)
+
+        if (tk != null && vd != null && c != null) {
+            val url2 = "https://web.wootly.ch/grabm?t=$tk&id=$vd"
+
+            val getHeaders = mapOf(
+                "Referer" to url,
+                "Cookie" to cookie
+            )
+
+            var respText = app.get(url2, headers = getHeaders).text.trim()
+
+            if (respText.startsWith("http") && !respText.contains(".mp4")) {
+                val redirectRes = app.get(respText, headers = mapOf("Referer" to url))
+                respText = redirectRes.url
+            }
+
+            if (respText.startsWith("http")) {
+                callback.invoke(
+                    newExtractorLink(
+                        name,
+                        name,
+                        respText,
+                        ExtractorLinkType.VIDEO
+                    ) {
+                        this.referer = mainUrl
+                    }
+                )
+            }
+        }
+    }
+}
+
 open class Gofile : ExtractorApi() {
     override val name = "Gofile"
     override val mainUrl = "https://gofile.io"
