@@ -49,13 +49,13 @@ class CineTmdbProvider: MainAPI() {
         "discover/tv?api_key=$apiKey&with_networks=3353" to "Peacock",
         "discover/movie?api_key=$apiKey&language=en-US&page=1&sort_by=popularity.desc&with_origin_country=IN&release_date.gte=${getDate().lastWeekStart}&release_date.lte=${getDate().today}" to "Trending Indian Movies",
         "discover/movie?api_key=$apiKey&with_keywords=210024|222243" to "Anime Movies",
-        "movie/top_rated?api_key=$apiKey&region=US" to "Top Rated Movies",
+        // "movie/top_rated?api_key=$apiKey&region=US" to "Top Rated Movies",
         "tv/top_rated?api_key=$apiKey&region=US" to "Top Rated TV Shows",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val type = if (request.data.contains("/movie")) "movie" else "tv"
-        val home = app.get("$apiUrl/${request.data}&page=$page", timeout = 10000)
+        val home = app.get("$apiUrl/${request.data}&without_keywords=190370|13059|226161|195669&page=$page", timeout = 10000)
             .parsedSafe<Results>()?.results?.mapNotNull { media ->
                 media.toSearchResponse(type)
             } ?: throw ErrorLoadingException("Invalid Json reponse")
@@ -102,6 +102,7 @@ class CineTmdbProvider: MainAPI() {
     override suspend fun search(query: String, page: Int): SearchResponseList? {
         return app.get("$apiUrl/search/multi?api_key=$apiKey&language=en-US&query=$query&page=$page")
             .parsedSafe<Results>()?.results?.mapNotNull { media ->
+                if (media.mediaType.toString() == "person") return@mapNotNull null
                 media.toSearchResponse()
             }?.toNewSearchResponseList()
     }

@@ -696,12 +696,10 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
     size: String = ""
 ) {
-    // 1. Anchor the entire extraction process to the Cloudstream lifecycle
     coroutineScope {
         val scope = this
 
         val processLink: (ExtractorLink) -> Unit = { link ->
-            // 2. Launch inside the anchored scope, NOT a detached IO thread!
             scope.launch {
                 val isDownload = link.source.contains("Download") ||
                                  link.url.contains("video-downloads.googleusercontent")
@@ -720,7 +718,6 @@ suspend fun loadSourceNameExtractor(
                     link.url,
                     type = link.type
                 ) {
-                    // Added a fallback to the original referer just in case the link dropped it!
                     this.referer = link.referer ?: referer ?: ""
                     this.quality = quality ?: link.quality
                     this.headers = link.headers
@@ -745,7 +742,7 @@ suspend fun loadSourceNameExtractor(
             Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
         } else if(url.contains("driveleech.") || url.contains("driveseed.")) {
             Driveleech().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("howblogs")) {
+        } else if(url.contains("howblogs.")) {
             Howblogs().getUrl(url, referer, subtitleCallback, processLink)
         } else {
             loadExtractor(url, referer, subtitleCallback, processLink)

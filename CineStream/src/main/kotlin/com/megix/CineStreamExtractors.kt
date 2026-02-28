@@ -61,6 +61,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Streamvix", streamvixAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -965,15 +966,26 @@ object CineStreamExtractors : CineStreamProvider() {
             val req = s.behaviorHints?.proxyHeaders?.request
             val streamUrl =  s.url
 
+            val proxyReq = s.behaviorHints?.proxyHeaders?.request
+            val stdHeaders = s.behaviorHints?.headers
+
+            val extractedReferer = proxyReq?.Referer ?: stdHeaders?.get("Referer") ?: stdHeaders?.get("referer") ?: ""
+            val extractedOrigin = proxyReq?.Origin ?: stdHeaders?.get("Origin") ?: stdHeaders?.get("origin") ?: ""
+            val extractedUserAgent = proxyReq?.userAgent ?: stdHeaders?.get("User-Agent") ?: stdHeaders?.get("user-agent") ?: USER_AGENT
+
             // Quality fallback
             val quality = getIndexQuality(title + name).takeIf { it != Qualities.Unknown.value }
                 ?: if (sourceName.contains("Castle")) Qualities.P1080.value else Qualities.Unknown.value
 
             callback(newExtractorLink(sourceName, "[$sourceName]".toSansSerifBold() + " ${if (sourceName == "Hdmovielover") getSimplifiedTitle(title) else title}", streamUrl, type) {
-                this.referer = req?.Referer ?: ""
                 this.quality = quality
-                this.headers = mapOf("User-Agent" to (req?.userAgent ?: USER_AGENT), "Referer" to (req?.Referer ?: ""), "Origin" to (req?.Origin ?: ""))
+                this.headers = mapOf(
+                    "User-Agent" to extractedUserAgent,
+                    "Referer" to extractedReferer,
+                    "Origin" to extractedOrigin
+                ).filterValues { it.isNotBlank() }
             })
+
             s.subtitles?.forEach { subtitleCallback(newSubtitleFile(getLanguage(it.lang) ?: it.lang, it.url)) }
         }
     }

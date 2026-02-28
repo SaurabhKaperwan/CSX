@@ -50,7 +50,6 @@ class CineSimklProvider: MainAPI() {
     // private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
-        "/discover/trending/tv/today_500.json" to "Trending Today",
         "/discover/trending/movies/today_500.json" to "Trending Movies Today",
         "/discover/trending/tv/today_500.json" to "Trending Shows Today",
         "/discover/trending/anime/today_500.json" to "Trending Anime Today",
@@ -268,17 +267,20 @@ class CineSimklProvider: MainAPI() {
         val anilist_meta = anilistId?.let { getAniListInfo(it) }
         val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
 
-        val plot = if (anilistId != null) {
+        val plot = if (tvType == "anime") {
             val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
-                .filter { it.isNotBlank() }
-                .distinct()
-                .takeIf { it.isNotEmpty() }
-                ?.joinToString(", ", prefix = "[Alt Titles: ", postfix = "]")
+            .filter { it.isNotBlank() }
+            .distinct()
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString(", ", prefix = "[${"Alt Titles".toSansSerifBold()}: ", postfix = "]")
 
             val description = anilist_meta?.description?.takeIf { it.isNotBlank() } ?: json.overview
 
-            listOfNotNull(description?.takeIf { it.isNotBlank() }, altTitles)
-                .joinToString("\n\n")
+            when {
+                altTitles != null && !description.isNullOrBlank() -> "$altTitles<br><br>$description"
+                altTitles != null -> altTitles
+                else -> description ?: ""
+            }
         } else {
             json.overview
         }

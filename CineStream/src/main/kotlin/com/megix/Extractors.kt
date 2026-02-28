@@ -62,7 +62,7 @@ open class Gofile : ExtractorApi() {
             callback.invoke(
                 newExtractorLink(
                     "Gofile",
-                    "Gofile $fileName [$formattedSize]",
+                    "[Gofile] $fileName [$formattedSize]",
                     file.link,
                     ExtractorLinkType.VIDEO
                 ) {
@@ -121,7 +121,7 @@ class GdFlix2: GDFlix() {
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new14.gdflix.*"
+    override var mainUrl = "https://new15.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
