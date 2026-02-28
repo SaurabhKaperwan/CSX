@@ -20,6 +20,55 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
+class Wootly : ExtractorApi() {
+    override var name = "Wootly"
+    override var mainUrl = "https://www.wootly.ch"
+    override val requiresReferer = true
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val iframe = app.get(url).document.selectFirst("iframe")?.attr("src") ?: return
+
+        val iframeHtml = app.post(
+            iframe,
+            headers = mapOf("Referer" to url),
+            data = mapOf("qdfx" to "1")
+        ).text
+
+        val vdRegex = Regex("""var\s+vd\s*=\s*["']([^"']+)["']""")
+        val tkRegex = Regex("""tk\s*=\s*["']([^"']+)["']""")
+
+        val vd = vdRegex.find(iframeHtml)?.groupValues?.get(1)
+        val tk = tkRegex.find(iframeHtml)?.groupValues?.get(1)
+
+        if (vd.isNullOrBlank() || tk.isNullOrBlank()) {
+            return
+        }
+
+        val streamUrl = app.get(
+            "https://web.wootly.ch/grabm?t=$tk&id=$vd",
+            headers = mapOf("Referer" to iframe)
+        ).text.trim()
+
+        if (streamUrl.isBlank() || !streamUrl.startsWith("http")) return
+
+        callback.invoke(
+            newExtractorLink(
+                this.name,
+                this.name,
+                url = streamUrl,
+                type = ExtractorLinkType.VIDEO,
+            ) {
+                this.referer = referer ?: ""
+            }
+        )
+    }
+}
+
 open class Gofile : ExtractorApi() {
     override val name = "Gofile"
     override val mainUrl = "https://gofile.io"
@@ -81,26 +130,26 @@ open class Gofile : ExtractorApi() {
     }
 
     data class AccountResponse(
-        @JsonProperty("data") val data: AccountData? = null
+        @param:JsonProperty("data") val data: AccountData? = null
     )
 
     data class AccountData(
-        @JsonProperty("token") val token: String? = null
+        @param:JsonProperty("token") val token: String? = null
     )
 
     data class GofileResponse(
-        @JsonProperty("data") val data: GofileData? = null
+        @param:JsonProperty("data") val data: GofileData? = null
     )
 
     data class GofileData(
-        @JsonProperty("children") val children: Map<String, GofileFile>? = null
+        @param:JsonProperty("children") val children: Map<String, GofileFile>? = null
     )
 
     data class GofileFile(
-        @JsonProperty("type") val type: String? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("link") val link: String? = null,
-        @JsonProperty("size") val size: Long? = 0L
+        @param:JsonProperty("type") val type: String? = null,
+        @param:JsonProperty("name") val name: String? = null,
+        @param:JsonProperty("link") val link: String? = null,
+        @param:JsonProperty("size") val size: Long? = 0L
     )
 }
 

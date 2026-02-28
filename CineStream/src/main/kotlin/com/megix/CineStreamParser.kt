@@ -63,22 +63,22 @@ data class AnimeInfo(
 // --- Data Classes for AniList ---
 
 data class AniListResponse(
-    @JsonProperty("data") val data: AniListData?
+    @param:JsonProperty("data") val data: AniListData?
 )
 
 data class AniListData(
-    @JsonProperty("Media") val media: AniListMedia?
+    @param:JsonProperty("Media") val media: AniListMedia?
 )
 
 data class AniListMedia(
-    @JsonProperty("title") val title: AniListTitle?,
-    @JsonProperty("bannerImage") val bannerImage: String?,
-    @JsonProperty("description") val description: String?
+    @param:JsonProperty("title") val title: AniListTitle?,
+    @param:JsonProperty("bannerImage") val bannerImage: String?,
+    @param:JsonProperty("description") val description: String?
 )
 
 data class AniListTitle(
-    @JsonProperty("english") val english: String?,
-    @JsonProperty("romaji") val romaji: String?
+    @param:JsonProperty("english") val english: String?,
+    @param:JsonProperty("romaji") val romaji: String?
 )
 
 //XDmovies
