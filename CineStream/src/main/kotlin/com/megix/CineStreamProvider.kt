@@ -60,7 +60,7 @@ open class CineStreamProvider : MainAPI() {
         // const val mp4MoviezAPI = "https://www.mp4moviez.talk"
         const val cinemaOSApi = "https://cinemaos.tech"
         // const val tripleOneMoviesApi = "https://111movies.com"
-        // const val vidfastProApi = "https://vidfast.pro"
+        const val vidfastProApi = "https://vidfast.pro"
         // const val vidPlusApi = "https://player.vidplus.to"
         const val multiEmbededApi = "https://multiembed.mov"
         const val vidSrcApi = "https://api.rgshows.ru"
@@ -90,6 +90,7 @@ open class CineStreamProvider : MainAPI() {
         const val flixIndiaAPI = "https://m.flixindia.xyz"
         const val levidiaAPI = "https://www.levidia.ch"
         const val streamvixAPI = "https://streamvix.hayd.uk"
+        const val projectfreetvAPI = "https://projectfreetv.sx"
         const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
         private val apiConfig by lazy {
