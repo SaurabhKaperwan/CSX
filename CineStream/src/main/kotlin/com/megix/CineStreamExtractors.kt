@@ -2879,7 +2879,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null) "$WYZIESubsAPI/search?id=$id&season=$season&episode=$episode" else "$WYZIESubsAPI/search?id=$id"
+        val url = if(season != null) "$WYZIESubsAPI/search?id=$id&season=$season&episode=$episode&source=all" else "$WYZIESubsAPI/search?id=$id&source=all"
         val json = app.get(url).text
         val data = parseJson<ArrayList<WYZIESubtitle>>(json)
 
