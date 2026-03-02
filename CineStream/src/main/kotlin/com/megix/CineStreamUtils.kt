@@ -720,7 +720,7 @@ suspend fun loadSourceNameExtractor(
     size: String = ""
 ) = supervisorScope {
     val processLink: (ExtractorLink) -> Unit = { link ->
-        launch {
+        launch(Dispatchers.IO) {
             val isDownload = link.source.contains("Download", ignoreCase = true) ||
                              link.url.contains("video-downloads.googleusercontent")
             val simplifiedTitle = getSimplifiedTitle(link.name)
@@ -768,7 +768,7 @@ suspend fun loadCustomExtractor(
 ) = supervisorScope {
 
     loadExtractor(url, referer, subtitleCallback) { link ->
-        launch {
+        launch(Dispatchers.IO) {
             val newLink = newExtractorLink(
                 name ?: link.source,
                 name ?: link.name,
