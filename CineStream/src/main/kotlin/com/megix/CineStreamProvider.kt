@@ -84,7 +84,6 @@ open class CineStreamProvider : MainAPI() {
         const val notorrentAPI = "https://addon-osvh.onrender.com"
         const val xpassAPI = "https://play.xpass.top"
         const val cinemacityAPI = "https://cinemacity.cc"
-        const val daramayoAPI = "https://dramayo.stream"
         const val dramafullAPI = "https://dramafull.cc"
         const val akwamAPI = "https://ak.sv"
         const val flixIndiaAPI = "https://m.flixindia.xyz"
