@@ -22,6 +22,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.supervisorScope
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -528,10 +530,31 @@ suspend fun loadNameExtractor(
     )
 }
 
+suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
+
+suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int, f: suspend (A) -> B?): List<B> = supervisorScope {
+    val semaphore = Semaphore(concurrency)
+
+    map { item ->
+        async(Dispatchers.IO) {
+            semaphore.withPermit {
+                try {
+                    f(item)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    Log.e("safeAmap", "Item failed: ${e.message}")
+                    null
+                }
+            }
+        }
+    }.awaitAll().filterNotNull()
+}
+
 suspend fun runLimitedAsync(
-    concurrency: Int = 5,
+    concurrency: Int = 7,
     vararg tasks: suspend () -> Unit
-) = coroutineScope {
+) = supervisorScope {
     val semaphore = Semaphore(concurrency)
 
     tasks.map { task ->
@@ -539,8 +562,9 @@ suspend fun runLimitedAsync(
             semaphore.withPermit {
                 try {
                     task()
-                } catch (e: Exception) {
-                    // Log error but continue
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
                     Log.e("runLimitedAsync", "Task failed: ${e.message}")
                 }
             }
@@ -691,21 +715,18 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = ""
-) = coroutineScope {
-
+) = supervisorScope {
     val processLink: (ExtractorLink) -> Unit = { link ->
-        launch(Dispatchers.IO) {
+        launch {
             val isDownload = link.source.contains("Download", ignoreCase = true) ||
                              link.url.contains("video-downloads.googleusercontent")
-
             val simplifiedTitle = getSimplifiedTitle(link.name)
             val combined = if (source.contains("(Combined)")) " (Combined)" else ""
             val fixSize = if (size.isNotEmpty()) " $size" else ""
             val sourceBold = "$source [${link.source}]".toSansSerifBold()
-
             val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
             val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
@@ -742,12 +763,12 @@ suspend fun loadCustomExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
-) = coroutineScope {
+) = supervisorScope {
 
     loadExtractor(url, referer, subtitleCallback) { link ->
-        launch(Dispatchers.IO) {
+        launch {
             val newLink = newExtractorLink(
                 name ?: link.source,
                 name ?: link.name,
@@ -1160,7 +1181,7 @@ suspend fun getProtonStream(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
 ) {
-    doc.select("tr.infotr").amap { tr ->
+    doc.select("tr.infotr").safeAmap { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
         if(id != null) {
             val uid = "uid_${System.currentTimeMillis()}_${

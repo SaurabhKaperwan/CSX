@@ -98,7 +98,7 @@ open class GDFlix : ExtractorApi() {
         val types = listOf("1", "2")
         val downloadLinks = mutableListOf<String>()
 
-        types.amap { t ->
+        types.safeAmap { t ->
             try {
                 val document = app.get(url + "?type=$t").document
                 val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
@@ -146,7 +146,7 @@ open class GDFlix : ExtractorApi() {
             )
         }
 
-        document.select("div.text-center a").amap { anchor ->
+        document.select("div.text-center a").safeAmap { anchor ->
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
 
@@ -165,7 +165,7 @@ open class GDFlix : ExtractorApi() {
                         .document
                         .select("div.card-body a")
                         .attr("href")
-                    if(dlink == "") return@amap
+                    if(dlink == "") return@safeAmap
                     myCallback(dlink, "[FAST CLOUD]")
                 }
 
@@ -190,7 +190,7 @@ open class GDFlix : ExtractorApi() {
                 text.contains("GoFile") -> {
                     try {
                         app.get(link).document
-                            .select(".row .row a").amap { gofileAnchor ->
+                            .select(".row .row a").safeAmap { gofileAnchor ->
                                 val link = gofileAnchor.attr("href")
                                 if (link.contains("gofile")) {
                                     loadExtractor(link, "", subtitleCallback, callback)
@@ -211,8 +211,8 @@ open class GDFlix : ExtractorApi() {
         try {
             val sources = CFType(newUrl.replace("file", "wfile"))
 
-            sources.amap { source ->
-                val redirectUrl = resolveFinalUrl(source) ?: return@amap
+            sources.safeAmap { source ->
+                val redirectUrl = resolveFinalUrl(source) ?: return@safeAmap
                 myCallback(redirectUrl, "[CF]")
             }
         } catch (e: Exception) {
@@ -252,7 +252,7 @@ class Linksmod : ExtractorApi() {
     ) {
         val document = app.get(url).document
 
-        document.select("div .view-well > a").amap {
+        document.select("div .view-well > a").safeAmap {
             val link = it.attr("href")
             loadExtractor(link, "", subtitleCallback, callback)
         }
@@ -367,14 +367,14 @@ open class Driveleech : ExtractorApi() {
             )
         }
 
-        document.select("div.text-center > a").amap { element ->
+        document.select("div.text-center > a").safeAmap { element ->
             val text = element.text()
             val href = element.attr("href")
             when {
                 text.contains("Cloud Download") -> { myCallback(href, "[Cloud]") }
                 text.contains("Instant Download") -> {
                     try{
-                        val instant = instantLink(href) ?: return@amap
+                        val instant = instantLink(href) ?: return@safeAmap
                         myCallback(instant, "[Instant(Download)]")
                     } catch (e: Exception) {
                         Log.d("Error:", e.toString())
@@ -401,7 +401,7 @@ open class Driveleech : ExtractorApi() {
                 }
                 text.contains("Resume Cloud") -> {
                     try {
-                        val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@amap
+                        val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@safeAmap
                         myCallback(resumeCloud, "[ResumeCloud]")
                     } catch (e: Exception) {
                         Log.d("Error:", e.toString())
@@ -430,7 +430,7 @@ class Howblogs : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        app.get(url).document.select("div.center_it a").amap {
+        app.get(url).document.select("div.center_it a").safeAmap {
             loadExtractor(it.attr("href"), referer, subtitleCallback, callback)
         }
     }
@@ -497,7 +497,7 @@ open class HubCloud : ExtractorApi() {
             )
         }
 
-        document.select("h2 a.btn").amap {
+        document.select("h2 a.btn").safeAmap {
             val link = it.attr("href")
             val text = it.text()
 
@@ -517,7 +517,7 @@ open class HubCloud : ExtractorApi() {
                 myCallback(finalURL, "[Pixeldrain]")
             }
             else if (text.contains("Server : 10Gbps")) {
-                var redirectUrl = resolveFinalUrl(link) ?: return@amap
+                var redirectUrl = resolveFinalUrl(link) ?: return@safeAmap
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")
             }
