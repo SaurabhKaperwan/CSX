@@ -321,10 +321,11 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-suspend fun checkPosterAvailable(posterUrl: String): String? {
+suspend fun checkPosterAvailable(posterUrl: String? = null): String? {
+    if(posterUrl == null) return null
     return try {
         val res = app.head(posterUrl)
-        if (res.status == 200) {
+        if (res.code == 200) {
             posterUrl
         } else {
             null
