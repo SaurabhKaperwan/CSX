@@ -292,8 +292,8 @@ class CineSimklProvider: MainAPI() {
 
         val backgroundPosterUrl =
             tvdbData?.background
+            ?: checkPosterAvailable(getPosterUrl(imdbId, "imdb:bg"))
             ?: anilist_meta?.banner
-            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
@@ -303,7 +303,7 @@ class CineSimklProvider: MainAPI() {
             json.relations?.forEach {
                 val prefix = it.relation_type?.replaceFirstChar { c -> c.uppercase() }?.let { "($it) " } ?: ""
 
-                add(newMovieSearchResponse("$prefix${it.en_title ?: it.title}", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
+                add(newMovieSearchResponse("${prefix} ${it.en_title ?: it.title}", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
                     this.posterUrl = getPosterUrl(it.poster, "poster")
                 })
             }

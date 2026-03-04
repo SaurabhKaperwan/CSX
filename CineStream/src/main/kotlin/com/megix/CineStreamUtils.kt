@@ -321,6 +321,20 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
+suspend fun checkPosterAvailable(posterUrl: String): String? {
+    return try {
+        val res = app.head(posterUrl)
+        if (res.status == 200) {
+            posterUrl
+        } else {
+            null
+        }
+
+    } catch (e: Exception) {
+        null
+    }
+}
+
 suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaData? {
     if (imdbId == null) return null
     val primaryUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
