@@ -1,5 +1,7 @@
 package com.megix
 
+import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.utils.*
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
@@ -27,6 +29,14 @@ data class AllLoadLinksData(
     val imdbSeason : Int? = null,
     val imdbEpisode : Int? = null,
     val imdbYear : Int? = null,
+)
+
+//AIO
+data class ExtractedMediaData(
+    val cast: List<ActorData>?,
+    val poster: String?,
+    val background: String?,
+    val logo: String?
 )
 
 //Enc-dec

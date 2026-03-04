@@ -44,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 7,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -118,7 +118,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 7,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -3564,35 +3564,34 @@ object CineStreamExtractors : CineStreamProvider() {
     //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
-    //     val STATIC_PATH = "fcd552c4321aeac1e62c5304913b3420be75a19d390807281a425aabbb5dc4c0"
+    //     val STATIC_PATH = "APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
     //     val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
     //     val headers = mapOf(
     //         "Referer" to tripleOneMoviesApi,
-    //         "Content-Type" to "application/octet-stream",
-    //         "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
-    //         "X-Requested-With" to "XMLHttpRequest")
-    //     val response = app.get(url,headers = headers, timeout = 20).text
+    //         "Content-Type" to "application/gzip",
+    //         "User-Agent" to USER_AGENT
+    //     )
+    //     val response = app.get(url, headers = headers, timeout = 20).text
     //     val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
     //     // AES encryption
     //     val aesEncrypted = aesEncrypt(rawData)
-
     //     // XOR operation
     //     val xorResult = xorOperation(aesEncrypted)
-
     //     // Custom encoding
     //     val encodedFinal = customEncode(xorResult)
-
     //     // Get servers
     //     val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
     //     val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
     //     val servers = parseServers(serversResponse)
+
     //     val urlList = mutableMapOf<String,String>()
+
     //     servers.forEach {
     //         try {
     //             val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
     //             val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
-    //             if(streamResponse.isNotEmpty())
-    //             {
+
+    //             if(streamResponse.isNotEmpty()) {
     //                 val jsonObject = JSONObject(streamResponse)
     //                 val url = jsonObject.getString("url")
 

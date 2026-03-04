@@ -321,33 +321,55 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-//get Cast Data
-suspend fun parseCastData(tvType: String, imdbId: String? = null): List<ActorData>? {
-    return if (tvType != "anime") {
-        try {
-            val url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
-            val json = app.get(url, timeout = 6L).text
-            val gson = Gson()
-            val data = gson.fromJson(json, TmdbResponse::class.java)
-            data.meta?.appExtras?.cast?.mapNotNull { castMember ->
-                if (castMember.name != null) {
-                    ActorData(
-                        Actor(
-                            name = castMember.name,
-                            image = castMember.photo
-                        ),
-                        roleString = castMember.character
-                    )
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            null
-        }
-    } else {
-        null
+suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaData? {
+    if (imdbId == null) return null
+    val primaryUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
+    var jsonText = try {
+        app.get(primaryUrl, timeout = 6L).text
+    } catch (e: Exception) {
+        ""
     }
+
+    if (jsonText.isEmpty()) {
+        val fallbackUrl = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/$imdbId.json"
+        jsonText = try {
+            app.get(fallbackUrl, timeout = 6L).text
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    if (jsonText.isEmpty()) return null
+
+    val root = JSONObject(jsonText)
+    val meta = root.optJSONObject("meta") ?: return null
+    val image_proxy = "https://wsrv.nl/?url="
+    val posterUrl = meta.optString("poster").takeIf { it.isNotEmpty() }?.let { "$image_proxy$it" }
+    val backgroundUrl = meta.optString("background").takeIf { it.isNotEmpty() }?.let { "$image_proxy$it" }
+    val logoUrl = meta.optString("logo").takeIf { it.isNotEmpty() }?.let { "$image_proxy$it" }
+
+    val castArray = meta.optJSONObject("app_extras")?.optJSONArray("cast")
+    val castList = if (castArray != null) {
+        (0 until castArray.length()).mapNotNull { i ->
+            val castMember = castArray.optJSONObject(i) ?: return@mapNotNull null
+
+            val name = castMember.optString("name")
+            if (name.isNotEmpty() && name != "null") {
+                ActorData(
+                    Actor(
+                        name = name,
+                        image = castMember.optString("photo")
+                            .takeIf { it.isNotEmpty() && it != "null" }
+                            ?.let { "$image_proxy$it" }
+                    ),
+                    roleString = castMember.optString("character")
+                        .takeIf { it.isNotEmpty() && it != "null" }
+                )
+            } else null
+        }
+    } else null
+
+    return ExtractedMediaData(castList, posterUrl, backgroundUrl, logoUrl)
 }
 
 suspend fun NFBypass(mainUrl: String): String {
@@ -1608,7 +1630,7 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 /** Encodes input using Base64 with custom character mapping. */
 // fun customEncode(input: String): String {
 //     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-//     val dst = "TuzHOxl7b0RW9o_1FPV3eGfmL4Z5pD8cahBQr2U-6yvEYwngXCdJjANtqKIMiSks"
+//     val dst = "Ckbl5ym-WLAev9dTuhpgK8PHtSGa2EBDnjMZR_Y0Xx7co1qrfFNJOQ6iUs4zIVw3"
 //     val transMap = src.zip(dst).toMap()
 //     val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //         Base64.getEncoder().encodeToString(input.toByteArray())
@@ -1630,8 +1652,8 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 
 /** Performs AES encryption */
 //  fun aesEncrypt(data: String): String {
-//     val aesKey = hexStringToByteArray("034bcfc6275541ff4059bffb23d6d1d23ea49b55f79ea730ac540d1213a61339")
-//     val aesIv = hexStringToByteArray("a2e7ad865464f12105e9df84f5bdabed")
+//     val aesKey = hexStringToByteArray("ecc34a66edea3dcd48c8733812365f5caf7d28865993ae5fdc4a08436736a998")
+//     val aesIv = hexStringToByteArray("4b47db0a764158dff36db37d27fdfcea")
 
 //     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
 //     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
@@ -1642,7 +1664,7 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 
 /** Performs XOR operation */
 //  fun xorOperation(input: String): String {
-//     val xorKey = hexStringToByteArray("aaa27e7e3cff888285")
+//     val xorKey = hexStringToByteArray("fafd3f")
 //     val result = StringBuilder()
 
 //     for (i in input.indices) {
