@@ -651,13 +651,6 @@ data class Url(
     val resulation: String,
 )
 
-data class CinemaOsSecretKeyRequest(
-    val tmdbId: String,
-    val imdbId: String,
-    val seasonId: String,
-    val episodeId: String)
-
-
 data class CinemaOSReponse(
     val data: CinemaOSReponseData,
     val encrypted: Boolean,

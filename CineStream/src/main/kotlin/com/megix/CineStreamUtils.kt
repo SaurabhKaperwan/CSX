@@ -5,7 +5,8 @@ import androidx.annotation.RequiresApi
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
-import java.util.Base64
+import com.lagradost.cloudstream3.base64DecodeArray
+import android.util.Base64
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import java.net.*
@@ -1448,43 +1449,53 @@ suspend fun getGojoStreams(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 suspend fun getRedirectLinks(url: String): String {
     fun encode(value: String): String {
-        return Base64.getEncoder().encodeToString(value.toByteArray())
+        return Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
     }
 
-    fun pen(value: String): String {
+    fun decode(value: String): String {
+        return String(Base64.decode(value, Base64.DEFAULT))
+    }
+
+    fun rot13(value: String): String {
         return value.map {
             when (it) {
-                in 'A'..'Z' -> ((it - 'A' + 13) % 26 + 'A'.code).toChar()
-                in 'a'..'z' -> ((it - 'a' + 13) % 26 + 'a'.code).toChar()
+                in 'A'..'Z' -> 'A' + (it - 'A' + 13) % 26
+                in 'a'..'z' -> 'a' + (it - 'a' + 13) % 26
                 else -> it
             }
         }.joinToString("")
     }
 
-    val doc = app.get(url).toString()
-    val regex = "s\\('o','([A-Za-z0-9+/=]+)'|ck\\('_wp_http_\\d+','([^']+)'".toRegex()
-    val combinedString = buildString {
-        regex.findAll(doc).forEach { matchResult ->
-            val extractedValue = matchResult.groups[1]?.value ?: matchResult.groups[2]?.value
-            if (!extractedValue.isNullOrEmpty()) append(extractedValue)
-        }
-    }
     return try {
-        val decodedString = base64Decode(pen(base64Decode(base64Decode(combinedString))))
+        val doc = app.get(url).text
+
+        val regex = """s\('o','([A-Za-z0-9+/=]+)'|ck\('_wp_http_\d+','([^']+)'""".toRegex()
+
+        val combinedString = regex.findAll(doc)
+            .mapNotNull { it.groups[1]?.value ?: it.groups[2]?.value }
+            .joinToString("")
+
+        if (combinedString.isEmpty()) return ""
+
+        val decodedString = decode(rot13(decode(decode(combinedString))))
         val jsonObject = JSONObject(decodedString)
-        val encodedurl = base64Decode(jsonObject.optString("o", "")).trim()
+
+        val encodedUrl = decode(jsonObject.optString("o", "")).trim()
         val data = encode(jsonObject.optString("data", "")).trim()
         val wphttp1 = jsonObject.optString("blog_url", "").trim()
-        val directlink = runCatching {
-            app.get("$wphttp1?re=$data".trim()).document.select("body").text().trim()
-        }.getOrDefault("").trim()
 
-        encodedurl.ifEmpty { directlink }
+        val directLink = if (wphttp1.isNotEmpty() && data.isNotEmpty()) {
+            runCatching {
+                app.get("$wphttp1?re=$data").document.select("body").text().trim()
+            }.getOrDefault("")
+        } else {
+            ""
+        }
+
+        encodedUrl.ifEmpty { directLink }
     } catch (e: Exception) {
-        Log.e("Error:", "Error processing links $e")
         ""
     }
 }
@@ -1507,38 +1518,26 @@ suspend fun getRedirectLinks(url: String): String {
 //     return result
 // }
 
-fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest,isSeries: Boolean): String {
+fun cinemaOSGenerateHash(tmdbId: Int?, imdbId: String?, season: Int?, episode: Int?): String {
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
     val secondary = "d3f8a5b2c9e6d1f7a4b8c5e2d9f3a6b1c7e4d8f2a9b5c3e7d4f1a8b6c2e9d5f3"
 
-    // Create content identifier string
-    val contentString = createContentString(t)
+    var message = "tmdbId:$tmdbId|imdbId:$imdbId"
 
-    // First HMAC with primary key
-    val firstHash = calculateHmacSha256(contentString, primary)
-
-    // Second HMAC with secondary key
+    if (season != null && episode != null) {
+        message += "|seasonId:$season|episodeId:$episode"
+    }
+    val firstHash = calculateHmacSha256(message, primary)
     return calculateHmacSha256(firstHash, secondary)
-}
-
-private fun createContentString(info: CinemaOsSecretKeyRequest): String {
-    val parts = mutableListOf<String>()
-
-    info.tmdbId.takeIf { it.isNotEmpty() }?.let { parts.add("tmdbId:$it") }
-    info.imdbId.takeIf { it.isNotEmpty() }?.let { parts.add("imdbId:$it") }
-    info.seasonId.takeIf { it.isNotEmpty() }?.let { parts.add("seasonId:$it") }
-    info.episodeId.takeIf { it.isNotEmpty() }?.let { parts.add("episodeId:$it") }
-
-    return parts.joinToString("|")
 }
 
 private fun calculateHmacSha256(data: String, key: String): String {
     val algorithm = "HmacSHA256"
-    val secretKeySpec = SecretKeySpec(key.toByteArray(), algorithm)
+    val secretKeySpec = SecretKeySpec(key.toByteArray(Charsets.UTF_8), algorithm)
     val mac = Mac.getInstance(algorithm)
     mac.init(secretKeySpec)
 
-    val bytes = mac.doFinal(data.toByteArray())
+    val bytes = mac.doFinal(data.toByteArray(Charsets.UTF_8))
     return bytes.joinToString("") { "%02x".format(it) }
 }
 
@@ -1553,47 +1552,42 @@ private fun calculateHmacSha256(data: String, key: String): String {
 //     return String(hexChars)
 // }
 
-fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): Any {
-    val encrypted = e?.encrypted
-    val cin = e?.cin
-    val mao = e?.mao
-    val salt = e?.salt
+fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): String? {
 
-    val keyBytes =  "a1b2c3d4e4f6477658455678901477567890abcdef1234567890abcdef123456".toByteArray()
-    val ivBytes = hexStringToByteArray(cin.toString())
-    val authTagBytes = hexStringToByteArray(mao.toString())
-    val encryptedBytes =hexStringToByteArray(encrypted.toString())
-    val saltBytes = hexStringToByteArray(salt.toString())
+    if (e?.encrypted.isNullOrEmpty() || e?.cin.isNullOrEmpty() || e?.mao.isNullOrEmpty() || e?.salt.isNullOrEmpty()) {
+        return null
+    }
 
-    // Derive key with PBKDF2-HMAC-SHA256
+    val encrypted = e!!.encrypted!!
+    val cin = e.cin!!
+    val mao = e.mao!!
+    val salt = e.salt!!
+
+    val passwordStr = "a1b2c3d4e4f6477658455678901477567890abcdef1234567890abcdef123456"
+
+    val ivBytes = hexStringToByteArray(cin)
+    val authTagBytes = hexStringToByteArray(mao)
+    val encryptedBytes = hexStringToByteArray(encrypted)
+    val saltBytes = hexStringToByteArray(salt)
+
     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-    val spec = PBEKeySpec(keyBytes.map { it.toInt().toChar() }.toCharArray(), saltBytes, 100000, 256)
+    val spec = PBEKeySpec(passwordStr.toCharArray(), saltBytes, 100000, 256)
     val tmp = factory.generateSecret(spec)
     val key = SecretKeySpec(tmp.encoded, "AES")
 
-    // AES-256-GCM decrypt
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
     val gcmSpec = GCMParameterSpec(128, ivBytes)
     cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec)
-    val decryptedBytes = cipher.doFinal(encryptedBytes + authTagBytes)
-    val decryptedData = String(decryptedBytes)
 
-    return decryptedData // Use your JSON parser
+    val decryptedBytes = cipher.doFinal(encryptedBytes + authTagBytes)
+    return String(decryptedBytes, Charsets.UTF_8)
 }
 
-
-// Helper function to convert hex string to byte array
 fun hexStringToByteArray(hex: String): ByteArray {
-    val len = hex.length
-    require(len % 2 == 0) { "Hex string must have even length" }
-
-    val data = ByteArray(len / 2)
-    var i = 0
-    while (i < len) {
-        data[i / 2] = ((Character.digit(hex[i], 16) shl 4) + Character.digit(hex[i + 1], 16)).toByte()
-        i += 2
-    }
-    return data
+    require(hex.length % 2 == 0) { "Hex string must have even length" }
+    return hex.chunked(2)
+        .map { it.toInt(16).toByte() }
+        .toByteArray()
 }
 
 fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
@@ -1641,6 +1635,22 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 
     return sourcesList
 }
+
+// fun decryptVidzeeUrl(encrypted: String, key: ByteArray): String {
+//     val decoded = base64Decode(encrypted)
+//     val parts = decoded.split(":")
+//     if (parts.size != 2) throw IllegalArgumentException("Invalid encrypted format")
+
+//     val iv = base64DecodeArray(parts[0])
+//     val cipherData = base64DecodeArray(parts[1])
+
+//     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+//     val secretKey = SecretKeySpec(key, "AES")
+//     cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+//     val decryptedBytes = cipher.doFinal(cipherData)
+//     return decryptedBytes.toString(Charsets.UTF_8)
+// }
 
 /** Encodes input using Base64 with custom character mapping. */
 // fun customEncode(input: String): String {
