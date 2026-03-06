@@ -45,21 +45,12 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runLimitedAsync( concurrency = 10,
-            { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
-            { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
+            { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
+            { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
+            { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
+            { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
+            { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Streamvix", streamvixAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -68,41 +59,52 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
-            { invokeLevidia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
+            { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
             { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
-            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
-            { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
-            { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
-            { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
-            { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
+            { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
+            { if (res.isAsian) invokeDramafull(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeCinemaOS(res.imdbId, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year, res.season, res.episode, callback) },
-            { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
-            { if (res.isAsian) invokeDramafull(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+
+            { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
+            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
+            { invokeLevidia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
-            { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAkwam(res.imdbId, res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
-            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
-            { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            { invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeCinemaOS(res.imdbId, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            // { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
+
+            // { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -119,15 +121,28 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runLimitedAsync( concurrency = 10,
-            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
+            { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
+            { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
+            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
+            { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+
+            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -135,19 +150,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
-            { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
-            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeVidFastPro(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { if(res.imdbSeason == null || res.imdbSeason == 1) invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
@@ -155,11 +159,10 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)} },
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
     }
 
@@ -1549,7 +1552,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if (servers.isEmpty()) return
 
         servers.safeAmap { server ->
-            runAllAsync (
+            runLimitedAsync ( concurrency = 3,
                 {
                     try {
                         val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=sub", headers = headers).text
@@ -2406,7 +2409,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     episodeDiv?.selectFirst("a")?.attr("href")?.let {
                         val source = protonmoviesAPI + it
                         val doc2 = app.get(source, headers = headers).document
-                        runAllAsync(
+                        runLimitedAsync( concurrency = 2,
                             {
                                 val scriptText = doc2.selectFirst("script:containsData(strm.json)")?.data().toString()
                                 getProtonEmbed(scriptText, protonmoviesAPI, subtitleCallback, callback)
@@ -2687,7 +2690,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
         val aniXL = malsync?.AniXL?.values?.firstNotNullOfOrNull { it["url"] }
 
-        runAllAsync(
+        runLimitedAsync( concurrency = 3,
             {
                 invokeHianime(hianimeurl, episode, subtitleCallback, callback)
             },
@@ -2768,7 +2771,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
 
-        runAllAsync(
+        runLimitedAsync( concurrency = 2,
             {
                 doc.select("div#pickDownload > a").safeAmap {
                     val href = it.attr("href")
@@ -3114,7 +3117,6 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeModflix(
         id: String? = null,
         season: Int? = null,
@@ -3823,57 +3825,56 @@ object CineStreamExtractors : CineStreamProvider() {
     //     }
     // }
 
-    suspend fun invokeMultiEmbeded(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val headers = mapOf("User-Agent" to USER_AGENT)
-        val url = if (season == null) {
-            "$multiEmbededApi/?video_id=$tmdbId&tmdb=1"
-        } else {
-            "$multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
-        }
+    // suspend fun invokeMultiEmbeded(
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     val headers = mapOf("User-Agent" to USER_AGENT)
+    //     val url = if (season == null) {
+    //         "$multiEmbededApi/?video_id=$tmdbId&tmdb=1"
+    //     } else {
+    //         "$multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
+    //     }
 
-        val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
-            if (response.text.contains("Just a moment", ignoreCase = true)) {
-                app.get(url, allowRedirects = false, interceptor = CloudflareKiller(), headers = headers).headers["Location"]
-            } else {
-                response.headers["Location"]
-            }
-        } ?: return
+    //     val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
+    //         if (response.text.contains("Just a moment", ignoreCase = true)) {
+    //             app.get(url, allowRedirects = false, interceptor = CloudflareKiller(), headers = headers).headers["Location"]
+    //         } else {
+    //             response.headers["Location"]
+    //         }
+    //     } ?: return
 
-        val sourcesDoc = app.post(
-            url = streamingUrl,
-            data = mapOf(
-                "button-click" to "ZEhKMVpTLVF0LVBTLVF0TnprekxTLVF5LVBEVXRMLTAtVjNOLTBjMU8tMEF5TmpneC1QRFUtNQ==",
-                "button-referer" to ""
-            ),
-            timeout = 40
-        ).text
-        val pattern = "load_sources\\(\"(.*?)\"\\)".toRegex()
-        val sourcesHash = pattern.find(sourcesDoc)?.groupValues?.getOrNull(1) ?: return
-        val hostUrl = "${URI(streamingUrl).scheme}://${URI(streamingUrl).host}"
-        val sourceslistDoc = app.post(
-            "$hostUrl/response.php",
-            data = mapOf("token" to sourcesHash),
-            headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        ).document
-        val serverList = sourceslistDoc.select("li")
-        serverList.safeAmap {
-            val serverDataId = it.attr("data-id")
-            val serverData = it.attr("data-server")
-            val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"
-            val src = app.get(playVideoUrl).document
-            val iframe = src.select("iframe").attr("src")
-            loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
-        }
-    }
+    //     val sourcesDoc = app.post(
+    //         url = streamingUrl,
+    //         data = mapOf(
+    //             "button-click" to "ZEhKMVpTLVF0LVBTLVF0TnprekxTLVF5LVBEVXRMLTAtVjNOLTBjMU8tMEF5TmpneC1QRFUtNQ==",
+    //             "button-referer" to ""
+    //         ),
+    //         timeout = 40
+    //     ).text
+    //     val pattern = "load_sources\\(\"(.*?)\"\\)".toRegex()
+    //     val sourcesHash = pattern.find(sourcesDoc)?.groupValues?.getOrNull(1) ?: return
+    //     val hostUrl = "${URI(streamingUrl).scheme}://${URI(streamingUrl).host}"
+    //     val sourceslistDoc = app.post(
+    //         "$hostUrl/response.php",
+    //         data = mapOf("token" to sourcesHash),
+    //         headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+    //     ).document
+    //     val serverList = sourceslistDoc.select("li")
+    //     serverList.safeAmap {
+    //         val serverDataId = it.attr("data-id")
+    //         val serverData = it.attr("data-server")
+    //         val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"
+    //         val src = app.get(playVideoUrl).document
+    //         val iframe = src.select("iframe").attr("src")
+    //         loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
+    //     }
+    // }
 
-
-       suspend fun invokeVicSrcWtf(
+    suspend fun invokeVicSrcWtf(
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -3881,7 +3882,11 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val referer = "https://www.vidsrc.wtf"
-        val headers = mapOf("Origin" to referer,"Referer" to referer,"User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
+        val headers = mapOf(
+            "Origin" to referer,
+            "Referer" to "$referer/",
+            "User-Agent" to USER_AGENT,
+        )
 
         try {
             val mainServer = if(season == null) "$vidSrcApi/main/movie/$tmdbId" else "$vidSrcApi/main/tv/$tmdbId/$season/$episode"
@@ -4212,57 +4217,66 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val url =
-            if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
+        val url = if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
 
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
             "Referer" to "$vidfastProApi/",
+            "X-Requested-With" to "XMLHttpRequest",
         )
+
         val response = app.get(url, headers = headers).text
         val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
+
         val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText"
         val decodedDataJson = app.get(decApiUrl).text
         val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
+
         val serversUrl = decodedData.servers ?: return
         val streamBaseUrl = decodedData.stream ?: return
+
         val serversListJson = app.get(serversUrl, headers = headers).text
         val serversList = tryParseJson<List<VidfastServer>>(serversListJson) ?: return
 
         serversList.forEach { server ->
-            val serverHash = server.data ?: return@forEach
-            val finalStreamUrl = "$streamBaseUrl/$serverHash"
-            val streamDataJson = app.get(finalStreamUrl, headers = headers).text
-            val streamData = tryParseJson<VidfastStreamResponse>(streamDataJson) ?: return@forEach
+            try {
+                val serverHash = server.data ?: return@forEach
+                val finalStreamUrl = "$streamBaseUrl/$serverHash"
 
-            streamData.tracks?.forEach { track ->
-                if (track.file != null && track.label != null) {
-                    subtitleCallback.invoke(
-                        newSubtitleFile(
-                            getLanguage(track.label) ?: track.label,
-                            track.file
+                val streamDataJson = app.get(finalStreamUrl, headers = headers).text
+                val streamData = tryParseJson<VidfastStreamResponse>(streamDataJson) ?: return@forEach
+
+                streamData.tracks?.forEach { track ->
+                    if (track.file != null && track.label != null) {
+                        subtitleCallback.invoke(
+                            newSubtitleFile(
+                                getLanguage(track.label) ?: track.label,
+                                track.file
+                            )
                         )
-                    )
+                    }
                 }
+
+                val fileUrl = streamData.url ?: return@forEach
+                val type = if (fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+
+                val is4k = streamData.is4kAvailable == true || server.description?.contains("4K", true) == true
+                val quality = if (is4k) Qualities.P2160.value else Qualities.P1080.value
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Vidfast[${server.name}]",
+                        "Vidfast[${server.name}] ${server.description ?: ""}",
+                        fileUrl,
+                        type
+                    ) {
+                        this.headers = headers
+                        this.quality = quality
+                    }
+                )
+            } catch (e: Exception) {
+                Log.w("VidFastPro", "Failed to extract server: ${server.name}", e)
             }
-
-            val fileUrl = streamData.url ?: return@forEach
-
-            val type = if (fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-
-            val is4k = streamData.is4kAvailable == true || server.description?.contains("4K", true) == true
-            val quality = if (is4k) Qualities.P2160.value else Qualities.P1080.value
-            callback.invoke(
-                newExtractorLink(
-                    "Vidfast[${server.name}]",
-                    "Vidfast[${server.name}] ${server.description}",
-                    fileUrl,
-                    type
-                ) {
-                    this.headers = headers
-                    this.quality = quality
-                }
-            )
         }
     }
 

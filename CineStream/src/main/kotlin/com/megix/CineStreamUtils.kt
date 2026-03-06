@@ -16,15 +16,8 @@ import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
 
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.supervisorScope
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -570,23 +563,29 @@ suspend fun loadNameExtractor(
 
 suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
 
-suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int, f: suspend (A) -> B?): List<B> = supervisorScope {
+suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int = 5, f: suspend (A) -> B?): List<B> = supervisorScope {
     val semaphore = Semaphore(concurrency)
+    val deferreds = mutableListOf<Deferred<B?>>()
 
-    map { item ->
-        async(Dispatchers.IO) {
-            semaphore.withPermit {
-                try {
-                    f(item)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Throwable) {
-                    Log.e("safeAmap", "Item failed: ${e.message}")
-                    null
-                }
+    for (item in this@safeAmap) {
+        semaphore.acquire()
+        deferreds += async(Dispatchers.IO) {
+            try {
+                f(item)
+            } catch (e: CancellationException) {
+                if (!this@supervisorScope.isActive) throw e
+                Log.w("safeAmap", "Item cancelled locally (e.g., timeout): ${e.message}")
+                null
+            } catch (e: Throwable) {
+                Log.e("safeAmap", "Item failed: ${e.message}")
+                null
+            } finally {
+                semaphore.release()
             }
         }
-    }.awaitAll().filterNotNull()
+    }
+
+    deferreds.awaitAll().filterNotNull()
 }
 
 suspend fun runLimitedAsync(
@@ -594,20 +593,26 @@ suspend fun runLimitedAsync(
     vararg tasks: suspend () -> Unit
 ) = supervisorScope {
     val semaphore = Semaphore(concurrency)
+    val deferreds = mutableListOf<Deferred<Unit>>()
 
-    tasks.map { task ->
-        async(Dispatchers.IO) {
-            semaphore.withPermit {
-                try {
-                    task()
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Throwable) {
-                    Log.e("runLimitedAsync", "Task failed: ${e.message}")
-                }
+    for (task in tasks) {
+        semaphore.acquire()
+
+        deferreds += async(Dispatchers.IO) {
+            try {
+                task()
+            } catch (e: CancellationException) {
+                if (!this@supervisorScope.isActive) throw e
+                Log.w("runLimitedAsync", "Task cancelled locally: ${e.message}")
+            } catch (e: Throwable) {
+                Log.e("runLimitedAsync", "Task failed: ${e.message}")
+            } finally {
+                semaphore.release()
             }
         }
-    }.awaitAll()
+    }
+
+    deferreds.awaitAll()
 }
 
 fun getEpisodeSlug(
@@ -686,7 +691,7 @@ suspend fun getHindMoviezLinks(
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
     val simplifiedTitle = getSimplifiedTitle(name + fileSize)
 
-    runAllAsync(
+    runLimitedAsync( concurrency = 2,
         {
             val link = doc.select("a.btn-info").attr("href")
             val referer = response.url
