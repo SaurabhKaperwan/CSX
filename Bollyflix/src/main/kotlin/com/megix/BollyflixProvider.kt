@@ -211,12 +211,12 @@ class BollyflixProvider : MainAPI() {
             val data = coroutineScope {
                 document.select("a.dl").map { link ->
                     async {
-                        var deocdeUrl = link.attr("href")
+                        var decodeUrl = link.attr("href")
                         if(decodeUrl.contains("id=")) {
                             val id = link.attr("href").substringAfterLast("id=")
                             decodeUrl = bypass(id)
                         }
-                        EpisodeLink(deocdeUrl)
+                        EpisodeLink(decodeUrl)
                     }
                 }.awaitAll()
             }
