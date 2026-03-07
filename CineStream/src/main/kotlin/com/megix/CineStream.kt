@@ -33,5 +33,6 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Driveleech())
         registerExtractorAPI(Howblogs())
         registerExtractorAPI(Wootly())
+        registerExtractorAPI(Gofile())
     }
 }

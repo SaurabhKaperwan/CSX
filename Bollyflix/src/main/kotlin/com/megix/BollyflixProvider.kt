@@ -151,13 +151,15 @@ class BollyflixProvider : MainAPI() {
             coroutineScope {
                 buttons.map { button ->
                     async {
-                        val link = button.attr("href")
-                        // val id = button.attr("href").substringAfterLast("id=")
+                        var link = button.attr("href")
+                        if(link.contains("id=")) {
+                            val id = button.attr("href").substringAfterLast("id=")
+                            link = bypass(id)
+                        }
                         val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
                         val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
                         val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
 
-                        // val decodeUrl = bypass(id)
                         val seasonDoc = app.get(link).document
                         val epLinks = seasonDoc.select("h3 > a")
                             .filter { !it.text().contains("Zip", ignoreCase = true) }
@@ -209,9 +211,12 @@ class BollyflixProvider : MainAPI() {
             val data = coroutineScope {
                 document.select("a.dl").map { link ->
                     async {
-                        // val id = link.attr("href").substringAfterLast("id=")
-                        // val decodeUrl = bypass(id)
-                        EpisodeLink(link.attr("href"))
+                        var deocdeUrl = link.attr("href")
+                        if(decodeUrl.contains("id=")) {
+                            val id = link.attr("href").substringAfterLast("id=")
+                            decodeUrl = bypass(id)
+                        }
+                        EpisodeLink(deocdeUrl)
                     }
                 }.awaitAll()
             }

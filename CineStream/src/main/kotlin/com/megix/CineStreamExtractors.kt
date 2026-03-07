@@ -77,6 +77,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year, res.season, res.episode, callback) },
+            { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
 
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -103,8 +104,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-
-            // { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -2607,12 +2606,15 @@ object CineStreamExtractors : CineStreamProvider() {
             res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
                 .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
         entries.safeAmap {
-            val href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
-            // val token = href?.substringAfter("id=")
-            // val encodedurl =
-            //     app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
-            //         .substringBefore("\"};")
-            // val decodedurl = base64Decode(encodedurl.replace("\\/", "/"))
+            var href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
+
+            if(href.contains("id=")) {
+                val token = href.substringAfter("id=")
+                val encodedurl =
+                    app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
+                        .substringBefore("\"};")
+                href = base64Decode(encodedurl.replace("\\/", "/"))
+            }
 
             if (season == null) {
                 loadSourceNameExtractor("Bollyflix", href , "", subtitleCallback, callback)
@@ -3939,89 +3941,82 @@ object CineStreamExtractors : CineStreamProvider() {
         } catch (e: Exception) { }
     }
 
-    // suspend fun invokeVidzee(
-    //     id: Int?,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val keyHex = "6966796f75736372617065796f75617265676179000000000000000000000000"
-    //     val keyBytes = keyHex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-    //     val defaultReferer = "https://core.vidzee.wtf/"
+    //Thanks to https://github.com/yogesh-hacker/MediaVanced
+    suspend fun invokeVidzee(
+        id: Int?,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val secret = "alookeparathewithlassi"
+        val defaultReferer = "https://core.vidzee.wtf/"
 
-    //     (1..13).toList().safeAmap { sr ->
-    //         try {
-    //             val apiUrl = if (season == null) {
-    //                 "$vidzeeApi/api/server?id=$id&sr=$sr"
-    //             } else {
-    //                 "$vidzeeApi/api/server?id=$id&sr=$sr&ss=$season&ep=$episode"
-    //             }
+        (1..13).toList().safeAmap { sr ->
+            try {
+                val apiUrl = if (season == null) {
+                    "$vidzeeApi/api/server?id=$id&sr=$sr"
+                } else {
+                    "$vidzeeApi/api/server?id=$id&sr=$sr&ss=$season&ep=$episode"
+                }
 
-    //             val response = app.get(apiUrl).text
-    //             val json = JSONObject(response)
+                val response = app.get(apiUrl).text
+                val json = JSONObject(response)
 
-    //             val globalHeaders = mutableMapOf<String, String>()
-    //             json.optJSONObject("headers")?.let { headersObj ->
-    //                 headersObj.keys().forEach { key ->
-    //                     globalHeaders[key] = headersObj.getString(key)
-    //                 }
-    //             }
+                val globalHeaders = mutableMapOf<String, String>()
+                json.optJSONObject("headers")?.let { headersObj ->
+                    headersObj.keys().forEach { key ->
+                        globalHeaders[key] = headersObj.getString(key)
+                    }
+                }
 
-    //             val urls = json.optJSONArray("url") ?: JSONArray()
-    //             for (i in 0 until urls.length()) {
-    //                 val obj = urls.getJSONObject(i)
-    //                 val encryptedLink = obj.optString("link")
-    //                 val name = obj.optString("name", "Vidzee")
-    //                 val type = obj.optString("type", "hls")
-    //                 val lang = obj.optString("lang", "Unknown")
-    //                 val flag = obj.optString("flag", "")
+                val urls = json.optJSONArray("url") ?: JSONArray()
+                for (i in 0 until urls.length()) {
+                    val obj = urls.getJSONObject(i)
+                    val encryptedLink = obj.optString("link")
+                    val name = obj.optString("name", "")
+                    val type = obj.optString("type", "hls")
+                    val lang = obj.optString("lang", "Unknown")
+                    val flag = obj.optString("flag", "")
 
-    //                 if (encryptedLink.isNotBlank()) {
-    //                     val finalUrl = try {
-    //                         decryptVidzeeUrl(encryptedLink, keyBytes)
-    //                     } catch (e: Exception) {
-    //                         Log.e("VidzeeDecrypt", "Failed to decrypt link: $e")
-    //                         encryptedLink
-    //                     }
+                    if (encryptedLink.isNotBlank()) {
+                        val finalUrl = decryptVidzeeUrl(encryptedLink, secret) ?: continue
+                        if(!finalUrl.contains("https:")) continue
+                        val headersMap = mutableMapOf<String, String>()
+                        headersMap.putAll(globalHeaders)
+                        val referer = headersMap["referer"] ?: defaultReferer
+                        val displayName =
+                            if (flag.isNotBlank()) "VidZee $name ($lang - $flag)" else " VidZee$name ($lang)"
 
-    //                     // URI(finalUrl)
-    //                     if(!finalUrl.contains("https:")) continue
-    //                     val headersMap = mutableMapOf<String, String>()
-    //                     headersMap.putAll(globalHeaders)
-    //                     val referer = headersMap["referer"] ?: defaultReferer
-    //                     val displayName =
-    //                         if (flag.isNotBlank()) "VidZee $name ($lang - $flag)" else " VidZee$name ($lang)"
+                        callback.invoke(
+                            newExtractorLink(
+                                "VidZee",
+                                displayName,
+                                finalUrl,
+                                if (type.equals("hls", ignoreCase = true))
+                                    ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+                            ) {
+                                this.referer = referer
+                                this.headers = headersMap
+                                this.quality = Qualities.P1080.value
+                            }
+                        )
+                    }
+                }
 
-    //                     callback.invoke(
-    //                         newExtractorLink(
-    //                             "VidZee",
-    //                             displayName,
-    //                             finalUrl,
-    //                             if (type.equals("hls", ignoreCase = true))
-    //                                 ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-    //                         ) {
-    //                             this.referer = referer
-    //                             this.headers = headersMap
-    //                             this.quality = Qualities.P1080.value
-    //                         }
-    //                     )
-    //                 }
-    //             }
+                val subs = json.optJSONArray("tracks") ?: JSONArray()
+                for (i in 0 until subs.length()) {
+                    val sub = subs.getJSONObject(i)
+                    val subLang = sub.optString("lang", "Unknown")
+                    val subUrl = sub.optString("url")
+                    if (subUrl.isNotBlank()) subtitleCallback(newSubtitleFile(subLang, subUrl))
+                }
 
-    //             val subs = json.optJSONArray("tracks") ?: JSONArray()
-    //             for (i in 0 until subs.length()) {
-    //                 val sub = subs.getJSONObject(i)
-    //                 val subLang = sub.optString("lang", "Unknown")
-    //                 val subUrl = sub.optString("url")
-    //                 if (subUrl.isNotBlank()) subtitleCallback(newSubtitleFile(subLang, subUrl))
-    //             }
-
-    //         } catch (e: Exception) {
-    //             Log.e("VidzeeApi", "Failed sr=$sr: $e")
-    //         }
-    //     }
-    // }
+            } catch (e: Exception) {
+                Log.e("VidzeeApi", "Failed sr=$sr: $e")
+            }
+        }
+    }
 
     suspend fun invokeBollywood(
         title: String? = null,

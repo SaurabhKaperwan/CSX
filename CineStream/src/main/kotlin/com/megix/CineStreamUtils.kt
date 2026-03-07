@@ -4,16 +4,12 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.base64Decode
-import com.lagradost.cloudstream3.base64DecodeArray
-import android.util.Base64
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import java.net.*
 import com.lagradost.api.Log
 import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
 
 import kotlinx.coroutines.*
@@ -46,6 +42,8 @@ import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.util.regex.Pattern
+
+import android.util.Base64
 
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
@@ -1641,21 +1639,27 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
     return sourcesList
 }
 
-// fun decryptVidzeeUrl(encrypted: String, key: ByteArray): String {
-//     val decoded = base64Decode(encrypted)
-//     val parts = decoded.split(":")
-//     if (parts.size != 2) throw IllegalArgumentException("Invalid encrypted format")
-
-//     val iv = base64DecodeArray(parts[0])
-//     val cipherData = base64DecodeArray(parts[1])
-
-//     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-//     val secretKey = SecretKeySpec(key, "AES")
-//     cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
-
-//     val decryptedBytes = cipher.doFinal(cipherData)
-//     return decryptedBytes.toString(Charsets.UTF_8)
-// }
+fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String? {
+    return try {
+        val decodedBytes = Base64.decode(encryptedUrl, Base64.DEFAULT)
+        val decodedString = String(decodedBytes, Charsets.UTF_8)
+        val parts = decodedString.split(":", limit = 2)
+        if (parts.size < 2) return null
+        val ivB64 = parts[0]
+        val ciphertextB64 = parts[1]
+        val iv = Base64.decode(ivB64, Base64.DEFAULT)
+        val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
+        val key = secret.padEnd(32, '\u0000').toByteArray(Charsets.UTF_8)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val secretKeySpec = SecretKeySpec(key, "AES")
+        val ivParameterSpec = IvParameterSpec(iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+        val decryptedData = cipher.doFinal(ciphertext)
+        String(decryptedData, Charsets.UTF_8)
+    } catch (e: Exception) {
+        null
+    }
+}
 
 /** Encodes input using Base64 with custom character mapping. */
 // fun customEncode(input: String): String {
