@@ -20,6 +20,8 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
+import com.megix.CineStreamProvider
+
 import java.security.MessageDigest
 
 //Thanks to https://github.com/yogesh-hacker/MediaVanced
@@ -251,6 +253,7 @@ open class GDFlix : ExtractorApi() {
             )
         }
 
+
         document.select("div.text-center a").safeAmap { anchor ->
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
@@ -281,7 +284,7 @@ open class GDFlix : ExtractorApi() {
                     myCallback(finalURL, "[Pixeldrain]")
                 }
 
-                text.contains("Instant DL") -> {
+                CineStreamProvider.allowDownloadLinks && text.contains("Instant DL") -> {
                     try {
                         val instantLink = app.get(link, allowRedirects = false)
                             .headers["location"]?.substringAfter("url=").orEmpty()
@@ -475,9 +478,12 @@ open class Driveleech : ExtractorApi() {
         document.select("div.text-center > a").safeAmap { element ->
             val text = element.text()
             val href = element.attr("href")
+
             when {
+
                 text.contains("Cloud Download") -> { myCallback(href, "[Cloud]") }
-                text.contains("Instant Download") -> {
+
+                CineStreamProvider.allowDownloadLinks && text.contains("Instant Download") -> {
                     try{
                         val instant = instantLink(href) ?: return@safeAmap
                         myCallback(instant, "[Instant(Download)]")
@@ -485,6 +491,7 @@ open class Driveleech : ExtractorApi() {
                         Log.d("Error:", e.toString())
                     }
                 }
+
                 text.contains("Resume Worker Bot") -> {
                     try{
                         val resumeLink = resumeBot(href)
@@ -494,6 +501,7 @@ open class Driveleech : ExtractorApi() {
                     }
 
                 }
+
                 text.contains("Direct Links") -> {
                     try {
                         val link = baseUrl + href
@@ -504,6 +512,7 @@ open class Driveleech : ExtractorApi() {
                         Log.d("Error:", e.toString())
                     }
                 }
+
                 text.contains("Resume Cloud") -> {
                     try {
                         val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@safeAmap
@@ -516,6 +525,7 @@ open class Driveleech : ExtractorApi() {
                 text.contains("gofile") -> {
                     loadExtractor(href, "", subtitleCallback, callback)
                 }
+
                 else -> {
                     Log.d("Error", "No Server matched")
                 }
@@ -621,7 +631,7 @@ open class HubCloud : ExtractorApi() {
                 else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                 myCallback(finalURL, "[Pixeldrain]")
             }
-            else if (text.contains("Server : 10Gbps")) {
+            else if (CineStreamProvider.allowDownloadLinks && text.contains("Server : 10Gbps")) {
                 var redirectUrl = resolveFinalUrl(link) ?: return@safeAmap
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")

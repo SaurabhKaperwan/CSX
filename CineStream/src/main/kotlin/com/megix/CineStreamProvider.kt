@@ -15,6 +15,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
 import com.megix.CineStreamExtractors.invokeAnimes
@@ -34,6 +35,13 @@ open class CineStreamProvider : MainAPI() {
     val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     companion object {
+
+        val allowTorrents: Boolean
+            get() = getKey(Settings.TORRENT_ENABLE) ?: false
+
+        val allowDownloadLinks: Boolean
+            get() = getKey(Settings.DOWNLOAD_ENABLE) ?: false
+
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val WYZIESubsAPI = "https://sub.wyzie.ru"

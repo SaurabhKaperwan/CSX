@@ -1,13 +1,13 @@
 package com.megix
 
+import android.content.Context
+import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
-import android.content.Context
 
 @CloudstreamPlugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
-        CineStreamStorage.init(context.applicationContext)
         registerMainAPI(CineStreamProvider())
         registerMainAPI(CineSimklProvider())
         registerMainAPI(CineTmdbProvider())
@@ -34,5 +34,11 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Howblogs())
         registerExtractorAPI(Wootly())
         registerExtractorAPI(Gofile())
+
+        this.openSettings = { ctx: Context ->
+            Settings.showSettingsDialog(ctx) {
+                MainActivity.reloadHomeEvent.invoke(true)
+            }
+        }
     }
 }
