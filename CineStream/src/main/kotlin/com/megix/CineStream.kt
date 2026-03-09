@@ -2,15 +2,26 @@ package com.megix
 
 import android.content.Context
 import com.lagradost.cloudstream3.MainActivity
+import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 
 @CloudstreamPlugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
-        registerMainAPI(CineStreamProvider())
-        registerMainAPI(CineSimklProvider())
-        registerMainAPI(CineTmdbProvider())
+
+        if (getKey<Boolean>(Settings.PROVIDER_CINESTREAM) ?: true) {
+            registerMainAPI(CineStreamProvider())
+        }
+
+        if (getKey<Boolean>(Settings.PROVIDER_SIMKL) ?: true) {
+            registerMainAPI(CineSimklProvider())
+        }
+
+        if (getKey<Boolean>(Settings.PROVIDER_TMDB) ?: true) {
+            registerMainAPI(CineTmdbProvider())
+        }
+
         registerExtractorAPI(Kwik())
         registerExtractorAPI(Pahe())
         registerExtractorAPI(SuperVideo())
