@@ -598,7 +598,7 @@ object Settings {
                         .setPositiveButton("Move") { _, _ ->
                             val target = input.text.toString().toIntOrNull()
                             if (target != null && target in 1..totalCount) {
-                                onMoveTo(target - 1
+                                onMoveTo(target - 1)
                             } else {
                                 Toast.makeText(context, "Enter a number between 1 and $totalCount", Toast.LENGTH_SHORT).show()
                             }
