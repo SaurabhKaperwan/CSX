@@ -36,11 +36,11 @@ open class CineStreamProvider : MainAPI() {
 
     companion object {
 
-        val allowTorrents: Boolean
-            get() = getKey(Settings.TORRENT_ENABLE) ?: false
-
         val allowDownloadLinks: Boolean
             get() = getKey(Settings.DOWNLOAD_ENABLE) ?: false
+
+        val activeProviderOrder: List<String>
+            get() = Settings.getOrder().filter { Settings.enabled(it) }
 
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
