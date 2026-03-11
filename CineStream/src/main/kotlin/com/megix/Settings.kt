@@ -193,7 +193,7 @@ object Settings {
     fun saveOrder(order: List<String>) = setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
 
     // =========================================================
-    //  NETMIRROR COOKIE HELPERS
+    // NETMIRROR COOKIE HELPERS
     // =========================================================
 
     fun saveCookie(cookie: String) {
@@ -233,6 +233,11 @@ object Settings {
         }
 
         layout.addView(createHeroBanner(context))
+
+        // spacer
+        layout.addView(View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 8.dp(context))
+        })
 
         // ── Scraping Settings (collapsible) — includes cookie clear ──
         layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings") {
@@ -280,7 +285,7 @@ object Settings {
 
         val dialog = AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog)
             .setView(scroll)
-            .setPositiveButton("Save & Reload") { _, _ ->
+            .setPositiveButton("Save") { _, _ ->
                 if (requiresRestart) showRestartWarning(context, onSave) else onSave()
             }
             .setNegativeButton("Cancel", null)
@@ -288,6 +293,10 @@ object Settings {
 
         dialog.window?.setBackgroundDrawable(roundRect(BG_DARK, 20f.dp(context)))
         dialog.show()
+        dialog.window?.setLayout(
+            (context.resources.displayMetrics.widthPixels * 0.95).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
     }
