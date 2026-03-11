@@ -35,6 +35,7 @@ object Settings {
     const val PROVIDER_TMDB       = "ProviderTmdb"
     private const val COOKIE_KEY    = "nf_cookie"
     private const val TIMESTAMP_KEY = "nf_cookie_timestamp"
+    const val SHOWBOX_TOKEN_KEY     = "showbox_ui_token"
 
     // --- DATABASE KEYS: Providers ---
     const val P_TORRENTIO    = "p_torrentio"
@@ -103,6 +104,7 @@ object Settings {
     const val P_ANIMES       = "p_animes"
     const val P_GOJO         = "p_gojo"
     const val P_ANIMEWORLD   = "p_animeworld"
+    const val P_SHOWBOX      = "p_showbox"
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
     private val TORRENT_KEYS = setOf(P_TORRENTIO, P_TORRENTSDB, P_ANIMETOSHO)
@@ -174,6 +176,7 @@ object Settings {
         P_GOJO         to "Animetsu",
         P_KISSKH       to "KissKH",
         P_DRAMAFULL    to "Dramafull",
+        P_SHOWBOX      to "ShowBox",
     )
 
     private val DEFAULT_ORDER = PROVIDER_NAMES.keys.toList()
@@ -207,6 +210,11 @@ object Settings {
         setKey(TIMESTAMP_KEY, null)
     }
 
+    // ShowBox UI token
+    fun saveShowboxToken(token: String) = setKey(SHOWBOX_TOKEN_KEY, token.trim())
+    fun getShowboxToken(): String? = getKey<String>(SHOWBOX_TOKEN_KEY)?.takeIf { it.isNotBlank() }
+    fun clearShowboxToken() = setKey(SHOWBOX_TOKEN_KEY, null)
+
     // =========================================================
     //  SETTINGS DIALOG
     // =========================================================
@@ -227,12 +235,15 @@ object Settings {
 
         layout.addView(createHeroBanner(context))
 
-        layout.addView(createSectionCard(context, "⚙️  Scraping Settings") {
+        layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings") {
             addView(createToggleRow(context, "Download Only Links", "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
         })
 
+        layout.addView(createShowboxTokenCard(context))
+
         val restartBanner = createRestartBanner(context).also { it.visibility = View.GONE }
 
+        // Active Catalogs
         val onCatalogChanged = {
             requiresRestart = true
             if (restartBanner.visibility == View.GONE) {
@@ -258,8 +269,10 @@ object Settings {
 
         layout.addView(restartBanner)
 
+        // Providers
         layout.addView(createProvidersCard(context))
 
+        // Danger Zone
         layout.addView(createDangerCard(context))
 
         scroll.addView(layout)
@@ -279,7 +292,179 @@ object Settings {
     }
 
     // =========================================================
-    //  COLLAPSIBLE CARD  (used by Catalogs)
+    //  SHOWBOX TOKEN CARD
+    // =========================================================
+
+    private fun createShowboxTokenCard(context: Context): View {
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val m = 16.dp(context)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(m, 0, m, m) }
+            background = roundRect(BG_CARD, 16f.dp(context))
+            elevation = 4f
+        }
+
+        var expanded = false
+
+        val SHOWBOX_ACCENT = Color.parseColor("#F59E0B")
+        val SHOWBOX_BG     = Color.parseColor("#13100A")
+        val SHOWBOX_BORDER = Color.parseColor("#3A2800")
+        val SHOWBOX_DIM    = Color.parseColor("#7A6030")
+
+        // Content
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
+            visibility = View.GONE
+        }
+
+        // Description
+        content.addView(TextView(context).apply {
+            text = "Enter your Febbox token to enable ShowBox source"
+            textSize = 12f
+            setTextColor(TEXT_SECONDARY)
+            setPadding(4.dp(context), 0, 4.dp(context), 10.dp(context))
+        })
+
+        // Token input field
+        val input = EditText(context).apply {
+            hint = "Paste UI token"
+            setText(getShowboxToken() ?: "")
+            setTextColor(TEXT_PRIMARY)
+            setHintTextColor(TEXT_SECONDARY)
+            textSize = 13f
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
+            background = GradientDrawable().apply {
+                cornerRadius = 10f.dp(context)
+                setColor(Color.parseColor("#0D1117"))
+                setStroke(1, Color.parseColor("#2E2850"))
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 10.dp(context) }
+        }
+        content.addView(input)
+
+        // Show/hide toggle + action buttons row
+        content.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+
+            // Eye toggle — show/hide token
+            var isVisible = false
+            val eyeBtn = TextView(context).apply {
+                text = "👁 Show"
+                textSize = 11f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY)
+                setPadding(0, 0, 12.dp(context), 0)
+                isClickable = true; isFocusable = true
+                setOnClickListener {
+                    isVisible = !isVisible
+                    input.inputType = if (isVisible)
+                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                    else
+                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    input.setSelection(input.text?.length ?: 0)
+                    text = if (isVisible) "🙈 Hide" else "👁 Show"
+                }
+            }
+            addView(eyeBtn)
+
+            // Spacer
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+            })
+
+            // Clear button
+            addView(pillBtn(context, "Clear", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+                input.setText("")
+                clearShowboxToken()
+                Toast.makeText(context, "Febbox token cleared", Toast.LENGTH_SHORT).show()
+            })
+
+            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
+
+            // Save button
+            addView(pillBtn(context, "Save", SHOWBOX_ACCENT, SHOWBOX_BG, SHOWBOX_BORDER) {
+                val token = input.text.toString().trim()
+                if (token.isBlank()) {
+                    Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
+                } else {
+                    saveShowboxToken(token)
+                    Toast.makeText(context, "✓ Febbox token saved", Toast.LENGTH_SHORT).show()
+                }
+            })
+        })
+
+        // Chevron
+        val chevron = TextView(context).apply {
+            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+        }
+
+        // Saved indicator shown in header when collapsed
+        val savedBadge = TextView(context).apply {
+            text = if (getShowboxToken() != null) "✓ Saved" else ""
+            textSize = 10f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#4ADE80"))
+            setPadding(0, 0, 8.dp(context), 0)
+        }
+
+        // Header
+        card.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true; isFocusable = true
+            background = stateDrawable(context)
+
+            // Accent bar
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(SHOWBOX_ACCENT, Color.parseColor("#D97706"))).apply { cornerRadius = 99f }
+            })
+            addView(TextView(context).apply {
+                text = "📦  Febbox Token"
+                textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(savedBadge)
+            addView(chevron)
+
+            setOnClickListener {
+                expanded = !expanded
+                chevron.text = if (expanded) "▲" else "▼"
+                // Refresh saved badge on collapse
+                if (!expanded) savedBadge.text = if (getShowboxToken() != null) "✓ Saved" else ""
+                if (expanded) {
+                    content.visibility = View.VISIBLE
+                    content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(200).start()
+                } else {
+                    content.animate().alpha(0f).setDuration(150).withEndAction {
+                        content.visibility = View.GONE; content.alpha = 1f
+                    }.start()
+                }
+            }
+        })
+
+        card.addView(content)
+        card.alpha = 0f; card.translationY = 20f
+        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        return card
+    }
+
+    // =========================================================
+    //  COLLAPSIBLE CARD
     // =========================================================
 
     private fun createCollapsibleCard(
@@ -551,7 +736,6 @@ object Settings {
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
-            // Index badge — tap to jump to position
             addView(TextView(context).apply {
                 text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -611,7 +795,6 @@ object Settings {
                     d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
                     d.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
 
-                    // Auto-show keyboard
                     input.requestFocus()
                     val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
                     imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
@@ -658,6 +841,10 @@ object Settings {
         }
     }
 
+    // =========================================================
+    //  REUSABLE PILL BUTTON
+    // =========================================================
+
     private fun pillBtn(
         context: Context,
         label: String,
@@ -681,6 +868,10 @@ object Settings {
             onClick()
         }
     }
+
+    // =========================================================
+    //  EXISTING COMPONENTS
+    // =========================================================
 
     private fun createHeroBanner(context: Context): View {
         return LinearLayout(context).apply {
@@ -840,7 +1031,7 @@ object Settings {
             }
             setPadding(20.dp(context), 18.dp(context), 20.dp(context), 18.dp(context))
             addView(TextView(context).apply {
-                text = "⚠️  Danger Zone"; textSize = 11f
+                text = "⚠️"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(DANGER_COLOR); letterSpacing = 0.1f
                 setPadding(0, 0, 0, 12.dp(context))
@@ -898,6 +1089,7 @@ object Settings {
             .setCancelable(false).show()
     }
 
+    // --- DRAWING HELPERS ---
     private fun roundRect(color: Int, radius: Float) = GradientDrawable().apply {
         cornerRadius = radius; setColor(color)
     }
@@ -908,6 +1100,7 @@ object Settings {
         addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
     }
 
+    // --- EXTENSION HELPERS ---
     private fun Int.dp(context: Context): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), context.resources.displayMetrics).toInt()
 

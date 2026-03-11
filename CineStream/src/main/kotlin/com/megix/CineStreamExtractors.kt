@@ -103,6 +103,7 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_SKYMOVIES     to { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             Settings.P_HDMOVIE2      to { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             Settings.P_MOSTRAGUARDA  to { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
+            Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -160,11 +161,59 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_VIDLINK       to { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             Settings.P_PRIMESRC      to { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             Settings.P_UHDMOVIES     to { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
-            Settings.P_KISSKH        to { invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_DRAMAFULL     to { invokeDramafull(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
         )
 
         runLimitedAsync(concurrency = 7, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
+    }
+
+    suspend fun invokeShowbox(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$femBoxAPI/movie/$tmdbId?ui=$showboxToken"
+        } else {
+            "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=$showboxToken"
+        }
+
+        val response = app.get(url).parsedSafe<ShowboxResponse>() ?: return
+
+        response.sources.forEach { source ->
+            val isM3u8 = source.url.contains(".m3u8")
+
+            callback.invoke(
+                newExtractorLink(
+                    "Showbox",
+                    "ShowBox" + (source.size?.let { " [$it]" } ?: ""),
+                    source.url,
+                    if(isM3u8) ExtractorLinkType.M3U8 else  ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = when (source.quality.uppercase()) {
+                        "4K", "ORG" -> Qualities.P2160.value
+                        "1080P"     -> Qualities.P1080.value
+                        "720P"      -> Qualities.P720.value
+                        "480P"      -> Qualities.P480.value
+                        "360P"      -> Qualities.P360.value
+                        else        -> Qualities.Unknown.value
+                    }
+                }
+            )
+
+        }
+
+        response.subtitles.forEach { sub ->
+            subtitleCallback.invoke(
+                newSubtitleFile(
+                    sub.language,
+                    sub.url
+                )
+            )
+        }
+
     }
 
     suspend fun invokeFlixIndia(

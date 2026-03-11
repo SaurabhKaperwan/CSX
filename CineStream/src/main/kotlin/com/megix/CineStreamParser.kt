@@ -31,6 +31,25 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//Showbox
+data class ShowboxSource(
+    @param:JsonProperty("url")     val url: String,
+    @param:JsonProperty("quality") val quality: String,
+    @param:JsonProperty("size")    val size: String? = null
+)
+
+data class ShowboxSubtitle(
+    @param:JsonProperty("language")    val language: String,
+    @param:JsonProperty("url")         val url: String,
+    @param:JsonProperty("name")        val name: String? = null,
+    @param:JsonProperty("upload_date") val uploadDate: String? = null
+)
+
+data class ShowboxResponse(
+    @param:JsonProperty("sources")   val sources: List<ShowboxSource> = emptyList(),
+    @param:JsonProperty("subtitles") val subtitles: List<ShowboxSubtitle> = emptyList()
+)
+
 //AIO
 data class ExtractedMediaData(
     val cast: List<ActorData>?,
