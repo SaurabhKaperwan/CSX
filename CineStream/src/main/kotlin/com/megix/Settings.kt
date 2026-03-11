@@ -110,73 +110,73 @@ object Settings {
     private val TORRENT_KEYS = setOf(P_TORRENTIO, P_TORRENTSDB, P_ANIMETOSHO)
 
     val PROVIDER_NAMES = linkedMapOf(
-        P_TORRENTIO    to "🧲 Torrentio",
-        P_TORRENTSDB   to "🧲 TorrentsDB",
-        P_ANIMETOSHO   to "🧲 AnimeTosho",
-        P_WEBSTREAMR   to "WebStreamr",
-        P_STREAMVIX    to "Streamvix",
-        P_NOTORRENT    to "NoTorrent",
-        P_CASTLE       to "Castle",
-        P_CINE         to "Cine",
-        P_ANIMEWORLD   to "AnimeWorld",
-        P_VIDFLIX      to "Vidflix",
-        P_MOVIEBOX     to "Moviebox",
-        P_CINEMACITY   to "Cinemacity",
-        P_ALLMOVIELAND to "Allmovieland",
-        P_MADPLAYCDN   to "MadplayCDN",
-        P_VIDFASTPRO   to "VidFastPro",
-        P_HEXA         to "Hexa",
-        P_YFLIX        to "Yflix",
-        P_XPASS        to "Xpass",
-        P_PLAYSRC      to "Playsrc",
-        P_2EMBED       to "2Embed",
-        P_VIDEASY      to "Videasy",
-        P_CINEMAOS     to "CinemaOS",
-        P_VICSRCWTF    to "VicSrcWtf",
-        P_VIDLINK      to "Vidlink",
-        P_MAPPLE       to "Mapple",
-        P_VIDSTACK     to "Vidstack",
-        P_VIDZEE       to "Vidzee",
-        P_WYZIESUBS    to "WYZIESubs",
-        P_STREMIOSUBS  to "StremioSubs",
-        P_NETFLIX      to "Netflix",
-        P_PRIMEVIDEO   to "Prime Video",
-        P_DISNEY       to "Hotstar",
-        P_BOLLYWOOD    to "Gramcinema",
-        P_FLIXINDIA    to "FlixIndia",
-        P_VEGAMOVIES   to "VegaMovies",
-        P_ROGMOVIES    to "RogMovies",
-        P_BOLLYFLIX    to "Bollyflix",
-        P_TOPMOVIES    to "TopMovies",
-        P_MOVIESMOD    to "Moviessmod",
-        P_MOVIES4U     to "Movies4u",
-        P_UHDMOVIES    to "UHDMovies",
-        P_MOVIESDRIVE  to "MoviesDrive",
-        P_HINDMOVIEZ   to "Hindmoviez",
-        P_4KHDHUB      to "4KHDHub",
-        P_XDMOVIES     to "XDMovies",
-        P_PRIMESRC     to "PrimeSrc",
+        P_TORRENTIO     to "🧲 Torrentio",
+        P_TORRENTSDB    to "🧲 TorrentsDB",
+        P_ANIMETOSHO    to "🧲 AnimeTosho",
+        P_WEBSTREAMR    to "WebStreamr",
+        P_STREAMVIX     to "Streamvix",
+        P_NOTORRENT     to "NoTorrent",
+        P_CASTLE        to "Castle",
+        P_CINE          to "Cine",
+        P_ANIMEWORLD    to "AnimeWorld",
+        P_SHOWBOX       to "ShowBox",
+        P_VIDFLIX       to "Vidflix",
+        P_MOVIEBOX      to "Moviebox",
+        P_CINEMACITY    to "Cinemacity",
+        P_ALLMOVIELAND  to "Allmovieland",
+        P_MADPLAYCDN    to "MadplayCDN",
+        P_VIDFASTPRO    to "VidFastPro",
+        P_HEXA          to "Hexa",
+        P_YFLIX         to "Yflix",
+        P_XPASS         to "Xpass",
+        P_PLAYSRC       to "Playsrc",
+        P_2EMBED        to "2Embed",
+        P_VIDEASY       to "Videasy",
+        P_CINEMAOS      to "CinemaOS",
+        P_VICSRCWTF     to "VicSrcWtf",
+        P_VIDLINK       to "Vidlink",
+        P_MAPPLE        to "Mapple",
+        P_VIDSTACK      to "Vidstack",
+        P_VIDZEE        to "Vidzee",
+        P_WYZIESUBS     to "WYZIESubs",
+        P_STREMIOSUBS   to "StremioSubs",
+        P_NETFLIX       to "Netflix",
+        P_PRIMEVIDEO    to "Prime Video",
+        P_DISNEY        to "Hotstar",
+        P_BOLLYWOOD     to "Gramcinema",
+        P_FLIXINDIA     to "FlixIndia",
+        P_VEGAMOVIES    to "VegaMovies",
+        P_ROGMOVIES     to "RogMovies",
+        P_BOLLYFLIX     to "Bollyflix",
+        P_TOPMOVIES     to "TopMovies",
+        P_MOVIESMOD     to "Moviessmod",
+        P_MOVIES4U      to "Movies4u",
+        P_UHDMOVIES     to "UHDMovies",
+        P_MOVIESDRIVE   to "MoviesDrive",
+        P_HINDMOVIEZ    to "Hindmoviez",
+        P_4KHDHUB       to "4KHDHub",
+        P_XDMOVIES      to "XDMovies",
+        P_PRIMESRC      to "PrimeSrc",
         P_PROJECTFREETV to "ProjectFreeTV",
-        P_LEVIDIA      to "Levidia",
-        P_DAHMERMOVIES to "DahmerMovies",
-        P_MULTIMOVIES  to "Multimovies",
-        P_PROTONMOVIES to "Protonmovies",
-        P_AKWAM        to "Akwam",
-        P_RTALLY       to "Rtally",
-        P_ASIAFLIX     to "Asiaflix",
-        P_SKYMOVIES    to "SkyMovies",
-        P_HDMOVIE2     to "HDMovie2",
-        P_MOSTRAGUARDA to "Mostraguarda",
-        P_TOONSTREAM   to "Toonstream",
-        P_ALLANIME     to "AllAnime",
-        P_SUDATCHI     to "Sudatchi",
-        P_TOKYOINSIDER to "TokyoInsider",
-        P_ANIZONE      to "Anizone",
-        P_ANIMES       to "Animes",
-        P_GOJO         to "Animetsu",
-        P_KISSKH       to "KissKH",
-        P_DRAMAFULL    to "Dramafull",
-        P_SHOWBOX      to "ShowBox",
+        P_LEVIDIA       to "Levidia",
+        P_DAHMERMOVIES  to "DahmerMovies",
+        P_MULTIMOVIES   to "Multimovies",
+        P_PROTONMOVIES  to "Protonmovies",
+        P_AKWAM         to "Akwam",
+        P_RTALLY        to "Rtally",
+        P_ASIAFLIX      to "Asiaflix",
+        P_SKYMOVIES     to "SkyMovies",
+        P_HDMOVIE2      to "HDMovie2",
+        P_MOSTRAGUARDA  to "Mostraguarda",
+        P_TOONSTREAM    to "Toonstream",
+        P_ALLANIME      to "AllAnime",
+        P_SUDATCHI      to "Sudatchi",
+        P_TOKYOINSIDER  to "TokyoInsider",
+        P_ANIZONE       to "Anizone",
+        P_ANIMES        to "Animes",
+        P_GOJO          to "Animetsu",
+        P_KISSKH        to "KissKH",
+        P_DRAMAFULL     to "Dramafull",
     )
 
     private val DEFAULT_ORDER = PROVIDER_NAMES.keys.toList()
@@ -201,19 +201,18 @@ object Settings {
         setKey(TIMESTAMP_KEY, System.currentTimeMillis())
     }
 
-    fun getCookie(): Pair<String?, Long> {
-        return Pair(getKey<String>(COOKIE_KEY), getKey<Long>(TIMESTAMP_KEY) ?: 0L)
-    }
+    fun getCookie(): Pair<String?, Long> =
+        Pair(getKey<String>(COOKIE_KEY), getKey<Long>(TIMESTAMP_KEY) ?: 0L)
 
     fun clearCookie() {
         setKey(COOKIE_KEY, null)
         setKey(TIMESTAMP_KEY, null)
     }
 
-    // ShowBox UI token
+    // ShowBox / Febbox token
     fun saveShowboxToken(token: String) = setKey(SHOWBOX_TOKEN_KEY, token.trim())
-    fun getShowboxToken(): String? = getKey<String>(SHOWBOX_TOKEN_KEY)?.takeIf { it.isNotBlank() }
-    fun clearShowboxToken() = setKey(SHOWBOX_TOKEN_KEY, null)
+    fun getShowboxToken(): String?       = getKey<String>(SHOWBOX_TOKEN_KEY)?.takeIf { it.isNotBlank() }
+    fun clearShowboxToken()              = setKey(SHOWBOX_TOKEN_KEY, null)
 
     // =========================================================
     //  SETTINGS DIALOG
@@ -235,15 +234,21 @@ object Settings {
 
         layout.addView(createHeroBanner(context))
 
+        // ── Scraping Settings (collapsible) — includes cookie clear ──
         layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings") {
-            addView(createToggleRow(context, "Download Only Links", "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
+            addView(createToggleRow(context, "Download Only Links",
+                "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
+            addView(createDivider(context))
+            addView(createCookieClearRow(context))
         })
 
+        // ── Febbox / ShowBox Token (collapsible) ──
         layout.addView(createShowboxTokenCard(context))
 
+        // ── Restart banner ──
         val restartBanner = createRestartBanner(context).also { it.visibility = View.GONE }
 
-        // Active Catalogs
+        // ── Active Catalogs (collapsible) ──
         val onCatalogChanged = {
             requiresRestart = true
             if (restartBanner.visibility == View.GONE) {
@@ -255,11 +260,7 @@ object Settings {
                     .setDuration(350).setInterpolator(DecelerateInterpolator()).start()
             }
         }
-        layout.addView(createCollapsibleCard(
-            context  = context,
-            title    = "📡  Active Catalogs",
-            startExpanded = false
-        ) {
+        layout.addView(createCollapsibleCard(context, "📡  Active Catalogs") {
             addView(createToggleRow(context, "CineStream", "Cinemeta catalog",  PROVIDER_CINESTREAM, true, onCatalogChanged))
             addView(createDivider(context))
             addView(createToggleRow(context, "CineSimkl",  "Simkl catalog",     PROVIDER_SIMKL,      true, onCatalogChanged))
@@ -269,11 +270,11 @@ object Settings {
 
         layout.addView(restartBanner)
 
-        // Providers
+        // ── Providers (collapsible, toggle + reorder) ──
         layout.addView(createProvidersCard(context))
 
-        // Danger Zone
-        layout.addView(createDangerCard(context))
+        // ── Credits ──
+        layout.addView(createCreditsCard(context))
 
         scroll.addView(layout)
 
@@ -292,10 +293,51 @@ object Settings {
     }
 
     // =========================================================
-    //  SHOWBOX TOKEN CARD
+    //  COOKIE CLEAR ROW  (inside Scraping Settings)
     // =========================================================
 
-    private fun createShowboxTokenCard(context: Context): View {
+    private fun createCookieClearRow(context: Context): View {
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+
+            val textCol = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            textCol.addView(TextView(context).apply {
+                text = "Clear Netmirror Cookies"; textSize = 15f
+                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_PRIMARY)
+            })
+            textCol.addView(TextView(context).apply {
+                text = "Remove saved Netmirror session cookies"
+                textSize = 12f; setTextColor(TEXT_SECONDARY); setPadding(0, 3.dp(context), 0, 0)
+            })
+            addView(textCol)
+
+            addView(pillBtn(context, "Clear", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+                clearCookie()
+                Toast.makeText(context, "🍪 Cookies cleared!", Toast.LENGTH_SHORT).show()
+            })
+        }
+    }
+
+    // =========================================================
+    //  CREDITS CARD  (collapsible)
+    // =========================================================
+
+    private fun createCreditsCard(context: Context): View {
+        val contributors = listOf(
+            Triple("phisher98",     "For multi-source plugin inspiration", "github.com/phisher98"),
+            Triple("AzartX47",      "For providing muliple API",           "github.com/AzartX47"),
+            Triple("yogesh-hacker", "For providing reference",             "github.com/yogesh-hacker"),
+        )
+
+        val CREDIT_ACCENT = Color.parseColor("#38BDF8")
+        val CREDIT_BG     = Color.parseColor("#0A1420")
+        val CREDIT_BORDER = Color.parseColor("#1A3040")
+
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             val m = 16.dp(context)
@@ -308,115 +350,80 @@ object Settings {
 
         var expanded = false
 
-        val SHOWBOX_ACCENT = Color.parseColor("#F59E0B")
-        val SHOWBOX_BG     = Color.parseColor("#13100A")
-        val SHOWBOX_BORDER = Color.parseColor("#3A2800")
-        val SHOWBOX_DIM    = Color.parseColor("#7A6030")
-
-        // Content
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
             visibility = View.GONE
         }
 
-        // Description
+        // Thank-you note
         content.addView(TextView(context).apply {
-            text = "Enter your Febbox token to enable ShowBox source"
+            text = "Special thanks to these developers whose work served as reference and inspiration ❤️"
             textSize = 12f
             setTextColor(TEXT_SECONDARY)
-            setPadding(4.dp(context), 0, 4.dp(context), 10.dp(context))
+            setPadding(4.dp(context), 4.dp(context), 4.dp(context), 14.dp(context))
         })
 
-        // Token input field
-        val input = EditText(context).apply {
-            hint = "Paste UI token"
-            setText(getShowboxToken() ?: "")
-            setTextColor(TEXT_PRIMARY)
-            setHintTextColor(TEXT_SECONDARY)
-            textSize = 13f
-            setSingleLine(true)
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or
-                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
-            background = GradientDrawable().apply {
-                cornerRadius = 10f.dp(context)
-                setColor(Color.parseColor("#0D1117"))
-                setStroke(1, Color.parseColor("#2E2850"))
-            }
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 10.dp(context) }
+        // Contributor rows
+        contributors.forEachIndexed { i, (name, role, url) ->
+            if (i > 0) content.addView(createDivider(context))
+            content.addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(4.dp(context), 12.dp(context), 4.dp(context), 12.dp(context))
+                gravity = Gravity.CENTER_VERTICAL
+
+                // Avatar placeholder circle with initial
+                addView(TextView(context).apply {
+                    text = name.first().uppercaseChar().toString()
+                    textSize = 14f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(CREDIT_ACCENT)
+                    gravity = Gravity.CENTER
+                    val size = 36.dp(context)
+                    layoutParams = LinearLayout.LayoutParams(size, size).also { it.marginEnd = 14.dp(context) }
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(CREDIT_BG)
+                        setStroke(2, CREDIT_BORDER)
+                    }
+                })
+
+                // Name + role column
+                val col = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
+                col.addView(TextView(context).apply {
+                    text = name; textSize = 14f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(TEXT_PRIMARY)
+                })
+                col.addView(TextView(context).apply {
+                    text = role; textSize = 11f
+                    setTextColor(TEXT_SECONDARY)
+                    setPadding(0, 2.dp(context), 0, 0)
+                })
+                addView(col)
+
+                // GitHub pill link
+                addView(pillBtn(context, "GitHub", CREDIT_ACCENT, CREDIT_BG, CREDIT_BORDER) {
+                    try {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://$url")
+                        )
+                        context.startActivity(intent)
+                    } catch (_: Exception) {
+                        Toast.makeText(context, url, Toast.LENGTH_SHORT).show()
+                    }
+                })
+            })
         }
-        content.addView(input)
 
-        // Show/hide toggle + action buttons row
-        content.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-
-            // Eye toggle — show/hide token
-            var isVisible = false
-            val eyeBtn = TextView(context).apply {
-                text = "👁 Show"
-                textSize = 11f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(TEXT_SECONDARY)
-                setPadding(0, 0, 12.dp(context), 0)
-                isClickable = true; isFocusable = true
-                setOnClickListener {
-                    isVisible = !isVisible
-                    input.inputType = if (isVisible)
-                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                    else
-                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                    input.setSelection(input.text?.length ?: 0)
-                    text = if (isVisible) "🙈 Hide" else "👁 Show"
-                }
-            }
-            addView(eyeBtn)
-
-            // Spacer
-            addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
-            })
-
-            // Clear button
-            addView(pillBtn(context, "Clear", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
-                input.setText("")
-                clearShowboxToken()
-                Toast.makeText(context, "Febbox token cleared", Toast.LENGTH_SHORT).show()
-            })
-
-            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
-
-            // Save button
-            addView(pillBtn(context, "Save", SHOWBOX_ACCENT, SHOWBOX_BG, SHOWBOX_BORDER) {
-                val token = input.text.toString().trim()
-                if (token.isBlank()) {
-                    Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
-                } else {
-                    saveShowboxToken(token)
-                    Toast.makeText(context, "✓ Febbox token saved", Toast.LENGTH_SHORT).show()
-                }
-            })
-        })
-
-        // Chevron
         val chevron = TextView(context).apply {
             text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
         }
 
-        // Saved indicator shown in header when collapsed
-        val savedBadge = TextView(context).apply {
-            text = if (getShowboxToken() != null) "✓ Saved" else ""
-            textSize = 10f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(Color.parseColor("#4ADE80"))
-            setPadding(0, 0, 8.dp(context), 0)
-        }
-
-        // Header
         card.addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
@@ -424,27 +431,22 @@ object Settings {
             isClickable = true; isFocusable = true
             background = stateDrawable(context)
 
-            // Accent bar
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    intArrayOf(SHOWBOX_ACCENT, Color.parseColor("#D97706"))).apply { cornerRadius = 99f }
+                    intArrayOf(CREDIT_ACCENT, Color.parseColor("#0EA5E9"))).apply { cornerRadius = 99f }
             })
             addView(TextView(context).apply {
-                text = "📦  Febbox Token"
-                textSize = 12f
+                text = "🙏  Credits & Thanks"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
-            addView(savedBadge)
             addView(chevron)
 
             setOnClickListener {
                 expanded = !expanded
                 chevron.text = if (expanded) "▲" else "▼"
-                // Refresh saved badge on collapse
-                if (!expanded) savedBadge.text = if (getShowboxToken() != null) "✓ Saved" else ""
                 if (expanded) {
                     content.visibility = View.VISIBLE
                     content.alpha = 0f
@@ -464,7 +466,144 @@ object Settings {
     }
 
     // =========================================================
-    //  COLLAPSIBLE CARD
+    //  SHOWBOX TOKEN CARD  (collapsible)
+    // =========================================================
+
+    private fun createShowboxTokenCard(context: Context): View {
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val m = 16.dp(context)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(m, 0, m, m) }
+            background = roundRect(BG_CARD, 16f.dp(context))
+            elevation = 4f
+        }
+
+        var expanded = false
+        val SHOWBOX_ACCENT = Color.parseColor("#F59E0B")
+        val SHOWBOX_BG     = Color.parseColor("#13100A")
+        val SHOWBOX_BORDER = Color.parseColor("#3A2800")
+
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
+            visibility = View.GONE
+        }
+
+        content.addView(TextView(context).apply {
+            text = "Enter your Febbox token to enable ShowBox source"
+            textSize = 12f; setTextColor(TEXT_SECONDARY)
+            setPadding(4.dp(context), 0, 4.dp(context), 10.dp(context))
+        })
+
+        val input = EditText(context).apply {
+            hint = "Paste UI token"
+            setText(getShowboxToken() ?: "")
+            setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY)
+            textSize = 13f; setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
+            background = GradientDrawable().apply {
+                cornerRadius = 10f.dp(context)
+                setColor(Color.parseColor("#0D1117"))
+                setStroke(1, Color.parseColor("#2E2850"))
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 10.dp(context) }
+        }
+        content.addView(input)
+
+        content.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+
+            var isVisible = false
+            addView(TextView(context).apply {
+                text = "👁 Show"; textSize = 11f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY)
+                setPadding(0, 0, 12.dp(context), 0)
+                isClickable = true; isFocusable = true
+                setOnClickListener {
+                    isVisible = !isVisible
+                    input.inputType = if (isVisible)
+                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                    else
+                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    input.setSelection(input.text?.length ?: 0)
+                    text = if (isVisible) "🙈 Hide" else "👁 Show"
+                }
+            })
+
+            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
+
+            addView(pillBtn(context, "Clear", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+                input.setText(""); clearShowboxToken()
+                Toast.makeText(context, "Febbox token cleared", Toast.LENGTH_SHORT).show()
+            })
+            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
+            addView(pillBtn(context, "Save", SHOWBOX_ACCENT, SHOWBOX_BG, SHOWBOX_BORDER) {
+                val token = input.text.toString().trim()
+                if (token.isBlank()) Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
+                else { saveShowboxToken(token); Toast.makeText(context, "✓ Febbox token saved", Toast.LENGTH_SHORT).show() }
+            })
+        })
+
+        val chevron   = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY) }
+        val savedBadge = TextView(context).apply {
+            text = if (getShowboxToken() != null) "✓ Saved" else ""
+            textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#4ADE80"))
+            setPadding(0, 0, 8.dp(context), 0)
+        }
+
+        card.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true; isFocusable = true
+            background = stateDrawable(context)
+
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(SHOWBOX_ACCENT, Color.parseColor("#D97706"))).apply { cornerRadius = 99f }
+            })
+            addView(TextView(context).apply {
+                text = "📦  Febbox Token"; textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(savedBadge)
+            addView(chevron)
+
+            setOnClickListener {
+                expanded = !expanded
+                chevron.text = if (expanded) "▲" else "▼"
+                if (!expanded) savedBadge.text = if (getShowboxToken() != null) "✓ Saved" else ""
+                if (expanded) {
+                    content.visibility = View.VISIBLE; content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(200).start()
+                } else {
+                    content.animate().alpha(0f).setDuration(150).withEndAction {
+                        content.visibility = View.GONE; content.alpha = 1f
+                    }.start()
+                }
+            }
+        })
+
+        card.addView(content)
+        card.alpha = 0f; card.translationY = 20f
+        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        return card
+    }
+
+    // =========================================================
+    //  COLLAPSIBLE CARD  (generic)
     // =========================================================
 
     private fun createCollapsibleCard(
@@ -479,8 +618,7 @@ object Settings {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.setMargins(m, 0, m, m) }
-            background = roundRect(BG_CARD, 16f.dp(context))
-            elevation = 4f
+            background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
         }
 
         var expanded = startExpanded
@@ -493,17 +631,14 @@ object Settings {
         content.block()
 
         val chevron = TextView(context).apply {
-            text = if (expanded) "▲" else "▼"
-            textSize = 11f
-            setTextColor(TEXT_SECONDARY)
+            text = if (expanded) "▲" else "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
         }
 
-        val header = LinearLayout(context).apply {
+        card.addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true
-            background = stateDrawable(context)
+            isClickable = true; isFocusable = true; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
@@ -519,24 +654,19 @@ object Settings {
             addView(chevron)
 
             setOnClickListener {
-                expanded = !expanded
-                chevron.text = if (expanded) "▲" else "▼"
+                expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
                 if (expanded) {
-                    content.visibility = View.VISIBLE
-                    content.alpha = 0f
+                    content.visibility = View.VISIBLE; content.alpha = 0f
                     content.animate().alpha(1f).setDuration(200).start()
                 } else {
                     content.animate().alpha(0f).setDuration(150).withEndAction {
-                        content.visibility = View.GONE
-                        content.alpha = 1f
+                        content.visibility = View.GONE; content.alpha = 1f
                     }.start()
                 }
             }
-        }
+        })
 
-        card.addView(header)
         card.addView(content)
-
         card.alpha = 0f; card.translationY = 20f
         card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
         return card
@@ -553,35 +683,17 @@ object Settings {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.setMargins(m, 0, m, m) }
-            background = roundRect(BG_CARD, 16f.dp(context))
-            elevation = 4f
+            background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
         }
 
         var expanded = false
 
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, 0, 8.dp(context))
-            visibility = View.GONE
+            setPadding(0, 0, 0, 8.dp(context)); visibility = View.GONE
         }
 
-        val toolbar = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
-        }
-
-        val pillRow = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 6.dp(context) }
-        }
-
-        val rows = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
+        val rows = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val order = getOrder().toMutableList()
 
         fun rebuild() {
@@ -608,37 +720,40 @@ object Settings {
             }
         }
 
+        // Toolbar
+        val pillRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 6.dp(context) }
+        }
         pillRow.addView(pillBtn(context, "✓ All", Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"), Color.parseColor("#1A3A1F")) {
-            order.forEach { setKey(it, true) }
-            rebuild()
+            order.forEach { setKey(it, true) }; rebuild()
             Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
         pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
-            order.forEach { setKey(it, false) }
-            rebuild()
+            order.forEach { setKey(it, false) }; rebuild()
             Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
         pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
-            order.clear()
-            order.addAll(DEFAULT_ORDER)
-            saveOrder(order)
-            rebuild()
+            order.clear(); order.addAll(DEFAULT_ORDER); saveOrder(order); rebuild()
             Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
         })
 
-        val noteRow = TextView(context).apply {
-            text = "🧲 = off by default  ·  ↑↓ = scraping order"
-            textSize = 10f
-            setTextColor(Color.parseColor("#44475A"))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 4.dp(context) }
+        val toolbar = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
+            addView(pillRow)
+            addView(TextView(context).apply {
+                text = "🧲 = off by default  ·  ↑↓ or tap # = scraping order"
+                textSize = 10f; setTextColor(Color.parseColor("#44475A"))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also { it.bottomMargin = 4.dp(context) }
+            })
         }
-
-        toolbar.addView(pillRow)
-        toolbar.addView(noteRow)
 
         val sep = View(context).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
@@ -647,32 +762,21 @@ object Settings {
         }
 
         rebuild()
+        content.addView(toolbar); content.addView(sep); content.addView(rows)
 
-        content.addView(toolbar)
-        content.addView(sep)
-        content.addView(rows)
-
-        val chevron = TextView(context).apply {
-            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
-        }
-
+        val chevron = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY) }
         val summary = TextView(context).apply {
             textSize = 11f; setTextColor(Color.parseColor("#5A5E7A"))
             setPadding(0, 0, 8.dp(context), 0)
         }
-
-        fun updateSummary() {
-            val enabledCount = order.count { enabled(it) }
-            summary.text = "$enabledCount / ${order.size} enabled"
-        }
+        fun updateSummary() { summary.text = "${order.count { enabled(it) }} / ${order.size} on" }
         updateSummary()
 
-        val header = LinearLayout(context).apply {
+        card.addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true
-            background = stateDrawable(context)
+            isClickable = true; isFocusable = true; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
@@ -685,30 +789,23 @@ object Settings {
                 setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
-            addView(summary)
-            addView(chevron)
+            addView(summary); addView(chevron)
 
             setOnClickListener {
-                expanded = !expanded
-                chevron.text = if (expanded) "▲" else "▼"
+                expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
                 updateSummary()
                 if (expanded) {
-                    content.visibility = View.VISIBLE
-                    content.alpha = 0f
+                    content.visibility = View.VISIBLE; content.alpha = 0f
                     content.animate().alpha(1f).setDuration(220).start()
                 } else {
                     content.animate().alpha(0f).setDuration(160).withEndAction {
-                        content.visibility = View.GONE
-                        content.alpha = 1f
-                        updateSummary()
+                        content.visibility = View.GONE; content.alpha = 1f; updateSummary()
                     }.start()
                 }
             }
-        }
+        })
 
-        card.addView(header)
         card.addView(content)
-
         card.alpha = 0f; card.translationY = 20f
         card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
         return card
@@ -719,16 +816,10 @@ object Settings {
     // =========================================================
 
     private fun createProviderRow(
-        context: Context,
-        label: String,
-        key: String,
-        index: Int,
-        totalCount: Int,
-        isTorrent: Boolean,
-        canMoveUp: Boolean,
-        canMoveDown: Boolean,
-        onMoveUp: () -> Unit,
-        onMoveDown: () -> Unit,
+        context: Context, label: String, key: String,
+        index: Int, totalCount: Int, isTorrent: Boolean,
+        canMoveUp: Boolean, canMoveDown: Boolean,
+        onMoveUp: () -> Unit, onMoveDown: () -> Unit,
         onMoveTo: (Int) -> Unit
     ): View {
         return LinearLayout(context).apply {
@@ -736,6 +827,7 @@ object Settings {
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
+            // Tappable index badge → jump to position dialog
             addView(TextView(context).apply {
                 text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -743,61 +835,44 @@ object Settings {
                 gravity = Gravity.CENTER
                 setPadding(4.dp(context), 4.dp(context), 4.dp(context), 4.dp(context))
                 background = GradientDrawable().apply {
-                    cornerRadius = 6f.dp(context)
-                    setColor(Color.parseColor("#1A1730"))
+                    cornerRadius = 6f.dp(context); setColor(Color.parseColor("#1A1730"))
                     setStroke(1, if (isTorrent) Color.parseColor("#3A2810") else Color.parseColor("#2E2850"))
                 }
-                minWidth = 28.dp(context)
-                isClickable = true; isFocusable = true
+                minWidth = 28.dp(context); isClickable = true; isFocusable = true
                 setOnClickListener {
                     val input = EditText(context).apply {
                         inputType = android.text.InputType.TYPE_CLASS_NUMBER
-                        hint = "1 – $totalCount"
-                        setText("$index")
-                        setTextColor(TEXT_PRIMARY)
-                        setHintTextColor(TEXT_SECONDARY)
-                        selectAll()
+                        hint = "1 – $totalCount"; setText("$index")
+                        setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY); selectAll()
                         setPadding(16.dp(context), 12.dp(context), 16.dp(context), 12.dp(context))
                         background = GradientDrawable().apply {
-                            cornerRadius = 10f.dp(context)
-                            setColor(Color.parseColor("#1A1E28"))
+                            cornerRadius = 10f.dp(context); setColor(Color.parseColor("#1A1E28"))
                             setStroke(1, Color.parseColor("#2E2850"))
                         }
                     }
-
                     val wrapper = LinearLayout(context).apply {
                         orientation = LinearLayout.VERTICAL
                         setPadding(24.dp(context), 16.dp(context), 24.dp(context), 8.dp(context))
                         addView(TextView(context).apply {
-                            text = "Move \"$label\" to position"
-                            textSize = 13f
-                            setTextColor(TEXT_SECONDARY)
-                            setPadding(0, 0, 0, 10.dp(context))
+                            text = "Move \"$label\" to position"; textSize = 13f
+                            setTextColor(TEXT_SECONDARY); setPadding(0, 0, 0, 10.dp(context))
                         })
                         addView(input)
                     }
-
                     val d = AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog)
                         .setView(wrapper)
                         .setPositiveButton("Move") { _, _ ->
-                            val target = input.text.toString().toIntOrNull()
-                            if (target != null && target in 1..totalCount) {
-                                onMoveTo(target - 1)
-                            } else {
-                                Toast.makeText(context, "Enter a number between 1 and $totalCount", Toast.LENGTH_SHORT).show()
-                            }
+                            val t = input.text.toString().toIntOrNull()
+                            if (t != null && t in 1..totalCount) onMoveTo(t - 1)
+                            else Toast.makeText(context, "Enter 1 – $totalCount", Toast.LENGTH_SHORT).show()
                         }
-                        .setNegativeButton("Cancel", null)
-                        .create()
-
-                    d.window?.setBackgroundDrawable(roundRect(BG_DARK, 16f.dp(context)))
-                    d.show()
+                        .setNegativeButton("Cancel", null).create()
+                    d.window?.setBackgroundDrawable(roundRect(BG_DARK, 16f.dp(context))); d.show()
                     d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
                     d.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
-
                     input.requestFocus()
-                    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-                    imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                    (context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                        .showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
                 }
             })
 
@@ -810,19 +885,17 @@ object Settings {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
 
-            fun arrowBtn(symbol: String, active: Boolean, action: () -> Unit) = TextView(context).apply {
-                text = symbol; textSize = 17f; gravity = Gravity.CENTER
+            fun arrowBtn(sym: String, active: Boolean, action: () -> Unit) = TextView(context).apply {
+                text = sym; textSize = 17f; gravity = Gravity.CENTER
                 setTextColor(if (active) ACCENT_START else Color.parseColor("#252840"))
                 setPadding(9.dp(context), 6.dp(context), 9.dp(context), 6.dp(context))
                 isClickable = active; isFocusable = active
                 if (active) setOnClickListener {
                     animate().scaleX(0.75f).scaleY(0.75f).setDuration(60).withEndAction {
                         animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                    }.start()
-                    action()
+                    }.start(); action()
                 }
             }
-
             addView(arrowBtn("↑", canMoveUp, onMoveUp))
             addView(arrowBtn("↓", canMoveDown, onMoveDown))
 
@@ -846,31 +919,24 @@ object Settings {
     // =========================================================
 
     private fun pillBtn(
-        context: Context,
-        label: String,
-        textColor: Int,
-        bgColor: Int,
-        borderColor: Int,
+        context: Context, label: String,
+        textColor: Int, bgColor: Int, borderColor: Int,
         onClick: () -> Unit
     ) = TextView(context).apply {
         text = label; textSize = 11f
-        setTypeface(null, android.graphics.Typeface.BOLD)
-        setTextColor(textColor)
+        setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(textColor)
         setPadding(12.dp(context), 6.dp(context), 12.dp(context), 6.dp(context))
-        background = GradientDrawable().apply {
-            cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor)
-        }
+        background = GradientDrawable().apply { cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor) }
         isClickable = true; isFocusable = true
         setOnClickListener {
             animate().scaleX(0.88f).scaleY(0.88f).setDuration(70).withEndAction {
                 animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-            }.start()
-            onClick()
+            }.start(); onClick()
         }
     }
 
     // =========================================================
-    //  EXISTING COMPONENTS
+    //  HERO BANNER
     // =========================================================
 
     private fun createHeroBanner(context: Context): View {
@@ -891,44 +957,14 @@ object Settings {
             })
             addView(TextView(context).apply {
                 text = "Configure sources, catalogs & cookies"
-                textSize = 13f; setTextColor(TEXT_SECONDARY)
-                setPadding(0, 6.dp(context), 0, 0)
+                textSize = 13f; setTextColor(TEXT_SECONDARY); setPadding(0, 6.dp(context), 0, 0)
             })
         }
     }
 
-    private fun createSectionCard(context: Context, title: String, block: LinearLayout.() -> Unit): View {
-        val card = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
-        }
-        card.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 16.dp(context), 20.dp(context), 12.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
-            addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
-            })
-            addView(TextView(context).apply {
-                text = title; textSize = 12f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
-            })
-        })
-        val content = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, 8.dp(context))
-        }
-        content.block(); card.addView(content)
-        card.alpha = 0f; card.translationY = 20f
-        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
-        return card
-    }
+    // =========================================================
+    //  TOGGLE ROW
+    // =========================================================
 
     private fun createToggleRow(
         context: Context, label: String, subtitle: String,
@@ -965,12 +1001,15 @@ object Settings {
                     setKey(databaseKey, isChecked)
                     animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
                         animate().scaleX(1f).scaleY(1f).setDuration(120).start()
-                    }.start()
-                    onChanged()
+                    }.start(); onChanged()
                 }
             })
         }
     }
+
+    // =========================================================
+    //  RESTART BANNER
+    // =========================================================
 
     private fun createRestartBanner(context: Context): LinearLayout {
         val WARN_BG     = Color.parseColor("#13100A")
@@ -995,8 +1034,7 @@ object Settings {
             }
             addView(dot)
             ObjectAnimator.ofFloat(dot, "alpha", 1f, 0.25f, 1f).apply {
-                duration = 1200; repeatCount = ObjectAnimator.INFINITE
-                interpolator = DecelerateInterpolator()
+                duration = 1200; repeatCount = ObjectAnimator.INFINITE; interpolator = DecelerateInterpolator()
             }.start()
             val textCol = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -1018,67 +1056,12 @@ object Settings {
         }
     }
 
-    private fun createDangerCard(context: Context): View {
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = GradientDrawable().apply {
-                cornerRadius = 16f.dp(context)
-                setColor(Color.parseColor("#140A0D")); setStroke(1, Color.parseColor("#3D1520"))
-            }
-            setPadding(20.dp(context), 18.dp(context), 20.dp(context), 18.dp(context))
-            addView(TextView(context).apply {
-                text = "⚠️"; textSize = 11f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(DANGER_COLOR); letterSpacing = 0.1f
-                setPadding(0, 0, 0, 12.dp(context))
-            })
-            addView(LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                val desc = LinearLayout(context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                }
-                desc.addView(TextView(context).apply {
-                    text = "Clear Netmirror Cookies"; textSize = 15f
-                    setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_PRIMARY)
-                })
-                desc.addView(TextView(context).apply {
-                    text = "Remove saved Netmirror session cookies"
-                    textSize = 12f; setTextColor(TEXT_SECONDARY); setPadding(0, 3.dp(context), 0, 0)
-                })
-                addView(desc)
-                addView(TextView(context).apply {
-                    text = "Clear"; textSize = 13f
-                    setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(DANGER_COLOR)
-                    setPadding(18.dp(context), 10.dp(context), 18.dp(context), 10.dp(context))
-                    background = GradientDrawable().apply {
-                        cornerRadius = 99f; setColor(Color.parseColor("#2A0A11"))
-                        setStroke(1, Color.parseColor("#5C1525"))
-                    }
-                    isClickable = true; isFocusable = true
-                    setOnClickListener {
-                        animate().alpha(0.5f).setDuration(80).withEndAction {
-                            animate().alpha(1f).setDuration(120).start()
-                        }.start()
-                        clearCookie()
-                        Toast.makeText(context, "🍪 Cookies cleared!", Toast.LENGTH_SHORT).show()
-                    }
-                })
-            })
-        }
-    }
+    // =========================================================
+    //  SAVE DIALOG  (called from showSettingsDialog)
+    // =========================================================
 
-    private fun createDivider(context: Context): View {
-        return View(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 1
-            ).also { it.setMargins(20.dp(context), 0, 20.dp(context), 0) }
-            setBackgroundColor(DIVIDER_COLOR)
-        }
+    private fun showSaveDialog(context: Context, requiresRestart: Boolean, onSave: () -> Unit) {
+        if (requiresRestart) showRestartWarning(context, onSave) else onSave()
     }
 
     private fun showRestartWarning(context: Context, onSave: () -> Unit) {
@@ -1087,6 +1070,18 @@ object Settings {
             .setMessage("You've changed your Active Catalogs.\n\nPlease fully close and reopen Cloudstream for providers to update.")
             .setPositiveButton("Got it") { _, _ -> onSave() }
             .setCancelable(false).show()
+    }
+
+    // =========================================================
+    //  DIVIDER
+    // =========================================================
+
+    private fun createDivider(context: Context): View {
+        return View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
+                .also { it.setMargins(20.dp(context), 0, 20.dp(context), 0) }
+            setBackgroundColor(DIVIDER_COLOR)
+        }
     }
 
     // --- DRAWING HELPERS ---
