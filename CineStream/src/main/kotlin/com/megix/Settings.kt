@@ -2,6 +2,8 @@ package com.megix
 
 import android.animation.ObjectAnimator
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.*
@@ -37,73 +39,73 @@ object Settings {
     const val SHOWBOX_TOKEN_KEY     = "showbox_ui_token"
 
     // --- DATABASE KEYS: Providers ---
-    const val P_TORRENTIO    = "p_torrentio"
-    const val P_TORRENTSDB   = "p_torrentsdb"
-    const val P_ANIMETOSHO   = "p_animetosho"
-    const val P_VIDFLIX      = "p_vidflix"
-    const val P_MOVIEBOX     = "p_moviebox"
-    const val P_WYZIESUBS    = "p_wyziesubs"
-    const val P_STREMIOSUBS  = "p_stremiosubs"
-    const val P_CINEMACITY   = "p_cinemacity"
-    const val P_WEBSTREAMR   = "p_webstreamr"
-    const val P_STREAMVIX    = "p_streamvix"
-    const val P_NOTORRENT    = "p_notorrent"
-    const val P_CASTLE       = "p_castle"
-    const val P_CINE         = "p_cine"
-    const val P_ALLMOVIELAND = "p_allmovieland"
-    const val P_MADPLAYCDN   = "p_madplaycdn"
-    const val P_VIDFASTPRO   = "p_vidfastpro"
-    const val P_HEXA         = "p_hexa"
-    const val P_YFLIX        = "p_yflix"
-    const val P_XPASS        = "p_xpass"
-    const val P_PLAYSRC      = "p_playsrc"
-    const val P_2EMBED       = "p_2embed"
-    const val P_DRAMAFULL    = "p_dramafull"
-    const val P_VIDEASY      = "p_videasy"
-    const val P_CINEMAOS     = "p_cinemaos"
-    const val P_VICSRCWTF    = "p_vicsrcwtf"
-    const val P_VIDLINK      = "p_vidlink"
-    const val P_MAPPLE       = "p_mapple"
-    const val P_VIDSTACK     = "p_vidstack"
-    const val P_KISSKH       = "p_kisskh"
-    const val P_NETFLIX      = "p_netflix"
-    const val P_PRIMEVIDEO   = "p_primevideo"
-    const val P_DISNEY       = "p_disney"
-    const val P_BOLLYWOOD    = "p_bollywood"
-    const val P_VIDZEE       = "p_vidzee"
-    const val P_XDMOVIES     = "p_xdmovies"
-    const val P_4KHDHUB      = "p_4khdhub"
-    const val P_FLIXINDIA    = "p_flixindia"
-    const val P_MOVIESDRIVE  = "p_moviesdrive"
-    const val P_VEGAMOVIES   = "p_vegamovies"
-    const val P_ROGMOVIES    = "p_rogmovies"
-    const val P_BOLLYFLIX    = "p_bollyflix"
-    const val P_TOPMOVIES    = "p_topmovies"
-    const val P_MOVIESMOD    = "p_moviesmod"
-    const val P_MOVIES4U     = "p_movies4u"
-    const val P_UHDMOVIES    = "p_uhdmovies"
-    const val P_PRIMESRC     = "p_primesrc"
+    const val P_TORRENTIO     = "p_torrentio"
+    const val P_TORRENTSDB    = "p_torrentsdb"
+    const val P_ANIMETOSHO    = "p_animetosho"
+    const val P_VIDFLIX       = "p_vidflix"
+    const val P_MOVIEBOX      = "p_moviebox"
+    const val P_WYZIESUBS     = "p_wyziesubs"
+    const val P_STREMIOSUBS   = "p_stremiosubs"
+    const val P_CINEMACITY    = "p_cinemacity"
+    const val P_WEBSTREAMR    = "p_webstreamr"
+    const val P_STREAMVIX     = "p_streamvix"
+    const val P_NOTORRENT     = "p_notorrent"
+    const val P_CASTLE        = "p_castle"
+    const val P_CINE          = "p_cine"
+    const val P_ALLMOVIELAND  = "p_allmovieland"
+    const val P_MADPLAYCDN    = "p_madplaycdn"
+    const val P_VIDFASTPRO    = "p_vidfastpro"
+    const val P_HEXA          = "p_hexa"
+    const val P_YFLIX         = "p_yflix"
+    const val P_XPASS         = "p_xpass"
+    const val P_PLAYSRC       = "p_playsrc"
+    const val P_2EMBED        = "p_2embed"
+    const val P_DRAMAFULL     = "p_dramafull"
+    const val P_VIDEASY       = "p_videasy"
+    const val P_CINEMAOS      = "p_cinemaos"
+    const val P_VICSRCWTF     = "p_vicsrcwtf"
+    const val P_VIDLINK       = "p_vidlink"
+    const val P_MAPPLE        = "p_mapple"
+    const val P_VIDSTACK      = "p_vidstack"
+    const val P_KISSKH        = "p_kisskh"
+    const val P_NETFLIX       = "p_netflix"
+    const val P_PRIMEVIDEO    = "p_primevideo"
+    const val P_DISNEY        = "p_disney"
+    const val P_BOLLYWOOD     = "p_bollywood"
+    const val P_VIDZEE        = "p_vidzee"
+    const val P_XDMOVIES      = "p_xdmovies"
+    const val P_4KHDHUB       = "p_4khdhub"
+    const val P_FLIXINDIA     = "p_flixindia"
+    const val P_MOVIESDRIVE   = "p_moviesdrive"
+    const val P_VEGAMOVIES    = "p_vegamovies"
+    const val P_ROGMOVIES     = "p_rogmovies"
+    const val P_BOLLYFLIX     = "p_bollyflix"
+    const val P_TOPMOVIES     = "p_topmovies"
+    const val P_MOVIESMOD     = "p_moviesmod"
+    const val P_MOVIES4U      = "p_movies4u"
+    const val P_UHDMOVIES     = "p_uhdmovies"
+    const val P_PRIMESRC      = "p_primesrc"
     const val P_PROJECTFREETV = "p_projectfreetv"
-    const val P_HINDMOVIEZ   = "p_hindmoviez"
-    const val P_LEVIDIA      = "p_levidia"
-    const val P_DAHMERMOVIES = "p_dahmermovies"
-    const val P_MULTIMOVIES  = "p_multimovies"
-    const val P_PROTONMOVIES = "p_protonmovies"
-    const val P_AKWAM        = "p_akwam"
-    const val P_RTALLY       = "p_rtally"
-    const val P_TOONSTREAM   = "p_toonstream"
-    const val P_ASIAFLIX     = "p_asiaflix"
-    const val P_SKYMOVIES    = "p_skymovies"
-    const val P_HDMOVIE2     = "p_hdmovie2"
-    const val P_MOSTRAGUARDA = "p_mostraguarda"
-    const val P_ALLANIME     = "p_allanime"
-    const val P_SUDATCHI     = "p_sudatchi"
-    const val P_TOKYOINSIDER = "p_tokyoinsider"
-    const val P_ANIZONE      = "p_anizone"
-    const val P_ANIMES       = "p_animes"
-    const val P_GOJO         = "p_gojo"
-    const val P_ANIMEWORLD   = "p_animeworld"
-    const val P_SHOWBOX      = "p_showbox"
+    const val P_HINDMOVIEZ    = "p_hindmoviez"
+    const val P_LEVIDIA       = "p_levidia"
+    const val P_DAHMERMOVIES  = "p_dahmermovies"
+    const val P_MULTIMOVIES   = "p_multimovies"
+    const val P_PROTONMOVIES  = "p_protonmovies"
+    const val P_AKWAM         = "p_akwam"
+    const val P_RTALLY        = "p_rtally"
+    const val P_TOONSTREAM    = "p_toonstream"
+    const val P_ASIAFLIX      = "p_asiaflix"
+    const val P_SKYMOVIES     = "p_skymovies"
+    const val P_HDMOVIE2      = "p_hdmovie2"
+    const val P_MOSTRAGUARDA  = "p_mostraguarda"
+    const val P_ALLANIME      = "p_allanime"
+    const val P_SUDATCHI      = "p_sudatchi"
+    const val P_TOKYOINSIDER  = "p_tokyoinsider"
+    const val P_ANIZONE       = "p_anizone"
+    const val P_ANIMES        = "p_animes"
+    const val P_GOJO          = "p_gojo"
+    const val P_ANIMEWORLD    = "p_animeworld"
+    const val P_SHOWBOX       = "p_showbox"
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
     private val TORRENT_KEYS = setOf(P_TORRENTIO, P_TORRENTSDB, P_ANIMETOSHO)
@@ -208,7 +210,6 @@ object Settings {
         setKey(TIMESTAMP_KEY, null)
     }
 
-    // ShowBox / Febbox token
     fun saveShowboxToken(token: String) = setKey(SHOWBOX_TOKEN_KEY, token.trim())
     fun getShowboxToken(): String?       = getKey<String>(SHOWBOX_TOKEN_KEY)?.takeIf { it.isNotBlank() }
     fun clearShowboxToken()              = setKey(SHOWBOX_TOKEN_KEY, null)
@@ -221,6 +222,8 @@ object Settings {
         var requiresRestart = false
 
         val pendingChanges = mutableMapOf<String, Any?>()
+
+        var commitOrder: () -> Unit = {}
 
         val scroll = ScrollView(context).apply {
             isScrollbarFadingEnabled = true
@@ -236,13 +239,12 @@ object Settings {
         }
 
         layout.addView(createHeroBanner(context))
-
-        // spacer
         layout.addView(View(context).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 8.dp(context))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 8.dp(context))
         })
 
-        // ── Scraping Settings (collapsible) ──
+        // ── Scraping Settings ──
         layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings") {
             addView(createToggleRow(context, "Download Only Links",
                 "Only great for downloading (Not for Streaming)",
@@ -251,13 +253,13 @@ object Settings {
             addView(createCookieClearRow(context))
         })
 
-        // ── Febbox / ShowBox Token (collapsible) ──
+        // ── Febbox / ShowBox Token ──
         layout.addView(createShowboxTokenCard(context, pendingChanges))
 
         // ── Restart banner ──
         val restartBanner = createRestartBanner(context).also { it.visibility = View.GONE }
 
-        // ── Active Catalogs (collapsible) ──
+        // ── Active Catalogs ──
         val onCatalogChanged = {
             requiresRestart = true
             if (restartBanner.visibility == View.GONE) {
@@ -282,8 +284,12 @@ object Settings {
 
         layout.addView(restartBanner)
 
-        layout.addView(createProvidersCard(context, pendingChanges))
+        // ── Providers ──
+        layout.addView(createProvidersCard(context, pendingChanges) { commit ->
+            commitOrder = commit
+        })
 
+        // ── Credits ──
         layout.addView(createCreditsCard(context))
 
         scroll.addView(layout)
@@ -293,12 +299,13 @@ object Settings {
             .setPositiveButton("Save") { _, _ ->
                 pendingChanges.forEach { (key, value) ->
                     when {
-                        key == SHOWBOX_TOKEN_KEY && value == null     -> clearShowboxToken()
-                        key == SHOWBOX_TOKEN_KEY && value is String   -> saveShowboxToken(value)
-                        value is Boolean                              -> setKey(key, value)
-                        value == null                                 -> setKey(key, null as String?)
+                        key == SHOWBOX_TOKEN_KEY && value == null   -> clearShowboxToken()
+                        key == SHOWBOX_TOKEN_KEY && value is String -> saveShowboxToken(value)
+                        value is Boolean                            -> setKey(key, value)
+                        value == null                               -> setKey(key, null as String?)
                     }
                 }
+                commitOrder()
                 if (requiresRestart) showRestartWarning(context, onSave) else onSave()
             }
             .setNegativeButton("Cancel", null)
@@ -310,12 +317,14 @@ object Settings {
             (context.resources.displayMetrics.widthPixels * 0.95).toInt(),
             android.view.WindowManager.LayoutParams.WRAP_CONTENT
         )
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            ?.apply { setTextColor(ACCENT_START); isAllCaps = false }
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+            ?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
     }
 
     // =========================================================
-    //  COOKIE CLEAR ROW  (inside Scraping Settings)
+    //  COOKIE CLEAR ROW
     // =========================================================
 
     private fun createCookieClearRow(context: Context): View {
@@ -347,27 +356,27 @@ object Settings {
     }
 
     // =========================================================
-    //  SHOWBOX TOKEN CARD  (collapsible)
+    //  SHOWBOX TOKEN CARD
     // =========================================================
 
     private fun createShowboxTokenCard(
         context: Context,
         pendingChanges: MutableMap<String, Any?>
     ): View {
+        val SHOWBOX_ACCENT = Color.parseColor("#F59E0B")
+        val SHOWBOX_BG     = Color.parseColor("#13100A")
+        val SHOWBOX_BORDER = Color.parseColor("#3A2800")
+
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             val m = 16.dp(context)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.setMargins(m, 0, m, m) }
-            background = roundRect(BG_CARD, 16f.dp(context))
-            elevation = 4f
+            background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
         }
 
         var expanded = false
-        val SHOWBOX_ACCENT = Color.parseColor("#F59E0B")
-        val SHOWBOX_BG     = Color.parseColor("#13100A")
-        val SHOWBOX_BORDER = Color.parseColor("#3A2800")
 
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -386,21 +395,14 @@ object Settings {
         val input = EditText(context).apply {
             hint = "Paste UI token"
             setText(initialToken)
-            setTextColor(TEXT_PRIMARY)
-            setHintTextColor(TEXT_SECONDARY)
-            textSize = 13f
-            setSingleLine(true)
+            setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY)
+            textSize = 13f; setSingleLine(true)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
                     android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-
-            isFocusable = true
-            isFocusableInTouchMode = true
+            isFocusable = true; isFocusableInTouchMode = true
             setOnFocusChangeListener { v, hasFocus ->
-                if (hasFocus) {
-                    (v.parent?.parent as? ScrollView)?.requestChildFocus(v, v)
-                }
+                if (hasFocus) (v.parent?.parent as? ScrollView)?.requestChildFocus(v, v)
             }
-
             setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
             background = GradientDrawable().apply {
                 cornerRadius = 10f.dp(context)
@@ -409,13 +411,57 @@ object Settings {
             }
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 10.dp(context) }
+            ).also { it.bottomMargin = 8.dp(context) }
         }
         content.addView(input)
 
+        // TV-friendly clipboard row ─────────────────────────────
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val CLIP_TEXT   = Color.parseColor("#94A3B8")
+        val CLIP_BG     = Color.parseColor("#0F1520")
+        val CLIP_BORDER = Color.parseColor("#1E2A3A")
+
+        content.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 10.dp(context) }
+
+            // 📋 Paste — reads system clipboard into the field
+            addView(pillBtn(context, "📋 Paste", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
+                val clip = clipboard.primaryClip
+                    ?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
+                if (!clip.isNullOrBlank()) {
+                    input.setText(clip)
+                    input.setSelection(input.text?.length ?: 0)
+                    Toast.makeText(context, "Pasted from clipboard", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                }
+            })
+            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
+
+            // 📄 Copy — copies field contents to system clipboard
+            addView(pillBtn(context, "📄 Copy", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
+                val text = input.text?.toString()?.trim()
+                if (!text.isNullOrBlank()) {
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Febbox Token", text))
+                    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Nothing to copy", Toast.LENGTH_SHORT).show()
+                }
+            })
+        })
+        // ─────────────────────────────────────────────────────────────────
+
         val savedBadge = TextView(context).apply {
-            text = if ((pendingChanges[SHOWBOX_TOKEN_KEY] as? String) != null
-                || (SHOWBOX_TOKEN_KEY !in pendingChanges && getShowboxToken() != null)) "✓ Saved" else ""
+            text = when {
+                pendingChanges.containsKey(SHOWBOX_TOKEN_KEY) ->
+                    if ((pendingChanges[SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Staged" else ""
+                getShowboxToken() != null -> "✓ Saved"
+                else -> ""
+            }
             textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
             setTextColor(Color.parseColor("#4ADE80"))
             setPadding(0, 0, 8.dp(context), 0)
@@ -428,10 +474,9 @@ object Settings {
             var isVisible = false
             addView(TextView(context).apply {
                 text = "👁 Show"; textSize = 11f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(TEXT_SECONDARY)
+                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_SECONDARY)
                 setPadding(0, 0, 12.dp(context), 0)
-                isClickable = true; isFocusable = true
+                isClickable = true; isFocusable = true; isFocusableInTouchMode = true
                 setOnClickListener {
                     isVisible = !isVisible
                     input.inputType = if (isVisible)
@@ -444,7 +489,6 @@ object Settings {
                     text = if (isVisible) "🙈 Hide" else "👁 Show"
                 }
             })
-
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
 
             addView(pillBtn(context, "Clear", DANGER_COLOR,
@@ -452,9 +496,9 @@ object Settings {
                 input.setText("")
                 pendingChanges[SHOWBOX_TOKEN_KEY] = null
                 savedBadge.text = ""
-                Toast.makeText(context, "Token cleared — tap Save to apply", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Cleared — tap outer Save to apply",
+                    Toast.LENGTH_SHORT).show()
             })
-
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
             addView(pillBtn(context, "Save", SHOWBOX_ACCENT, SHOWBOX_BG, SHOWBOX_BORDER) {
@@ -463,8 +507,8 @@ object Settings {
                     Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
                 } else {
                     pendingChanges[SHOWBOX_TOKEN_KEY] = token
-                    savedBadge.text = "✓ Saved"
-                    Toast.makeText(context, "✓ Token staged — tap outer Save to apply",
+                    savedBadge.text = "✓ Staged"
+                    Toast.makeText(context, "✓ Staged — tap outer Save to apply",
                         Toast.LENGTH_SHORT).show()
                 }
             })
@@ -478,8 +522,7 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true
-            background = stateDrawable(context)
+            isClickable = true; isFocusable = true; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -494,16 +537,14 @@ object Settings {
                 setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
-            addView(savedBadge)
-            addView(chevron)
+            addView(savedBadge); addView(chevron)
 
             setOnClickListener {
-                expanded = !expanded
-                chevron.text = if (expanded) "▲" else "▼"
+                expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
                 if (!expanded) {
                     savedBadge.text = when {
                         pendingChanges.containsKey(SHOWBOX_TOKEN_KEY) ->
-                            if ((pendingChanges[SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Saved" else ""
+                            if ((pendingChanges[SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Staged" else ""
                         getShowboxToken() != null -> "✓ Saved"
                         else -> ""
                     }
@@ -546,7 +587,6 @@ object Settings {
         }
 
         var expanded = startExpanded
-
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, 0, 0, 8.dp(context))
@@ -562,7 +602,8 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true; background = stateDrawable(context)
+            isClickable = true; isFocusable = true
+            background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -600,11 +641,14 @@ object Settings {
 
     // =========================================================
     //  PROVIDERS CARD
+    //
+    //  FIX 2 (order): ↑/↓/moveTo and Reset Order only mutate the
     // =========================================================
 
     private fun createProvidersCard(
         context: Context,
-        pendingChanges: MutableMap<String, Any?>
+        pendingChanges: MutableMap<String, Any?>,
+        onRegisterCommit: (() -> Unit) -> Unit
     ): View {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -616,14 +660,15 @@ object Settings {
         }
 
         var expanded = false
-
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, 0, 0, 8.dp(context)); visibility = View.GONE
         }
 
-        val rows = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        val rows  = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val order = getOrder().toMutableList()
+
+        onRegisterCommit { saveOrder(order) }
 
         fun providerEnabled(key: String): Boolean =
             pendingChanges[key] as? Boolean ?: (getKey<Boolean>(key) ?: (key !in TORRENT_KEYS))
@@ -633,21 +678,20 @@ object Settings {
             order.forEachIndexed { i, key ->
                 if (i > 0) rows.addView(createDivider(context))
                 rows.addView(createProviderRow(
-                    context       = context,
-                    label         = PROVIDER_NAMES[key] ?: key,
-                    key           = key,
-                    index         = i + 1,
-                    totalCount    = order.size,
-                    isTorrent     = key in TORRENT_KEYS,
-                    canMoveUp     = i > 0,
-                    canMoveDown   = i < order.lastIndex,
+                    context        = context,
+                    label          = PROVIDER_NAMES[key] ?: key,
+                    key            = key,
+                    index          = i + 1,
+                    totalCount     = order.size,
+                    isTorrent      = key in TORRENT_KEYS,
+                    canMoveUp      = i > 0,
+                    canMoveDown    = i < order.lastIndex,
                     pendingChanges = pendingChanges,
-                    onMoveUp      = { order.add(i - 1, order.removeAt(i)); saveOrder(order); rebuild() },
-                    onMoveDown    = { order.add(i + 1, order.removeAt(i)); saveOrder(order); rebuild() },
-                    onMoveTo      = { target ->
+                    onMoveUp   = { order.add(i - 1, order.removeAt(i)); rebuild() },
+                    onMoveDown = { order.add(i + 1, order.removeAt(i)); rebuild() },
+                    onMoveTo   = { target ->
                         val item = order.removeAt(i)
-                        order.add(target.coerceIn(0, order.size), item)
-                        saveOrder(order); rebuild()
+                        order.add(target.coerceIn(0, order.size), item); rebuild()
                     }
                 ))
             }
@@ -660,27 +704,28 @@ object Settings {
             ).also { it.bottomMargin = 6.dp(context) }
         }
 
+        // ✓ All — stage true, no saveOrder()
         pillRow.addView(pillBtn(context, "✓ All",
             Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"),
             Color.parseColor("#1A3A1F")) {
-            order.forEach { pendingChanges[it] = true }
-            rebuild()
+            order.forEach { pendingChanges[it] = true }; rebuild()
             Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
+        // ✕ None — stage false, no saveOrder()
         pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR,
             Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
-            order.forEach { pendingChanges[it] = false }
-            rebuild()
+            order.forEach { pendingChanges[it] = false }; rebuild()
             Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
+        // ↺ Reset Order — reset in-memory list only, no saveOrder()
         pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START,
             Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
-            order.clear(); order.addAll(DEFAULT_ORDER); saveOrder(order); rebuild()
-            Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
+            order.clear(); order.addAll(DEFAULT_ORDER); rebuild()
+            Toast.makeText(context, "Order reset — tap Save to apply", Toast.LENGTH_SHORT).show()
         })
 
         val toolbar = LinearLayout(context).apply {
@@ -705,12 +750,16 @@ object Settings {
         rebuild()
         content.addView(toolbar); content.addView(sep); content.addView(rows)
 
-        val chevron = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY) }
+        val chevron = TextView(context).apply {
+            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+        }
         val summary = TextView(context).apply {
             textSize = 11f; setTextColor(Color.parseColor("#5A5E7A"))
             setPadding(0, 0, 8.dp(context), 0)
         }
-        fun updateSummary() { summary.text = "${order.count { providerEnabled(it) }} / ${order.size} on" }
+        fun updateSummary() {
+            summary.text = "${order.count { providerEnabled(it) }} / ${order.size} on"
+        }
         updateSummary()
 
         card.addView(LinearLayout(context).apply {
@@ -782,19 +831,19 @@ object Settings {
                     setStroke(1, if (isTorrent) Color.parseColor("#3A2810")
                     else Color.parseColor("#2E2850"))
                 }
-                minWidth = 28.dp(context); isClickable = true; isFocusable = true
+                minWidth = 28.dp(context)
+                isClickable = true; isFocusable = true; isFocusableInTouchMode = true
                 setOnClickListener {
                     val moveInput = EditText(context).apply {
                         inputType = android.text.InputType.TYPE_CLASS_NUMBER
                         hint = "1 – $totalCount"; setText("$index")
                         setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY); selectAll()
                         setPadding(16.dp(context), 12.dp(context), 16.dp(context), 12.dp(context))
+                        isFocusable = true; isFocusableInTouchMode = true
                         background = GradientDrawable().apply {
                             cornerRadius = 10f.dp(context); setColor(Color.parseColor("#1A1E28"))
                             setStroke(1, Color.parseColor("#2E2850"))
                         }
-                        isFocusable = true
-                        isFocusableInTouchMode = true
                     }
                     val wrapper = LinearLayout(context).apply {
                         orientation = LinearLayout.VERTICAL
@@ -836,26 +885,32 @@ object Settings {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
 
-            fun arrowBtn(sym: String, active: Boolean, action: () -> Unit) = TextView(context).apply {
-                text = sym; textSize = 17f; gravity = Gravity.CENTER
-                setTextColor(if (active) ACCENT_START else Color.parseColor("#252840"))
-                setPadding(9.dp(context), 6.dp(context), 9.dp(context), 6.dp(context))
-                isClickable = active; isFocusable = active
-                if (active) setOnClickListener {
-                    animate().scaleX(0.75f).scaleY(0.75f).setDuration(60).withEndAction {
-                        animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                    }.start(); action()
+            fun arrowBtn(sym: String, active: Boolean, action: () -> Unit) =
+                TextView(context).apply {
+                    text = sym; textSize = 17f; gravity = Gravity.CENTER
+                    setTextColor(if (active) ACCENT_START else Color.parseColor("#252840"))
+                    setPadding(9.dp(context), 6.dp(context), 9.dp(context), 6.dp(context))
+                    isClickable = active
+                    isFocusable = active
+                    isFocusableInTouchMode = active
+                    if (active) {
+                        background = stateDrawable(context)
+                        setOnClickListener {
+                            animate().scaleX(0.75f).scaleY(0.75f).setDuration(60).withEndAction {
+                                animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                            }.start(); action()
+                        }
+                    }
                 }
-            }
             addView(arrowBtn("↑", canMoveUp, onMoveUp))
             addView(arrowBtn("↓", canMoveDown, onMoveDown))
 
             val effectiveChecked = pendingChanges[key] as? Boolean
-                ?: getKey<Boolean>(key)
-                ?: (key !in TORRENT_KEYS)
+                ?: getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
 
             addView(Switch(context).apply {
                 isChecked = effectiveChecked
+                isFocusable = true; isFocusableInTouchMode = true
                 thumbTintList = android.content.res.ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                     intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
@@ -867,8 +922,70 @@ object Settings {
                         SWITCH_OFF
                     )
                 )
+                // Stage only — no setKey() here
                 setOnCheckedChangeListener { _, v -> pendingChanges[key] = v }
             })
+        }
+    }
+
+    // =========================================================
+    //  TOGGLE ROW
+    // =========================================================
+
+    private fun createToggleRow(
+        context: Context, label: String, subtitle: String,
+        databaseKey: String, defaultState: Boolean,
+        pendingChanges: MutableMap<String, Any?>,
+        onChanged: () -> Unit = {}
+    ): View {
+        val effectiveChecked = pendingChanges[databaseKey] as? Boolean
+            ?: getKey<Boolean>(databaseKey) ?: defaultState
+
+        val sw = Switch(context).apply {
+            isChecked = effectiveChecked
+            isFocusable = false
+            isClickable = false
+            thumbTintList = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
+            )
+            trackTintList = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(SWITCH_ON, SWITCH_OFF)
+            )
+        }
+
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+
+            isClickable = true; isFocusable = true; isFocusableInTouchMode = true
+            background = stateDrawable(context)
+
+            val textCol = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            textCol.addView(TextView(context).apply {
+                text = label; textSize = 15f
+                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_PRIMARY)
+            })
+            textCol.addView(TextView(context).apply {
+                text = subtitle; textSize = 12f; setTextColor(TEXT_SECONDARY)
+                setPadding(0, 3.dp(context), 0, 0)
+            })
+            addView(textCol)
+            addView(sw)
+
+            setOnClickListener {
+                sw.isChecked = !sw.isChecked
+                pendingChanges[databaseKey] = sw.isChecked
+                sw.animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
+                    sw.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+                }.start()
+                onChanged()
+            }
         }
     }
 
@@ -893,12 +1010,10 @@ object Settings {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.setMargins(m, 0, m, m) }
-            background = roundRect(BG_CARD, 16f.dp(context))
-            elevation = 4f
+            background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
         }
 
         var expanded = false
-
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
@@ -920,8 +1035,7 @@ object Settings {
 
                 addView(TextView(context).apply {
                     text = name.first().uppercaseChar().toString()
-                    textSize = 14f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    textSize = 14f; setTypeface(null, android.graphics.Typeface.BOLD)
                     setTextColor(CREDIT_ACCENT); gravity = Gravity.CENTER
                     val size = 36.dp(context)
                     layoutParams = LinearLayout.LayoutParams(size, size)
@@ -934,7 +1048,8 @@ object Settings {
 
                 val col = LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    layoutParams = LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 col.addView(TextView(context).apply {
                     text = name; textSize = 14f
@@ -948,11 +1063,9 @@ object Settings {
 
                 addView(pillBtn(context, "GitHub", CREDIT_ACCENT, CREDIT_BG, CREDIT_BORDER) {
                     try {
-                        val intent = android.content.Intent(
+                        context.startActivity(android.content.Intent(
                             android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://$url")
-                        )
-                        context.startActivity(intent)
+                            android.net.Uri.parse("https://$url")))
                     } catch (_: Exception) {
                         Toast.makeText(context, url, Toast.LENGTH_SHORT).show()
                     }
@@ -968,8 +1081,7 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true
-            background = stateDrawable(context)
+            isClickable = true; isFocusable = true; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -987,8 +1099,7 @@ object Settings {
             addView(chevron)
 
             setOnClickListener {
-                expanded = !expanded
-                chevron.text = if (expanded) "▲" else "▼"
+                expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
                 if (expanded) {
                     content.visibility = View.VISIBLE; content.alpha = 0f
                     content.animate().alpha(1f).setDuration(200).start()
@@ -1022,7 +1133,7 @@ object Settings {
         background = GradientDrawable().apply {
             cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor)
         }
-        isClickable = true; isFocusable = true
+        isClickable = true; isFocusable = true; isFocusableInTouchMode = true
         setOnClickListener {
             animate().scaleX(0.88f).scaleY(0.88f).setDuration(70).withEndAction {
                 animate().scaleX(1f).scaleY(1f).setDuration(100).start()
@@ -1054,62 +1165,6 @@ object Settings {
             addView(TextView(context).apply {
                 text = "Configure sources, catalogs & cookies"
                 textSize = 13f; setTextColor(TEXT_SECONDARY); setPadding(0, 6.dp(context), 0, 0)
-            })
-        }
-    }
-
-    // =========================================================
-    //  TOGGLE ROW
-    // =========================================================
-
-    private fun createToggleRow(
-        context: Context, label: String, subtitle: String,
-        databaseKey: String, defaultState: Boolean,
-        pendingChanges: MutableMap<String, Any?>,
-        onChanged: () -> Unit = {}
-    ): View {
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
-            gravity = Gravity.CENTER_VERTICAL; background = stateDrawable(context)
-
-            val textCol = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            textCol.addView(TextView(context).apply {
-                text = label; textSize = 15f
-                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_PRIMARY)
-            })
-            textCol.addView(TextView(context).apply {
-                text = subtitle; textSize = 12f; setTextColor(TEXT_SECONDARY)
-                setPadding(0, 3.dp(context), 0, 0)
-            })
-            addView(textCol)
-
-            // Resolve effective state: pending change > persisted > default
-            val effectiveChecked = pendingChanges[databaseKey] as? Boolean
-                ?: getKey<Boolean>(databaseKey)
-                ?: defaultState
-
-            addView(Switch(context).apply {
-                isChecked = effectiveChecked
-                thumbTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
-                )
-                trackTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(SWITCH_ON, SWITCH_OFF)
-                )
-                setOnCheckedChangeListener { _, isChecked ->
-                    // Stage the change only — do NOT call setKey here
-                    pendingChanges[databaseKey] = isChecked
-                    animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
-                        animate().scaleX(1f).scaleY(1f).setDuration(120).start()
-                    }.start()
-                    onChanged()
-                }
             })
         }
     }
@@ -1188,22 +1243,41 @@ object Settings {
         }
     }
 
-    // --- DRAWING HELPERS ---
+    // =========================================================
+    //  DRAWING HELPERS
+    // =========================================================
+
     private fun roundRect(color: Int, radius: Float) = GradientDrawable().apply {
         cornerRadius = radius; setColor(color)
     }
 
     private fun stateDrawable(context: Context) = StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_pressed),
-            GradientDrawable().apply { setColor(Color.parseColor("#1F2235")) })
-        addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
+        addState(
+            intArrayOf(android.R.attr.state_pressed),
+            GradientDrawable().apply { setColor(Color.parseColor("#2A2D45")) }
+        )
+        addState(
+            intArrayOf(android.R.attr.state_focused),
+            GradientDrawable().apply {
+                setColor(Color.parseColor("#1F2235"))
+                setStroke(2, ACCENT_START)
+            }
+        )
+        addState(
+            intArrayOf(),
+            GradientDrawable().apply { setColor(Color.TRANSPARENT) }
+        )
     }
 
-    // --- EXTENSION HELPERS ---
+    // =========================================================
+    //  EXTENSION HELPERS
+    // =========================================================
+
     private fun Int.dp(context: Context): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(),
             context.resources.displayMetrics).toInt()
 
     private fun Float.dp(context: Context): Float =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, context.resources.displayMetrics)
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this,
+            context.resources.displayMetrics)
 }

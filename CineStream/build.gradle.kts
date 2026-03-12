@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 368
+version = 369
 
 android {
     defaultConfig {
