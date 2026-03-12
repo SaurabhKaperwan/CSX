@@ -220,9 +220,13 @@ object Settings {
     fun showSettingsDialog(context: Context, onSave: () -> Unit) {
         var requiresRestart = false
 
+        val pendingChanges = mutableMapOf<String, Any?>()
+
         val scroll = ScrollView(context).apply {
             isScrollbarFadingEnabled = true
             background = ColorDrawable(BG_DARK)
+            isFocusable = false
+            descendantFocusability = ScrollView.FOCUS_AFTER_DESCENDANTS
         }
 
         val layout = LinearLayout(context).apply {
@@ -238,16 +242,17 @@ object Settings {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 8.dp(context))
         })
 
-        // ── Scraping Settings (collapsible) — includes cookie clear ──
+        // ── Scraping Settings (collapsible) ──
         layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings") {
             addView(createToggleRow(context, "Download Only Links",
-                "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
+                "Only great for downloading (Not for Streaming)",
+                DOWNLOAD_ENABLE, false, pendingChanges))
             addView(createDivider(context))
             addView(createCookieClearRow(context))
         })
 
         // ── Febbox / ShowBox Token (collapsible) ──
-        layout.addView(createShowboxTokenCard(context))
+        layout.addView(createShowboxTokenCard(context, pendingChanges))
 
         // ── Restart banner ──
         val restartBanner = createRestartBanner(context).also { it.visibility = View.GONE }
@@ -265,19 +270,20 @@ object Settings {
             }
         }
         layout.addView(createCollapsibleCard(context, "📡  Active Catalogs") {
-            addView(createToggleRow(context, "CineStream", "Cinemeta catalog",  PROVIDER_CINESTREAM, true, onCatalogChanged))
+            addView(createToggleRow(context, "CineStream", "Cinemeta catalog",
+                PROVIDER_CINESTREAM, true, pendingChanges, onCatalogChanged))
             addView(createDivider(context))
-            addView(createToggleRow(context, "CineSimkl",  "Simkl catalog",     PROVIDER_SIMKL,      true, onCatalogChanged))
+            addView(createToggleRow(context, "CineSimkl", "Simkl catalog",
+                PROVIDER_SIMKL, true, pendingChanges, onCatalogChanged))
             addView(createDivider(context))
-            addView(createToggleRow(context, "CineTmdb",   "TMDB catalog",      PROVIDER_TMDB,       true, onCatalogChanged))
+            addView(createToggleRow(context, "CineTmdb", "TMDB catalog",
+                PROVIDER_TMDB, true, pendingChanges, onCatalogChanged))
         })
 
         layout.addView(restartBanner)
 
-        // ── Providers (collapsible, toggle + reorder) ──
-        layout.addView(createProvidersCard(context))
+        layout.addView(createProvidersCard(context, pendingChanges))
 
-        // ── Credits ──
         layout.addView(createCreditsCard(context))
 
         scroll.addView(layout)
@@ -285,6 +291,14 @@ object Settings {
         val dialog = AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog)
             .setView(scroll)
             .setPositiveButton("Save") { _, _ ->
+                pendingChanges.forEach { (key, value) ->
+                    when {
+                        key == SHOWBOX_TOKEN_KEY && value == null     -> clearShowboxToken()
+                        key == SHOWBOX_TOKEN_KEY && value is String   -> saveShowboxToken(value)
+                        value is Boolean                              -> setKey(key, value)
+                        value == null                                 -> setKey(key, null as String?)
+                    }
+                }
                 if (requiresRestart) showRestartWarning(context, onSave) else onSave()
             }
             .setNegativeButton("Cancel", null)
@@ -324,7 +338,8 @@ object Settings {
             })
             addView(textCol)
 
-            addView(pillBtn(context, "Clear", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+            addView(pillBtn(context, "Clear", DANGER_COLOR,
+                Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
                 clearCookie()
                 Toast.makeText(context, "🍪 Cookies cleared!", Toast.LENGTH_SHORT).show()
             })
@@ -332,152 +347,13 @@ object Settings {
     }
 
     // =========================================================
-    //  CREDITS CARD  (collapsible)
-    // =========================================================
-
-    private fun createCreditsCard(context: Context): View {
-        val contributors = listOf(
-            Triple("phisher98",     "For multi-source plugin inspiration", "github.com/phisher98"),
-            Triple("AzartX47",      "For providing muliple API",           "github.com/AzartX47"),
-            Triple("yogesh-hacker", "For providing reference",             "github.com/yogesh-hacker"),
-        )
-
-        val CREDIT_ACCENT = Color.parseColor("#38BDF8")
-        val CREDIT_BG     = Color.parseColor("#0A1420")
-        val CREDIT_BORDER = Color.parseColor("#1A3040")
-
-        val card = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = roundRect(BG_CARD, 16f.dp(context))
-            elevation = 4f
-        }
-
-        var expanded = false
-
-        val content = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
-            visibility = View.GONE
-        }
-
-        // Thank-you note
-        content.addView(TextView(context).apply {
-            text = "Special thanks to these developers whose work served as reference and inspiration ❤️"
-            textSize = 12f
-            setTextColor(TEXT_SECONDARY)
-            setPadding(4.dp(context), 4.dp(context), 4.dp(context), 14.dp(context))
-        })
-
-        // Contributor rows
-        contributors.forEachIndexed { i, (name, role, url) ->
-            if (i > 0) content.addView(createDivider(context))
-            content.addView(LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(4.dp(context), 12.dp(context), 4.dp(context), 12.dp(context))
-                gravity = Gravity.CENTER_VERTICAL
-
-                // Avatar placeholder circle with initial
-                addView(TextView(context).apply {
-                    text = name.first().uppercaseChar().toString()
-                    textSize = 14f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    setTextColor(CREDIT_ACCENT)
-                    gravity = Gravity.CENTER
-                    val size = 36.dp(context)
-                    layoutParams = LinearLayout.LayoutParams(size, size).also { it.marginEnd = 14.dp(context) }
-                    background = GradientDrawable().apply {
-                        shape = GradientDrawable.OVAL
-                        setColor(CREDIT_BG)
-                        setStroke(2, CREDIT_BORDER)
-                    }
-                })
-
-                // Name + role column
-                val col = LinearLayout(context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                }
-                col.addView(TextView(context).apply {
-                    text = name; textSize = 14f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    setTextColor(TEXT_PRIMARY)
-                })
-                col.addView(TextView(context).apply {
-                    text = role; textSize = 11f
-                    setTextColor(TEXT_SECONDARY)
-                    setPadding(0, 2.dp(context), 0, 0)
-                })
-                addView(col)
-
-                // GitHub pill link
-                addView(pillBtn(context, "GitHub", CREDIT_ACCENT, CREDIT_BG, CREDIT_BORDER) {
-                    try {
-                        val intent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://$url")
-                        )
-                        context.startActivity(intent)
-                    } catch (_: Exception) {
-                        Toast.makeText(context, url, Toast.LENGTH_SHORT).show()
-                    }
-                })
-            })
-        }
-
-        val chevron = TextView(context).apply {
-            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
-        }
-
-        card.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true
-            background = stateDrawable(context)
-
-            addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    intArrayOf(CREDIT_ACCENT, Color.parseColor("#0EA5E9"))).apply { cornerRadius = 99f }
-            })
-            addView(TextView(context).apply {
-                text = "🙏  Credits & Thanks"; textSize = 12f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            })
-            addView(chevron)
-
-            setOnClickListener {
-                expanded = !expanded
-                chevron.text = if (expanded) "▲" else "▼"
-                if (expanded) {
-                    content.visibility = View.VISIBLE
-                    content.alpha = 0f
-                    content.animate().alpha(1f).setDuration(200).start()
-                } else {
-                    content.animate().alpha(0f).setDuration(150).withEndAction {
-                        content.visibility = View.GONE; content.alpha = 1f
-                    }.start()
-                }
-            }
-        })
-
-        card.addView(content)
-        card.alpha = 0f; card.translationY = 20f
-        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
-        return card
-    }
-
-    // =========================================================
     //  SHOWBOX TOKEN CARD  (collapsible)
     // =========================================================
 
-    private fun createShowboxTokenCard(context: Context): View {
+    private fun createShowboxTokenCard(
+        context: Context,
+        pendingChanges: MutableMap<String, Any?>
+    ): View {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             val m = 16.dp(context)
@@ -505,13 +381,26 @@ object Settings {
             setPadding(4.dp(context), 0, 4.dp(context), 10.dp(context))
         })
 
+        val initialToken = (pendingChanges[SHOWBOX_TOKEN_KEY] as? String) ?: getShowboxToken() ?: ""
+
         val input = EditText(context).apply {
             hint = "Paste UI token"
-            setText(getShowboxToken() ?: "")
-            setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY)
-            textSize = 13f; setSingleLine(true)
+            setText(initialToken)
+            setTextColor(TEXT_PRIMARY)
+            setHintTextColor(TEXT_SECONDARY)
+            textSize = 13f
+            setSingleLine(true)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or
                     android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+
+            isFocusable = true
+            isFocusableInTouchMode = true
+            setOnFocusChangeListener { v, hasFocus ->
+                if (hasFocus) {
+                    (v.parent?.parent as? ScrollView)?.requestChildFocus(v, v)
+                }
+            }
+
             setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
             background = GradientDrawable().apply {
                 cornerRadius = 10f.dp(context)
@@ -523,6 +412,14 @@ object Settings {
             ).also { it.bottomMargin = 10.dp(context) }
         }
         content.addView(input)
+
+        val savedBadge = TextView(context).apply {
+            text = if ((pendingChanges[SHOWBOX_TOKEN_KEY] as? String) != null
+                || (SHOWBOX_TOKEN_KEY !in pendingChanges && getShowboxToken() != null)) "✓ Saved" else ""
+            textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#4ADE80"))
+            setPadding(0, 0, 8.dp(context), 0)
+        }
 
         content.addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -538,9 +435,11 @@ object Settings {
                 setOnClickListener {
                     isVisible = !isVisible
                     input.inputType = if (isVisible)
-                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                        android.text.InputType.TYPE_CLASS_TEXT or
+                                android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                     else
-                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        android.text.InputType.TYPE_CLASS_TEXT or
+                                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
                     input.setSelection(input.text?.length ?: 0)
                     text = if (isVisible) "🙈 Hide" else "👁 Show"
                 }
@@ -548,24 +447,31 @@ object Settings {
 
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
 
-            addView(pillBtn(context, "Clear", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
-                input.setText(""); clearShowboxToken()
-                Toast.makeText(context, "Febbox token cleared", Toast.LENGTH_SHORT).show()
+            addView(pillBtn(context, "Clear", DANGER_COLOR,
+                Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+                input.setText("")
+                pendingChanges[SHOWBOX_TOKEN_KEY] = null
+                savedBadge.text = ""
+                Toast.makeText(context, "Token cleared — tap Save to apply", Toast.LENGTH_SHORT).show()
             })
+
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
+
             addView(pillBtn(context, "Save", SHOWBOX_ACCENT, SHOWBOX_BG, SHOWBOX_BORDER) {
                 val token = input.text.toString().trim()
-                if (token.isBlank()) Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
-                else { saveShowboxToken(token); Toast.makeText(context, "✓ Febbox token saved", Toast.LENGTH_SHORT).show() }
+                if (token.isBlank()) {
+                    Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
+                } else {
+                    pendingChanges[SHOWBOX_TOKEN_KEY] = token
+                    savedBadge.text = "✓ Saved"
+                    Toast.makeText(context, "✓ Token staged — tap outer Save to apply",
+                        Toast.LENGTH_SHORT).show()
+                }
             })
         })
 
-        val chevron   = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY) }
-        val savedBadge = TextView(context).apply {
-            text = if (getShowboxToken() != null) "✓ Saved" else ""
-            textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(Color.parseColor("#4ADE80"))
-            setPadding(0, 0, 8.dp(context), 0)
+        val chevron = TextView(context).apply {
+            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
         }
 
         card.addView(LinearLayout(context).apply {
@@ -576,9 +482,11 @@ object Settings {
             background = stateDrawable(context)
 
             addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
+                    .also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    intArrayOf(SHOWBOX_ACCENT, Color.parseColor("#D97706"))).apply { cornerRadius = 99f }
+                    intArrayOf(SHOWBOX_ACCENT, Color.parseColor("#D97706")))
+                    .apply { cornerRadius = 99f }
             })
             addView(TextView(context).apply {
                 text = "📦  Febbox Token"; textSize = 12f
@@ -592,7 +500,14 @@ object Settings {
             setOnClickListener {
                 expanded = !expanded
                 chevron.text = if (expanded) "▲" else "▼"
-                if (!expanded) savedBadge.text = if (getShowboxToken() != null) "✓ Saved" else ""
+                if (!expanded) {
+                    savedBadge.text = when {
+                        pendingChanges.containsKey(SHOWBOX_TOKEN_KEY) ->
+                            if ((pendingChanges[SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Saved" else ""
+                        getShowboxToken() != null -> "✓ Saved"
+                        else -> ""
+                    }
+                }
                 if (expanded) {
                     content.visibility = View.VISIBLE; content.alpha = 0f
                     content.animate().alpha(1f).setDuration(200).start()
@@ -606,7 +521,8 @@ object Settings {
 
         card.addView(content)
         card.alpha = 0f; card.translationY = 20f
-        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        card.animate().alpha(1f).translationY(0f)
+            .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
         return card
     }
 
@@ -649,7 +565,8 @@ object Settings {
             isClickable = true; isFocusable = true; background = stateDrawable(context)
 
             addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
+                    .also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
             })
@@ -676,7 +593,8 @@ object Settings {
 
         card.addView(content)
         card.alpha = 0f; card.translationY = 20f
-        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        card.animate().alpha(1f).translationY(0f)
+            .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
         return card
     }
 
@@ -684,7 +602,10 @@ object Settings {
     //  PROVIDERS CARD
     // =========================================================
 
-    private fun createProvidersCard(context: Context): View {
+    private fun createProvidersCard(
+        context: Context,
+        pendingChanges: MutableMap<String, Any?>
+    ): View {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             val m = 16.dp(context)
@@ -704,22 +625,26 @@ object Settings {
         val rows = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val order = getOrder().toMutableList()
 
+        fun providerEnabled(key: String): Boolean =
+            pendingChanges[key] as? Boolean ?: (getKey<Boolean>(key) ?: (key !in TORRENT_KEYS))
+
         fun rebuild() {
             rows.removeAllViews()
             order.forEachIndexed { i, key ->
                 if (i > 0) rows.addView(createDivider(context))
                 rows.addView(createProviderRow(
-                    context,
-                    label       = PROVIDER_NAMES[key] ?: key,
-                    key         = key,
-                    index       = i + 1,
-                    totalCount  = order.size,
-                    isTorrent   = key in TORRENT_KEYS,
-                    canMoveUp   = i > 0,
-                    canMoveDown = i < order.lastIndex,
-                    onMoveUp    = { order.add(i - 1, order.removeAt(i)); saveOrder(order); rebuild() },
-                    onMoveDown  = { order.add(i + 1, order.removeAt(i)); saveOrder(order); rebuild() },
-                    onMoveTo    = { target ->
+                    context       = context,
+                    label         = PROVIDER_NAMES[key] ?: key,
+                    key           = key,
+                    index         = i + 1,
+                    totalCount    = order.size,
+                    isTorrent     = key in TORRENT_KEYS,
+                    canMoveUp     = i > 0,
+                    canMoveDown   = i < order.lastIndex,
+                    pendingChanges = pendingChanges,
+                    onMoveUp      = { order.add(i - 1, order.removeAt(i)); saveOrder(order); rebuild() },
+                    onMoveDown    = { order.add(i + 1, order.removeAt(i)); saveOrder(order); rebuild() },
+                    onMoveTo      = { target ->
                         val item = order.removeAt(i)
                         order.add(target.coerceIn(0, order.size), item)
                         saveOrder(order); rebuild()
@@ -728,24 +653,32 @@ object Settings {
             }
         }
 
-        // Toolbar
         val pillRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = 6.dp(context) }
         }
-        pillRow.addView(pillBtn(context, "✓ All", Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"), Color.parseColor("#1A3A1F")) {
-            order.forEach { setKey(it, true) }; rebuild()
+
+        pillRow.addView(pillBtn(context, "✓ All",
+            Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"),
+            Color.parseColor("#1A3A1F")) {
+            order.forEach { pendingChanges[it] = true }
+            rebuild()
             Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
-        pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
-            order.forEach { setKey(it, false) }; rebuild()
+
+        pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR,
+            Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+            order.forEach { pendingChanges[it] = false }
+            rebuild()
             Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
-        pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
+
+        pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START,
+            Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
             order.clear(); order.addAll(DEFAULT_ORDER); saveOrder(order); rebuild()
             Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
         })
@@ -777,7 +710,7 @@ object Settings {
             textSize = 11f; setTextColor(Color.parseColor("#5A5E7A"))
             setPadding(0, 0, 8.dp(context), 0)
         }
-        fun updateSummary() { summary.text = "${order.count { enabled(it) }} / ${order.size} on" }
+        fun updateSummary() { summary.text = "${order.count { providerEnabled(it) }} / ${order.size} on" }
         updateSummary()
 
         card.addView(LinearLayout(context).apply {
@@ -787,7 +720,8 @@ object Settings {
             isClickable = true; isFocusable = true; background = stateDrawable(context)
 
             addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
+                    .also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
             })
@@ -815,7 +749,8 @@ object Settings {
 
         card.addView(content)
         card.alpha = 0f; card.translationY = 20f
-        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        card.animate().alpha(1f).translationY(0f)
+            .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
         return card
     }
 
@@ -827,6 +762,7 @@ object Settings {
         context: Context, label: String, key: String,
         index: Int, totalCount: Int, isTorrent: Boolean,
         canMoveUp: Boolean, canMoveDown: Boolean,
+        pendingChanges: MutableMap<String, Any?>,
         onMoveUp: () -> Unit, onMoveDown: () -> Unit,
         onMoveTo: (Int) -> Unit
     ): View {
@@ -835,7 +771,6 @@ object Settings {
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
-            // Tappable index badge → jump to position dialog
             addView(TextView(context).apply {
                 text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -844,11 +779,12 @@ object Settings {
                 setPadding(4.dp(context), 4.dp(context), 4.dp(context), 4.dp(context))
                 background = GradientDrawable().apply {
                     cornerRadius = 6f.dp(context); setColor(Color.parseColor("#1A1730"))
-                    setStroke(1, if (isTorrent) Color.parseColor("#3A2810") else Color.parseColor("#2E2850"))
+                    setStroke(1, if (isTorrent) Color.parseColor("#3A2810")
+                    else Color.parseColor("#2E2850"))
                 }
                 minWidth = 28.dp(context); isClickable = true; isFocusable = true
                 setOnClickListener {
-                    val input = EditText(context).apply {
+                    val moveInput = EditText(context).apply {
                         inputType = android.text.InputType.TYPE_CLASS_NUMBER
                         hint = "1 – $totalCount"; setText("$index")
                         setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY); selectAll()
@@ -857,6 +793,8 @@ object Settings {
                             cornerRadius = 10f.dp(context); setColor(Color.parseColor("#1A1E28"))
                             setStroke(1, Color.parseColor("#2E2850"))
                         }
+                        isFocusable = true
+                        isFocusableInTouchMode = true
                     }
                     val wrapper = LinearLayout(context).apply {
                         orientation = LinearLayout.VERTICAL
@@ -865,22 +803,27 @@ object Settings {
                             text = "Move \"$label\" to position"; textSize = 13f
                             setTextColor(TEXT_SECONDARY); setPadding(0, 0, 0, 10.dp(context))
                         })
-                        addView(input)
+                        addView(moveInput)
                     }
                     val d = AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog)
                         .setView(wrapper)
                         .setPositiveButton("Move") { _, _ ->
-                            val t = input.text.toString().toIntOrNull()
+                            val t = moveInput.text.toString().toIntOrNull()
                             if (t != null && t in 1..totalCount) onMoveTo(t - 1)
-                            else Toast.makeText(context, "Enter 1 – $totalCount", Toast.LENGTH_SHORT).show()
+                            else Toast.makeText(context, "Enter 1 – $totalCount",
+                                Toast.LENGTH_SHORT).show()
                         }
                         .setNegativeButton("Cancel", null).create()
                     d.window?.setBackgroundDrawable(roundRect(BG_DARK, 16f.dp(context))); d.show()
-                    d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
-                    d.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
-                    input.requestFocus()
-                    (context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
-                        .showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                    d.getButton(AlertDialog.BUTTON_POSITIVE)
+                        ?.apply { setTextColor(ACCENT_START); isAllCaps = false }
+                    d.getButton(AlertDialog.BUTTON_NEGATIVE)
+                        ?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
+                    moveInput.requestFocus()
+                    (context.getSystemService(Context.INPUT_METHOD_SERVICE)
+                            as android.view.inputmethod.InputMethodManager)
+                        .showSoftInput(moveInput,
+                            android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
                 }
             })
 
@@ -907,19 +850,161 @@ object Settings {
             addView(arrowBtn("↑", canMoveUp, onMoveUp))
             addView(arrowBtn("↓", canMoveDown, onMoveDown))
 
+            val effectiveChecked = pendingChanges[key] as? Boolean
+                ?: getKey<Boolean>(key)
+                ?: (key !in TORRENT_KEYS)
+
             addView(Switch(context).apply {
-                isChecked = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
+                isChecked = effectiveChecked
                 thumbTintList = android.content.res.ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                     intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
                 )
                 trackTintList = android.content.res.ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(if (isTorrent) Color.parseColor("#8B5E3C") else SWITCH_ON, SWITCH_OFF)
+                    intArrayOf(
+                        if (isTorrent) Color.parseColor("#8B5E3C") else SWITCH_ON,
+                        SWITCH_OFF
+                    )
                 )
-                setOnCheckedChangeListener { _, v -> setKey(key, v) }
+                setOnCheckedChangeListener { _, v -> pendingChanges[key] = v }
             })
         }
+    }
+
+    // =========================================================
+    //  CREDITS CARD  (collapsible)
+    // =========================================================
+
+    private fun createCreditsCard(context: Context): View {
+        val contributors = listOf(
+            Triple("phisher98",     "For multi-source plugin inspiration", "github.com/phisher98"),
+            Triple("AzartX47",      "For providing multiple APIs",         "github.com/AzartX47"),
+            Triple("yogesh-hacker", "For providing reference",             "github.com/yogesh-hacker"),
+        )
+
+        val CREDIT_ACCENT = Color.parseColor("#38BDF8")
+        val CREDIT_BG     = Color.parseColor("#0A1420")
+        val CREDIT_BORDER = Color.parseColor("#1A3040")
+
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val m = 16.dp(context)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(m, 0, m, m) }
+            background = roundRect(BG_CARD, 16f.dp(context))
+            elevation = 4f
+        }
+
+        var expanded = false
+
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
+            visibility = View.GONE
+        }
+
+        content.addView(TextView(context).apply {
+            text = "Special thanks to these developers whose work served as reference and inspiration ❤️"
+            textSize = 12f; setTextColor(TEXT_SECONDARY)
+            setPadding(4.dp(context), 4.dp(context), 4.dp(context), 14.dp(context))
+        })
+
+        contributors.forEachIndexed { i, (name, role, url) ->
+            if (i > 0) content.addView(createDivider(context))
+            content.addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(4.dp(context), 12.dp(context), 4.dp(context), 12.dp(context))
+                gravity = Gravity.CENTER_VERTICAL
+
+                addView(TextView(context).apply {
+                    text = name.first().uppercaseChar().toString()
+                    textSize = 14f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(CREDIT_ACCENT); gravity = Gravity.CENTER
+                    val size = 36.dp(context)
+                    layoutParams = LinearLayout.LayoutParams(size, size)
+                        .also { it.marginEnd = 14.dp(context) }
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(CREDIT_BG); setStroke(2, CREDIT_BORDER)
+                    }
+                })
+
+                val col = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
+                col.addView(TextView(context).apply {
+                    text = name; textSize = 14f
+                    setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_PRIMARY)
+                })
+                col.addView(TextView(context).apply {
+                    text = role; textSize = 11f; setTextColor(TEXT_SECONDARY)
+                    setPadding(0, 2.dp(context), 0, 0)
+                })
+                addView(col)
+
+                addView(pillBtn(context, "GitHub", CREDIT_ACCENT, CREDIT_BG, CREDIT_BORDER) {
+                    try {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://$url")
+                        )
+                        context.startActivity(intent)
+                    } catch (_: Exception) {
+                        Toast.makeText(context, url, Toast.LENGTH_SHORT).show()
+                    }
+                })
+            })
+        }
+
+        val chevron = TextView(context).apply {
+            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+        }
+
+        card.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true; isFocusable = true
+            background = stateDrawable(context)
+
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
+                    .also { it.marginEnd = 12.dp(context) }
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(CREDIT_ACCENT, Color.parseColor("#0EA5E9")))
+                    .apply { cornerRadius = 99f }
+            })
+            addView(TextView(context).apply {
+                text = "🙏  Credits & Thanks"; textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(chevron)
+
+            setOnClickListener {
+                expanded = !expanded
+                chevron.text = if (expanded) "▲" else "▼"
+                if (expanded) {
+                    content.visibility = View.VISIBLE; content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(200).start()
+                } else {
+                    content.animate().alpha(0f).setDuration(150).withEndAction {
+                        content.visibility = View.GONE; content.alpha = 1f
+                    }.start()
+                }
+            }
+        })
+
+        card.addView(content)
+        card.alpha = 0f; card.translationY = 20f
+        card.animate().alpha(1f).translationY(0f)
+            .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        return card
     }
 
     // =========================================================
@@ -934,7 +1019,9 @@ object Settings {
         text = label; textSize = 11f
         setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(textColor)
         setPadding(12.dp(context), 6.dp(context), 12.dp(context), 6.dp(context))
-        background = GradientDrawable().apply { cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor) }
+        background = GradientDrawable().apply {
+            cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor)
+        }
         isClickable = true; isFocusable = true
         setOnClickListener {
             animate().scaleX(0.88f).scaleY(0.88f).setDuration(70).withEndAction {
@@ -954,7 +1041,8 @@ object Settings {
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 intArrayOf(Color.parseColor("#1A1730"), BG_DARK))
             addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(48.dp(context), 4.dp(context)).also { it.bottomMargin = 16.dp(context) }
+                layoutParams = LinearLayout.LayoutParams(48.dp(context), 4.dp(context))
+                    .also { it.bottomMargin = 16.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
                     intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
             })
@@ -976,12 +1064,15 @@ object Settings {
 
     private fun createToggleRow(
         context: Context, label: String, subtitle: String,
-        databaseKey: String, defaultState: Boolean, onChanged: () -> Unit = {}
+        databaseKey: String, defaultState: Boolean,
+        pendingChanges: MutableMap<String, Any?>,
+        onChanged: () -> Unit = {}
     ): View {
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
             gravity = Gravity.CENTER_VERTICAL; background = stateDrawable(context)
+
             val textCol = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -995,8 +1086,14 @@ object Settings {
                 setPadding(0, 3.dp(context), 0, 0)
             })
             addView(textCol)
+
+            // Resolve effective state: pending change > persisted > default
+            val effectiveChecked = pendingChanges[databaseKey] as? Boolean
+                ?: getKey<Boolean>(databaseKey)
+                ?: defaultState
+
             addView(Switch(context).apply {
-                isChecked = getKey<Boolean>(databaseKey) ?: defaultState
+                isChecked = effectiveChecked
                 thumbTintList = android.content.res.ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                     intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
@@ -1006,10 +1103,12 @@ object Settings {
                     intArrayOf(SWITCH_ON, SWITCH_OFF)
                 )
                 setOnCheckedChangeListener { _, isChecked ->
-                    setKey(databaseKey, isChecked)
+                    // Stage the change only — do NOT call setKey here
+                    pendingChanges[databaseKey] = isChecked
                     animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
                         animate().scaleX(1f).scaleY(1f).setDuration(120).start()
-                    }.start(); onChanged()
+                    }.start()
+                    onChanged()
                 }
             })
         }
@@ -1034,16 +1133,21 @@ object Settings {
                 cornerRadius = 14f.dp(context); setColor(WARN_BG); setStroke(1, WARN_BORDER)
             }
             setPadding(16.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
+
             val dot = View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(8.dp(context), 8.dp(context)).also {
                     it.marginEnd = 12.dp(context); it.topMargin = 2.dp(context)
                 }
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(WARN_ACCENT) }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL; setColor(WARN_ACCENT)
+                }
             }
             addView(dot)
             ObjectAnimator.ofFloat(dot, "alpha", 1f, 0.25f, 1f).apply {
-                duration = 1200; repeatCount = ObjectAnimator.INFINITE; interpolator = DecelerateInterpolator()
+                duration = 1200; repeatCount = ObjectAnimator.INFINITE
+                interpolator = DecelerateInterpolator()
             }.start()
+
             val textCol = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -1097,7 +1201,8 @@ object Settings {
 
     // --- EXTENSION HELPERS ---
     private fun Int.dp(context: Context): Int =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), context.resources.displayMetrics).toInt()
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(),
+            context.resources.displayMetrics).toInt()
 
     private fun Float.dp(context: Context): Float =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, context.resources.displayMetrics)
