@@ -415,7 +415,6 @@ object Settings {
         }
         content.addView(input)
 
-        // TV-friendly clipboard row ─────────────────────────────
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val CLIP_TEXT   = Color.parseColor("#94A3B8")
         val CLIP_BG     = Color.parseColor("#0F1520")
@@ -428,7 +427,6 @@ object Settings {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = 10.dp(context) }
 
-            // 📋 Paste — reads system clipboard into the field
             addView(pillBtn(context, "📋 Paste", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
                 val clip = clipboard.primaryClip
                     ?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
@@ -442,7 +440,6 @@ object Settings {
             })
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
-            // 📄 Copy — copies field contents to system clipboard
             addView(pillBtn(context, "📄 Copy", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
                 val text = input.text?.toString()?.trim()
                 if (!text.isNullOrBlank()) {
@@ -641,8 +638,6 @@ object Settings {
 
     // =========================================================
     //  PROVIDERS CARD
-    //
-    //  FIX 2 (order): ↑/↓/moveTo and Reset Order only mutate the
     // =========================================================
 
     private fun createProvidersCard(
@@ -704,7 +699,6 @@ object Settings {
             ).also { it.bottomMargin = 6.dp(context) }
         }
 
-        // ✓ All — stage true, no saveOrder()
         pillRow.addView(pillBtn(context, "✓ All",
             Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"),
             Color.parseColor("#1A3A1F")) {
@@ -713,7 +707,6 @@ object Settings {
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
-        // ✕ None — stage false, no saveOrder()
         pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR,
             Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
             order.forEach { pendingChanges[it] = false }; rebuild()
@@ -721,7 +714,6 @@ object Settings {
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
-        // ↺ Reset Order — reset in-memory list only, no saveOrder()
         pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START,
             Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
             order.clear(); order.addAll(DEFAULT_ORDER); rebuild()
@@ -820,6 +812,7 @@ object Settings {
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
+            // Index badge → jump-to-position dialog
             addView(TextView(context).apply {
                 text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -922,7 +915,6 @@ object Settings {
                         SWITCH_OFF
                     )
                 )
-                // Stage only — no setKey() here
                 setOnCheckedChangeListener { _, v -> pendingChanges[key] = v }
             })
         }
@@ -941,26 +933,10 @@ object Settings {
         val effectiveChecked = pendingChanges[databaseKey] as? Boolean
             ?: getKey<Boolean>(databaseKey) ?: defaultState
 
-        val sw = Switch(context).apply {
-            isChecked = effectiveChecked
-            isFocusable = false
-            isClickable = false
-            thumbTintList = android.content.res.ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
-            )
-            trackTintList = android.content.res.ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(SWITCH_ON, SWITCH_OFF)
-            )
-        }
-
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-
-            isClickable = true; isFocusable = true; isFocusableInTouchMode = true
             background = stateDrawable(context)
 
             val textCol = LinearLayout(context).apply {
@@ -976,16 +952,28 @@ object Settings {
                 setPadding(0, 3.dp(context), 0, 0)
             })
             addView(textCol)
-            addView(sw)
 
-            setOnClickListener {
-                sw.isChecked = !sw.isChecked
-                pendingChanges[databaseKey] = sw.isChecked
-                sw.animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
-                    sw.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
-                }.start()
-                onChanged()
-            }
+            addView(Switch(context).apply {
+                isChecked = effectiveChecked
+                isClickable = true
+                isFocusable = true
+                isFocusableInTouchMode = false
+                thumbTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                    intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
+                )
+                trackTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                    intArrayOf(SWITCH_ON, SWITCH_OFF)
+                )
+                setOnCheckedChangeListener { _, isChecked ->
+                    pendingChanges[databaseKey] = isChecked
+                    animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
+                        animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+                    }.start()
+                    onChanged()
+                }
+            })
         }
     }
 
