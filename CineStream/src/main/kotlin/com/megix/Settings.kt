@@ -415,7 +415,7 @@ object Settings {
         }
         content.addView(input)
 
-        // ── TV-friendly clipboard row ─────────────────────────────
+        // TV-friendly clipboard row ─────────────────────────────
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val CLIP_TEXT   = Color.parseColor("#94A3B8")
         val CLIP_BG     = Color.parseColor("#0F1520")
@@ -476,7 +476,7 @@ object Settings {
                 text = "👁 Show"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_SECONDARY)
                 setPadding(0, 0, 12.dp(context), 0)
-                isClickable = true; isFocusable = true; isFocusableInTouchMode = true
+                isClickable = true; isFocusable = true; isFocusableInTouchMode = false
                 setOnClickListener {
                     isVisible = !isVisible
                     input.inputType = if (isVisible)
@@ -522,7 +522,7 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true; background = stateDrawable(context)
+            isClickable = true; isFocusable = true; isFocusableInTouchMode = false; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -602,8 +602,8 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true
-            background = stateDrawable(context)
+            isClickable = true; isFocusable = true; isFocusableInTouchMode = false
+            background = stateDrawable(context) // shows focus highlight on TV
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -761,7 +761,7 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true; background = stateDrawable(context)
+            isClickable = true; isFocusable = true; isFocusableInTouchMode = false; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -827,7 +827,7 @@ object Settings {
                     else Color.parseColor("#2E2850"))
                 }
                 minWidth = 28.dp(context)
-                isClickable = true; isFocusable = true; isFocusableInTouchMode = true
+                isClickable = true; isFocusable = true; isFocusableInTouchMode = false
                 setOnClickListener {
                     val moveInput = EditText(context).apply {
                         inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -887,7 +887,7 @@ object Settings {
                     setPadding(9.dp(context), 6.dp(context), 9.dp(context), 6.dp(context))
                     isClickable = active
                     isFocusable = active
-                    isFocusableInTouchMode = active
+                    isFocusableInTouchMode = false
                     if (active) {
                         background = stateDrawable(context)
                         setOnClickListener {
@@ -903,9 +903,11 @@ object Settings {
             val effectiveChecked = pendingChanges[key] as? Boolean
                 ?: getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
 
-            addView(Switch(context).apply {
+            val sw = Switch(context).apply {
                 isChecked = effectiveChecked
-                isFocusable = true; isFocusableInTouchMode = true
+                isClickable = false
+                isFocusable = false
+                isFocusableInTouchMode = false
                 thumbTintList = android.content.res.ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                     intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
@@ -917,7 +919,19 @@ object Settings {
                         SWITCH_OFF
                     )
                 )
-                setOnCheckedChangeListener { _, v -> pendingChanges[key] = v }
+            }
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                isClickable = true
+                isFocusable = true
+                isFocusableInTouchMode = false
+                background = stateDrawable(context)
+                addView(sw)
+                setOnClickListener {
+                    sw.isChecked = !sw.isChecked
+                    pendingChanges[key] = sw.isChecked
+                }
             })
         }
     }
@@ -934,6 +948,7 @@ object Settings {
     ): View {
         val effectiveChecked = pendingChanges[databaseKey] as? Boolean
             ?: getKey<Boolean>(databaseKey) ?: defaultState
+
 
         val sw = Switch(context).apply {
             isChecked = effectiveChecked
@@ -1078,7 +1093,7 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true; background = stateDrawable(context)
+            isClickable = true; isFocusable = true; isFocusableInTouchMode = false; background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
@@ -1130,7 +1145,7 @@ object Settings {
         background = GradientDrawable().apply {
             cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor)
         }
-        isClickable = true; isFocusable = true; isFocusableInTouchMode = true
+        isClickable = true; isFocusable = true; isFocusableInTouchMode = false
         setOnClickListener {
             animate().scaleX(0.88f).scaleY(0.88f).setDuration(70).withEndAction {
                 animate().scaleX(1f).scaleY(1f).setDuration(100).start()
@@ -1248,6 +1263,8 @@ object Settings {
         cornerRadius = radius; setColor(color)
     }
 
+    // FIX 3 (TV toggle): added state_focused with a purple outline so TV users
+    // can clearly see which row / button the D-pad cursor is sitting on.
     private fun stateDrawable(context: Context) = StateListDrawable().apply {
         addState(
             intArrayOf(android.R.attr.state_pressed),
