@@ -4079,9 +4079,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val titleSlug = title?.replace(" ", ".")
         val url = if (season == null) {
-            """$bollywoodAPI/files/search?q=${titleSlug}&page=1"""
+            "$bollywoodAPI/files/search?q=${titleSlug}.${year}&page=1"
         } else {
-            """$bollywoodAPI/files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"""
+            "$bollywoodAPI/files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"
         }
 
         val response = app.get(

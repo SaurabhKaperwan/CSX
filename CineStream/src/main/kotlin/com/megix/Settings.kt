@@ -1,7 +1,6 @@
 package com.megix
 
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.*
@@ -793,7 +792,7 @@ object Settings {
                     intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
             })
             addView(TextView(context).apply {
-                text = "🎬  PROVIDERS"; textSize = 12f
+                text = "🎬  Providers"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -1063,14 +1062,6 @@ object Settings {
                 setPadding(12.dp(context), 0, 0, 0); alpha = 0.85f
             })
         }
-    }
-
-    // =========================================================
-    //  SAVE DIALOG  (called from showSettingsDialog)
-    // =========================================================
-
-    private fun showSaveDialog(context: Context, requiresRestart: Boolean, onSave: () -> Unit) {
-        if (requiresRestart) showRestartWarning(context, onSave) else onSave()
     }
 
     private fun showRestartWarning(context: Context, onSave: () -> Unit) {
