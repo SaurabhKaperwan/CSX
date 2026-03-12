@@ -415,6 +415,7 @@ object Settings {
         }
         content.addView(input)
 
+        // ── TV-friendly clipboard row ─────────────────────────────
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val CLIP_TEXT   = Color.parseColor("#94A3B8")
         val CLIP_BG     = Color.parseColor("#0F1520")
@@ -427,6 +428,7 @@ object Settings {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = 10.dp(context) }
 
+            // 📋 Paste — reads system clipboard into the field
             addView(pillBtn(context, "📋 Paste", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
                 val clip = clipboard.primaryClip
                     ?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
@@ -440,6 +442,7 @@ object Settings {
             })
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
+            // 📄 Copy — copies field contents to system clipboard
             addView(pillBtn(context, "📄 Copy", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
                 val text = input.text?.toString()?.trim()
                 if (!text.isNullOrBlank()) {
@@ -812,7 +815,6 @@ object Settings {
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
-            // Index badge → jump-to-position dialog
             addView(TextView(context).apply {
                 text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -933,10 +935,29 @@ object Settings {
         val effectiveChecked = pendingChanges[databaseKey] as? Boolean
             ?: getKey<Boolean>(databaseKey) ?: defaultState
 
+        val sw = Switch(context).apply {
+            isChecked = effectiveChecked
+            isClickable = false
+            isFocusable = false
+            isFocusableInTouchMode = false
+            thumbTintList = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
+            )
+            trackTintList = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(SWITCH_ON, SWITCH_OFF)
+            )
+        }
+
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
             gravity = Gravity.CENTER_VERTICAL
+
+            isClickable = true
+            isFocusable = true
+            isFocusableInTouchMode = false
             background = stateDrawable(context)
 
             val textCol = LinearLayout(context).apply {
@@ -952,28 +973,16 @@ object Settings {
                 setPadding(0, 3.dp(context), 0, 0)
             })
             addView(textCol)
+            addView(sw)
 
-            addView(Switch(context).apply {
-                isChecked = effectiveChecked
-                isClickable = true
-                isFocusable = true
-                isFocusableInTouchMode = false
-                thumbTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(Color.WHITE, Color.parseColor("#9099B8"))
-                )
-                trackTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(SWITCH_ON, SWITCH_OFF)
-                )
-                setOnCheckedChangeListener { _, isChecked ->
-                    pendingChanges[databaseKey] = isChecked
-                    animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
-                        animate().scaleX(1f).scaleY(1f).setDuration(120).start()
-                    }.start()
-                    onChanged()
-                }
-            })
+            setOnClickListener {
+                sw.isChecked = !sw.isChecked
+                pendingChanges[databaseKey] = sw.isChecked
+                sw.animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).withEndAction {
+                    sw.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+                }.start()
+                onChanged()
+            }
         }
     }
 
