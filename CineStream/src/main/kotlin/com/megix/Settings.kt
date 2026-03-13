@@ -37,6 +37,7 @@ object Settings {
     private const val COOKIE_KEY    = "nf_cookie"
     private const val TIMESTAMP_KEY = "nf_cookie_timestamp"
     const val SHOWBOX_TOKEN_KEY     = "showbox_ui_token"
+    const val STREMIO_ADDONS_KEY    = "stremio_addons"
 
     // --- DATABASE KEYS: Providers ---
     const val P_TORRENTIO     = "p_torrentio"
@@ -185,13 +186,45 @@ object Settings {
     fun enabled(key: String): Boolean = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
 
     fun getOrder(): List<String> {
+        val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
+        val allKnown = DEFAULT_ORDER + stremioKeys
         val saved = getKey<String>(PROVIDER_ORDER_KEY)
             ?.split(",")?.filter { it.isNotBlank() }
-            ?: return DEFAULT_ORDER
-        return saved + (DEFAULT_ORDER - saved.toSet())
+            ?: return allKnown
+        return saved + (allKnown - saved.toSet())
     }
 
     fun saveOrder(order: List<String>) = setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
+
+    // Key for a stremio addon: "stremio_<name normalised>"
+    fun stremioAddonKey(name: String): String =
+        "stremio_${name.trim().lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')}"
+
+    fun providerDisplayName(key: String): String {
+        PROVIDER_NAMES[key]?.let { return it }
+        if (key.startsWith("stremio_")) {
+            val addon = getStremioAddons().firstOrNull { stremioAddonKey(it.name) == key }
+            if (addon != null) {
+                val icon = when (addon.type) {
+                    AddonType.TORRENT  -> "🧲"
+                    AddonType.DEBRID   -> "☁️"
+                    AddonType.SUBTITLE -> "📝"
+                    AddonType.HTTPS    -> "🔌"
+                }
+                return "$icon ${addon.name}"
+            }
+            return "🔌 " + key.removePrefix("stremio_").replace("_", " ")
+                .replaceFirstChar { it.uppercaseChar() }
+        }
+        return key
+    }
+
+    // True when the key belongs to a stremio addon of TORRENT type
+    fun isStremioTorrent(key: String): Boolean {
+        if (!key.startsWith("stremio_")) return false
+        return getStremioAddons().firstOrNull { stremioAddonKey(it.name) == key }
+            ?.type == AddonType.TORRENT
+    }
 
     // =========================================================
     // NETMIRROR COOKIE HELPERS
@@ -215,15 +248,51 @@ object Settings {
     fun clearShowboxToken()              = setKey(SHOWBOX_TOKEN_KEY, null)
 
     // =========================================================
+    //  STREMIO ADDON HELPERS
+    // =========================================================
+
+    enum class AddonType { HTTPS, TORRENT, DEBRID, SUBTITLE }
+
+    data class StremioAddon(
+        val name: String,
+        val url: String,
+        val type: AddonType
+    )
+
+    fun getStremioAddons(): MutableList<StremioAddon> {
+        val raw = getKey<String>(STREMIO_ADDONS_KEY) ?: return mutableListOf()
+        return raw.lines()
+            .filter { it.isNotBlank() }
+            .mapNotNull { line ->
+                val parts = line.split("|")
+                if (parts.size < 3) return@mapNotNull null
+                val type = runCatching { AddonType.valueOf(parts[2]) }.getOrDefault(AddonType.HTTPS)
+                StremioAddon(name = parts[0], url = parts[1], type = type)
+            }.toMutableList()
+    }
+
+    fun saveStremioAddons(addons: List<StremioAddon>) {
+        if (addons.isEmpty()) { setKey(STREMIO_ADDONS_KEY, null as String?) }
+        else setKey(STREMIO_ADDONS_KEY, addons.joinToString("\n") { "${it.name}|${it.url}|${it.type}" })
+        val validKeys = addons.map { stremioAddonKey(it.name) }.toSet()
+        val currentOrder = getKey<String>(PROVIDER_ORDER_KEY)
+            ?.split(",")?.filter { it.isNotBlank() } ?: return
+        val pruned = currentOrder.filter { key ->
+            !key.startsWith("stremio_") || key in validKeys
+        }
+        if (pruned.size != currentOrder.size) saveOrder(pruned)
+    }
+
+
+    // =========================================================
     //  SETTINGS DIALOG
     // =========================================================
 
     fun showSettingsDialog(context: Context, onSave: () -> Unit) {
         var requiresRestart = false
-
         val pendingChanges = mutableMapOf<String, Any?>()
-
         var commitOrder: () -> Unit = {}
+        var commitAddons: () -> Unit = {}
 
         val scroll = ScrollView(context).apply {
             isScrollbarFadingEnabled = true
@@ -245,7 +314,8 @@ object Settings {
         })
 
         // ── Scraping Settings ──
-        layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings") {
+        layout.addView(createCollapsibleCard(context, "⚙️  Scraping Settings",
+            accentA = Color.parseColor("#06B6D4"), accentB = Color.parseColor("#0891B2")) {
             addView(createToggleRow(context, "Download Only Links",
                 "Only great for downloading (Not for Streaming)",
                 DOWNLOAD_ENABLE, false, pendingChanges))
@@ -271,7 +341,8 @@ object Settings {
                     .setDuration(350).setInterpolator(DecelerateInterpolator()).start()
             }
         }
-        layout.addView(createCollapsibleCard(context, "📡  Active Catalogs") {
+        layout.addView(createCollapsibleCard(context, "📡  Active Catalogs",
+            accentA = Color.parseColor("#10B981"), accentB = Color.parseColor("#059669")) {
             addView(createToggleRow(context, "CineStream", "Cinemeta catalog",
                 PROVIDER_CINESTREAM, true, pendingChanges, onCatalogChanged))
             addView(createDivider(context))
@@ -289,6 +360,9 @@ object Settings {
             commitOrder = commit
         })
 
+        // ── Stremio Addons ──
+        layout.addView(createStremioAddonsCard(context) { commit -> commitAddons = commit })
+
         // ── Credits ──
         layout.addView(createCreditsCard(context))
 
@@ -305,6 +379,7 @@ object Settings {
                         value == null                               -> setKey(key, null as String?)
                     }
                 }
+                commitAddons()
                 commitOrder()
                 if (requiresRestart) showRestartWarning(context, onSave) else onSave()
             }
@@ -415,7 +490,6 @@ object Settings {
         }
         content.addView(input)
 
-        // TV-friendly clipboard row ─────────────────────────────
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val CLIP_TEXT   = Color.parseColor("#94A3B8")
         val CLIP_BG     = Color.parseColor("#0F1520")
@@ -428,7 +502,6 @@ object Settings {
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.bottomMargin = 10.dp(context) }
 
-            // 📋 Paste — reads system clipboard into the field
             addView(pillBtn(context, "📋 Paste", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
                 val clip = clipboard.primaryClip
                     ?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
@@ -442,7 +515,6 @@ object Settings {
             })
             addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
-            // 📄 Copy — copies field contents to system clipboard
             addView(pillBtn(context, "📄 Copy", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
                 val text = input.text?.toString()?.trim()
                 if (!text.isNullOrBlank()) {
@@ -453,7 +525,6 @@ object Settings {
                 }
             })
         })
-        // ─────────────────────────────────────────────────────────────────
 
         val savedBadge = TextView(context).apply {
             text = when {
@@ -568,13 +639,15 @@ object Settings {
     }
 
     // =========================================================
-    //  COLLAPSIBLE CARD  (generic)
+    //  COLLAPSIBLE CARD
     // =========================================================
 
     private fun createCollapsibleCard(
         context: Context,
         title: String,
         startExpanded: Boolean = false,
+        accentA: Int = ACCENT_START,
+        accentB: Int = ACCENT_END,
         block: LinearLayout.() -> Unit
     ): View {
         val card = LinearLayout(context).apply {
@@ -603,13 +676,13 @@ object Settings {
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
             gravity = Gravity.CENTER_VERTICAL
             isClickable = true; isFocusable = true; isFocusableInTouchMode = false
-            background = stateDrawable(context) // shows focus highlight on TV
+            background = stateDrawable(context)
 
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
                     .also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
+                    intArrayOf(accentA, accentB)).apply { cornerRadius = 99f }
             })
             addView(TextView(context).apply {
                 text = title; textSize = 12f
@@ -666,10 +739,17 @@ object Settings {
         val rows  = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val order = getOrder().toMutableList()
 
-        onRegisterCommit { saveOrder(order) }
+        onRegisterCommit {
+            val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }.toSet()
+            val merged = order
+                .filter { key -> !key.startsWith("stremio_") || key in stremioKeys }
+                .let { filtered -> filtered + (stremioKeys - filtered.toSet()) }
+            saveOrder(merged)
+        }
 
         fun providerEnabled(key: String): Boolean =
-            pendingChanges[key] as? Boolean ?: (getKey<Boolean>(key) ?: (key !in TORRENT_KEYS))
+            pendingChanges[key] as? Boolean ?: (getKey<Boolean>(key)
+                ?: (key !in TORRENT_KEYS && !isStremioTorrent(key)))
 
         fun rebuild() {
             rows.removeAllViews()
@@ -677,11 +757,11 @@ object Settings {
                 if (i > 0) rows.addView(createDivider(context))
                 rows.addView(createProviderRow(
                     context        = context,
-                    label          = PROVIDER_NAMES[key] ?: key,
+                    label          = providerDisplayName(key),
                     key            = key,
                     index          = i + 1,
                     totalCount     = order.size,
-                    isTorrent      = key in TORRENT_KEYS,
+                    isTorrent      = key in TORRENT_KEYS || isStremioTorrent(key),
                     canMoveUp      = i > 0,
                     canMoveDown    = i < order.lastIndex,
                     pendingChanges = pendingChanges,
@@ -702,6 +782,7 @@ object Settings {
             ).also { it.bottomMargin = 6.dp(context) }
         }
 
+        // ✓ All — stage true, no saveOrder()
         pillRow.addView(pillBtn(context, "✓ All",
             Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"),
             Color.parseColor("#1A3A1F")) {
@@ -710,6 +791,7 @@ object Settings {
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
+        // ✕ None — stage false, no saveOrder()
         pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR,
             Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
             order.forEach { pendingChanges[it] = false }; rebuild()
@@ -717,9 +799,11 @@ object Settings {
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
 
+        // ↺ Reset Order — reset in-memory list only, no saveOrder()
         pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START,
             Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
-            order.clear(); order.addAll(DEFAULT_ORDER); rebuild()
+            val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
+            order.clear(); order.addAll(DEFAULT_ORDER + stremioKeys); rebuild()
             Toast.makeText(context, "Order reset — tap Save to apply", Toast.LENGTH_SHORT).show()
         })
 
@@ -728,7 +812,7 @@ object Settings {
             setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
             addView(pillRow)
             addView(TextView(context).apply {
-                text = "🧲 = off by default  ·  ↑↓ or tap # = scraping order"
+                text = "🧲 = off by default  ·  🔌 = Stremio addon  ·  ↑↓ or # = order"
                 textSize = 10f; setTextColor(Color.parseColor("#44475A"))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -949,7 +1033,6 @@ object Settings {
         val effectiveChecked = pendingChanges[databaseKey] as? Boolean
             ?: getKey<Boolean>(databaseKey) ?: defaultState
 
-
         val sw = Switch(context).apply {
             isChecked = effectiveChecked
             isClickable = false
@@ -969,7 +1052,6 @@ object Settings {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
             gravity = Gravity.CENTER_VERTICAL
-
             isClickable = true
             isFocusable = true
             isFocusableInTouchMode = false
@@ -1002,7 +1084,375 @@ object Settings {
     }
 
     // =========================================================
-    //  CREDITS CARD  (collapsible)
+    //  STREMIO ADDONS CARD
+    // =========================================================
+
+    private fun createStremioAddonsCard(context: Context, onRegisterCommit: (() -> Unit) -> Unit): View {
+        val ADDON_ACCENT  = Color.parseColor("#22D3EE")
+        val ADDON_BG      = Color.parseColor("#0A1820")
+        val ADDON_BORDER  = Color.parseColor("#1A3040")
+        val TYPE_HTTPS    = Color.parseColor("#4ADE80")
+        val TYPE_TORRENT  = Color.parseColor("#FACC15")
+        val TYPE_DEBRID   = Color.parseColor("#F472B6")
+
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val m = 16.dp(context)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(m, 0, m, m) }
+            background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
+        }
+
+        var expanded = false
+
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 0, 0, 8.dp(context))
+            visibility = android.view.View.GONE
+        }
+
+        val addons = getStremioAddons()
+
+        val addonRows = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+
+        val TYPE_SUBTITLE = Color.parseColor("#C084FC")
+
+        fun typeColor(t: AddonType) = when (t) {
+            AddonType.HTTPS     -> TYPE_HTTPS
+            AddonType.TORRENT   -> TYPE_TORRENT
+            AddonType.DEBRID    -> TYPE_DEBRID
+            AddonType.SUBTITLE  -> TYPE_SUBTITLE
+        }
+
+        fun AddonType.next() = when (this) {
+            AddonType.HTTPS     -> AddonType.TORRENT
+            AddonType.TORRENT   -> AddonType.DEBRID
+            AddonType.DEBRID    -> AddonType.SUBTITLE
+            AddonType.SUBTITLE  -> AddonType.HTTPS
+        }
+
+        fun rebuildRows() {
+            addonRows.removeAllViews()
+            addons.forEachIndexed { i, addon ->
+                if (i > 0) addonRows.addView(createDivider(context))
+
+                val row = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(16.dp(context), 12.dp(context), 16.dp(context), 12.dp(context))
+                }
+
+                val header = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.bottomMargin = 8.dp(context) }
+                }
+
+                val typePill = TextView(context).apply {
+                    text = addon.type.name
+                    textSize = 10f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(typeColor(addon.type))
+                    setPadding(10.dp(context), 4.dp(context), 10.dp(context), 4.dp(context))
+                    background = GradientDrawable().apply {
+                        cornerRadius = 99f
+                        setColor(Color.parseColor("#0D1117"))
+                        setStroke(1, typeColor(addon.type))
+                    }
+                    isClickable = true; isFocusable = true; isFocusableInTouchMode = false
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.marginEnd = 10.dp(context) }
+                    setOnClickListener {
+                        val next = addons[i].type.next()
+                        addons[i] = addons[i].copy(type = next)
+                        text = next.name
+                        setTextColor(typeColor(next))
+                        (background as? GradientDrawable)?.setStroke(1, typeColor(next))
+                        (background as? GradientDrawable)?.setColor(Color.parseColor("#0D1117"))
+                    }
+                }
+                header.addView(typePill)
+
+                // Name label
+                header.addView(TextView(context).apply {
+                    text = addon.name.ifBlank { "Unnamed" }
+                    textSize = 13f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(if (addon.name.isBlank()) TEXT_SECONDARY else TEXT_PRIMARY)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                })
+
+                // Delete button
+                header.addView(pillBtn(context, "✕", DANGER_COLOR,
+                    Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+                    addons.removeAt(i); rebuildRows()
+                })
+
+                row.addView(header)
+
+                // ── Name field ──
+                row.addView(TextView(context).apply {
+                    text = "Name"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+                    setPadding(0, 0, 0, 4.dp(context))
+                })
+                val nameField = EditText(context).apply {
+                    setText(addon.name)
+                    hint = "e.g. Torrentio"; textSize = 13f
+                    setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY)
+                    setSingleLine(true)
+                    isFocusable = true; isFocusableInTouchMode = true
+                    setOnFocusChangeListener { v, hasFocus ->
+                        if (hasFocus) (v.parent?.parent?.parent?.parent as? ScrollView)
+                            ?.requestChildFocus(v, v)
+                    }
+                    addTextChangedListener(object : android.text.TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                        override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {
+                            addons[i] = addons[i].copy(name = s?.toString() ?: "")
+                        }
+                        override fun afterTextChanged(s: android.text.Editable?) {}
+                    })
+                    setPadding(12.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
+                    background = GradientDrawable().apply {
+                        cornerRadius = 8f.dp(context)
+                        setColor(Color.parseColor("#0D1117"))
+                        setStroke(1, Color.parseColor("#2E2850"))
+                    }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.bottomMargin = 8.dp(context) }
+                }
+                row.addView(nameField)
+
+                row.addView(TextView(context).apply {
+                    text = "URL"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+                    setPadding(0, 0, 0, 4.dp(context))
+                })
+                // Strip trailing /manifest.json before storing — user pastes the full
+                fun String.stripManifest() = trimEnd('/')
+                    .removeSuffix("/manifest.json").trimEnd('/')
+
+                val urlField = EditText(context).apply {
+                    // Display stored base URL; user may paste full manifest URL
+                    setText(addon.url)
+                    hint = "https://xyz.com/manifest.json"; textSize = 12f
+                    setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY)
+                    setSingleLine(true)
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                            android.text.InputType.TYPE_TEXT_VARIATION_URI
+                    isFocusable = true; isFocusableInTouchMode = true
+                    setOnFocusChangeListener { v, hasFocus ->
+                        if (hasFocus) (v.parent?.parent?.parent?.parent as? ScrollView)
+                            ?.requestChildFocus(v, v)
+                    }
+                    addTextChangedListener(object : android.text.TextWatcher {
+                        override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                        override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {
+                            // Store base URL — /manifest.json
+                            addons[i] = addons[i].copy(url = (s?.toString() ?: "").stripManifest())
+                        }
+                        override fun afterTextChanged(s: android.text.Editable?) {}
+                    })
+                    setPadding(12.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
+                    background = GradientDrawable().apply {
+                        cornerRadius = 8f.dp(context)
+                        setColor(Color.parseColor("#0D1117"))
+                        setStroke(1, Color.parseColor("#2E2850"))
+                    }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.bottomMargin = 6.dp(context) }
+                }
+                row.addView(urlField)
+
+                // TV clipboard row for URL
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                row.addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.bottomMargin = 4.dp(context) }
+
+                    addView(pillBtn(context, "📋 Paste URL",
+                        Color.parseColor("#94A3B8"), Color.parseColor("#0F1520"),
+                        Color.parseColor("#1E2A3A")) {
+                        val clip = clipboard.primaryClip
+                            ?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
+                        if (!clip.isNullOrBlank()) {
+                            val stripped = clip.stripManifest()
+                            urlField.setText(stripped)
+                            urlField.setSelection(urlField.text?.length ?: 0)
+                            addons[i] = addons[i].copy(url = stripped)
+                            Toast.makeText(context, "URL pasted", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Clipboard empty", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                    addView(android.view.View(context).apply {
+                        layoutParams = LinearLayout.LayoutParams(8.dp(context), 1)
+                    })
+                    addView(pillBtn(context, "📄 Copy URL",
+                        Color.parseColor("#94A3B8"), Color.parseColor("#0F1520"),
+                        Color.parseColor("#1E2A3A")) {
+                        val text = urlField.text?.toString()?.trim()
+                        if (!text.isNullOrBlank()) {
+                            clipboard.setPrimaryClip(ClipData.newPlainText("Addon URL", text))
+                            Toast.makeText(context, "URL copied", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Nothing to copy", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                })
+
+                addonRows.addView(row)
+            }
+
+            // Empty state hint
+            if (addons.isEmpty()) {
+                addonRows.addView(TextView(context).apply {
+                    text = "No addons yet — tap Add Addon to add one"
+                    textSize = 12f; setTextColor(TEXT_SECONDARY)
+                    gravity = Gravity.CENTER
+                    setPadding(0, 16.dp(context), 0, 16.dp(context))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                })
+            }
+        }
+
+        // ── Toolbar: Add + Save All ──
+        val toolbar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(16.dp(context), 10.dp(context), 16.dp(context), 6.dp(context))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+        toolbar.addView(pillBtn(context, "+ Add Addon", ADDON_ACCENT, ADDON_BG, ADDON_BORDER) {
+            addons.add(StremioAddon(name = "", url = "", type = AddonType.HTTPS))
+            rebuildRows()
+        })
+
+        val sep = android.view.View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
+                .also { it.setMargins(16.dp(context), 4.dp(context), 16.dp(context), 0) }
+            setBackgroundColor(DIVIDER_COLOR)
+        }
+
+        onRegisterCommit {
+            val invalid = addons.indexOfFirst { it.url.isBlank() }
+            if (invalid != -1) {
+                Toast.makeText(context, "Addon ${invalid + 1} has empty URL — not saved",
+                    Toast.LENGTH_SHORT).show()
+            } else {
+                saveStremioAddons(addons)
+            }
+        }
+
+        rebuildRows()
+
+        // ── IMDB note banner ──
+        val noteBanner = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(16.dp(context), 6.dp(context), 16.dp(context), 8.dp(context)) }
+            background = GradientDrawable().apply {
+                cornerRadius = 10f.dp(context)
+                setColor(Color.parseColor("#0C1A2E"))
+                setStroke(2, Color.parseColor("#1D4ED8"))
+            }
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(8.dp(context), 8.dp(context)).also {
+                    it.marginEnd = 10.dp(context); it.topMargin = 2.dp(context)
+                }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.parseColor("#3B82F6"))
+                }
+            })
+            val noteCol = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            noteCol.addView(TextView(context).apply {
+                text = "IMDB IDs Required"
+                textSize = 12f; setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#60A5FA"))
+            })
+            noteCol.addView(TextView(context).apply {
+                text = "Only addons that support IMDB IDs are compatible & no catalog addons are supported"
+                textSize = 11f; setTextColor(Color.parseColor("#93C5FD"))
+                setPadding(0, 3.dp(context), 0, 0)
+            })
+            addView(noteCol)
+        }
+
+        content.addView(toolbar); content.addView(sep); content.addView(noteBanner); content.addView(addonRows)
+
+        val chevron = TextView(context).apply {
+            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+        }
+        val summary = TextView(context).apply {
+            textSize = 11f; setTextColor(Color.parseColor("#5A5E7A"))
+            setPadding(0, 0, 8.dp(context), 0)
+            text = if (addons.isEmpty()) "" else "${addons.size} addon${if (addons.size == 1) "" else "s"}"
+        }
+
+        card.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true; isFocusable = true; isFocusableInTouchMode = false
+            background = stateDrawable(context)
+
+            addView(android.view.View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
+                    .also { it.marginEnd = 12.dp(context) }
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(ADDON_ACCENT, Color.parseColor("#0891B2")))
+                    .apply { cornerRadius = 99f }
+            })
+            addView(TextView(context).apply {
+                text = "🔌  Stremio Addons"; textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(summary); addView(chevron)
+
+            setOnClickListener {
+                expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
+                summary.text = if (addons.isEmpty()) "" else "${addons.size} addon${if (addons.size == 1) "" else "s"}"
+                if (expanded) {
+                    content.visibility = android.view.View.VISIBLE; content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(220).start()
+                } else {
+                    content.animate().alpha(0f).setDuration(160).withEndAction {
+                        content.visibility = android.view.View.GONE; content.alpha = 1f
+                        summary.text = if (addons.isEmpty()) "" else "${addons.size} addon${if (addons.size == 1) "" else "s"}"
+                    }.start()
+                }
+            }
+        })
+
+        card.addView(content)
+        card.alpha = 0f; card.translationY = 20f
+        card.animate().alpha(1f).translationY(0f)
+            .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        return card
+    }
+
+    // =========================================================
+    //  CREDITS CARD
     // =========================================================
 
     private fun createCreditsCard(context: Context): View {
@@ -1263,8 +1713,6 @@ object Settings {
         cornerRadius = radius; setColor(color)
     }
 
-    // FIX 3 (TV toggle): added state_focused with a purple outline so TV users
-    // can clearly see which row / button the D-pad cursor is sitting on.
     private fun stateDrawable(context: Context) = StateListDrawable().apply {
         addState(
             intArrayOf(android.R.attr.state_pressed),

@@ -45,6 +45,9 @@ open class CineStreamProvider : MainAPI() {
         val showboxToken: String?
             get() = Settings.getShowboxToken()
 
+        val stremioAddons: List<Settings.StremioAddon>
+            get() = Settings.getStremioAddons()
+
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
