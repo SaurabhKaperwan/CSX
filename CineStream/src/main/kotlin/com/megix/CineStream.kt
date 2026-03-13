@@ -10,6 +10,10 @@ import com.lagradost.cloudstream3.plugins.Plugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
 
+        // Seed seen-providers on every load so reinstalls/updates
+        // don't treat existing providers as new
+        Settings.initSeenProviders()
+
         if (getKey<Boolean>(Settings.PROVIDER_CINESTREAM) ?: true) {
             registerMainAPI(CineStreamProvider())
         }
