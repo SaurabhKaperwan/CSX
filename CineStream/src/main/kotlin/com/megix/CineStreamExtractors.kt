@@ -37,6 +37,8 @@ import kotlin.toString
 import java.security.SecureRandom
 import java.io.IOException
 
+import okhttp3.HttpUrl.Companion.toHttpUrl
+
 object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeAllSources(
@@ -105,6 +107,8 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_HDMOVIE2      to { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             Settings.P_MOSTRAGUARDA  to { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            Settings.P_VIDSRCCC      to { invokeVidsrcCC(res.imdbId, res.season, res.episode, callback) },
+
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -186,6 +190,7 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_PRIMESRC      to { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             Settings.P_UHDMOVIES     to { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            Settings.P_VIDSRCCC      to { invokeVidsrcCC(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
         )
 
         val stremioMap: Map<String, suspend () -> Unit> = Settings.getStremioAddons()
@@ -1350,7 +1355,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Accept" to "plain/text",
-            "X-Api-Key" to key
+            "X-Api-Key" to key,
+            "X-Fingerprint-Lite" to "e9136c4150464644",
+            "Referer" to "https://hexa.su/",
         )
 
         val enc_data = app.get(url, headers = headers).text
@@ -3466,12 +3473,12 @@ object CineStreamExtractors : CineStreamProvider() {
             "$PrimeSrcApi/api/v1/s?imdb=$imdbId&season=$season&episode=$episode&type=tv"
         }
 
-        val serverJson = app.get(url, timeout = 30, headers = headers).text
+        val serverJson = app.get(url, timeout = 300, headers = headers).text
 
         val serverList = tryParseJson<PrimeSrcServerList>(serverJson) ?: return
 
         serverList.servers?.safeAmap {
-            val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
+            val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 300, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
@@ -4466,5 +4473,126 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             )
         }
+    }
+
+    suspend fun invokeVidsrcCC(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer"    to "$vidsrcCCAPI/"
+        )
+
+        suspend fun fromIframe(iframeUrl: String): JSONObject? {
+            val html = app.get(iframeUrl, headers = headers).text
+
+            val sourceEncoded = Regex("""var\s+source\s*=\s*"([^"]+)\"""")
+                .find(html)?.groupValues?.get(1) ?: return null
+
+            val sourceUrl = JSONObject("""{"v":"$sourceEncoded"}""").optString("v")
+
+            val domain    = sourceUrl.toHttpUrl().host
+            val embedType = sourceUrl.toHttpUrl().pathSegments.getOrNull(0) ?: return null
+
+            val iframeHeaders = mapOf(
+                "User-Agent"       to headers["User-Agent"]!!,
+                "Referer"          to "https://$domain/",
+                "X-Requested-With" to "XMLHttpRequest"
+            )
+
+            val htmlSource = app.get(sourceUrl, headers = iframeHeaders).text
+
+            val videoId = Regex("""<title>File\s+#([A-Za-z0-9]+)\s*-""")
+                .find(htmlSource)?.groupValues?.get(1) ?: return null
+
+            val nonce = Regex("""\b[a-zA-Z0-9]{48}\b""").find(htmlSource)?.value
+                ?: run {
+                    val m = Regex("""\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b""")
+                        .find(htmlSource) ?: return null
+                    m.groupValues.drop(1).joinToString("")
+                }
+
+            val api = "https://$domain/$embedType/v3/e-1/getSources?id=$videoId&_k=$nonce"
+            return runCatching { JSONObject(app.get(api, headers = iframeHeaders).text) }.getOrNull()
+        }
+
+        val type = if(season == null) "movie" else "tv"
+
+        val embedUrl = if (season != null && episode != null)
+            "$vidsrcCCAPI/v2/embed/$type/$imdbId/$season/$episode"
+        else
+            "$vidsrcCCAPI/v2/embed/$type/$imdbId"
+
+        val html = app.get(embedUrl, headers = headers).text
+
+        val v       = Regex("""var v = "(.*?)\";""").find(html)?.groupValues?.get(1) ?: return emptyList()
+        val userId  = Regex("""var userId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return emptyList()
+        val movieId = Regex("""var movieId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return emptyList()
+
+        val encrypted = JSONObject(
+            app.get("$multiDecryptAPI/enc-vidsrc?user_id=$userId&movie_id=$movieId").text
+        ).optString("result").ifEmpty { return emptyList() }
+
+        val serversUrl = buildString {
+            append("$vidsrcCCAPI/api/$movieId/servers")
+            append("?id=$movieId&type=$type&v=$v&vrf=$encrypted&imdbId=$imdbId")
+            if (season  != null) append("&season=$season")
+            if (episode != null) append("&episode=$episode")
+        }
+
+        val serversData = JSONObject(app.get(serversUrl, headers = headers).text)
+        val serversArray = serversData.optJSONArray("data") ?: return emptyList()
+
+        val servers = (0 until serversArray.length()).associate {
+            val obj = serversArray.getJSONObject(it)
+            obj.optString("name") to obj.optString("hash")
+        }
+
+        // ── VidPlay ──────────────────────────────────────────────────────────────
+        runCatching {
+            servers["VidPlay"]?.let { hash ->
+                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+                val streams = data.optJSONArray("data") ?: return@let
+                for (i in 0 until streams.length()) {
+                    val streamUrl = streams.getJSONObject(i).optString("file") ?: continue
+                    callback.invoke(
+                        newExtractorLink(
+                            "VidsrcCC[VidPlay]",
+                            "VidsrcCC[VidPlay]",
+                            streamUrl,
+                        ) {
+                            this.headers = headers
+                        }
+                    )
+                }
+            }
+        }.onFailure { Log.e("VidPlay", it.message ?: "Unknown error") }
+
+        // ── UpCloud ──────────────────────────────────────────────────────────────
+        runCatching {
+            servers["UpCloud"]?.let { hash ->
+                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+                val iframeSource = data.optJSONObject("data")?.optString("source") ?: return@let
+                val streamsData = fromIframe(iframeSource) ?: return@let
+                val sources = streamsData.optJSONArray("sources") ?: return@let
+                for (i in 0 until sources.length()) {
+                    val streamUrl = streams.getJSONObject(i).optString("file") ?: continue
+                    callback.invoke(
+                        newExtractorLink(
+                            "VidsrcCC[UpCloud]",
+                            "VidsrcCC[UpCloud]",
+                            streamUrl,
+                        ) {
+                            this.headers = headers
+                        }
+                    )
+                }
+            }
+        }.onFailure { Log.e("UpCloud", it.message ?: "Unknown error") }
+
+        return results
     }
 }
