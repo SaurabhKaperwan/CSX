@@ -1348,9 +1348,11 @@ object CineStreamExtractors : CineStreamProvider() {
         val key = keyBytes.joinToString("") { "%02x".format(it) }
 
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "User-Agent" to USER_AGENT,
             "Accept" to "plain/text",
-            "X-Api-Key" to key
+            "X-Api-Key" to key,
+            "X-Fingerprint-Lite" to "e9136c4150464644",
+            "Referer" to "https://hexa.su/",
         )
 
         val enc_data = app.get(url, headers = headers).text
