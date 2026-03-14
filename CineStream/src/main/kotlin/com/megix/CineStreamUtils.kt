@@ -993,14 +993,13 @@ suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val media = response?.data?.media ?: return null
 
     val finalBanner = media.bannerImage?.takeUnless { it.isBlank() || it == "null" }
-
     val finalTitle = media.title?.english?.takeUnless { it.isBlank() || it == "null" }
-        ?: media.title?.romaji
-
+    val finaromajiTitle = media.title?.romaji?.takeUnless { it.isBlank() || it == "null" }
     val finalDescription = media.description?.takeUnless { it.isBlank() || it == "null" }
 
     return AnimeInfo(
         title = finalTitle,
+        romajiTitle = finaromajiTitle,
         banner = finalBanner,
         description = finalDescription
     )

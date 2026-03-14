@@ -114,6 +114,7 @@ data class KisskhSubtitle(
 //Anilist
 data class AnimeInfo(
     val title: String?,
+    val romajiTitle: String?,
     val banner: String?,
     val description: String?
 )

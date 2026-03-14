@@ -90,11 +90,11 @@ object Settings {
     const val P_GOJO          = "p_gojo"
     const val P_ANIMEWORLD    = "p_animeworld"
     const val P_SHOWBOX       = "p_showbox"
-
     const val P_HIANIME       = "p_hianime"
     const val P_ANIMEPAHE     = "p_animepahe"
     const val P_ANIMEZ        = "p_animez"
     const val P_ANIMEKAI      = "p_animekai"
+
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
 

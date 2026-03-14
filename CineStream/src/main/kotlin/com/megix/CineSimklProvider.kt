@@ -264,6 +264,7 @@ class CineSimklProvider: MainAPI() {
         val imdbId = ids?.imdb
         val anilist_meta = anilistId?.let { getAniListInfo(it) }
         val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
+        val originalTitle = anilist_meta?.romajiTitle ?: json.title
 
         val plot = if (tvType == "anime") {
             val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
@@ -319,8 +320,8 @@ class CineSimklProvider: MainAPI() {
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
-                json.title,
                 enTitle,
+                originalTitle,
                 tvType,
                 simklId.toIntOrNull(),
                 imdbId,
@@ -361,8 +362,8 @@ class CineSimklProvider: MainAPI() {
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
                     LoadLinksData(
-                        json.title,
                         enTitle,
+                        originalTitle,
                         tvType,
                         simklId.toIntOrNull(),
                         imdbId,
@@ -422,14 +423,14 @@ class CineSimklProvider: MainAPI() {
         val res = parseJson<LoadLinksData>(data)
         if(res.isAnime) {
             val (imdbTitle, imdbYear) = try {
-                extractNameAndYear(res.imdbId) ?: Pair(res.en_title, res.year)
+                extractNameAndYear(res.imdbId) ?: Pair(res.title, res.year)
             } catch (e: Exception) {
-                Pair(res.en_title, res.year)
+                Pair(res.title, res.year)
             }
 
             invokeAllAnimeSources(
                 AllLoadLinksData(
-                    res.en_title,
+                    res.title,
                     res.imdbId,
                     res.tmdbId,
                     res.anilistId,
@@ -443,7 +444,7 @@ class CineSimklProvider: MainAPI() {
                     res.isBollywood,
                     res.isAsian,
                     res.isCartoon,
-                    res.title,
+                    res.original_title,
                     imdbTitle,
                     res.imdbSeason,
                     res.imdbEpisode,
@@ -469,7 +470,7 @@ class CineSimklProvider: MainAPI() {
                     res.isBollywood,
                     res.isAsian,
                     res.isCartoon,
-                    null,
+                    res.original_title,
                     null,
                     null,
                     null,
@@ -590,7 +591,7 @@ class CineSimklProvider: MainAPI() {
 
     data class LoadLinksData(
         val title       : String? = null,
-        val en_title    : String? = null,
+        val original_title    : String? = null,
         val tvtype      : String? = null,
         val simklId     : Int?    = null,
         val imdbId      : String? = null,

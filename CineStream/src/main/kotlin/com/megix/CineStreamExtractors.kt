@@ -143,19 +143,21 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
         val providerMap: Map<String, suspend () -> Unit> = mapOf(
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_ANIMETOSHO    to { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            Settings.P_ALLANIME      to { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
+            Settings.P_ALLANIME      to { invokeAllanime(res.originalTitle ?: res.title, res.year, res.episode, subtitleCallback, callback) },
             Settings.P_SUDATCHI      to { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             Settings.P_WYZIESUBS     to { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             Settings.P_STREMIOSUBS   to { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
-            Settings.P_ANIZONE       to { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
+            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.originalTitle ?: res.title, res.episode, subtitleCallback, callback) },
+            Settings.P_ANIZONE       to { invokeAnizone(res.originalTitle ?: res.title, res.episode, subtitleCallback, callback) },
+            Settings.P_ANIMEZ        to { invokeAnimez(res.title, res.episode, callback) },
             Settings.P_ANIMES        to { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             Settings.P_CINEMACITY    to { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_GOJO          to { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback, callback) },
+            Settings.P_GOJO          to { invokeGojo(res.title, res.anilistId, res.episode, subtitleCallback, callback) },
             Settings.P_TOONSTREAM    to { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             Settings.P_BOLLYWOOD     to { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             Settings.P_NETFLIX       to { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -1632,7 +1634,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if (aniId == null) return
 
         val episodeNumber = episode ?: 1
-        val gojoAPI = gojoBaseAPI.replace("https://", "https://b.")
+        val gojoAPI = "$gojoBaseAPI/v2"
         val headers = mapOf(
             "Referer" to "$gojoBaseAPI/",
             "Origin" to gojoBaseAPI
@@ -3226,6 +3228,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val url = "$anizoneAPI/anime?search=$title"
+
         val link = app.get(url).document.select("div.truncate > a").firstOrNull {
             it.text().contains(title.toString(), ignoreCase = true)
         }?.attr("href") ?: return
@@ -3323,8 +3326,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val privatereferer = "https://allmanga.to"
-        val ephash = "5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0"
-        val queryhash = "06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a"
+        val ephash = "d405d0edd690624b66baba3068e0edc3ac90f1597d898a1ec8db4e5c43c00fec"
+        val queryhash = "a24c500a1b765c68ae1d8dd85174931f661c71369c89b92b88b75a725afc471c"
+
         var type = ""
         if (episode == null) {
             type = "Movie"
@@ -3332,8 +3336,8 @@ object CineStreamExtractors : CineStreamProvider() {
             type = "TV"
         }
 
-        val query =
-            """$AllanimeAPI?variables={"search":{"types":["$type"],"year":$year,"query":"$name"},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
+        val query = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$name"},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
+
         val response =
             app.get(query, referer = privatereferer).parsedSafe<Anichi>()?.data?.shows?.edges
         if (response != null) {
@@ -3342,6 +3346,7 @@ object CineStreamExtractors : CineStreamProvider() {
             for (i in langType) {
                 val epData =
                     """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
+
                 val eplinks = app.get(epData, referer = privatereferer)
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
                 eplinks?.safeAmap { source ->
@@ -3352,7 +3357,9 @@ object CineStreamExtractors : CineStreamProvider() {
                                 "platformstr" to "android_c",
                                 "Referer" to "https://allmanga.to"
                             )
+
                         val sourceUrl = source.sourceUrl
+
                         if (sourceUrl.startsWith("http")) {
                             val sourcename = sourceUrl.getHost()
                             loadCustomExtractor(
@@ -3363,6 +3370,21 @@ object CineStreamExtractors : CineStreamProvider() {
                                 callback,
                             )
                         }
+                        else if (URI(sourceUrl).isAbsolute || sourceUrl.startsWith("//")) {
+                            val fixedLink = if (sourceUrl.startsWith("//")) "https:$sourceUrl" else sourceUrl
+                            val host = fixedLink.getHost()
+
+                            loadCustomExtractor(
+                                "Allanime [$host]  [${lang.uppercase()}]",
+                                fixedLink,
+                                "",
+                                subtitleCallback,
+                                callback
+                            )
+
+                            return@safeApiCall
+                        }
+
                         else {
                             val decodedlink = if (sourceUrl.startsWith("--"))
                             {
