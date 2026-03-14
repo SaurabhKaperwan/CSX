@@ -105,7 +105,6 @@ open class CineStreamProvider : MainAPI() {
         const val femBoxAPI = "https://fembox.aether.mom"
         const val streamvixAPI = "https://streamvix.hayd.uk"
         const val projectfreetvAPI = "https://projectfreetv.sx"
-        const val vidsrcCCAPI = "https://vidsrc.cc"
         const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
         private val apiConfig by lazy {
