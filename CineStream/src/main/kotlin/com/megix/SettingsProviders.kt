@@ -22,15 +22,7 @@ internal object SettingsProviders {
         onRegisterCommit: (() -> Unit) -> Unit
     ): View {
         val theme = SettingsTheme
-        val card  = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = theme.roundRect(theme.BG_CARD, 16f.dp(context))
-            elevation  = 4f
-        }
+        val card  = SettingsWidgets.cardContainer(context)
 
         var expanded = false
         val content  = LinearLayout(context).apply {
@@ -105,13 +97,13 @@ internal object SettingsProviders {
             order.forEach { pendingChanges[it] = true }; rebuild()
             Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
         })
-        pillRow.addView(spacer(context, 8))
+        pillRow.addView(SettingsWidgets.hSpacer(context, 8))
         pillRow.addView(SettingsWidgets.pillBtn(context, "✕ None", theme.DANGER_COLOR,
             Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
             order.forEach { pendingChanges[it] = false }; rebuild()
             Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
         })
-        pillRow.addView(spacer(context, 8))
+        pillRow.addView(SettingsWidgets.hSpacer(context, 8))
         pillRow.addView(SettingsWidgets.pillBtn(context, "↺ Reset Order", theme.ACCENT_START,
             Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
             val stremioKeys = Settings.getStremioAddons().map { Settings.stremioAddonKey(it.name) }
@@ -150,18 +142,8 @@ internal object SettingsProviders {
             })
             addView(col)
 
-            val sw = Switch(context).apply {
-                isChecked = newProviderDefaultOnNow()
-                isClickable = false; isFocusable = false; isFocusableInTouchMode = false
-                thumbTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(android.graphics.Color.WHITE, Color.parseColor("#9099B8"))
-                )
-                trackTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(Color.parseColor("#4ADE80"), theme.SWITCH_OFF)
-                )
-            }
+            val sw = SettingsWidgets.styledSwitch(context, newProviderDefaultOnNow(),
+                trackOnColor = Color.parseColor("#4ADE80"))
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 isClickable = true; isFocusable = true; isFocusableInTouchMode = false
@@ -215,7 +197,7 @@ internal object SettingsProviders {
             isClickable = true; isFocusable = true; isFocusableInTouchMode = false
             background  = theme.stateDrawable(context)
 
-            addView(accentBar(context, theme.ACCENT_START, theme.ACCENT_END))
+            addView(SettingsWidgets.accentBar(context, theme.ACCENT_START, theme.ACCENT_END))
             addView(TextView(context).apply {
                 text = "🎬  Providers"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -269,7 +251,7 @@ internal object SettingsProviders {
                 setOnClickListener { showMoveToDialog(context, label, index, totalCount, onMoveTo) }
             })
 
-            addView(spacer(context, 10))
+            addView(SettingsWidgets.hSpacer(context, 10))
 
             addView(TextView(context).apply {
                 text = label; textSize = 14f
@@ -296,24 +278,9 @@ internal object SettingsProviders {
             addView(arrowBtn("↑", canMoveUp,   onMoveUp))
             addView(arrowBtn("↓", canMoveDown, onMoveDown))
 
-            val effectiveChecked = pendingChanges[key] as? Boolean
-                ?: getKey<Boolean>(key) ?: (key !in Settings.TORRENT_KEYS)
-
-            val sw = Switch(context).apply {
-                isChecked = effectiveChecked
-                isClickable = false; isFocusable = false; isFocusableInTouchMode = false
-                thumbTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(android.graphics.Color.WHITE, Color.parseColor("#9099B8"))
-                )
-                trackTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(
-                        if (isTorrent) Color.parseColor("#8B5E3C") else theme.SWITCH_ON,
-                        theme.SWITCH_OFF
-                    )
-                )
-            }
+            val effectiveChecked = pendingChanges[key] as? Boolean ?: Settings.enabled(key)
+            val sw = SettingsWidgets.styledSwitch(context, effectiveChecked,
+                trackOnColor = if (isTorrent) Color.parseColor("#8B5E3C") else theme.SWITCH_ON)
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 isClickable = true; isFocusable = true; isFocusableInTouchMode = false
@@ -368,13 +335,5 @@ internal object SettingsProviders {
             .showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
     }
 
-    private fun accentBar(context: Context, top: Int, bottom: Int) = View(context).apply {
-        layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
-            .also { it.marginEnd = 12.dp(context) }
-        background = SettingsTheme.verticalGradient(top, bottom)
-    }
-
-    private fun spacer(context: Context, widthDp: Int) = View(context).apply {
-        layoutParams = LinearLayout.LayoutParams(widthDp.dp(context), 1)
-    }
 }
+

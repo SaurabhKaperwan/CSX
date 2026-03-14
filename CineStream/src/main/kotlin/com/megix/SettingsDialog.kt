@@ -1,6 +1,5 @@
 package com.megix
 
-import android.animation.ObjectAnimator
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -9,7 +8,6 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import android.widget.*
 import com.megix.SettingsTheme.dp
 
@@ -127,15 +125,7 @@ internal object SettingsDialog {
         block: LinearLayout.() -> Unit
     ): View {
         val theme = SettingsTheme
-        val card  = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = theme.roundRect(theme.BG_CARD, 16f.dp(context))
-            elevation  = 4f
-        }
+        val card  = SettingsWidgets.cardContainer(context)
 
         var expanded = startExpanded
         val content  = LinearLayout(context).apply {
@@ -190,18 +180,7 @@ internal object SettingsDialog {
         val checked = pending[databaseKey] as? Boolean
             ?: com.lagradost.cloudstream3.AcraApplication.getKey<Boolean>(databaseKey) ?: defaultState
 
-        val sw = Switch(context).apply {
-            isChecked = checked
-            isClickable = false; isFocusable = false; isFocusableInTouchMode = false
-            thumbTintList = android.content.res.ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(android.graphics.Color.WHITE, Color.parseColor("#9099B8"))
-            )
-            trackTintList = android.content.res.ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(theme.SWITCH_ON, theme.SWITCH_OFF)
-            )
-        }
+        val sw = SettingsWidgets.styledSwitch(context, checked)
 
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -282,20 +261,21 @@ internal object SettingsDialog {
         val CLIP_BG       = Color.parseColor("#0F1520")
         val CLIP_BORDER   = Color.parseColor("#1E2A3A")
 
-        val card = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = theme.roundRect(theme.BG_CARD, 16f.dp(context)); elevation = 4f
-        }
+        val card = SettingsWidgets.cardContainer(context)
 
         var expanded = false
         val content  = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(context), 4.dp(context), 16.dp(context), 16.dp(context))
             visibility  = View.GONE
+        }
+
+        // Computed in two places (badge init + collapse); extract to avoid duplication
+        fun savedBadgeText() = when {
+            pending.containsKey(Settings.SHOWBOX_TOKEN_KEY) ->
+                if ((pending[Settings.SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Staged" else ""
+            Settings.getShowboxToken() != null -> "✓ Saved"
+            else -> ""
         }
 
         content.addView(TextView(context).apply {
@@ -348,12 +328,7 @@ internal object SettingsDialog {
         })
 
         val savedBadge = TextView(context).apply {
-            text = when {
-                pending.containsKey(Settings.SHOWBOX_TOKEN_KEY) ->
-                    if ((pending[Settings.SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Staged" else ""
-                Settings.getShowboxToken() != null -> "✓ Saved"
-                else -> ""
-            }
+            text = savedBadgeText()
             textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
             setTextColor(Color.parseColor("#4ADE80"))
             setPadding(0, 0, 8.dp(context), 0)
@@ -403,12 +378,7 @@ internal object SettingsDialog {
             isClickable = true; isFocusable = true; isFocusableInTouchMode = false
             background  = theme.stateDrawable(context)
 
-            addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context))
-                    .also { it.marginEnd = 12.dp(context) }
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                    intArrayOf(SHOWBOX_ACCENT, Color.parseColor("#D97706"))).apply { cornerRadius = 99f }
-            })
+            addView(SettingsWidgets.accentBar(context, SHOWBOX_ACCENT, Color.parseColor("#D97706")))
             addView(TextView(context).apply {
                 text = "📦  Febbox Token"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
@@ -419,14 +389,7 @@ internal object SettingsDialog {
 
             setOnClickListener {
                 expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
-                if (!expanded) {
-                    savedBadge.text = when {
-                        pending.containsKey(Settings.SHOWBOX_TOKEN_KEY) ->
-                            if ((pending[Settings.SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Staged" else ""
-                        Settings.getShowboxToken() != null -> "✓ Saved"
-                        else -> ""
-                    }
-                }
+                if (!expanded) savedBadge.text = savedBadgeText()
                 SettingsWidgets.animateExpand(content, expanded)
             }
         })
@@ -466,14 +429,7 @@ internal object SettingsDialog {
 
         fun String.stripManifest() = trimEnd('/').removeSuffix("/manifest.json").trimEnd('/')
 
-        val card = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = theme.roundRect(theme.BG_CARD, 16f.dp(context)); elevation = 4f
-        }
+        val card = SettingsWidgets.cardContainer(context)
 
         var expanded = false
         val content  = LinearLayout(context).apply {
@@ -734,14 +690,7 @@ internal object SettingsDialog {
             Triple("yogesh-hacker", "For providing reference",             "github.com/yogesh-hacker"),
         )
 
-        val card = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = theme.roundRect(theme.BG_CARD, 16f.dp(context)); elevation = 4f
-        }
+        val card = SettingsWidgets.cardContainer(context)
 
         var expanded = false
         val content  = LinearLayout(context).apply {
@@ -853,59 +802,6 @@ internal object SettingsDialog {
             addView(TextView(context).apply {
                 text = "Configure sources, catalogs & cookies"
                 textSize = 13f; setTextColor(theme.TEXT_SECONDARY); setPadding(0, 6.dp(context), 0, 0)
-            })
-        }
-    }
-
-    // =========================================================
-    //  RESTART BANNER
-    // =========================================================
-
-    private fun buildRestartBanner(context: Context): LinearLayout {
-        val theme       = SettingsTheme
-        val WARN_BG     = Color.parseColor("#13100A")
-        val WARN_BORDER = Color.parseColor("#4A3200")
-        val WARN_ACCENT = Color.parseColor("#F5A623")
-        val WARN_DIM    = Color.parseColor("#9E7A30")
-
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            val m = 16.dp(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(m, 0, m, m) }
-            background = GradientDrawable().apply {
-                cornerRadius = 14f.dp(context); setColor(WARN_BG); setStroke(1, WARN_BORDER)
-            }
-            setPadding(16.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
-
-            val dot = View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(8.dp(context), 8.dp(context))
-                    .also { it.marginEnd = 12.dp(context); it.topMargin = 2.dp(context) }
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(WARN_ACCENT) }
-            }
-            addView(dot)
-            ObjectAnimator.ofFloat(dot, "alpha", 1f, 0.25f, 1f).apply {
-                duration = 1200; repeatCount = ObjectAnimator.INFINITE
-                interpolator = DecelerateInterpolator()
-            }.start()
-
-            val textCol = LinearLayout(context).apply {
-                orientation  = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            textCol.addView(TextView(context).apply {
-                text = "Restart Required"; textSize = 14f
-                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(WARN_ACCENT)
-            })
-            textCol.addView(TextView(context).apply {
-                text = "Fully close & reopen Cloudstream to apply catalog changes"
-                textSize = 11f; setTextColor(WARN_DIM); setPadding(0, 3.dp(context), 0, 0)
-            })
-            addView(textCol)
-            addView(TextView(context).apply {
-                text = "↺"; textSize = 22f; setTextColor(WARN_ACCENT)
-                setPadding(12.dp(context), 0, 0, 0); alpha = 0.85f
             })
         }
     }

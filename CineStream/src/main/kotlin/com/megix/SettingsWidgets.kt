@@ -6,6 +6,7 @@ import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.LinearLayout
+import android.widget.Switch
 import android.widget.TextView
 import com.megix.SettingsTheme.dp
 
@@ -95,4 +96,38 @@ internal object SettingsWidgets {
         Color.parseColor("#3A1520"),
         onClick
     )
+
+    // ── Styled switch ────────────────────────────────────────
+    // Single place for all switch tint boilerplate.
+    // trackOnColor defaults to SWITCH_ON; pass a different color for custom tints.
+
+    fun styledSwitch(
+        context: Context,
+        checked: Boolean,
+        trackOnColor: Int = SettingsTheme.SWITCH_ON
+    ) = Switch(context).apply {
+        isChecked = checked
+        isClickable = false; isFocusable = false; isFocusableInTouchMode = false
+        thumbTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(android.graphics.Color.WHITE, Color.parseColor("#9099B8"))
+        )
+        trackTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(trackOnColor, SettingsTheme.SWITCH_OFF)
+        )
+    }
+
+    // ── Card container ───────────────────────────────────────
+    // Standard card: vertical LinearLayout with side margins, rounded bg, elevation.
+
+    fun cardContainer(context: Context) = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        val m = 16.dp(context)
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).also { it.setMargins(m, 0, m, m) }
+        background = SettingsTheme.roundRect(SettingsTheme.BG_CARD, 16f.dp(context))
+        elevation = 4f
+    }
 }
