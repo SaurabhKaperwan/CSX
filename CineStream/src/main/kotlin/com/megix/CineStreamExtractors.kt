@@ -4421,4 +4421,70 @@ object CineStreamExtractors : CineStreamProvider() {
 
     }
 
+    suspend fun invokeAutoembed(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$autoembedAPI/embed/movie/$imdbId"
+        } else {
+            "$autoembedAPI/embed/tv/$imdbId/$season/$episode"
+        }
+
+        val text = app.get(url).text
+        val regex = Regex("""var\s+embedUrlValue\s*=\s*"([^"]+)";""")
+        val embedUrl = regex.find(text)?.groupValues?.get(1) ?: return
+        loadCustomExtractor("Autoembed", embedUrl, "", subtitleCallback, callback)
+    }
+
+    suspend fun invokeWatch32(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if (title.isNullOrBlank()) return
+
+        val type = if (season == null) "Movie" else "TV"
+        val searchUrl = "$watch32API/search/${title.trim().replace(" ", "-")}"
+
+        val matchedElement = app.get(searchUrl).document
+            .select("div.flw-item").firstOrNull { item ->
+                val name = item.selectFirst("h2.film-name a")?.text()?.trim() ?: ""
+                val mediaType = item.selectFirst("span.fdi-type")?.text()?.trim() ?: ""
+                name.contains(title, ignoreCase = true) && mediaType.equals(type, ignoreCase = true)
+            }?.selectFirst("h2.film-name a") ?: return
+
+        val infoId = matchedElement.attr("href").substringAfterLast("-")
+
+        if (season != null && episode != null) {
+            val seasonId = app.get("$watch32API/ajax/season/list/$infoId").document
+                .select("div.dropdown-menu a").firstOrNull { it.text().contains("Season $season", true) }
+                ?.attr("data-id") ?: return
+
+            val dataId = app.get("$watch32API/ajax/season/episodes/$seasonId").document
+                .select("li.nav-item a").firstOrNull { it.text().contains("Eps $episode:", true) }
+                ?.attr("data-id") ?: return
+
+            val servers = app.get("$watch32API/ajax/episode/servers/$dataId").document.select("li.nav-item a")
+
+            servers.toList().safeAmap { source ->
+                val iframeUrl = app.get("$watch32API/ajax/episode/sources/${source.attr("data-id")}")
+                    .parsedSafe<Watch32>()?.link ?: return@safeAmap
+                loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
+            }
+        } else {
+            val servers = app.get("$watch32API/ajax/episode/list/$infoId").document.select("li.nav-item a")
+
+            servers.safeAmap { ep ->
+                val iframeUrl = app.get("$watch32API/ajax/episode/sources/${ep.attr("data-id")}")
+                    .parsedSafe<Watch32>()?.link ?: return@safeAmap
+                loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
+            }
+        }
+    }
 }

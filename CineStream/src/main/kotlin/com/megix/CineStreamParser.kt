@@ -58,6 +58,12 @@ data class ExtractedMediaData(
     val logo: String?
 )
 
+//Watch32
+data class Watch32(
+    val type: String,
+    val link: String,
+)
+
 //Enc-dec
 data class EncDecResponse(
     @param:JsonProperty("result") val result: EncDecResult?

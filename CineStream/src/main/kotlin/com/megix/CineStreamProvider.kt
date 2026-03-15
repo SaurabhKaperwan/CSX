@@ -106,6 +106,8 @@ open class CineStreamProvider : MainAPI() {
         const val streamvixAPI = "https://streamvix.hayd.uk"
         const val projectfreetvAPI = "https://projectfreetv.sx"
         const val vidsrcCCAPI = "https://vidsrc.cc"
+        const val autoembedAPI = "https://player2.autoembed.cc"
+        const val watch32API = "https://watch32.sx"
         const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
         private val apiConfig by lazy {

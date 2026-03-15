@@ -312,6 +312,15 @@ object ProviderRegistry {
             key = "p_vidsrccc", displayName = "VidsrcCC",
             executeStandard = { res, _, cb -> invokeVidsrcCC(res.imdbId, res.season, res.episode, cb) }
         ),
+        ProviderDef(
+            key = "p_autoembed", displayName = "AutoEmbed",
+            executeStandard = { res, subCb, cb -> invokeAutoembed(res.imdbId, res.season, res.episode, subCb, cb) },
+        ),
+        ProviderDef(
+            key = "p_watch32", displayName = "Watch32",
+            executeStandard = { res, subCb, cb -> invokeWatch32(res.title, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeWatch32(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
 
         // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
         // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
