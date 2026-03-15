@@ -45,6 +45,8 @@ import java.util.regex.Pattern
 
 import android.util.Base64
 
+import okhttp3.HttpUrl.Companion.toHttpUrl
+
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
 
@@ -1655,6 +1657,51 @@ fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String? {
         String(decryptedData, Charsets.UTF_8)
     } catch (e: Exception) {
         null
+    }
+}
+
+suspend fun getUpcloud(
+    iframeUrl: String,
+    referer: String,
+    callback: (ExtractorLink) -> Unit
+) {
+    val html = app.get(iframeUrl, referer = referer).text
+    val sourceEncoded = Regex("""var\s+source\s*=\s*"([^"]+)\"""")
+        .find(html)?.groupValues?.get(1) ?: return
+    val sourceUrl = JSONObject("""{"v":"$sourceEncoded"}""").optString("v")
+    val domain    = sourceUrl.toHttpUrl().host
+    val embedType = sourceUrl.toHttpUrl().pathSegments.getOrNull(0) ?: return
+    val iframeHeaders = mapOf(
+        "User-Agent"       to USER_AGENT,
+        "Referer"          to "https://$domain/",
+        "X-Requested-With" to "XMLHttpRequest"
+    )
+    val htmlSource = app.get(sourceUrl, headers = iframeHeaders).text
+    val videoId = Regex("""<title>File\s+#([A-Za-z0-9]+)\s*-""")
+        .find(htmlSource)?.groupValues?.get(1) ?: return
+    val nonce = Regex("""\b[a-zA-Z0-9]{48}\b""").find(htmlSource)?.value
+        ?: run {
+            val m = Regex("""\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b""")
+                .find(htmlSource) ?: return
+            m.groupValues.drop(1).joinToString("")
+        }
+    val api = "https://$domain/$embedType/v3/e-1/getSources?id=$videoId&_k=$nonce"
+    val streamsData = runCatching { JSONObject(app.get(api, headers = iframeHeaders).text) }.getOrNull() ?: return
+    val sources  = streamsData.optJSONArray("sources") ?: return
+
+    for (i in 0 until sources.length()) {
+        val streamUrl = sources.getJSONObject(i).optString("file").ifEmpty { return }
+        callback.invoke(
+            newExtractorLink(
+                "VidsrcCC[UpCloud]",
+                "VidsrcCC[UpCloud]",
+                streamUrl,
+                ExtractorLinkType.M3U8
+            ) {
+                this.headers = iframeHeaders
+                this.quality = 1080
+            }
+        )
     }
 }
 
