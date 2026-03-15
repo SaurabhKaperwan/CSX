@@ -20,7 +20,7 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
-import com.megix.CineStreamProvider.allowDownloadLinks
+import com.megix.CineStreamProvider.Companion.allowDownloadLinks
 
 import java.security.MessageDigest
 

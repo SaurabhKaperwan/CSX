@@ -313,6 +313,14 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeVidsrcCC(res.imdbId, res.season, res.episode, cb) }
         ),
 
+        // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+        // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
+        // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
+        // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+        // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
+        // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+        // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─
         ProviderDef(
             key = "p_kisskh", displayName = "KissKH",
