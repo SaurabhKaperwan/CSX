@@ -44,99 +44,15 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
 
-        val providerMap: Map<String, suspend () -> Unit> = mapOf(
-            Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  res.imdbId, res.season, res.episode, callback) },
-            Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
-            Settings.P_VIDFLIX       to { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
-            Settings.P_MOVIEBOX      to { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_WYZIESUBS     to { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
-            Settings.P_STREMIOSUBS   to { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
-            Settings.P_CINEMACITY    to { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_WEBSTREAMR    to { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_STREAMVIX     to { invokeStremioStreams("Streamvix",  streamvixAPI,  res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_NOTORRENT     to { invokeStremioStreams("NoTorrent",  notorrentAPI,  res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_CASTLE        to { invokeStremioStreams("Castle",     CASTLE_API,    res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_CINE          to { invokeStremioStreams("Cine",       CINE_API,      res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_ALLMOVIELAND  to { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
-            Settings.P_MADPLAYCDN    to { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
-            Settings.P_VIDFASTPRO    to { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_HEXA          to { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
-            Settings.P_YFLIX         to { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_XPASS         to { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
-            Settings.P_PLAYSRC       to { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
-            Settings.P_2EMBED        to { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
-            Settings.P_DRAMAFULL     to { if (res.isAsian) invokeDramafull(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_VIDEASY       to { invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_CINEMAOS      to { invokeCinemaOS(res.imdbId, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_VICSRCWTF     to { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            Settings.P_VIDLINK       to { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_MAPPLE        to { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
-            Settings.P_VIDSTACK      to { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_KISSKH        to { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_NETFLIX       to { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_PRIMEVIDEO    to { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_DISNEY        to { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_BOLLYWOOD     to { invokeBollywood(res.title, res.year, res.season, res.episode, callback) },
-            Settings.P_VIDZEE        to { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_XDMOVIES      to { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_4KHDHUB       to { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_FLIXINDIA     to { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_MOVIESDRIVE   to { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_VEGAMOVIES    to { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_ROGMOVIES     to { if (res.isBollywood)  invokeVegamovies("RogMovies",  res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_BOLLYFLIX     to { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_TOPMOVIES     to { if (res.isBollywood)  invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_MOVIESMOD     to { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_MOVIES4U      to { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_UHDMOVIES     to { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
-            Settings.P_PRIMESRC      to { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_PROJECTFREETV to { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_HINDMOVIEZ    to { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
-            Settings.P_LEVIDIA       to { invokeLevidia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_DAHMERMOVIES  to { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
-            Settings.P_MULTIMOVIES   to { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_PROTONMOVIES  to { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_AKWAM         to { invokeAkwam(res.imdbId, res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_RTALLY        to { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_TOONSTREAM    to { if (res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_ASIAFLIX      to { if (!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
-            Settings.P_SKYMOVIES     to { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            Settings.P_HDMOVIE2      to { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            Settings.P_MOSTRAGUARDA  to { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-            Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            Settings.P_VIDSRCCC      to { invokeVidsrcCC(res.imdbId, res.season, res.episode, callback) },
-            // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
-            // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
-            // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-            // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-            // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-        )
-
-        val stremioMap: Map<String, suspend () -> Unit> = Settings.getStremioAddons()
-        .associate { addon ->
-            val key = Settings.stremioAddonKey(addon.name)
-            key to suspend {
-                when (addon.type) {
-                    Settings.AddonType.SUBTITLE ->
-                        invokeStremioSubtitlesGlobal(addon.name, addon.url, res.imdbId, res.season, res.episode, subtitleCallback)
-                    Settings.AddonType.TORRENT ->
-                        invokeStremioTorrentsGlobal(addon.name, addon.url, res.imdbId, res.season, res.episode, callback)
-                    Settings.AddonType.HTTPS, Settings.AddonType.DEBRID ->
-                        invokeStreamioStreamsGlobal(addon.name, addon.url, res.imdbId, res.season, res.episode, subtitleCallback, callback)
-                }
-            }
+        val executionList = activeProviderOrder.mapNotNull { key ->
+            ProviderRegistry.builtInProviders.find { it.key == key }?.executeStandard?.let { action ->
+                suspend { this.action(res, subtitleCallback, callback) }
+            } ?: stremioMap[key]
         }
 
-        val combined = providerMap + stremioMap
-
-        runLimitedAsync(
-            concurrency = 7,
-            *activeProviderOrder.mapNotNull { combined[it] }.toTypedArray()
-        )
-
+        runLimitedAsync(concurrency = 7, *executionList.toTypedArray())
     }
 
     suspend fun invokeAllAnimeSources(
@@ -144,73 +60,63 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
 
-        val providerMap: Map<String, suspend () -> Unit> = mapOf(
-            Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            Settings.P_ANIMETOSHO    to { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            Settings.P_ALLANIME      to { invokeAllanime(res.originalTitle ?: res.title, res.year, res.episode, subtitleCallback, callback) },
-            Settings.P_SUDATCHI      to { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
-            Settings.P_WYZIESUBS     to { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            Settings.P_STREMIOSUBS   to { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.originalTitle ?: res.title, res.episode, subtitleCallback, callback) },
-            Settings.P_ANIZONE       to { invokeAnizone(res.originalTitle ?: res.title, res.episode, subtitleCallback, callback) },
-            Settings.P_ANIMEZ        to { invokeAnimez(res.title, res.episode, callback) },
-            Settings.P_ANIMES        to { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
-            Settings.P_CINEMACITY    to { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_GOJO          to { invokeGojo(res.title, res.anilistId, res.episode, subtitleCallback, callback) },
-            Settings.P_TOONSTREAM    to { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_BOLLYWOOD     to { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
-            Settings.P_NETFLIX       to { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_PRIMEVIDEO    to { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_MOVIEBOX      to { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_ANIMEWORLD    to { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_XDMOVIES      to { invokeXDmovies(res.imdbTitle, res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_FLIXINDIA     to { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_DAHMERMOVIES  to { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
-            Settings.P_VEGAMOVIES    to { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_4KHDHUB       to { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_MOVIESDRIVE   to { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_MULTIMOVIES   to { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_MOVIESMOD     to { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_MOVIES4U      to { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_BOLLYFLIX     to { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_HINDMOVIEZ    to { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            Settings.P_VIDFASTPRO    to { invokeVidFastPro(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_PROTONMOVIES  to { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_CASTLE        to { if (res.imdbSeason == null || res.imdbSeason == 1) invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_ALLMOVIELAND  to { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            Settings.P_LEVIDIA       to { invokeLevidia(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_HEXA          to { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            Settings.P_MAPPLE        to { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
-            Settings.P_VIDLINK       to { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_PRIMESRC      to { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_UHDMOVIES     to { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
-            Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-        )
+        val executionList = activeProviderOrder.mapNotNull { key ->
+            ProviderRegistry.builtInProviders.find { it.key == key }?.executeAnime?.let { action ->
+                suspend { this.action(res, subtitleCallback, callback) }
+            } ?: stremioMap[key]
+        }
 
-        val stremioMap: Map<String, suspend () -> Unit> = Settings.getStremioAddons()
-        .associate { addon ->
-            val key = Settings.stremioAddonKey(addon.name)
-            key to suspend {
-                when (addon.type) {
-                    Settings.AddonType.SUBTITLE ->
-                        invokeStremioSubtitlesGlobal(addon.name, addon.url, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback)
-                    Settings.AddonType.TORRENT ->
-                        invokeStremioTorrentsGlobal(addon.name, addon.url, res.imdbId, res.imdbSeason, res.imdbEpisode, callback)
-                    Settings.AddonType.HTTPS, Settings.AddonType.DEBRID ->
-                        invokeStreamioStreamsGlobal(addon.name, addon.url, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
-                }
+        runLimitedAsync(concurrency = 7, *executionList.toTypedArray())
+    }
+
+    suspend fun invokeAnimes(
+        malId: Int? = null,
+        aniId: Int? = null,
+        episode: Int? = null,
+        year: Int? = null,
+        origin: String,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}").parsedSafe<MALSyncResponses>()
+
+        val title = mal_response?.title
+        val malsync = mal_response?.sites
+        val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":", " ")
+        val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
+        val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
+
+        // Package the API results for the registry
+        val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
+
+        val executionList = activeProviderOrder.mapNotNull { key ->
+            ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
+                suspend { this.action(malData, subtitleCallback, callback) }
             }
         }
 
-        val combined = providerMap + stremioMap
+        runLimitedAsync(concurrency = 7, *executionList.toTypedArray())
+    }
 
-        runLimitedAsync(
-            concurrency = 7,
-            *activeProviderOrder.mapNotNull { combined[it] }.toTypedArray()
-        )
-
+    private fun getDynamicStremioMap(
+        imdbId: String?,
+        season: Int?,
+        episode: Int?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Map<String, suspend () -> Unit> {
+        return Settings.getStremioAddons().associate { addon ->
+            val key = Settings.stremioAddonKey(addon.name)
+            key to suspend {
+                when (addon.type) {
+                    Settings.AddonType.SUBTITLE -> invokeStremioSubtitlesGlobal(addon.name, addon.url, imdbId, season, episode, subtitleCallback)
+                    Settings.AddonType.TORRENT -> invokeStremioTorrentsGlobal(addon.name, addon.url, imdbId, season, episode, callback)
+                    Settings.AddonType.HTTPS, Settings.AddonType.DEBRID -> invokeStreamioStreamsGlobal(addon.name, addon.url, imdbId, season, episode, subtitleCallback, callback)
+                }
+            }
+        }
     }
 
     suspend fun invokeShowbox(
@@ -2774,47 +2680,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeAnimes(
-        malId: Int? = null,
-        aniId: Int? = null,
-        episode: Int? = null,
-        year: Int? = null,
-        origin: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
-            .parsedSafe<MALSyncResponses>()
-
-        // val zoroIds = malsync?.zoro?.keys?.map { it }
-        val title = mal_response?.title
-        val malsync = mal_response?.sites
-        val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":"," ")
-        val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
-        val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
-        val aniXL = malsync?.AniXL?.values?.firstNotNullOfOrNull { it["url"] }
-
-        val providerMap: Map<String, suspend () -> Unit> = mapOf(
-            Settings.P_HIANIME    to { invokeHianime(hianimeurl, episode, subtitleCallback, callback) },
-            Settings.P_ANIMEPAHE  to { invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback) },
-            Settings.P_ANIMEZ     to { invokeAnimez(title ?: zorotitle, episode, callback) },
-            Settings.P_ANIMEKAI   to { invokeAnimekai(zorotitle ?: title, episode, subtitleCallback, callback) },
-            Settings.P_TOKYOINSIDER to { if(origin == "imdb") invokeTokyoInsider(title, episode, subtitleCallback, callback) },
-            Settings.P_ALLANIME to { if(origin == "imdb") invokeAllanime(title, year, episode, subtitleCallback, callback) },
-            Settings.P_ANIZONE to { if(origin == "imdb") invokeAnizone(title, episode, subtitleCallback, callback) },
-            Settings.P_GOJO to { if(origin == "imdb") invokeGojo(title, aniId, episode, subtitleCallback, callback) },
-            Settings.P_SUDATCHI to { if(origin == "imdb") invokeSudatchi(aniId, episode, subtitleCallback, callback) },
-
-        )
-
-        runLimitedAsync(
-            concurrency = 7,
-            *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray()
-        )
-
-    }
-
-    private suspend fun invokeAnimepahe(
+    suspend fun invokeAnimepahe(
         url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -3263,7 +3129,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    private suspend fun invokeHianime(
+    suspend fun invokeHianime(
         url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -4381,6 +4247,8 @@ object CineStreamExtractors : CineStreamProvider() {
             } else {
                 INFER_TYPE
             }
+
+            if(s.url.contains("video-downloads.googleusercontent") && allowDownloadLinks == false) return@forEach
 
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers
