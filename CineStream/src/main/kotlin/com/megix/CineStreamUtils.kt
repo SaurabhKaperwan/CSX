@@ -1086,45 +1086,6 @@ suspend fun bypassXDM(url: String): String? {
     }
 }
 
-// suspend fun bypassXDM(url: String): String? {
-
-//     val link = app.get(
-//         url,
-//         allowRedirects = false,
-//         timeout = 600L
-//     ).headers["location"] ?: return null
-
-//     if(link.contains("hubcloud")) return link
-
-//     val baseUrl = getBaseUrl(link)
-//     val id = link.substringAfterLast("/")
-
-//     if (id.isEmpty()) return null
-
-//     val responseText = app.post(
-//         "$baseUrl/api/session",
-//         json = mapOf("code" to id)
-//     ).text
-
-//     val json = try {
-//         JSONObject(responseText)
-//     } catch (e: Exception) {
-//         return null
-//     }
-//     val sessionId = json.optString("sessionId")
-//     val token = json.optString("token")
-
-//     if (sessionId.isEmpty() || token.isEmpty()) return null
-
-//     val source = app.get(
-//         "$baseUrl/go/$sessionId?t=$token",
-//         timeout = 600L,
-//         allowRedirects = false
-//     ).headers["location"] ?: return null
-
-//     return source
-// }
-
 suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val query = """
         query (${'$'}id: Int) {

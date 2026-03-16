@@ -41,7 +41,78 @@ import java.net.URLEncoder
 // import javax.crypto.spec.IvParameterSpec
 // import javax.crypto.spec.SecretKeySpec
 
-object CineStreamExtractors : CineStreamProvider() {
+import com.megix.ApiConstants.AllanimeAPI
+import com.megix.ApiConstants.CC_COOKIE
+import com.megix.ApiConstants.MostraguardaAPI
+import com.megix.ApiConstants.PrimeSrcApi
+import com.megix.ApiConstants.WYZIESubsAPI
+import com.megix.ApiConstants.XDmoviesAPI
+import com.megix.ApiConstants.YflixAPI
+import com.megix.ApiConstants.akwamAPI
+import com.megix.ApiConstants.allmovielandAPI
+import com.megix.ApiConstants.animekaiAPI
+import com.megix.ApiConstants.animepaheAPI
+import com.megix.ApiConstants.animetoshoAPI
+import com.megix.ApiConstants.animezAPI
+import com.megix.ApiConstants.aniversehdAPI
+import com.megix.ApiConstants.anizipAPI
+import com.megix.ApiConstants.anizoneAPI
+import com.megix.ApiConstants.asiaflixAPI
+import com.megix.ApiConstants.autoembedAPI
+import com.megix.ApiConstants.bollyflixAPI
+import com.megix.ApiConstants.bollywoodAPI
+import com.megix.ApiConstants.bollywoodBaseAPI
+import com.megix.ApiConstants.cinemaOSApi
+import com.megix.ApiConstants.cinemacityAPI
+import com.megix.ApiConstants.dahmerMoviesAPI
+import com.megix.ApiConstants.dramafullAPI
+import com.megix.ApiConstants.femBoxAPI
+import com.megix.ApiConstants.flixIndiaAPI
+import com.megix.ApiConstants.fourkhdhubAPI
+import com.megix.ApiConstants.gojoBaseAPI
+import com.megix.ApiConstants.hdmovie2API
+import com.megix.ApiConstants.hexaAPI
+import com.megix.ApiConstants.hianimeAPI
+import com.megix.ApiConstants.hindMoviezAPI
+import com.megix.ApiConstants.kissKhAPI
+import com.megix.ApiConstants.levidiaAPI
+import com.megix.ApiConstants.malsyncAPI
+import com.megix.ApiConstants.mappleAPI
+import com.megix.ApiConstants.movies4uAPI
+import com.megix.ApiConstants.moviesdriveAPI
+import com.megix.ApiConstants.moviesmodAPI
+import com.megix.ApiConstants.multiDecryptAPI
+import com.megix.ApiConstants.multiEmbededApi
+import com.megix.ApiConstants.multimoviesAPI
+import com.megix.ApiConstants.netflix2API
+import com.megix.ApiConstants.netflixAPI
+import com.megix.ApiConstants.projectfreetvAPI
+import com.megix.ApiConstants.protonmoviesAPI
+import com.megix.ApiConstants.rogmoviesAPI
+import com.megix.ApiConstants.rtallyAPI
+import com.megix.ApiConstants.skymoviesAPI
+import com.megix.ApiConstants.sudatchiAPI
+import com.megix.ApiConstants.tokyoInsiderAPI
+import com.megix.ApiConstants.toonStreamAPI
+import com.megix.ApiConstants.topmoviesAPI
+import com.megix.ApiConstants.twoembedAPI
+import com.megix.ApiConstants.uhdmoviesAPI
+import com.megix.ApiConstants.vegamoviesAPI
+import com.megix.ApiConstants.vidSrcApi
+import com.megix.ApiConstants.vidSrcHindiApi
+import com.megix.ApiConstants.videasyAPI
+import com.megix.ApiConstants.vidfastProApi
+import com.megix.ApiConstants.vidlinkAPI
+import com.megix.ApiConstants.vidsrcCCAPI
+import com.megix.ApiConstants.vidstackAPI
+import com.megix.ApiConstants.vidstackBaseAPI
+import com.megix.ApiConstants.vidzeeApi
+import com.megix.ApiConstants.watch32API
+import com.megix.ApiConstants.xpassAPI
+// import com.megix.ApiConstants.xprimeAPI
+// import com.megix.ApiConstants.xprimeBaseAPI
+
+object CineStreamExtractors {
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
@@ -50,7 +121,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
 
-        val executionList = activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeStandard?.let { action ->
                 suspend { this.action(res, subtitleCallback, callback) }
             } ?: stremioMap[key]
@@ -66,7 +137,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
 
-        val executionList = activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeAnime?.let { action ->
                 suspend { this.action(res, subtitleCallback, callback) }
             } ?: stremioMap[key]
@@ -95,7 +166,7 @@ object CineStreamExtractors : CineStreamProvider() {
         // Package the API results for the registry
         val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
 
-        val executionList = activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
                 suspend { this.action(malData, subtitleCallback, callback) }
             }
@@ -131,9 +202,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
-            "$femBoxAPI/movie/$tmdbId?ui=$showboxToken"
+            "$femBoxAPI/movie/$tmdbId?ui=${Settings.getShowboxToken() ?: return}"
         } else {
-            "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=$showboxToken"
+            "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=${Settings.getShowboxToken() ?: return}"
         }
 
         val response = app.get(url).parsedSafe<ShowboxResponse>() ?: return
@@ -2733,7 +2804,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         loadCustomExtractor(
                             "Animepahe(VLC) [$type]",
                             href,
-                            mainUrl,
+                            "",
                             subtitleCallback,
                             callback,
                             getQualityFromName(quality)
@@ -3048,7 +3119,7 @@ object CineStreamExtractors : CineStreamProvider() {
             episode,
             subtitleCallback,
             callback,
-            MoviesmodAPI
+            moviesmodAPI
         )
     }
 
@@ -3251,7 +3322,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             val host = fixedLink.getHost()
 
                             loadCustomExtractor(
-                                "Allanime [$host]  [${lang.uppercase()}]",
+                                "Allanime [$host]  [${i.uppercase()}]",
                                 fixedLink,
                                 "",
                                 subtitleCallback,
@@ -4252,7 +4323,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 INFER_TYPE
             }
 
-            if(s.url.contains("video-downloads.googleusercontent") && allowDownloadLinks == false) return@forEach
+            if(s.url.contains("video-downloads.googleusercontent") && Settings.allowDownloadLinks == false) return@forEach
 
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers

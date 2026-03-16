@@ -26,8 +26,6 @@ import org.json.JSONObject
 // Java IO
 import java.io.IOException
 
-import com.megix.CineStreamProvider.Companion.allowDownloadLinks
-
 import java.security.MessageDigest
 
 class Streameeeeee : Videostr() {
@@ -360,7 +358,7 @@ open class GDFlix : ExtractorApi() {
                     myCallback(finalURL, "[Pixeldrain]")
                 }
 
-                CineStreamProvider.allowDownloadLinks && text.contains("Instant DL") -> {
+                Settings.allowDownloadLinks && text.contains("Instant DL") -> {
                     try {
                         val instantLink = app.get(link, allowRedirects = false)
                             .headers["location"]?.substringAfter("url=").orEmpty()
@@ -559,7 +557,7 @@ open class Driveleech : ExtractorApi() {
 
                 text.contains("Cloud Download") -> { myCallback(href, "[Cloud]") }
 
-                CineStreamProvider.allowDownloadLinks && text.contains("Instant Download") -> {
+                Settings.allowDownloadLinks && text.contains("Instant Download") -> {
                     try{
                         val instant = instantLink(href) ?: return@safeAmap
                         myCallback(instant, "[Instant(Download)]")
@@ -707,7 +705,7 @@ open class HubCloud : ExtractorApi() {
                 else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                 myCallback(finalURL, "[Pixeldrain]")
             }
-            else if (CineStreamProvider.allowDownloadLinks && text.contains("Server : 10Gbps")) {
+            else if (Settings.allowDownloadLinks && text.contains("Server : 10Gbps")) {
                 var redirectUrl = resolveFinalUrl(link) ?: return@safeAmap
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")

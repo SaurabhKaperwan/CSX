@@ -3,15 +3,14 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-import com.megix.CineStreamProvider.Companion.CASTLE_API
-import com.megix.CineStreamProvider.Companion.CINE_API
-import com.megix.CineStreamProvider.Companion.animeWorldAPI
-import com.megix.CineStreamProvider.Companion.notorrentAPI
-import com.megix.CineStreamProvider.Companion.showboxToken
-import com.megix.CineStreamProvider.Companion.streamvixAPI
-import com.megix.CineStreamProvider.Companion.torrentioAPI
-import com.megix.CineStreamProvider.Companion.torrentsdbAPI
-import com.megix.CineStreamProvider.Companion.webStreamrAPI
+import com.megix.ApiConstants.torrentioAPI
+import com.megix.ApiConstants.torrentsdbAPI
+import com.megix.ApiConstants.webStreamrAPI
+import com.megix.ApiConstants.streamvixAPI
+import com.megix.ApiConstants.notorrentAPI
+import com.megix.ApiConstants.CASTLE_API
+import com.megix.ApiConstants.CINE_API
+import com.megix.ApiConstants.animeWorldAPI
 
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
@@ -96,8 +95,12 @@ object ProviderRegistry {
         // ── Direct HTTP Providers ─────────────────────────────────
         ProviderDef(
             key = "p_showbox", displayName = "ShowBox",
-            executeStandard = { res, subCb, cb -> if (showboxToken != null) invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeStandard = { res, subCb, cb ->
+                invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb)
+            },
+            executeAnime = { res, subCb, cb ->
+                invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb)
+            }
         ),
         ProviderDef(
             key = "p_vidflix", displayName = "Vidflix",

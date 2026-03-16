@@ -24,6 +24,13 @@ object Settings {
     private const val SEEN_PROVIDERS_KEY = "seen_providers"
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
+    // ── Configuration Getters ────────────────────────────────
+    val allowDownloadLinks: Boolean
+        get() = getKey<Boolean>(DOWNLOAD_ENABLE) ?: false
+
+    val activeProviderOrder: List<String>
+        get() = getOrder().filter { enabled(it) }
+
     // ── Dynamic Provider Maps ────────────────────────────────
     // We dynamically pull these from our single source of truth (ProviderRegistry)!
     val TORRENT_KEYS: Set<String> get() = ProviderRegistry.torrentKeys
