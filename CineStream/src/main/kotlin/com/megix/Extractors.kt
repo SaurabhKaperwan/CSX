@@ -1,24 +1,30 @@
 package com.megix
 
+// Cloudstream Core, Network, Utils, & Logging
+import com.lagradost.api.Log
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.network.WebViewResolver
+import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.getAndUnpack
+
+// Network (OkHttp & Java Net)
+import java.net.URI
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
+
+// JSON Parsing (Gson, Jackson, Org)
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
-import com.fasterxml.jackson.annotation.JsonProperty
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import com.lagradost.cloudstream3.utils.M3u8Helper
-import com.lagradost.cloudstream3.utils.getAndUnpack
-import java.net.URI
-import com.lagradost.api.Log
+
+// Java IO
+import java.io.IOException
 
 import com.megix.CineStreamProvider.Companion.allowDownloadLinks
 
@@ -92,111 +98,6 @@ open class Videostr : ExtractorApi() {
         M3u8Helper.generateM3u8(name, m3u8, mainUrl, headers = mainHeaders)
             .forEach(callback)
     }
-}
-
-class Rapid : MegaPlay() {
-    override val name = "Rapid"
-    override val mainUrl = "https://rapid-cloud.co"
-    override val requiresReferer = true
-}
-
-open class MegaPlay : ExtractorApi() {
-    override val name = "MegaPlay"
-    override val mainUrl = "https://megaplay.buzz"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-
-        val mainHeaders = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Accept" to "*/*",
-            "Accept-Language" to "en-US,en;q=0.5",
-            "Accept-Encoding" to "gzip, deflate, br, zstd",
-            "Origin" to mainUrl,
-            "Referer" to "$mainUrl/",
-            "Connection" to "keep-alive",
-            "Pragma" to "no-cache",
-            "Cache-Control" to "no-cache"
-        )
-
-        try {
-            val headers = mapOf(
-                "Accept" to "*/*",
-                "X-Requested-With" to "XMLHttpRequest",
-                "Referer" to mainUrl
-            )
-
-            val id = url.substringAfterLast("/").substringBefore("?")
-                .takeIf { it.isNotBlank() }
-                ?: app.get(url, headers = headers)
-                    .document
-                    .selectFirst("#vidcloud-player")
-                    ?.attr("data-id")
-                ?: return
-
-
-            val apiUrl = "$mainUrl/embed-2/v2/e-1/getSources?id=$id"
-
-            val response = app.get(apiUrl, headers = headers)
-                .parsedSafe<MegaPlayResponse>()
-                ?: return
-
-            val m3u8 = response.sources?.firstOrNull()?.file ?: return
-
-            M3u8Helper.generateM3u8(name, m3u8, mainUrl, headers = mainHeaders)
-                .forEach(callback)
-
-            response.tracks?.forEach { track ->
-                if (track.kind == "captions" || track.kind == "subtitles") {
-                    val file = track.file ?: return@forEach
-                    val label = track.label ?: "Unknown"
-
-                    subtitleCallback(
-                        newSubtitleFile(label, file)
-                    )
-                }
-            }
-
-        } catch (e: Exception) {
-            Log.e("MegaPlay", "Extraction failed: ${e.message}")
-        }
-    }
-
-    data class MegaPlayResponse(
-        val sources: List<Source>?,
-        val tracks: List<Track>?,
-        val encrypted: Boolean?,
-        val intro: Intro?,
-        val outro: Outro?,
-        val server: Long?
-    )
-
-    data class Source(
-        val file: String?,
-        val type: String?
-    )
-
-    data class Track(
-        val file: String?,
-        val label: String?,
-        val kind: String?,
-        val default: Boolean?
-    )
-
-    data class Intro(
-        val start: Long?,
-        val end: Long?
-    )
-
-    data class Outro(
-        val start: Long?,
-        val end: Long?
-    )
 }
 
 //Thanks to https://github.com/yogesh-hacker/MediaVanced

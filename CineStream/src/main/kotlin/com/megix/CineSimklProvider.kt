@@ -1,23 +1,34 @@
 package com.megix
 
+
+// Cloudstream Core & Utils
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
+
+// Cloudstream Static Helpers (AppUtils, CommonActivity, LoadResponse)
+import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import com.lagradost.cloudstream3.CommonActivity.activity
-import com.lagradost.cloudstream3.syncproviders.SyncRepo
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+
+// Cloudstream Sync Providers
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.syncproviders.SyncRepo
+
+// Coroutines
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import org.json.JSONObject
+
+// JSON Parsing
 import com.google.gson.Gson
+import org.json.JSONObject
+
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
 

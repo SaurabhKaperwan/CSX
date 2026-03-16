@@ -221,7 +221,7 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_moviesmod", displayName = "Moviessmod",
+            key = "p_moviesmod", displayName = "Moviesmod",
             executeStandard = { res, subCb, cb -> if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
@@ -328,7 +328,6 @@ object ProviderRegistry {
         // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
         // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
         // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-        // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
 
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─
         ProviderDef(

@@ -1,51 +1,63 @@
 package com.megix
 
+// Android
 import android.os.Build
+import android.util.Base64
 import androidx.annotation.RequiresApi
-import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
-import org.jsoup.nodes.Document
-import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import java.net.*
+
+// Cloudstream & NiceHttp
 import com.lagradost.api.Log
-import com.lagradost.nicehttp.NiceResponse
+import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.APIHolder.unixTimeMS
+import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.nicehttp.RequestBodyTypes
 
+// Coroutines
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-import org.json.JSONObject
-import org.json.JSONArray
-import org.jsoup.Jsoup
-import java.security.MessageDigest
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
-import javax.crypto.Mac
-import com.lagradost.cloudstream3.runAllAsync
-import kotlin.math.pow
-import kotlin.random.Random
+// Network (OkHttp / Java Net)
+import java.net.*
+import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrl
+
+// JSON & HTML Parsing
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
+import org.json.JSONArray
+import org.json.JSONObject
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+
+// Java Utils & Math
 import java.nio.charset.StandardCharsets
-import java.security.spec.KeySpec
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.PBEKeySpec
-import kotlin.math.max
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.UUID
 import java.util.Date
 import java.util.Locale
-import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.util.regex.Pattern
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.random.Random
 
-import android.util.Base64
-
-import okhttp3.HttpUrl.Companion.toHttpUrl
+// Security & Crypto
+import java.security.MessageDigest
+import java.security.spec.KeySpec
+import javax.crypto.Cipher
+import javax.crypto.Mac
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
@@ -538,27 +550,6 @@ fun getKisskhTitle(str: String?): String? {
     return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
 }
 
-suspend fun loadNameExtractor(
-    name: String? = null,
-    url: String,
-    referer: String? = null,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
-    quality: Int,
-) {
-    callback.invoke(
-        newExtractorLink(
-            name ?: "",
-            name ?: "",
-            url,
-            type = if (url.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
-        ) {
-            this.referer = referer ?: ""
-            this.quality = quality
-        }
-    )
-}
-
 suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
 
 suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int = 5, f: suspend (A) -> B?): List<B> = supervisorScope {
@@ -927,46 +918,212 @@ suspend fun bypassHrefli(url: String): String? {
 }
 
 //XDM
+
+fun createMouseData(durationMs: Long, phase: Int = 1): Map<String, Any> {
+    val duration = maxOf(1000L, durationMs)
+    val steps = maxOf(6L, duration / 1000L).toInt()
+    return mapOf(
+        "eventCount" to (12 + (steps * 2) + phase),
+        "moveCount" to (8 + steps + phase),
+        "clickCount" to minOf(3, phase + 1),
+        "totalDistance" to (180 + (steps * 90)),
+        "hasMovement" to true,
+        "duration" to duration
+    )
+}
+
+fun generateRandomFingerprint(): String {
+    return UUID.randomUUID().toString().replace("-", "")
+}
+
+suspend fun openAndTrackProtectorSocket(
+    socketUrl: String, baseUrl: String, cookies: Map<String, String>, bindToken: String, durationMs: Long
+): Unit = suspendCancellableCoroutine { cont ->
+    val cookieHeader = cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
+    val request = Request.Builder()
+        .url(socketUrl)
+        .header("User-Agent", USER_AGENT)
+        .header("Cookie", cookieHeader)
+        .header("Origin", baseUrl)
+        .build()
+
+    val scope = CoroutineScope(Dispatchers.IO)
+    var startedAt = 0L
+    var intervalJob: Job? = null
+    var timeoutJob: Job? = null
+    var finished = false
+
+    val finish = { error: Exception? ->
+        if (!finished) {
+            finished = true
+            intervalJob?.cancel()
+            timeoutJob?.cancel()
+            if (error != null && cont.isActive) cont.resumeWithException(error)
+            else if (cont.isActive) cont.resume(Unit)
+        }
+    }
+
+    timeoutJob = scope.launch {
+        delay(maxOf(30_000L, durationMs + 10_000L))
+        finish(Exception("WebSocket timeout"))
+    }
+
+    val listener = object : WebSocketListener() {
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            when {
+                text.startsWith("0") -> webSocket.send("40")
+                text == "2" -> webSocket.send("3")
+                text.startsWith("40") && startedAt == 0L -> {
+                    startedAt = System.currentTimeMillis()
+                    webSocket.send("""42["bind","$bindToken"]""")
+                    webSocket.send("""42["visibility","visible"]""")
+
+                    intervalJob = scope.launch {
+                        while (isActive) {
+                            delay(1000)
+                            val elapsed = maxOf(1000L, System.currentTimeMillis() - startedAt)
+                            webSocket.send("""42["heartbeat"]""")
+                            webSocket.send("""42["visibility","visible"]""")
+                            webSocket.send("""42["mouseActivity",${JSONObject(createMouseData(elapsed, 2))}]""")
+                        }
+                    }
+
+                    scope.launch {
+                        delay(durationMs)
+                        finish(null)
+                        webSocket.close(1000, "Done")
+                    }
+                }
+            }
+        }
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = finish(Exception(t))
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = finish(null)
+    }
+
+    val webSocket = OkHttpClient().newWebSocket(request, listener)
+
+    cont.invokeOnCancellation {
+        finished = true
+        intervalJob?.cancel()
+        timeoutJob?.cancel()
+        webSocket.cancel()
+    }
+}
+
 suspend fun bypassXDM(url: String): String? {
 
-    if(url.contains("hubcloud")) return url
+    val link = app.get(url, allowRedirects = false).headers["location"] ?: return null
 
-    val link = app.get(
-        url,
-        allowRedirects = false,
-        timeout = 600L
-    ).headers["location"] ?: return null
+    if (link.contains("hubcloud")) return link
 
-    if(link.contains("hubcloud")) return link
+    val fingerprint = generateRandomFingerprint()
+    val visibleMs = 15_000L
 
-    val baseUrl = getBaseUrl(link)
-    val id = link.substringAfterLast("/")
+    val uri = URI(link)
+    val baseUrl = "${uri.scheme}://${uri.host}"
+    val socketUrl = "${if (uri.scheme == "https") "wss" else "ws"}://${uri.host}/socket.io/?EIO=4&transport=websocket"
 
-    if (id.isEmpty()) return null
+    val id = link.substringAfter("/r/").substringBefore("?").substringBefore("/")
 
-    val responseText = app.post(
-        "$baseUrl/api/session",
-        json = mapOf("code" to id)
-    ).text
+    if (id.isEmpty() || id == link) return null
 
-    val json = try {
-        JSONObject(responseText)
+    var sessionCookies = mapOf<String, String>()
+
+    return try {
+        val sessionResponse = app.post(
+            "$baseUrl/api/session",
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link, "Origin" to baseUrl),
+            json = mapOf("code" to id, "fingerprint" to fingerprint, "mouseData" to createMouseData(2500, 1))
+        )
+        sessionCookies = sessionCookies + sessionResponse.cookies
+
+        val sessionData = JSONObject(sessionResponse.text)
+        val sessionId = sessionData.optString("sessionId").ifEmpty { return null }
+        val sessionToken = sessionData.optString("token").ifEmpty { return null }
+
+        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, sessionToken, visibleMs)
+
+        val step2Url = "$baseUrl/r/${URLEncoder.encode(id, "UTF-8")}?step=2&sid=${URLEncoder.encode(sessionId, "UTF-8")}"
+        val step2Response = app.get(step2Url, headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link), cookies = sessionCookies)
+        sessionCookies = sessionCookies + step2Response.cookies
+
+        val rebindResponse = app.post(
+            "$baseUrl/api/session/rebind",
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
+            cookies = sessionCookies,
+            json = mapOf("fingerprint" to fingerprint)
+        )
+        sessionCookies = sessionCookies + rebindResponse.cookies
+        val rebindToken = JSONObject(rebindResponse.text).optString("token").ifEmpty { return null }
+
+        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, rebindToken, visibleMs)
+
+        val completeResponse = app.post(
+            "$baseUrl/api/session/complete",
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
+            cookies = sessionCookies,
+            json = mapOf(
+                "fingerprint" to fingerprint,
+                "mouseData" to createMouseData((visibleMs * 2) + 2500, 3),
+                "honeypot" to ""
+            )
+        )
+        sessionCookies = sessionCookies + completeResponse.cookies
+        val completeToken = JSONObject(completeResponse.text).optString("token").ifEmpty { return null }
+
+        val goUrl = "$baseUrl/go/${URLEncoder.encode(sessionId, "UTF-8")}?t=${URLEncoder.encode(completeToken, "UTF-8")}"
+        val goResponse = app.get(
+            goUrl,
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url),
+            cookies = sessionCookies,
+            allowRedirects = false
+        )
+
+        goResponse.headers["location"] ?: goResponse.headers["Location"]
     } catch (e: Exception) {
-        return null
+        println("Failed to bypass XDM: ${e.message}")
+        null
     }
-    val sessionId = json.optString("sessionId")
-    val token = json.optString("token")
-
-    if (sessionId.isEmpty() || token.isEmpty()) return null
-
-    val source = app.get(
-        "$baseUrl/go/$sessionId?t=$token",
-        timeout = 600L,
-        allowRedirects = false
-    ).headers["location"] ?: return null
-
-    return source
 }
+
+// suspend fun bypassXDM(url: String): String? {
+
+//     val link = app.get(
+//         url,
+//         allowRedirects = false,
+//         timeout = 600L
+//     ).headers["location"] ?: return null
+
+//     if(link.contains("hubcloud")) return link
+
+//     val baseUrl = getBaseUrl(link)
+//     val id = link.substringAfterLast("/")
+
+//     if (id.isEmpty()) return null
+
+//     val responseText = app.post(
+//         "$baseUrl/api/session",
+//         json = mapOf("code" to id)
+//     ).text
+
+//     val json = try {
+//         JSONObject(responseText)
+//     } catch (e: Exception) {
+//         return null
+//     }
+//     val sessionId = json.optString("sessionId")
+//     val token = json.optString("token")
+
+//     if (sessionId.isEmpty() || token.isEmpty()) return null
+
+//     val source = app.get(
+//         "$baseUrl/go/$sessionId?t=$token",
+//         timeout = 600L,
+//         allowRedirects = false
+//     ).headers["location"] ?: return null
+
+//     return source
+// }
 
 suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val query = """
