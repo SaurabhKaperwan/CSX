@@ -801,6 +801,7 @@ suspend fun loadCustomExtractor(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
+    serverName: String = "",
 ) = supervisorScope {
 
     val processLink: (ExtractorLink) -> Unit = { link ->
@@ -822,8 +823,8 @@ suspend fun loadCustomExtractor(
     }
 
     when {
-        url.contains("https://dingtezuni.com") -> VidHidePro().getUrl(url, referer, subtitleCallback, processLink)
-        url.contains("https://hglink.to") -> StreamWishExtractor().getUrl(url, referer, subtitleCallback, processLink)
+        serverName.contains("Vidhide", true) -> VidHidePro().getUrl(url, referer, subtitleCallback, processLink)
+        serverName.contains("Streamwish", true) -> StreamWishExtractor().getUrl(url, referer, subtitleCallback, processLink)
         else -> loadExtractor(url, referer, subtitleCallback, processLink)
     }
 }
@@ -1015,7 +1016,7 @@ suspend fun openAndTrackProtectorSocket(
     cont.invokeOnCancellation {
         finished = true
         intervalJob?.cancel()
-        timeoutJob?.cancel()
+        timeoutJob.cancel()
         webSocket.cancel()
     }
 }
@@ -1683,22 +1684,18 @@ private fun calculateHmacSha256(data: String, key: String): String {
 // }
 
 fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): String? {
+    if (e == null) return null
 
-    if (e?.encrypted.isNullOrEmpty() || e?.cin.isNullOrEmpty() || e?.mao.isNullOrEmpty() || e?.salt.isNullOrEmpty()) {
+    if (e.encrypted.isEmpty() || e.cin.isEmpty() || e.mao.isEmpty() || e.salt.isEmpty()) {
         return null
     }
 
-    val encrypted = e!!.encrypted!!
-    val cin = e.cin!!
-    val mao = e.mao!!
-    val salt = e.salt!!
-
     val passwordStr = "a1b2c3d4e4f6477658455678901477567890abcdef1234567890abcdef123456"
 
-    val ivBytes = hexStringToByteArray(cin)
-    val authTagBytes = hexStringToByteArray(mao)
-    val encryptedBytes = hexStringToByteArray(encrypted)
-    val saltBytes = hexStringToByteArray(salt)
+    val ivBytes = hexStringToByteArray(e.cin)
+    val authTagBytes = hexStringToByteArray(e.mao)
+    val encryptedBytes = hexStringToByteArray(e.encrypted)
+    val saltBytes = hexStringToByteArray(e.salt)
 
     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
     val spec = PBEKeySpec(passwordStr.toCharArray(), saltBytes, 100000, 256)

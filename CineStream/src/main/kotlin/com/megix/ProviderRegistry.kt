@@ -94,6 +94,11 @@ object ProviderRegistry {
 
         // ── Direct HTTP Providers ─────────────────────────────────
         ProviderDef(
+            key = "p_xdmovies", displayName = "XDMovies",
+            executeStandard = { res, subCb, cb -> invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeXDmovies(res.imdbTitle, res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_showbox", displayName = "ShowBox",
             executeStandard = { res, subCb, cb ->
                 invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb)
@@ -252,11 +257,6 @@ object ProviderRegistry {
             key = "p_4khdhub", displayName = "4KHDHub",
             executeStandard = { res, subCb, cb -> if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_xdmovies", displayName = "XDMovies",
-            executeStandard = { res, subCb, cb -> invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeXDmovies(res.imdbTitle, res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_primesrc", displayName = "PrimeSrc",
