@@ -110,6 +110,8 @@ import com.megix.ApiConstants.vidzeeApi
 import com.megix.ApiConstants.watch32API
 import com.megix.ApiConstants.xpassAPI
 import com.megix.ApiConstants.kuudereAPI
+import com.megix.ApiConstants.vidrockAPI
+// import com.megix.ApiConstants.tripleOneMoviesApi
 // import com.megix.ApiConstants.xprimeAPI
 // import com.megix.ApiConstants.xprimeBaseAPI
 
@@ -3569,14 +3571,15 @@ object CineStreamExtractors {
     //     tmdbId: Int? = null,
     //     season: Int? = null,
     //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
     // ) {
-    //     val STATIC_PATH = "APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
+    //     val STATIC_PATH = "9816ad6837c78fcc2e0944fe2e6398b8a525d43f1afea28f9d5347b35cd53128/c1a5e2db/APA91iMgb2ifswAU727_OpyUBk45sDi2ciUVYVGZXVUXlYUrIshxfIIWC7WwfK3Rug52O7fWefpKiXKVeVPB-I4gl5GeF6Wj-MeAmJpzWiKkZMhg5kDvEv0fRguit6YtNIAHOpF47joyVLBgqzKlw98WhN6eQiF_QvG8Mmq3j2tpbtfSw0oAU-o/2db11c71f014bd4128f1a3ec314796da7e09b87e/tor/c6779436-9455-57ed-8527-73ad249a83db"
     //     val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
     //     val headers = mapOf(
     //         "Referer" to tripleOneMoviesApi,
-    //         "Content-Type" to "application/gzip",
+    //         "Content-Type" to "application/x-shockwave-flash",
+    //         "X-Csrf-Token" to "lOky1FfH4K8k7nlP1rymCoe3q2smDW8T",
     //         "User-Agent" to USER_AGENT
     //     )
     //     val response = app.get(url, headers = headers, timeout = 20).text
@@ -3589,7 +3592,7 @@ object CineStreamExtractors {
     //     val encodedFinal = customEncode(xorResult)
     //     // Get servers
     //     val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
-    //     val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
+    //     val serversResponse = app.post(apiServers, timeout = 20, headers = headers).text
     //     val servers = parseServers(serversResponse)
 
     //     val urlList = mutableMapOf<String,String>()
@@ -3597,7 +3600,7 @@ object CineStreamExtractors {
     //     servers.forEach {
     //         try {
     //             val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
-    //             val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
+    //             val streamResponse = app.post(apiStream, timeout = 20, headers = headers).text
 
     //             if(streamResponse.isNotEmpty()) {
     //                 val jsonObject = JSONObject(streamResponse)
@@ -4598,6 +4601,53 @@ object CineStreamExtractors {
             val dataType = episodeLinks.getJSONObject(i).optString("dataType")
             val serverName = episodeLinks.getJSONObject(i).optString("serverName")
             loadCustomExtractor("Kuudere[${dataType.uppercase()}] $serverName", embedUrl, "$kuudereAPI/", subtitleCallback, callback, null, serverName)
+        }
+    }
+
+    suspend fun invokeVidrock(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(tmdbId == null) return
+        val type = if (season == null) "movie" else "tv"
+        val query = if (type == "movie") "$tmdbId" else "${tmdbId}_${season}_${episode}"
+        val urlEncoded = getVidrockUrlEncode(query)
+        val apiUrl = "$vidrockAPI/api/$type/$urlEncoded"
+        val headers = mapOf(
+            "Origin" to vidrockAPI,
+            "Referer" to "$vidrockAPI/",
+            "User-Agent" to USER_AGENT
+        )
+
+        val responseText = app.get(apiUrl, headers = headers).text
+        val jsonObject = JSONObject(responseText)
+
+        jsonObject.keys().forEach { serverName ->
+            val serverData = jsonObject.optJSONObject(serverName) ?: return@forEach
+
+            val url = serverData.optString("url", "")
+
+            if (url.isNotEmpty() || url != "error" || url != "null") {
+
+                if(serverName == "Astra") {
+                    getAstra(url, callback)
+                } else {
+                    val type = if(url.contains("m3u8") || url.contains("playlist")) ExtractorLinkType.M3U8 else INFER_TYPE
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Vidrock[$serverName]",
+                            "Vidrock[$serverName]",
+                            url,
+                            type
+                        ) {
+                            this.headers = headers
+                        }
+                    )
+                }
+            }
         }
     }
 }

@@ -25,6 +25,8 @@ import kotlin.coroutines.resumeWithException
 import java.net.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import android.net.Uri
+import java.net.URLDecoder
 
 // JSON & HTML Parsing
 import com.google.gson.Gson
@@ -1830,24 +1832,63 @@ suspend fun getUpcloud(
     }
 }
 
+fun getVidrockUrlEncode(itemId: String): String {
+    val passphrase = "x7k9mPqT2rWvY8zA5bC3nF6hJ2lK4mN9"
+    val keyBytes = passphrase.toByteArray(Charsets.UTF_8)
+    val ivBytes = keyBytes.copyOfRange(0, 16)
+    val secretKey = SecretKeySpec(keyBytes, "AES")
+    val ivSpec = IvParameterSpec(ivBytes)
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
+    val encryptedBytes = cipher.doFinal(itemId.toByteArray(Charsets.UTF_8))
+    val base64Encoded = android.util.Base64.encodeToString(encryptedBytes, android.util.Base64.NO_WRAP)
+    val urlEncoded = URLEncoder.encode(base64Encoded, "UTF-8").replace("%2F", "/")
+    return urlEncoded
+}
+
+suspend fun getAstra(rawLink: String, callback: (ExtractorLink) -> Unit) {
+    val uri = Uri.parse(rawLink)
+    val realUrl = uri.getQueryParameter("url")?.let { java.net.URLDecoder.decode(it, "UTF-8") } ?: return
+    val headersJson = uri.getQueryParameter("headers")?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+
+    val headersMap = mutableMapOf<String, String>()
+    if (headersJson != null) {
+        val json = org.json.JSONObject(headersJson)
+        json.keys().forEach { headersMap[it] = json.getString(it) }
+    }
+
+    callback.invoke(
+        newExtractorLink(
+            "Vidrock[Astra]",
+            "Vidrock[Astra]",
+            realUrl,
+            ExtractorLinkType.M3U8
+        ) {
+            this.headers = headersMap
+        }
+    )
+}
+
+
+//111Movies
+
 /** Encodes input using Base64 with custom character mapping. */
 // fun customEncode(input: String): String {
 //     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-//     val dst = "Ckbl5ym-WLAev9dTuhpgK8PHtSGa2EBDnjMZR_Y0Xx7co1qrfFNJOQ6iUs4zIVw3"
+//     val dst = "zF-NXZYgxKqj7nbuGoI_SDfkQ9y3VcJrRBip6tadPwv0MWLehT5Um4As2l8C1HEO"
 //     val transMap = src.zip(dst).toMap()
-//     val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//         Base64.getEncoder().encodeToString(input.toByteArray())
-//             .replace("+", "-")
-//             .replace("/", "_")
-//             .replace("=", "")
-//     } else {
-//         android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
-//     }
+
+//     // Android's Base64 safely handles URL encoding and padding on all SDK versions
+//     val base64 = android.util.Base64.encodeToString(
+//         input.toByteArray(Charsets.UTF_8),
+//         android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
+//     )
+
 //     return base64.map { char -> transMap[char] ?: char }.joinToString("")
 // }
 
 /** Extracts data using regex pattern */
-//  fun extractData(pattern: String, input: String): String {
+// fun extractData(pattern: String, input: String): String {
 //     val regex = Regex(pattern)
 //     val match = regex.find(input)
 //     return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
@@ -1855,8 +1896,8 @@ suspend fun getUpcloud(
 
 /** Performs AES encryption */
 //  fun aesEncrypt(data: String): String {
-//     val aesKey = hexStringToByteArray("ecc34a66edea3dcd48c8733812365f5caf7d28865993ae5fdc4a08436736a998")
-//     val aesIv = hexStringToByteArray("4b47db0a764158dff36db37d27fdfcea")
+//     val aesKey = hexStringToByteArray("55eb57c5e52d3ae19f899e702cb539084adf606b06cc44382c21e48a82215d8a")
+//     val aesIv = hexStringToByteArray("324d1fae84bafaba643f236ee116de27")
 
 //     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
 //     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
@@ -1867,7 +1908,7 @@ suspend fun getUpcloud(
 
 /** Performs XOR operation */
 //  fun xorOperation(input: String): String {
-//     val xorKey = hexStringToByteArray("fafd3f")
+//     val xorKey = hexStringToByteArray("dd69ce")
 //     val result = StringBuilder()
 
 //     for (i in input.indices) {

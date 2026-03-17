@@ -64,7 +64,9 @@ object ApiConstants {
     const val vidsrcCCAPI = "https://vidsrc.cc"
     const val autoembedAPI = "https://player2.autoembed.cc"
     const val watch32API = "https://watch32.sx"
+    // const val tripleOneMoviesApi = "https://111movies.net"
     const val kuudereAPI = "https://kuudere.to"
+    const val vidrockAPI = "https://vidrock.net"
     const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
     // ── 2. Private Background Logic ──────────────────────────────
