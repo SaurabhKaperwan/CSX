@@ -4597,7 +4597,7 @@ object CineStreamExtractors {
             val embedUrl = episodeLinks.getJSONObject(i).optString("dataLink")
             val dataType = episodeLinks.getJSONObject(i).optString("dataType")
             val serverName = episodeLinks.getJSONObject(i).optString("serverName")
-            loadCustomExtractor("Kuudere[$dataType.uppercase()] $serverName", embedUrl, "$kuudereAPI/", subtitleCallback, callback)
+            loadCustomExtractor("Kuudere[${dataType.uppercase()}] $serverName", embedUrl, "$kuudereAPI/", subtitleCallback, callback)
         }
     }
 }
