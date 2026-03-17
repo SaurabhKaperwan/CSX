@@ -36,7 +36,7 @@ object ApiConstants {
     const val vidSrcApi = "https://api.rgshows.ru"
     const val vidSrcHindiApi = "https://hindi.rgshows.ru"
     const val dahmerMoviesAPI = "https://a.111477.xyz"
-    const val hexaAPI = "https://themoviedb.hexa.su"
+    const val hexaAPI = "https://theemoviedb.hexa.su"
     const val videasyAPI = "https://api.videasy.net"
     const val vidlinkAPI = "https://vidlink.pro"
     const val multiDecryptAPI = "https://enc-dec.app/api"
@@ -64,6 +64,7 @@ object ApiConstants {
     const val vidsrcCCAPI = "https://vidsrc.cc"
     const val autoembedAPI = "https://player2.autoembed.cc"
     const val watch32API = "https://watch32.sx"
+    const val kuudereAPI = "https://kuudere.to"
     const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
     // ── 2. Private Background Logic ──────────────────────────────

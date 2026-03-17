@@ -109,6 +109,7 @@ import com.megix.ApiConstants.vidstackBaseAPI
 import com.megix.ApiConstants.vidzeeApi
 import com.megix.ApiConstants.watch32API
 import com.megix.ApiConstants.xpassAPI
+import com.megix.ApiConstants.kuudereAPI
 // import com.megix.ApiConstants.xprimeAPI
 // import com.megix.ApiConstants.xprimeBaseAPI
 
@@ -1333,7 +1334,7 @@ object CineStreamExtractors {
             "User-Agent" to USER_AGENT,
             "Accept" to "plain/text",
             "X-Api-Key" to key,
-            "X-Fingerprint-Lite" to "e9136c4150464644",
+            "X-Fingerprint-Lite" to "e9136c41504646444",
             "Referer" to "https://hexa.su/",
         )
 
@@ -4560,6 +4561,43 @@ object CineStreamExtractors {
                     .parsedSafe<Watch32>()?.link ?: return@safeAmap
                 loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
             }
+        }
+    }
+
+    suspend fun invokeKuudere(
+        title: String? = null,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val json = app.get(
+            "$kuudereAPI/search/__data.json?keyword=${title?.replace(" ", "+")}&year=$year&x-sveltekit-invalidated=01",
+            referer = "$kuudereAPI/"
+        ).text
+
+        val nodes = JSONObject(json).getJSONArray("nodes")
+        var id: String? = null
+
+        for (i in 0 until nodes.length()) {
+            val node = nodes.getJSONObject(i)
+            if (node.optString("type") != "data") continue
+            val data = node.getJSONArray("data")
+            val schema = (0 until data.length()).map { data.opt(it) }
+                .filterIsInstance<JSONObject>().firstOrNull { it.has("id") } ?: continue
+            id = data.optString(schema.getInt("id")).takeIf { it.isNotBlank() }
+            break
+        }
+
+        if(id == null) return
+
+        val epJson = app.get("$kuudereAPI/api/watch/$id/${episode ?: 1}", referer = "$kuudereAPI/").text
+        val episodeLinks = JSONObject(epJson).getJSONArray("episode_links")
+        (0 until episodeLinks.length()).forEach { i ->
+            val embedUrl = episodeLinks.getJSONObject(i).optString("dataLink")
+            val dataType = episodeLinks.getJSONObject(i).optString("dataType")
+            val serverName = episodeLinks.getJSONObject(i).optString("serverName")
+            loadCustomExtractor("Kuudere[$dataType.uppercase()] $serverName", embedUrl, "$kuudereAPI/", subtitleCallback, callback)
         }
     }
 }

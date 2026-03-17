@@ -379,6 +379,10 @@ object ProviderRegistry {
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnizone(data.title, data.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_kuudere", displayName = "Kuudere",
+            executeAnime = { res, subCb, cb -> invokeKuudere(res.originalTitle ?: res.title, res.year, res.episode, subCb, cb) },
+        ),
+        ProviderDef(
             key = "p_animes", displayName = "Animes",
             executeAnime = { res, subCb, cb -> invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subCb, cb) }
         ),

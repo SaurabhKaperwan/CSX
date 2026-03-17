@@ -59,6 +59,9 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
+import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
 
@@ -784,6 +787,7 @@ suspend fun loadSourceNameExtractor(
         url.contains("fastdlserver.") -> fastdlserver().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("linksmod.") -> Linksmod().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("hubdrive.") -> Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("gofile.") -> Gofile().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("driveleech.") || url.contains("driveseed.") -> Driveleech().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("howblogs.") -> Howblogs().getUrl(url, referer, subtitleCallback, processLink)
         else -> loadExtractor(url, referer, subtitleCallback, processLink)
@@ -799,7 +803,7 @@ suspend fun loadCustomExtractor(
     quality: Int? = null,
 ) = supervisorScope {
 
-    loadExtractor(url, referer, subtitleCallback) { link ->
+    val processLink: (ExtractorLink) -> Unit = { link ->
         launch(Dispatchers.IO) {
             val newLink = newExtractorLink(
                 name ?: link.source,
@@ -815,6 +819,12 @@ suspend fun loadCustomExtractor(
 
             callback(newLink)
         }
+    }
+
+    when {
+        url.contains("https://dingtezuni.com") -> VidHidePro().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("https://hglink.to") -> StreamWishExtractor().getUrl(url, referer, subtitleCallback, processLink)
+        else -> loadExtractor(url, referer, subtitleCallback, processLink)
     }
 }
 
