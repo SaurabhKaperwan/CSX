@@ -25,8 +25,6 @@ import kotlin.coroutines.resumeWithException
 import java.net.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import android.net.Uri
-import java.net.URLDecoder
 
 // JSON & HTML Parsing
 import com.google.gson.Gson
@@ -1674,17 +1672,6 @@ private fun calculateHmacSha256(data: String, key: String): String {
     return bytes.joinToString("") { "%02x".format(it) }
 }
 
-// Helper function to convert byte array to hex string
-// fun bytesToHex(bytes: ByteArray): String {
-//     val hexChars = CharArray(bytes.size * 2)
-//     for (i in bytes.indices) {
-//         val v = bytes[i].toInt() and 0xFF
-//         hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
-//         hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
-//     }
-//     return String(hexChars)
-// }
-
 fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): String? {
     if (e == null) return null
 
@@ -1845,100 +1832,6 @@ fun getVidrockUrlEncode(itemId: String): String {
     val urlEncoded = URLEncoder.encode(base64Encoded, "UTF-8").replace("%2F", "/")
     return urlEncoded
 }
-
-suspend fun getAstra(rawLink: String, callback: (ExtractorLink) -> Unit) {
-    val uri = Uri.parse(rawLink)
-    val realUrl = uri.getQueryParameter("url")?.let { java.net.URLDecoder.decode(it, "UTF-8") } ?: return
-    val headersJson = uri.getQueryParameter("headers")?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-
-    val headersMap = mutableMapOf<String, String>()
-    if (headersJson != null) {
-        val json = org.json.JSONObject(headersJson)
-        json.keys().forEach { headersMap[it] = json.getString(it) }
-    }
-
-    callback.invoke(
-        newExtractorLink(
-            "Vidrock[Astra]",
-            "Vidrock[Astra]",
-            realUrl,
-            ExtractorLinkType.M3U8
-        ) {
-            this.headers = headersMap
-        }
-    )
-}
-
-
-//111Movies
-
-/** Encodes input using Base64 with custom character mapping. */
-// fun customEncode(input: String): String {
-//     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-//     val dst = "zF-NXZYgxKqj7nbuGoI_SDfkQ9y3VcJrRBip6tadPwv0MWLehT5Um4As2l8C1HEO"
-//     val transMap = src.zip(dst).toMap()
-
-//     // Android's Base64 safely handles URL encoding and padding on all SDK versions
-//     val base64 = android.util.Base64.encodeToString(
-//         input.toByteArray(Charsets.UTF_8),
-//         android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP
-//     )
-
-//     return base64.map { char -> transMap[char] ?: char }.joinToString("")
-// }
-
-/** Extracts data using regex pattern */
-// fun extractData(pattern: String, input: String): String {
-//     val regex = Regex(pattern)
-//     val match = regex.find(input)
-//     return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
-// }
-
-/** Performs AES encryption */
-//  fun aesEncrypt(data: String): String {
-//     val aesKey = hexStringToByteArray("55eb57c5e52d3ae19f899e702cb539084adf606b06cc44382c21e48a82215d8a")
-//     val aesIv = hexStringToByteArray("324d1fae84bafaba643f236ee116de27")
-
-//     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-//     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
-
-//     val encryptedData = cipher.doFinal(data.toByteArray())
-//     return bytesToHex(encryptedData)
-// }
-
-/** Performs XOR operation */
-//  fun xorOperation(input: String): String {
-//     val xorKey = hexStringToByteArray("dd69ce")
-//     val result = StringBuilder()
-
-//     for (i in input.indices) {
-//         val char = input[i]
-//         val xorByte = xorKey[i % xorKey.size].toInt()
-//         result.append((char.code xor xorByte).toChar())
-//     }
-
-//     return result.toString()
-// }
-
-// fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
-//     val servers = mutableListOf<TripleOneMoviesServer>()
-//     try {
-//         val jsonArray = JSONArray(jsonString)
-//         for (i in 0 until jsonArray.length()) {
-//             val jsonObject = jsonArray.getJSONObject(i)
-//             val server = TripleOneMoviesServer(
-//                 name = jsonObject.getString("name"),
-//                 description = jsonObject.getString("description"),
-//                 image = jsonObject.getString("image"),
-//                 data = jsonObject.getString("data")
-//             )
-//             servers.add(server)
-//         }
-//     } catch (e: Exception) {
-//         Log.e("salman731", "Manual parsing failed: ${e.message}")
-//     }
-//     return servers
-// }
 
 /**
  * PBKDF2 key derivation using Bouncy Castle

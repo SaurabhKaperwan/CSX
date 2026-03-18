@@ -11,6 +11,7 @@ import com.lagradost.cloudstream3.AcraApplication.Companion.setKey
 object Settings {
 
     // ── Global keys ──────────────────────────────────────────
+    const val CONCURRENCY_KEY          = "ScrapeConcurrency"
     const val DOWNLOAD_ENABLE          = "DownloadEnable"
     const val PROVIDER_CINESTREAM      = "ProviderCineStream"
     const val PROVIDER_SIMKL           = "ProviderSimkl"
@@ -25,6 +26,8 @@ object Settings {
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
     // ── Configuration Getters ────────────────────────────────
+    fun getConcurrency(): Int = getKey<Int>(CONCURRENCY_KEY) ?: 7
+
     val allowDownloadLinks: Boolean
         get() = getKey<Boolean>(DOWNLOAD_ENABLE) ?: false
 

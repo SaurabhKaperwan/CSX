@@ -111,7 +111,6 @@ import com.megix.ApiConstants.watch32API
 import com.megix.ApiConstants.xpassAPI
 import com.megix.ApiConstants.kuudereAPI
 import com.megix.ApiConstants.vidrockAPI
-// import com.megix.ApiConstants.tripleOneMoviesApi
 // import com.megix.ApiConstants.xprimeAPI
 // import com.megix.ApiConstants.xprimeBaseAPI
 
@@ -130,7 +129,7 @@ object CineStreamExtractors {
             } ?: stremioMap[key]
         }
 
-        runLimitedAsync(concurrency = 7, *executionList.toTypedArray())
+        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
     suspend fun invokeAllAnimeSources(
@@ -146,7 +145,7 @@ object CineStreamExtractors {
             } ?: stremioMap[key]
         }
 
-        runLimitedAsync(concurrency = 7, *executionList.toTypedArray())
+        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
     suspend fun invokeAnimes(
@@ -175,7 +174,7 @@ object CineStreamExtractors {
             }
         }
 
-        runLimitedAsync(concurrency = 7, *executionList.toTypedArray())
+        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
     private fun getDynamicStremioMap(
@@ -1634,7 +1633,7 @@ object CineStreamExtractors {
         if (servers.isEmpty()) return
 
         servers.safeAmap { server ->
-            runLimitedAsync ( concurrency = 3,
+            runLimitedAsync ( concurrency = 2,
                 {
                     try {
                         val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=sub", headers = headers).text
@@ -3539,7 +3538,7 @@ object CineStreamExtractors {
 
         val secretHash = cinemaOSGenerateHash(tmdbId, imdbId, season, episode)
         val type = if(season == null) {"movie"}  else {"tv"}
-        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=&ry=&secret=$secretHash"} else {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=&ry=&secret=$secretHash"}
+        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv3?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=&ry=&secret=$secretHash"} else {"$cinemaOSApi/api/providerv3?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=&ry=&secret=$secretHash"}
         val sourceResponse = app.get(sourceUrl, headers = headers, timeout = 60).parsedSafe<CinemaOSReponse>()
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data)
 
@@ -3547,7 +3546,7 @@ object CineStreamExtractors {
 
         val json = parseCinemaOSSources(decryptedJson)
 
-        json.safeAmap {
+        json.forEach {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
             val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else if(it["bitrate"]?.contains("4K",true) ?: false){ Qualities.P2160.value} else { Qualities.P1080.value}
             val quality =  if(it["quality"]?.isNotEmpty() == true && it["quality"]?.toIntOrNull() !=null) getQualityFromName(it["quality"]) else if (it["quality"]?.isNotEmpty() == true)  if(it["quality"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["quality"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value} else bitrateQuality
@@ -3556,7 +3555,7 @@ object CineStreamExtractors {
                 newExtractorLink(
                     "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]}".replace("\\s{2,}".toRegex(), " ").trim(),
                     "CinemaOS [${it["server"]}] ${it["bitrate"]} ${it["speed"]}".replace("\\s{2,}".toRegex(), " ").trim(),
-                    url = it["url"].toString(),
+                    url = it["url"] ?: return@forEach,
                     type = extractorLinkType
                 )
                 {
@@ -3566,67 +3565,6 @@ object CineStreamExtractors {
             )
         }
     }
-
-    // suspend fun invokeTripleOneMovies(
-    //     tmdbId: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit,
-    // ) {
-    //     val STATIC_PATH = "9816ad6837c78fcc2e0944fe2e6398b8a525d43f1afea28f9d5347b35cd53128/c1a5e2db/APA91iMgb2ifswAU727_OpyUBk45sDi2ciUVYVGZXVUXlYUrIshxfIIWC7WwfK3Rug52O7fWefpKiXKVeVPB-I4gl5GeF6Wj-MeAmJpzWiKkZMhg5kDvEv0fRguit6YtNIAHOpF47joyVLBgqzKlw98WhN6eQiF_QvG8Mmq3j2tpbtfSw0oAU-o/2db11c71f014bd4128f1a3ec314796da7e09b87e/tor/c6779436-9455-57ed-8527-73ad249a83db"
-    //     val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
-    //     val headers = mapOf(
-    //         "Referer" to tripleOneMoviesApi,
-    //         "Content-Type" to "application/x-shockwave-flash",
-    //         "X-Csrf-Token" to "lOky1FfH4K8k7nlP1rymCoe3q2smDW8T",
-    //         "User-Agent" to USER_AGENT
-    //     )
-    //     val response = app.get(url, headers = headers, timeout = 20).text
-    //     val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
-    //     // AES encryption
-    //     val aesEncrypted = aesEncrypt(rawData)
-    //     // XOR operation
-    //     val xorResult = xorOperation(aesEncrypted)
-    //     // Custom encoding
-    //     val encodedFinal = customEncode(xorResult)
-    //     // Get servers
-    //     val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
-    //     val serversResponse = app.post(apiServers, timeout = 20, headers = headers).text
-    //     val servers = parseServers(serversResponse)
-
-    //     val urlList = mutableMapOf<String,String>()
-
-    //     servers.forEach {
-    //         try {
-    //             val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
-    //             val streamResponse = app.post(apiStream, timeout = 20, headers = headers).text
-
-    //             if(streamResponse.isNotEmpty()) {
-    //                 val jsonObject = JSONObject(streamResponse)
-    //                 val url = jsonObject.getString("url")
-
-    //                 urlList.put(it.name,url)
-    //             }
-    //         } catch (e: Exception) {
-    //             TODO("Not yet implemented")
-    //         }
-    //     }
-
-    //     urlList.forEach {
-    //         callback.invoke(
-    //             newExtractorLink(
-    //                 "111Movies [${it.key}]",
-    //                 "111Movies [${it.key}]",
-    //                 url = it.value,
-    //                 type = ExtractorLinkType.M3U8
-    //             )
-    //             {
-    //                 this.quality = Qualities.P1080.value
-    //             }
-    //         )
-    //     }
-    // }
 
     // suspend fun invokeVidPlus(
     //     tmdbId: Int? = null,
@@ -4631,10 +4569,12 @@ object CineStreamExtractors {
 
             if (url.isNotEmpty() || url != "error" || url != "null") {
 
-                if(serverName == "Astra") {
-                    getAstra(url, callback)
+                Log.d("Vidrock", "$serverName url: $url")
+
+                if(serverName == "Astra" || serverName == "Atlas") {
+                    return@forEach
                 } else {
-                    val type = if(url.contains("m3u8") || url.contains("playlist")) ExtractorLinkType.M3U8 else INFER_TYPE
+                    val type = if(url.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
 
                     callback.invoke(
                         newExtractorLink(

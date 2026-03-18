@@ -50,6 +50,8 @@ internal object SettingsDialog {
                 "Only great for downloading (Not for Streaming)",
                 Settings.DOWNLOAD_ENABLE, false, pending))
             addView(SettingsWidgets.divider(context))
+            addView(buildConcurrencyRow(context, pending))
+            addView(SettingsWidgets.divider(context))
             addView(buildCookieClearRow(context))
         })
 
@@ -91,6 +93,7 @@ internal object SettingsDialog {
                         key == Settings.SHOWBOX_TOKEN_KEY && value == null   -> Settings.clearShowboxToken()
                         key == Settings.SHOWBOX_TOKEN_KEY && value is String -> Settings.saveShowboxToken(value)
                         value is Boolean                                     -> com.lagradost.cloudstream3.AcraApplication.setKey(key, value)
+                        value is Int                                         -> com.lagradost.cloudstream3.AcraApplication.setKey(key, value)
                         value == null                                        -> com.lagradost.cloudstream3.AcraApplication.setKey(key, null as String?)
                     }
                 }
@@ -774,6 +777,68 @@ internal object SettingsDialog {
         card.addView(content)
         SettingsWidgets.fadeInSlide(card)
         return card
+    }
+
+    // =========================================================
+    //  CONCURRENCY ROW
+    // =========================================================
+
+    private fun buildConcurrencyRow(
+        context: Context,
+        pending: MutableMap<String, Any?>
+    ): View {
+        val theme = SettingsTheme
+        var currentVal = pending[Settings.CONCURRENCY_KEY] as? Int ?: Settings.getConcurrency()
+
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            background = theme.stateDrawable(context)
+
+            val textCol = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            textCol.addView(TextView(context).apply {
+                text = "Scraping Concurrency"
+                textSize = 15f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(theme.TEXT_PRIMARY)
+            })
+            textCol.addView(TextView(context).apply {
+                text = "Number of providers run concurrently\n⚠️ For low end devices set it low"
+                textSize = 12f
+                setTextColor(theme.TEXT_SECONDARY)
+                setPadding(0, 3.dp(context), 0, 0)
+            })
+            addView(textCol)
+
+            val valText = TextView(context).apply {
+                text = currentVal.toString()
+                textSize = 15f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(theme.ACCENT_START)
+                gravity = Gravity.CENTER
+                minWidth = 32.dp(context)
+            }
+
+            addView(SettingsWidgets.pillBtn(context, " - ", theme.TEXT_PRIMARY, Color.parseColor("#1A1E28"), Color.parseColor("#2E2850")) {
+                if (currentVal > 1) {
+                    currentVal--
+                    pending[Settings.CONCURRENCY_KEY] = currentVal
+                    valText.text = currentVal.toString()
+                }
+            })
+            addView(valText)
+            addView(SettingsWidgets.pillBtn(context, " + ", theme.TEXT_PRIMARY, Color.parseColor("#1A1E28"), Color.parseColor("#2E2850")) {
+                if (currentVal < 50) {
+                    currentVal++
+                    pending[Settings.CONCURRENCY_KEY] = currentVal
+                    valText.text = currentVal.toString()
+                }
+            })
+        }
     }
 
     // =========================================================

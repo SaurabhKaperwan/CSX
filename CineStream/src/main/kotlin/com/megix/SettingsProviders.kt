@@ -59,24 +59,33 @@ internal object SettingsProviders {
             return true
         }
 
+        var searchQuery = ""
+
         fun rebuild() {
             rows.removeAllViews()
-            order.forEachIndexed { i, key ->
-                if (i > 0) rows.addView(SettingsWidgets.divider(context))
+            val filteredOrder = if (searchQuery.isBlank()) order else order.filter {
+                Settings.providerDisplayName(it).contains(searchQuery, ignoreCase = true)
+            }
+
+            filteredOrder.forEachIndexed { displayIndex, key ->
+                val actualIndex = order.indexOf(key)
+                val isSearching = searchQuery.isNotBlank()
+
+                if (displayIndex > 0) rows.addView(SettingsWidgets.divider(context))
                 rows.addView(buildRow(
                     context        = context,
                     label          = Settings.providerDisplayName(key),
                     key            = key,
-                    index          = i + 1,
+                    index          = actualIndex + 1,
                     totalCount     = order.size,
                     isTorrent      = key in Settings.TORRENT_KEYS || Settings.isStremioTorrent(key),
-                    canMoveUp      = i > 0,
-                    canMoveDown    = i < order.lastIndex,
+                    canMoveUp      = !isSearching && actualIndex > 0,
+                    canMoveDown    = !isSearching && actualIndex < order.lastIndex,
                     pendingChanges = pendingChanges,
-                    onMoveUp       = { order.add(i - 1, order.removeAt(i)); rebuild() },
-                    onMoveDown     = { order.add(i + 1, order.removeAt(i)); rebuild() },
+                    onMoveUp       = { order.add(actualIndex - 1, order.removeAt(actualIndex)); rebuild() },
+                    onMoveDown     = { order.add(actualIndex + 1, order.removeAt(actualIndex)); rebuild() },
                     onMoveTo       = { target ->
-                        val item = order.removeAt(i)
+                        val item = order.removeAt(actualIndex)
                         order.add(target.coerceIn(0, order.size), item); rebuild()
                     }
                 ))
@@ -178,8 +187,33 @@ internal object SettingsProviders {
             setBackgroundColor(theme.DIVIDER_COLOR)
         }
 
+        val searchInput = EditText(context).apply {
+            hint = "Search providers..."
+            textSize = 13f
+            setTextColor(theme.TEXT_PRIMARY)
+            setHintTextColor(theme.TEXT_SECONDARY)
+            setSingleLine(true)
+            setPadding(14.dp(context), 10.dp(context), 14.dp(context), 10.dp(context))
+            background = SettingsTheme.inputBackground(context)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context)) }
+
+            addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    searchQuery = s?.toString()?.trim() ?: ""
+                    rebuild()
+                }
+                override fun afterTextChanged(s: android.text.Editable?) {}
+            })
+        }
+
         rebuild()
-        content.addView(toolbar); content.addView(sep); content.addView(rows)
+        content.addView(toolbar)
+        content.addView(sep)
+        content.addView(searchInput)
+        content.addView(rows)
 
         // Header row
         val chevron = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(theme.TEXT_SECONDARY) }

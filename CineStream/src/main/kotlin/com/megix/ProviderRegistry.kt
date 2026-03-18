@@ -148,10 +148,6 @@ object ProviderRegistry {
             key = "p_yflix", displayName = "Yflix",
             executeStandard = { res, subCb, cb -> invokeYflix(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
-        // ProviderDef(
-        //     key = "p_111movies", displayName = "111Movies",
-        //     executeStandard = { res, subCb, cb -> invokeTripleOneMovies(res.tmdbId, res.season, res.episode, subCb, cb) }
-        // ),
         ProviderDef(
             key = "p_xpass", displayName = "Xpass",
             executeStandard = { res, _, cb -> invokeXpass(res.tmdbId, res.season, res.episode, cb) }
@@ -333,7 +329,6 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeWatch32(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
 
-        // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
         // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
         // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
         // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
