@@ -553,20 +553,19 @@ fun getKisskhTitle(str: String?): String? {
     return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
 }
 
-suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
-
-suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int = 5, f: suspend (A) -> B?): List<B> = supervisorScope {
+suspend fun <A, B> Iterable<A>.safeAmap(
+    concurrency: Int = 5,
+    f: suspend (A) -> B?
+): List<B> = supervisorScope {
     val semaphore = Semaphore(concurrency)
-    val deferreds = mutableListOf<Deferred<B?>>()
-
-    for (item in this@safeAmap) {
-        semaphore.acquire()
-        deferreds += async(Dispatchers.IO) {
+    map { item ->
+        async<B?>(Dispatchers.IO) {
+            semaphore.acquire()
             try {
                 f(item)
             } catch (e: CancellationException) {
                 if (!this@supervisorScope.isActive) throw e
-                Log.w("safeAmap", "Item cancelled locally (e.g., timeout): ${e.message}")
+                Log.w("safeAmap", "Item cancelled locally: ${e.message}")
                 null
             } catch (e: Throwable) {
                 Log.e("safeAmap", "Item failed: ${e.message}")
@@ -575,9 +574,7 @@ suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int = 5, f: suspend (A) -> 
                 semaphore.release()
             }
         }
-    }
-
-    deferreds.awaitAll().filterNotNull()
+    }.awaitAll().filterNotNull()
 }
 
 suspend fun runLimitedAsync(
@@ -585,12 +582,9 @@ suspend fun runLimitedAsync(
     vararg tasks: suspend () -> Unit
 ) = supervisorScope {
     val semaphore = Semaphore(concurrency)
-    val deferreds = mutableListOf<Deferred<Unit>>()
-
-    for (task in tasks) {
-        semaphore.acquire()
-
-        deferreds += async(Dispatchers.IO) {
+    tasks.map { task ->
+        async<Unit>(Dispatchers.IO) {
+            semaphore.acquire()
             try {
                 task()
             } catch (e: CancellationException) {
@@ -602,9 +596,7 @@ suspend fun runLimitedAsync(
                 semaphore.release()
             }
         }
-    }
-
-    deferreds.awaitAll()
+    }.awaitAll()
 }
 
 fun getEpisodeSlug(

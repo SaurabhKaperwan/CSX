@@ -112,6 +112,7 @@ open class ZenCloudz : ExtractorApi() {
                 type = if (videoUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
             ) {
                 this.referer = "$mainUrl/"
+                this.quality = 1080
             }
         )
     }
