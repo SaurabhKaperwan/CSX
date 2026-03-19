@@ -27,6 +27,120 @@ import org.json.JSONObject
 import java.io.IOException
 
 import java.security.MessageDigest
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+import android.util.Base64
+
+open class ZenCloudz : ExtractorApi() {
+    override val name = "ZenCloudz"
+    override val mainUrl = "https://zencloudz.cc"
+    override val requiresReferer = true
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Referer" to "$mainUrl/",
+            "User-Agent" to USER_AGENT
+        )
+
+        val response = app.get(url, headers = headers).text
+
+        val regex = Regex("""data:\s*\[null,null,(\{.*?\})\],\s*form:\s*null""")
+        val matchResult = regex.find(response) ?: return
+        val jsonString = matchResult.groupValues[1]
+
+        val siteData = JSONObject(jsonString).getJSONObject("data")
+        val obfuscatedCryptoData = siteData.getJSONObject("obfuscated_crypto_data")
+        val obfuscationSeed = siteData.getString("obfuscation_seed")
+
+        val primaryHash = sha256(obfuscationSeed)
+        val secondaryHash = sha256(primaryHash)
+
+        val containerField = "cd_${primaryHash.substring(24, 32)}"
+        val arrayField = "ad_${primaryHash.substring(32, 40)}"
+        val objectField = "od_${primaryHash.substring(40, 48)}"
+        val keyField = "kf_${primaryHash.substring(8, 16)}"
+        val ivField = "ivf_${primaryHash.substring(16, 24)}"
+        val tokenField = "${primaryHash.substring(48, 64)}_${primaryHash.substring(56, 64)}"
+        val secondaryKeyField = "${secondaryHash.substring(0, 16)}_${secondaryHash.substring(16, 24)}"
+
+        val containerData = obfuscatedCryptoData.getJSONObject(containerField)
+        val arrayData = containerData.getJSONArray(arrayField)
+        val objectData = arrayData.getJSONObject(0).getJSONObject(objectField)
+
+        val encryptedKeyB64 = objectData.getString(keyField)
+        val ivB64 = objectData.getString(ivField)
+        val secondaryKeyB64 = siteData.getString(secondaryKeyField)
+        val tokenReference = siteData.getString(tokenField)
+
+        val tokenResponseStr = app.get("$mainUrl/api/m3u8/$tokenReference", headers = headers).text
+        val tokenJson = JSONObject(tokenResponseStr)
+
+        val encryptedVideoB64 = tokenJson.getString("video_b64")
+        val dynamicKeyB64 = tokenJson.getString("key_frag")
+
+        val encryptedKeyBytes = Base64.decode(encryptedKeyB64, Base64.DEFAULT)
+        val secondaryKeyBytes = Base64.decode(secondaryKeyB64, Base64.DEFAULT)
+        val dynamicKeyBytes = Base64.decode(dynamicKeyB64, Base64.DEFAULT)
+        val ivBytes = Base64.decode(ivB64, Base64.DEFAULT)
+        val ciphertextBytes = Base64.decode(encryptedVideoB64, Base64.DEFAULT)
+
+        val sboxSeed = obfuscationSeed.substring(0, 8).toLong(16).toInt()
+        val sboxTable = generateSbox(sboxSeed)
+        val aesKey = deriveAesKey(encryptedKeyBytes, secondaryKeyBytes, dynamicKeyBytes, sboxTable)
+
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val secretKeySpec = SecretKeySpec(aesKey, "AES")
+        val ivParameterSpec = IvParameterSpec(ivBytes)
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+
+        val plaintextBytes = cipher.doFinal(ciphertextBytes)
+        val videoUrl = String(plaintextBytes, Charsets.UTF_8)
+
+        Log.d("ZenCloudz", "Decrypted URL: $videoUrl")
+
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                videoUrl,
+                type = if (videoUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+            ) {
+                this.referer = "$mainUrl/"
+            }
+        )
+    }
+
+    private fun sha256(input: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun generateSbox(seed: Int): ByteArray {
+        val sbox = ByteArray(256)
+        for (i in 0 until 256) {
+            sbox[i] = ((i * 37 + seed) and 0xFF).toByte()
+        }
+        return sbox
+    }
+
+    private fun deriveAesKey(keyFragment: ByteArray, secondaryKey: ByteArray, dynamicKey: ByteArray, sbox: ByteArray): ByteArray {
+        val length = keyFragment.size
+        val aesKey = ByteArray(length)
+        for (i in 0 until length) {
+            aesKey[i] = (keyFragment[i].toInt() xor
+                         secondaryKey[i].toInt() xor
+                         dynamicKey[i].toInt() xor
+                         sbox[i and 0xFF].toInt()).toByte()
+        }
+        return aesKey
+    }
+}
 
 class Streameeeeee : Videostr() {
     override var name = "Streameeeeee"

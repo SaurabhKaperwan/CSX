@@ -1331,12 +1331,16 @@ object CineStreamExtractors {
         SecureRandom().nextBytes(keyBytes)
         val key = keyBytes.joinToString("") { "%02x".format(it) }
 
+        val tokenResponseText = app.get("$multiDecryptAPI/enc-hexa").text
+        val token = JSONObject(tokenResponseText).getJSONObject("result").getString("token")
+
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
-            "Accept" to "plain/text",
+            "Accept" to "text/plain",
             "X-Api-Key" to key,
             "X-Fingerprint-Lite" to "e9136c41504646444",
             "Referer" to "https://hexa.su/",
+            "X-Cap-Token" to token
         )
 
         val enc_data = app.get(url, headers = headers).text
@@ -1380,10 +1384,10 @@ object CineStreamExtractors {
         val enc_data = JSONObject(json).getString("result")
 
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "User-Agent" to USER_AGENT,
             "Connection" to "keep-alive",
             "Referer" to "$vidlinkAPI/",
-            "Origin" to "$vidlinkAPI/",
+            "Origin" to vidlinkAPI,
         )
 
         val epUrl = if(season == null) {
