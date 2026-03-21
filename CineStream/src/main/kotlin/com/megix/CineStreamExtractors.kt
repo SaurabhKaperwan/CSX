@@ -3922,7 +3922,7 @@ object CineStreamExtractors {
         }
 
         Gson().fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
-            val title = s.title ?: s.name ?: ""
+            val title = s.description ?: s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
                 ExtractorLinkType.M3U8
@@ -4008,7 +4008,7 @@ object CineStreamExtractors {
 
         res?.streams?.forEach { stream ->
 
-            val title = stream.title ?: stream.name ?: ""
+            val title = stream.description ?: stream.title ?: stream.name ?: ""
             val magnet = buildMagnetString(stream)
 
             callback.invoke(

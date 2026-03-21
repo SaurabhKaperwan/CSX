@@ -569,6 +569,7 @@ data class Streamify(
     var type: String? = null,
     var url: String,
     var title: String? = null,
+    var description: String? = null,
     var subtitles: List<StreamifySubs>? = null,
     @SerializedName("behaviorHints" ) var behaviorHints: StreamifyBehaviorHints? = StreamifyBehaviorHints()
 )
