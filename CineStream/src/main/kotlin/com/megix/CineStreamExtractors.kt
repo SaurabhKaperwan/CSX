@@ -1528,25 +1528,31 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit
     ) {
         if(title == null) return
+
         val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
+
         document.select("article > a").safeAmap {
-            val doc = app.get(animezAPI + it.attr("href")).document
-            val titles = doc.select("ul.InfoList > li").text().replace(" -Dub", "")
-
+            val titles = it.attr("title").replace(" -Dub", "")
             if(titles != title) return@safeAmap
-
+            val doc = app.get(animezAPI + it.attr("href")).document
             val ep = episode ?: 1
             val links  = doc.select("li.wp-manga-chapter > a")
             val link = if (links.size >= ep) links[links.size - ep] else return@safeAmap
             val type = if(link.text().contains("Dub", true)) "DUB" else "SUB"
             val epDoc = app.get(animezAPI + link.attr("href")).document
-            val source = epDoc.select("iframe").attr("src")
+            val m3u8 = epDoc.select("iframe").attr("src").replace("/embed/", "/anime/").replace(Regex("\\s+"), "")
 
-            M3u8Helper.generateM3u8(
-                "Animez [$type]",
-                source.replace("/embed/", "/anime/"),
-                "$animezAPI/",
-            ).forEach(callback)
+            callback.invoke(
+                newExtractorLink(
+                    "Animez[$type]",
+                    "Animez[$type]",
+                    m3u8,
+                    type = ExtractorLinkType.M3U8
+                ) {
+                    this.quality = 1080
+                    this.referer = "$animezAPI/"
+                }
+            )
         }
     }
 
@@ -1642,19 +1648,29 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        if (aniId == null) return
+        if (title == null) return
 
         val episodeNumber = episode ?: 1
         val gojoAPI = "$gojoBaseAPI/v2"
         val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
             "Referer" to "$gojoBaseAPI/",
             "Origin" to gojoBaseAPI
         )
 
         val searchJson = app.get("$gojoAPI/api/anime/search/?query=$title", headers = headers).text
-        val id = getGojoId(searchJson, aniId) ?: return
+
+        Log.d("Gojo", "searchJson: $searchJson")
+
+        val id = getGojoId(searchJson, title) ?: return
+
+        Log.d("Gojo", "id: $id")
+
         val epDetailsJson = app.get("$gojoAPI/api/anime/servers/$id/$episodeNumber", headers = headers).text
         val servers = getGojoServers(epDetailsJson)
+
+        Log.d("Gojo", "servers: $servers")
+
         if (servers.isEmpty()) return
 
         servers.safeAmap { server ->

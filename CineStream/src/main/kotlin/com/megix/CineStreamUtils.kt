@@ -1439,15 +1439,31 @@ fun fixSourceUrls(url: String, source: String?): String? {
     }
 }
 
-fun getGojoId(jsonString: String, aniId: Int): String? {
+fun getGojoId(jsonString: String, title: String): String? {
+
     val results = JSONObject(jsonString).getJSONArray("results")
 
-    for (i in 0 until results.length()) {
+    for( i in 0 until results.length() ) {
         val item = results.getJSONObject(i)
-        if (item.optInt("anilist_id") == aniId) {
+
+        val titleObject = item.optJSONObject("title") ?: continue
+
+        val englishTitle = titleObject.optString("english", "")
+        val romajiTitle = titleObject.optString("romaji", "")
+
+        if (englishTitle.equals(title, ignoreCase = true) ||
+            romajiTitle.equals(title, ignoreCase = true)) {
             return item.getString("id")
         }
     }
+
+    // for (i in 0 until results.length()) {
+    //     val item = results.getJSONObject(i)
+    //     if (item.optInt("anilist_id") == aniId) {
+    //         return item.getString("id")
+    //     }
+    // }
+
     return null
 }
 
