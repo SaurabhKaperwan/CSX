@@ -11,21 +11,19 @@ object ApiConstants {
     // ── 1. Static APIs ──────────────────────────────────────────
     const val malsyncAPI = "https://api.malsync.moe"
     const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-    const val WYZIESubsAPI = "https://sub.wyzie.ru"
+    const val WYZIESubsAPI = "https://sub.wyzie.io"
     const val MostraguardaAPI = "https://mostraguarda.stream"
     const val CC_COOKIE = BuildConfig.CC_COOKIE
     const val CINE_API = BuildConfig.CINE_API
     const val CASTLE_API = BuildConfig.CASTLE_API
     const val animepaheAPI = "https://animepahe.si"
-    const val allmovielandAPI = "https://allmovieland.io"
+    const val allmovielandAPI = "https://allmovieland.you"
     const val torrentioAPI = "https://torrentio.strem.fun/sort=seeders"
     const val anizoneAPI = "https://anizone.to"
     const val AllanimeAPI = "https://api.allanime.day/api"
     const val PrimeSrcApi = "https://primesrc.me"
     const val asiaflixAPI = "https://asiaflix.net"
     const val twoembedAPI = "https://2embed.cc"
-    // const val xprimeBaseAPI = "https://xprime.today"
-    // const val xprimeAPI = "https://backend.xprime.today"
     const val sudatchiAPI = "https://sudatchi.com"
     const val aniversehdAPI = "https://aniversehd.com"
     const val animezAPI = "https://animeyy.com"

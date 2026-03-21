@@ -150,7 +150,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_xpass", displayName = "Xpass",
-            executeStandard = { res, _, cb -> invokeXpass(res.tmdbId, res.season, res.episode, cb) }
+            executeStandard = { res, subCb, cb -> invokeXpass(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_playsrc", displayName = "Playsrc",
@@ -329,11 +329,7 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeWatch32(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
 
-        // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
         // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
-        // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-        // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-        // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
 
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─
         ProviderDef(

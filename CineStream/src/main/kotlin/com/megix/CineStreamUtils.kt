@@ -862,32 +862,6 @@ fun formatSize(bytes: Long): String {
     }
 }
 
-//Xprime
-// suspend fun multiDecrypt(text : String, source: String) : String? {
-//     val headers = mapOf(
-//         "Content-Type" to "application/json",
-//         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-//         "Accept" to "application/json",
-//         "Accept-Language" to "en-US,en;q=0.9'",
-//     )
-
-//     val jsonBody = mapOf(
-//         "text" to text
-//     )
-
-//     val response = app.post(
-//         "https://enc-dec.app/api/$source",
-//         headers = headers,
-//         json = jsonBody
-//     )
-
-//     if(response.isSuccessful) {
-//         val json = response.text
-//         return JSONObject(json).getString("result")
-//     }
-//     return null
-// }
-
 suspend fun bypassHrefli(url: String): String? {
     fun Document.getFormUrl(): String {
         return this.select("form#landing").attr("action")
@@ -1424,29 +1398,6 @@ fun decodeMeta(document: Document): Document? {
     return null
 }
 
-// fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
-//     val totalSize = keySize + ivSize
-//     val derived = ByteArray(totalSize)
-//     var block: ByteArray? = null
-//     var offset = 0
-
-//     while (offset < totalSize) {
-//         val hasher = MessageDigest.getInstance("MD5")
-//         if (block != null) hasher.update(block)
-//         hasher.update(password)
-//         hasher.update(salt)
-//         block = hasher.digest()
-
-//         val len = Math.min(block.size, totalSize - offset)
-//         System.arraycopy(block, 0, derived, offset, len)
-//         offset += len
-//     }
-
-//     val key = derived.copyOfRange(0, keySize)
-//     val iv = derived.copyOfRange(keySize, totalSize)
-//     return Pair(key, iv)
-// }
-
 //Allanime
 fun decrypthex(inputStr: String): String {
     val hexString = if (inputStr.startsWith("-")) {
@@ -1623,24 +1574,6 @@ suspend fun getRedirectLinks(url: String): String {
     }
 }
 
-// fun generateHashedString(): String {
-//     val s = "a8f7e9c2d4b6a1f3e8c9d2t4a7f6e9c2d4z6a1f3e8c9d2b4a7f5e9c2d4b6a1f3"
-//     val a = "2"
-//     val algorithm = "HmacSHA512"
-//     val keySpec = SecretKeySpec(s.toByteArray(StandardCharsets.UTF_8), algorithm)
-//     val mac = Mac.getInstance(algorithm)
-//     mac.init(keySpec)
-
-//     val input = "crypto_rotation_v${a}_seed_2025"
-//     val hmacBytes = mac.doFinal(input.toByteArray(StandardCharsets.UTF_8))
-//     val hex = hmacBytes.joinToString("") { "%02x".format(it) }
-
-//     val repeated = hex.repeat(3)
-//     val result = repeated.substring(0, max(s.length, 128))
-
-//     return result
-// }
-
 fun cinemaOSGenerateHash(tmdbId: Int?, imdbId: String?, season: Int?, episode: Int?): String {
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
     val secondary = "d3f8a5b2c9e6d1f7a4b8c5e2d9f3a6b1c7e4d8f2a9b5c3e7d4f1a8b6c2e9d5f3"
@@ -1708,7 +1641,6 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
         val key = keys.next()
         val source = sourcesObject.getJSONObject(key)
 
-        // Check if source has "qualities" object
         if (source.has("qualities")) {
             val qualities = source.getJSONObject("qualities")
             val qualityKeys = qualities.keys()
@@ -1723,12 +1655,11 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
                 sourceMap["type"] = qualityObj.optString("type", "")
                 sourceMap["speed"] = source.optString("speed", "")
                 sourceMap["bitrate"] = source.optString("bitrate", "")
-                sourceMap["quality"] = qualityKey // Use the quality key (e.g., "480", "720")
+                sourceMap["quality"] = qualityKey
 
                 sourcesList.add(sourceMap)
             }
         } else {
-            // Regular source with direct URL
             val sourceMap = mutableMapOf<String, String>()
             sourceMap["server"] = source.optString("server", key)
             sourceMap["url"] = source.optString("url", "")
@@ -1825,42 +1756,16 @@ fun getVidrockUrlEncode(itemId: String): String {
     return urlEncoded
 }
 
-/**
- * PBKDF2 key derivation using Bouncy Castle
- */
-// fun derivePbkdf2Key(password: String, salt: ByteArray, iterations: Int, keyLength: Int): ByteArray {
-//    val generator = PKCS5S2ParametersGenerator(SHA256Digest())
-//    generator.init(password.toByteArray(Charsets.UTF_8), salt, iterations)
-//    return (generator.generateDerivedParameters(keyLength * 8) as KeyParameter).key
-//}
+//Xpass
 
-// fun derivePbkdf2Key(
-//     password: String,
-//     salt: ByteArray,
-//     iterations: Int,
-//     keyLength: Int
-// ): ByteArray {
-//     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-//     val spec: KeySpec = PBEKeySpec(password.toCharArray(), salt, iterations, keyLength * 8)
-//     return factory.generateSecret(spec).encoded
-// }
-
-/**
- * Remove PKCS7 padding
- */
-// fun unpadData(data: ByteArray): ByteArray {
-//     val padding = data[data.size - 1].toInt() and 0xFF
-//     if (padding < 1 || padding > data.size) {
-//         return data
-//     }
-//     return data.copyOf(data.size - padding)
-// }
-
-// fun hasHost(url: String): Boolean {
-//     return try {
-//         val host = URL(url).host
-//         !host.isNullOrEmpty()
-//     } catch (e: Exception) {
-//         false
-//     }
-// }
+fun extractXpassBackups(html: String): List<Pair<String, String>> {
+    val raw = Regex("""var backups=(\[.*?]);""", RegexOption.DOT_MATCHES_ALL)
+        .find(html)?.groupValues?.get(1) ?: return emptyList()
+    val array = JSONArray(raw)
+    return (0 until array.length()).mapNotNull { i ->
+        val obj  = array.getJSONObject(i)
+        val name = obj.optString("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        val url  = obj.optString("url").takeIf  { it.isNotBlank() } ?: return@mapNotNull null
+        Pair(name, url)
+    }
+}

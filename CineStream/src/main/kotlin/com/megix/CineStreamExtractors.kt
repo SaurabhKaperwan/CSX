@@ -107,8 +107,6 @@ import com.megix.ApiConstants.watch32API
 import com.megix.ApiConstants.xpassAPI
 import com.megix.ApiConstants.kuudereAPI
 import com.megix.ApiConstants.vidrockAPI
-// import com.megix.ApiConstants.xprimeAPI
-// import com.megix.ApiConstants.xprimeBaseAPI
 
 object CineStreamExtractors {
 
@@ -840,26 +838,53 @@ object CineStreamExtractors {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season == null) {
-            "$xpassAPI/feb/${tmdbId}/0/0/0/playlist.json"
-        } else {
-            "$xpassAPI/meg/tv/${tmdbId}/${season}/${episode}/playlist.json"
-        }
+        val embedUrl = if(season == null) "$xpassAPI/e/movie/$tmdbId" else "$xpassAPI/e/tv/$tmdbId/$season/$episode"
+        val html = app.get(embedUrl, referer = "$xpassAPI/").text
+        val backups = extractXpassBackups(html)
 
-        val json = app.get(url).text
-        val regex = """\"file":"(.*?)\"""".toRegex()
-        val match = regex.find(json)
-        val rawUrl = match?.groupValues?.get(1)
-        val m3u8 = rawUrl?.replace("\\u0026", "&")
+        Log.d("Xpass", "backups: $backups")
 
-        if (m3u8 != null) {
-            M3u8Helper.generateM3u8(
-                "Xpass",
-                m3u8,
-                "$xpassAPI/",
-            ).forEach(callback)
+        backups.safeAmap { (name, url) ->
+            val fullUrl  = if (url.startsWith("http")) url else xpassAPI + url
+
+            Log.d("Xpass", "fullUrl: $fullUrl")
+
+            val json     = app.get(fullUrl).text
+            val sources  = JSONObject(json)
+                .optJSONArray("playlist")
+                ?.optJSONObject(0)
+                ?.optJSONArray("sources") ?: return@safeAmap
+
+            for (i in 0 until sources.length()) {
+                val source = sources.getJSONObject(i)
+                val file   = source.optString("file").takeIf {
+                    it.isNotBlank() && it.startsWith("http")
+                } ?: continue
+                val isM3u8 = source.optString("type").contains("hls", ignoreCase = true)
+                        || file.contains(".m3u8")
+
+                if(isM3u8) {
+                    M3u8Helper.generateM3u8(
+                        "Xpass [$name]",
+                        file,
+                        "$xpassAPI/",
+                    ).forEach(callback)
+                } else {
+                    callback.invoke(
+                        newExtractorLink(
+                            "Xpass [$name]",
+                            "Xpass [$name]",
+                            file
+                        ) {
+                            this.referer = "$xpassAPI/"
+                        }
+                    )
+                }
+            }
+
         }
     }
 
@@ -1654,116 +1679,6 @@ object CineStreamExtractors {
         }
     }
 
-    // suspend fun invokePrimenet(
-    //     tmdbId: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val headers = mapOf(
-    //         "Referer" to xprimeBaseAPI,
-    //         "Origin" to xprimeBaseAPI,
-    //         "User-Agent" to USER_AGENT
-    //     )
-
-    //     val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
-    //     val jsonObject = JSONObject(tokenJson)
-    //     val token = jsonObject.getString("result")
-
-    //     val url = if(season == null) {
-    //         "$xprimeAPI/primenet?id=$tmdbId&turnstile=$token"
-    //     } else {
-    //         "$xprimeAPI/primenet?id=$tmdbId&season=$season&episode=$episode&turnstile=$token"
-    //     }
-
-    //     val text = app.get(url, headers = headers).text
-    //     val json = multiDecrypt(text, "dec-xprime") ?: return
-
-    //     val sourceUrl = JSONObject(json).getString("url")
-    //     if(sourceUrl == "null") {
-    //         return
-    //     }
-
-    //     callback.invoke(
-    //         newExtractorLink(
-    //             "Primenet",
-    //             "Primenet",
-    //             sourceUrl,
-    //             type = ExtractorLinkType.M3U8
-    //         ) {
-    //             this.referer = xprimeBaseAPI
-    //             this.quality = 1080
-    //             this.headers = headers
-    //         }
-    //     )
-    // }
-
-    // suspend fun invokePrimebox(
-    //     title: String? = null,
-    //     year: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val headers = mapOf(
-    //         "Referer" to xprimeBaseAPI,
-    //         "Origin" to xprimeBaseAPI,
-    //         "User-Agent" to USER_AGENT
-    //     )
-
-    //     val tokenJson = app.get("$multiDecryptAPI/enc-xprime").text
-    //     val jsonObject = JSONObject(tokenJson)
-    //     val token = jsonObject.getString("result")
-
-    //     val url = if(season == null) {
-    //         "$xprimeAPI/primebox?name=$title&fallback_year=$year&turnstile=$token"
-    //     } else {
-    //         "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode&turnstile=$token"
-    //     }
-
-    //     val text = app.get(url, headers = headers).text
-    //     val json = multiDecrypt(text, "dec-xprime") ?: return
-    //     val data = tryParseJson<Primebox>(json) ?: return
-
-    //     data.streams?.let { streams ->
-    //         listOf(
-    //             360 to streams.quality360P,
-    //             720 to streams.quality720P,
-    //             1080 to streams.quality1080P
-    //         ).forEach { (quality, link) ->
-    //             if (!link.isNullOrBlank()) {
-    //                 callback.invoke(
-    //                     newExtractorLink(
-    //                         "PrimeBox",
-    //                         "PrimeBox",
-    //                         link,
-    //                         type = ExtractorLinkType.VIDEO,
-    //                     ) {
-    //                         this.quality = quality
-    //                         this.headers = headers
-    //                     }
-    //                 )
-    //             }
-    //         }
-    //     }
-
-    //     if (data.hasSubtitles && data.subtitles.isNotEmpty()) {
-    //         data.subtitles.forEach { sub ->
-    //             val file = sub.file
-    //             val label = sub.label
-    //             if (!file.isNullOrBlank() && !label.isNullOrBlank()) {
-    //                 subtitleCallback.invoke(
-    //                     newSubtitleFile(
-    //                         getLanguage(label),
-    //                         file
-    //                     )
-    //                 )
-    //             }
-    //         }
-    //     }
-    // }
-
     suspend fun invoke2embed(
         id: String? = null,
         season: Int? = null,
@@ -2316,7 +2231,7 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            "User-Agent" to USER_AGENT
         )
 
         val document = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
@@ -2522,21 +2437,30 @@ object CineStreamExtractors {
     ) {
         val searchQuery = if(season == null) "${title?.replace(" ", "+")}+${year}" else "${title?.replace(" ", "+")}+season+${season}"
         val searchUrl = "$movies4uAPI/?s=$searchQuery"
+        val headers = mapOf(
+            "Cookie" to "xla=s4t",
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+            "Referer" to "$movies4uAPI/"
+        )
 
-        val searchDoc = app.get(searchUrl).document
+        val searchDoc = app.get(searchUrl, headers = headers).document
         val links = searchDoc.select("article h3 a")
+
+        Log.d("Movies4u", "links: $links")
 
         links.safeAmap { element ->
             val postUrl = element.attr("href")
-            val postDoc = app.get(postUrl).document
+            val postDoc = app.get(postUrl, headers = headers).document
             val imdbId = postDoc.select("p a:contains(IMDb Rating)").attr("href")
                             .substringAfter("title/").substringBefore("/")
+
+            Log.d("Movies4u", "imdbId: $imdbId | id: $id")
 
             if(imdbId != id.toString()) { return@safeAmap }
 
             if (season == null) {
                 val innerUrl = postDoc.select("div.download-links-div a.btn").attr("href")
-                val innerDoc = app.get(innerUrl).document
+                val innerDoc = app.get(innerUrl, headers = headers).document
                 val sourceButtons = innerDoc.select("div.downloads-btns-div a.btn")
                 sourceButtons.safeAmap { sourceButton ->
                     val sourceLink = sourceButton.attr("href")
@@ -2555,7 +2479,7 @@ object CineStreamExtractors {
                     if (headerText.contains("Season $season", ignoreCase = true)) {
                         val seasonLink = block.selectFirst("a.btn")?.attr("href") ?: return@safeAmap
 
-                        val episodeDoc = app.get(seasonLink).document
+                        val episodeDoc = app.get(seasonLink, headers = headers).document
                         val episodeBlocks = episodeDoc.select("div.downloads-btns-div")
 
                         if (episode != null && episode in 1..episodeBlocks.size) {
@@ -3474,54 +3398,6 @@ object CineStreamExtractors {
         }
     }
 
-    // suspend fun invokeMp4Moviez(
-    //     title: String?,
-    //     season: Int?,
-    //     episode: Int?,
-    //     year: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     if (season == null) {
-    //         val doc = app.get("$mp4MoviezAPI/search/$title.html", allowRedirects = true, timeout = 30).document
-    //         val searchResponse = doc.select(".fl")
-    //         searchResponse.forEach {
-    //             val url = mp4MoviezAPI + it.select("a").attr("href")
-    //             val name = it.select("img").attr("alt")
-    //             val doc = app.get(url, allowRedirects = true, timeout = 30).document
-    //             val link = mp4MoviezAPI + doc.select("div[style=\"text-align:left;\"] a").attr("href")
-    //             if(name.contains(title.toString()) == true && name.contains(year.toString()))
-    //             {
-    //                 val cleanName =  name.replace("download","",true).replace("full","",true).replace("movie","",true).trim()
-    //                 val doc = app.get(link).document
-    //                 val links = doc.select("div[style=\"text-align:left;\"]")
-    //                 links.forEach { item ->
-    //                     val link = item.select("a").attr("href")
-    //                     if (!link.contains("links4mad.online")) {
-    //                         callback.invoke(
-    //                             newExtractorLink(
-    //                                 "Mp4Moviez [${cleanName}]",
-    //                                 "Mp4Moviez [${cleanName}]",
-    //                                 url = link,
-    //                             ) {
-    //                                 quality = getIndexQuality(link)
-    //                             }
-    //                         )
-    //                     } else if (link.contains("links4mad.online")) {
-    //                         val shortLinkUrl = item.select("a").attr("href")
-    //                         val sDoc = app.post(shortLinkUrl).document
-    //                         val links1 = sDoc.select(".col-sm-8.col-sm-offset-2.well.view-well a")
-    //                         links1.forEach {
-    //                             loadExtractor(it.attr("href"), subtitleCallback, callback)
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-
-    //     }
-    // }
-
     suspend fun invokeCinemaOS(
         imdbId: String? = null,
         tmdbId: Int? = null,
@@ -3565,233 +3441,6 @@ object CineStreamExtractors {
             )
         }
     }
-
-    // suspend fun invokeVidPlus(
-    //     tmdbId: Int? = null,
-    //     imdbId: String? = null,
-    //     title: String? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     year: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val headers = mapOf(
-    //         "Accept" to "*/*",
-    //         "Referer" to vidPlusApi,
-    //         "Origin" to vidPlusApi,
-    //         "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
-    //         "X-Requested-With" to "XMLHttpRequest"
-    //     )
-
-    //     // Build request parameters and fetch encrypted response
-    //     val requestArgs = listOf(title, year, imdbId).joinToString("*")
-    //     val urlListMap = mutableMapOf<String,String>()
-    //     val serList = """
-    //                 [
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Nexon",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Crown",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Cine",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Wink",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "VN",
-    //                     "name": "Viet",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "AU",
-    //                     "name": "Orion",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Beta",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "GB",
-    //                     "name": "Gork",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Vox",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Minecloud",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "US",
-    //                     "name": "Joker",
-    //                     "audioLanguage": "English audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "GB",
-    //                     "name": "Leo",
-    //                     "audioLanguage": "Original audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "4K",
-    //                     "name": "4K",
-    //                     "audioLanguage": "Original audio",
-    //                     "language": "English"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Hindi",
-    //                     "audioLanguage": "Hindi audio",
-    //                     "language": "Hindi"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Indus",
-    //                     "audioLanguage": "Hindi audio",
-    //                     "language": "Hindi"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Delta",
-    //                     "audioLanguage": "Bengali audio",
-    //                     "language": "Bengali"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Ben",
-    //                     "audioLanguage": "Bengali audio",
-    //                     "language": "Bengali"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Pearl",
-    //                     "audioLanguage": "Tamil audio",
-    //                     "language": "Tamil"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Tamil",
-    //                     "audioLanguage": "Tamil audio",
-    //                     "language": "Tamil"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Ruby",
-    //                     "audioLanguage": "Telugu audio",
-    //                     "language": "Telugu"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Tel",
-    //                     "audioLanguage": "Telugu audio",
-    //                     "language": "Telugu"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Mal",
-    //                     "audioLanguage": "Malayalam audio",
-    //                     "language": "Malayalam"
-    //                   },
-    //                   {
-    //                     "flag": "IN",
-    //                     "name": "Kan",
-    //                     "audioLanguage": "Kannada audio",
-    //                     "language": "Kannada"
-    //                   },
-    //                   {
-    //                     "flag": "FR",
-    //                     "name": "Lava",
-    //                     "audioLanguage": "French audio",
-    //                     "language": "French"
-    //                   }
-    //                 ]
-    //                 """.trimIndent()
-
-    //     val serverJson = JSONArray(serList)
-    //     for (index in 0 until serverJson.length()) {
-    //         val obj = serverJson.getJSONObject(index)
-    //         try {
-    //             val serverName = obj.getString("name")
-    //             val serverLanguage = obj.getString("language")
-    //             val serverId = index+1;
-    //             val serverUrl = if(season == null) "$vidPlusApi/api/server?id=$tmdbId&sr=$serverId&args=$requestArgs" else  "$vidPlusApi/api/server?id=$tmdbId&sr=$serverId&ep=$episode&ss=$season&args=$requestArgs"
-
-    //             val apiResponse = app.get(serverUrl,headers=headers, timeout = 20,).text
-    //             if (apiResponse.contains("\"data\"",ignoreCase = true)) {
-    //                 val decodedPayload = String(Base64.getDecoder().decode(JSONObject(apiResponse).getString("data")))
-    //                 val payloadJson = JSONObject(decodedPayload)
-
-    //                 val ciphertext = Base64.getDecoder().decode(payloadJson.getString("encryptedData"))
-    //                 val password = payloadJson.getString("key")
-    //                 val salt = hexStringToByteArray2(payloadJson.getString("salt"))
-    //                 val iv = hexStringToByteArray2(payloadJson.getString("iv"))
-    //                 val derivedKey = derivePbkdf2Key(password, salt, 1000, 32)
-    //                 val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    //                 cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(derivedKey, "AES"), IvParameterSpec(iv))
-    //                 val decryptedText = unpadData(cipher.doFinal(ciphertext))
-    //                 val decryptedString = String(decryptedText)
-
-    //                 val regex = Regex("\"url\":\"(.*?)\",")
-    //                 val match = regex.find(decryptedString)
-    //                 val streamURl = match?.groupValues?.get(1)
-    //                 if (!streamURl.isNullOrEmpty()) {
-    //                     var finalStreamUrl = streamURl
-    //                     if (!hasHost(streamURl.toString())) {
-    //                         finalStreamUrl = app.head("$vidPlusApi$streamURl",headers= headers, allowRedirects = false).headers.get("Location")
-    //                    }
-
-
-    //                     urlListMap["$serverName | $serverLanguage"] = finalStreamUrl.toString()
-    //                 }
-    //             }
-    //         } catch (e: Exception) {
-    //             TODO("Not yet implemented")
-    //         }
-    //     }
-
-    //     urlListMap.forEach {
-    //         callback.invoke(
-    //             newExtractorLink(
-    //                 "VidPlus [${it.key}]",
-    //                 "VidPlus [${it.key}]",
-    //                 url = it.value,
-    //             )
-    //             {
-    //                 this.quality = Qualities.P1080.value
-    //                 this.headers = mapOf("Origin" to vidPlusApi)
-    //             }
-    //         )
-    //     }
-    // }
 
     // suspend fun invokeMultiEmbeded(
     //     tmdbId: Int? = null,
