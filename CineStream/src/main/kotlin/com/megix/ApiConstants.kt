@@ -103,4 +103,5 @@ object ApiConstants {
     val XDmoviesAPI get() = api("xdmovies")
     val animekaiAPI get() = api("animekai")
     val rtallyAPI get() = api("rtally")
+    val kaidoAPI get() = api("kaido")
 }

@@ -31,6 +31,7 @@ open class CineStream: Plugin() {
         registerExtractorAPI(SuperVideo())
         registerExtractorAPI(Akamaicdn())
         registerExtractorAPI(MegaUp())
+        registerExtractorAPI(Rapidshare())
         registerExtractorAPI(MegaUpTwoTwo())
         registerExtractorAPI(Fourspromax())
         registerExtractorAPI(Rapidairmax())
@@ -52,6 +53,8 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Videostr())
         registerExtractorAPI(Streameeeeee())
         registerExtractorAPI(ZenCloudz())
+        registerExtractorAPI(Rapid())
+        registerExtractorAPI(MegaPlay())
 
         this.openSettings = { ctx: Context ->
             Settings.showSettingsDialog(ctx) {

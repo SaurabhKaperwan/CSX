@@ -222,6 +222,16 @@ data class HianimeResponses(
     @param:JsonProperty("link") val link: String? = null,
 )
 
+data class HianimeEpisodeServers(
+    val type: String? = null,
+    val link: String? = null,
+    val server: Long? = null,
+    val sources: List<Any?>? = null,
+    val tracks: List<Any?>? = null
+)
+
+
+//Anivers Hianime
 data class HianimeStreamResponse(
     val sources: List<HianimeSources>,
     val tracks: List<HianimeTracks>,

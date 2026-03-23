@@ -350,6 +350,10 @@ object ProviderRegistry {
             executeMalSync = { data, subCb, cb -> invokeHianime(data.hianimeurl, data.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_kaido", displayName = "Kaido",
+            executeMalSync = { data, subCb, cb -> invokeKaido(data.hianimeurl, data.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_animepahe", displayName = "AnimePahe",
             executeMalSync = { data, subCb, cb -> invokeAnimepahe(data.animepaheUrl, data.episode, subCb, cb) }
         ),
