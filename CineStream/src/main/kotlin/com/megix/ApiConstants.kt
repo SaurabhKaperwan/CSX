@@ -2,8 +2,6 @@ package com.megix
 
 import android.util.Log
 import com.lagradost.cloudstream3.app
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 object ApiConstants {
@@ -66,19 +64,21 @@ object ApiConstants {
     const val vidrockAPI = "https://vidrock.net"
     const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
-    // ── 2. Private Background Logic ──────────────────────────────
-    private val apiConfig by lazy {
-        runBlocking(Dispatchers.IO) {
-            runCatching {
-                JSONObject(app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text)
-            }.getOrElse {
-                Log.e("CineStream", "Error loading API URLs")
-                JSONObject()
-            }
+    // ── 2. Dynamic API Config ────────────────────────────────────
+    // Loaded once via init() called from CineStream.load()
+    private var _apiConfig: JSONObject? = null
+
+    suspend fun init() {
+        if (_apiConfig != null) return
+        _apiConfig = runCatching {
+            JSONObject(app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text)
+        }.getOrElse {
+            Log.e("CineStream", "Error loading dynamic API URLs: ${it.message}")
+            JSONObject()
         }
     }
 
-    private fun api(key: String) = apiConfig.optString(key)
+    private fun api(key: String) = _apiConfig?.optString(key).orEmpty()
 
     // ── 3. Dynamic APIs ──────────────────────────────────────────
     val protonmoviesAPI get() = api("protonmovies")

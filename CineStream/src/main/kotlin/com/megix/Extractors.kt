@@ -32,6 +32,8 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import android.util.Base64
 
+import com.megix.settings.Settings
+
 class Rapid : MegaPlay() {
     override val name = "Rapid"
     override val mainUrl = "https://rapid-cloud.co"

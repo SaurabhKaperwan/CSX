@@ -5,10 +5,15 @@ import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
+import com.megix.settings.Settings
+import kotlinx.coroutines.runBlocking
 
 @CloudstreamPlugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
+
+        // Load dynamic API URLs once
+        runBlocking { ApiConstants.init() }
 
         // Seed seen-providers on every load so reinstalls/updates
         // don't treat existing providers as new

@@ -1,9 +1,7 @@
 package com.megix
 
 // Android
-import android.os.Build
 import android.util.Base64
-import androidx.annotation.RequiresApi
 
 // Cloudstream & NiceHttp
 import com.lagradost.api.Log
@@ -13,7 +11,6 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.nicehttp.NiceResponse
-import com.lagradost.nicehttp.RequestBodyTypes
 
 // Coroutines
 import kotlinx.coroutines.*
@@ -21,36 +18,29 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-// Network (OkHttp / Java Net)
+// Network
 import java.net.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 // JSON & HTML Parsing
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonParser
-import com.google.gson.reflect.TypeToken
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-// Java Utils & Math
-import java.nio.charset.StandardCharsets
+// Java Utils
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.UUID
 import java.util.Date
 import java.util.Locale
-import java.util.regex.Pattern
-import kotlin.math.max
+import java.util.UUID
 import kotlin.math.pow
 import kotlin.random.Random
 
 // Security & Crypto
 import java.security.MessageDigest
-import java.security.spec.KeySpec
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
@@ -59,8 +49,12 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
+// Extractors
 import com.lagradost.cloudstream3.extractors.VidHidePro
 import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+
+// Settings
+import com.megix.settings.Settings
 
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
