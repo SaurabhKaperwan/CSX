@@ -14,14 +14,14 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.supervisorScope
 
 class BollyflixProvider : MainAPI() {
-    override var mainUrl = "https://bollyflix.sarl"
+    override var mainUrl = "https://bollyflix.frl"
     override var name = "BollyFlix"
     override val hasMainPage = true
     override var lang = "hi"
-    val cinemeta_url = "https://v3-cinemeta.strem.io/meta"
+    val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -53,6 +53,8 @@ class BollyflixProvider : MainAPI() {
         }
     }
 
+    private val cfKiller by lazy { CloudflareKiller() }
+
     override val mainPage = mainPageOf(
         "" to "Home",
         "/movies/bollywood/" to "Bollywood Movies",
@@ -65,10 +67,10 @@ class BollyflixProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
         val document = if(page == 1) {
-            app.get("${mainUrl}${request.data}", interceptor = CloudflareKiller()).document
+            app.get("${mainUrl}${request.data}", interceptor = cfKiller).document
         }
         else {
-            app.get(request.data + "page/" + page, interceptor = CloudflareKiller()).document
+            app.get(request.data + "page/" + page, interceptor = cfKiller).document
         }
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
@@ -94,14 +96,14 @@ class BollyflixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/search/$query/page/$page/", interceptor = CloudflareKiller()).document
+        val document = app.get("$mainUrl/search/$query/page/$page/", interceptor = cfKiller).document
         val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url, interceptor = CloudflareKiller()).document
+        val document = app.get(url, interceptor = cfKiller).document
         var title = document.selectFirst("title")?.text()?.replace("Download ", "").toString()
         var posterUrl = document.selectFirst("meta[property=og:image]")?.attr("content").toString()
         var description = document.selectFirst("span#summary")?.text().toString()
@@ -113,13 +115,11 @@ class BollyflixProvider : MainAPI() {
         }
         val imdbUrl = document.selectFirst("div.imdb_left > a")?.attr("href")
         val responseData = if (!imdbUrl.isNullOrEmpty()) {
-            val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
-            val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
-            if(jsonResponse.isNotEmpty() && jsonResponse.startsWith("{")) {
-                val gson = Gson()
-                gson.fromJson(jsonResponse, ResponseData::class.java)
-            }
-            else {
+            try {
+                val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+                app.get("$cinemeta_url/$tvtype/$imdbId.json").parsedSafe<ResponseData>()
+
+            } catch (e: Exception) {
                 null
             }
         } else {
@@ -148,30 +148,35 @@ class BollyflixProvider : MainAPI() {
             val episodesMap: MutableMap<Pair<Int, Int>, MutableList<String>> = mutableMapOf()
             val buttons = document.select("a.maxbutton-download-links, a.dl, a.btnn")
 
-            coroutineScope {
+            supervisorScope {
                 buttons.map { button ->
                     async {
-                        var link = button.attr("href")
-                        if(link.contains("id=")) {
-                            val id = button.attr("href").substringAfterLast("id=")
-                            link = bypass(id)
-                        }
-                        val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
-                        val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                        val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                        try {
+                            var link = button.attr("href")
 
-                        val seasonDoc = app.get(link).document
-                        val epLinks = seasonDoc.select("h3 > a")
-                            .filter { !it.text().contains("Zip", ignoreCase = true) }
-
-                        synchronized(episodesMap) {
-                            var e = 1
-                            for (epLink in epLinks) {
-                                val epUrl = epLink.attr("href")
-                                val key = Pair(realSeason, e)
-                                episodesMap.getOrPut(key) { mutableListOf() }.add(epUrl)
-                                e++
+                            if(link.contains("id=")) {
+                                val id = button.attr("href").substringAfterLast("id=")
+                                link = bypass(id)
                             }
+
+                            val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
+                            val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
+                            val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+
+                            val seasonDoc = app.get(link).document
+                            val epLinks = seasonDoc.select("h3 > a")
+                                .filter { !it.text().contains("Zip", ignoreCase = true) }
+
+                            synchronized(episodesMap) {
+                                var e = 1
+                                for (epLink in epLinks) {
+                                    val epUrl = epLink.attr("href")
+                                    val key = Pair(realSeason, e)
+                                    episodesMap.getOrPut(key) { mutableListOf() }.add(epUrl)
+                                    e++
+                                }
+                            }
+                        } catch (e: Exception) {
                         }
                     }
                 }.awaitAll()
@@ -208,17 +213,21 @@ class BollyflixProvider : MainAPI() {
                 addImdbUrl(imdbUrl)
             }
         } else {
-            val data = coroutineScope {
+            val data = supervisorScope {
                 document.select("a.dl").map { link ->
                     async {
-                        var decodeUrl = link.attr("href")
-                        if(decodeUrl.contains("id=")) {
-                            val id = link.attr("href").substringAfterLast("id=")
-                            decodeUrl = bypass(id)
+                        try {
+                            var decodeUrl = link.attr("href")
+                            if(decodeUrl.contains("id=")) {
+                                val id = link.attr("href").substringAfterLast("id=")
+                                decodeUrl = bypass(id)
+                            }
+                            EpisodeLink(decodeUrl)
+                        } catch (e: Exception) {
+                            null
                         }
-                        EpisodeLink(decodeUrl)
                     }
-                }.awaitAll()
+                }.awaitAll().filterNotNull()
             }
 
             return newMovieLoadResponse(title, url, TvType.Movie, data) {

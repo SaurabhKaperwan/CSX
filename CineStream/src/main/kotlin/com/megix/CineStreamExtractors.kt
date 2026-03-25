@@ -42,6 +42,8 @@ import com.megix.settings.Settings
 
 object CineStreamExtractors {
 
+    private val cfKiller by lazy { CloudflareKiller() }
+    private val globalGson by lazy { Gson() }
     // ── ApiConstants ─────────────────────────────────────
     // ── Static ────────────────────────────────────
     private val AllanimeAPI      = ApiConstants.AllanimeAPI
@@ -1079,7 +1081,7 @@ object CineStreamExtractors {
         val url = if (sourceName == "Hdmovielover") "$api/${if (isMovie) "movie?imdbid=$imdbId" else "series?imdbid=$imdbId&s=$season&e=$episode"}"
                 else "$api/stream/${if (isMovie) "movie/$imdbId" else "series/$imdbId:$season:$episode"}.json"
 
-        Gson().fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.title ?: ""
             val name = s.name ?: title
 
@@ -1432,8 +1434,7 @@ object CineStreamExtractors {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
-        val gson = Gson()
-        val data = gson.fromJson(epJson, VidlinkResponse::class.java)
+        val data = globalGson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist
 
         M3u8Helper.generateM3u8(
@@ -1470,7 +1471,7 @@ object CineStreamExtractors {
         val response = app.get(url).let {
             if (
                 it.text.contains("Just a moment", true)
-            ) app.get(url, interceptor = CloudflareKiller())
+            ) app.get(url, interceptor = cfKiller)
             else it
         }
 
@@ -1576,7 +1577,6 @@ object CineStreamExtractors {
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val gson = Gson()
         val subsUrls = listOf(
             "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true",
             """https://subsense.nepiraw.com/n0tcjfba-{"languages":["en","hi","ta","es","ar"],"maxSubtitles":10}"""
@@ -1591,7 +1591,7 @@ object CineStreamExtractors {
                 }
 
                 val json = app.get(url).text
-                val subtitleResponse = gson.fromJson(json, StremioSubtitleResponse::class.java)
+                val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
 
                 subtitleResponse.subtitles.forEach {
                     val lang = it.lang ?: it.lang_code
@@ -2585,9 +2585,8 @@ object CineStreamExtractors {
         val json = app.get("$anizipAPI/mappings?$type=$id").text
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
         val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
-        val gson = Gson()
         val listType = object : TypeToken<List<Animetosho>>() {}.type
-        val items: List<Animetosho> = gson.fromJson(json2, listType)
+        val items: List<Animetosho> = globalGson.fromJson(json2, listType)
         // val filtered = items.filter { (it.seeders ?: 0) > 25 }
         // val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
 
@@ -2636,9 +2635,27 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        var res1 = app.get("""$bollyflixAPI/search/${id ?: return} ${season ?: ""}""", interceptor = CloudflareKiller()).document
+        val query = buildString {
+            append("$bollyflixAPI/search/${id ?: return}")
+            if (season != null) append(" $season")
+        }
+
+        val res1 = app.get(query).let {
+            if (
+                it.text.contains("Just a moment", true)
+            ) app.get(query, interceptor = cfKiller)
+            else it
+        }.document
+
         val url = res1.selectFirst("div > article > a")?.attr("href") ?: return
-        val res = app.get(url, interceptor = CloudflareKiller()).document
+
+        val res = app.get(url).let {
+            if (
+                it.text.contains("Just a moment", true)
+            ) app.get(url, interceptor = cfKiller)
+            else it
+        }.document
+
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
         val entries =
@@ -3541,7 +3558,7 @@ object CineStreamExtractors {
 
     //     val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
     //         if (response.text.contains("Just a moment", ignoreCase = true)) {
-    //             app.get(url, allowRedirects = false, interceptor = CloudflareKiller(), headers = headers).headers["Location"]
+    //             app.get(url, allowRedirects = false, headers = headers).headers["Location"]
     //         } else {
     //             response.headers["Location"]
     //         }
@@ -3988,7 +4005,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        Gson().fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.description ?: s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
@@ -4041,7 +4058,7 @@ object CineStreamExtractors {
         }
 
         val json = app.get(url, timeout = 1000L).text
-        val subtitleResponse = Gson().fromJson(json, StremioSubtitleResponse::class.java)
+        val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
 
         subtitleResponse.subtitles.forEach {
             val lang = it.lang ?: it.lang_code
