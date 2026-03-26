@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.lagradost.nicehttp.NiceResponse
 
 // Gson & Jackson
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -40,10 +41,15 @@ import java.net.URLEncoder
 import com.megix.ApiConstants
 import com.megix.settings.Settings
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 object CineStreamExtractors {
 
     private val cfKiller by lazy { CloudflareKiller() }
     private val globalGson by lazy { Gson() }
+    private val cfMutex = Mutex()
+
     // ── ApiConstants ─────────────────────────────────────
     // ── Static ────────────────────────────────────
     private val AllanimeAPI      = ApiConstants.AllanimeAPI
@@ -201,6 +207,28 @@ object CineStreamExtractors {
                     Settings.AddonType.HTTPS, Settings.AddonType.DEBRID -> invokeStreamioStreamsGlobal(addon.name, addon.url, imdbId, season, episode, subtitleCallback, callback)
                 }
             }
+        }
+    }
+
+    private fun isCloudflarePage(response: NiceResponse): Boolean {
+        val server = response.headers["Server"] ?: ""
+        return server.contains("cloudflare", true) && response.code in listOf(403, 503)
+    }
+
+    suspend fun cfGet(url: String, headers: Map<String, String> = emptyMap()): NiceResponse {
+        val response = app.get(url, headers = headers)
+        return if (isCloudflarePage(response)) {
+            cfMutex.withLock {
+                val retryResponse = app.get(url, headers = headers, interceptor = cfKiller)
+                if (isCloudflarePage(retryResponse)) {
+                    cfKiller.savedCookies.clear()
+                    app.get(url, headers = headers, interceptor = cfKiller)
+                } else {
+                    retryResponse
+                }
+            }
+        } else {
+            response
         }
     }
 
@@ -1467,14 +1495,7 @@ object CineStreamExtractors {
 
         val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
         val url = XDmoviesAPI + matched.path
-
-        val response = app.get(url).let {
-            if (
-                it.text.contains("Just a moment", true)
-            ) app.get(url, interceptor = cfKiller)
-            else it
-        }
-
+        val response = cfGet(url)
         val document = response.document
 
         if(season == null) {
@@ -1503,6 +1524,8 @@ object CineStreamExtractors {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@safeAmap
                 }
+
+                Log.d("XDM", "link: $link")
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
@@ -2640,22 +2663,9 @@ object CineStreamExtractors {
             if (season != null) append(" $season")
         }
 
-        val res1 = app.get(query).let {
-            if (
-                it.text.contains("Just a moment", true)
-            ) app.get(query, interceptor = cfKiller)
-            else it
-        }.document
-
+        val res1 = cfGet(query).document
         val url = res1.selectFirst("div > article > a")?.attr("href") ?: return
-
-        val res = app.get(url).let {
-            if (
-                it.text.contains("Just a moment", true)
-            ) app.get(url, interceptor = cfKiller)
-            else it
-        }.document
-
+        val res = cfGet(url).document
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
         val entries =
