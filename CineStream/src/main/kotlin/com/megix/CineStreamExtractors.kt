@@ -2658,38 +2658,37 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val query = buildString {
-            append("$bollyflixAPI/search/${id ?: return}")
-            if (season != null) append(" $season")
-        }
+        val res1 = cfGet("$bollyflixAPI/search/$id").document
+        
+        res1.select("div > article > a").safeAmap {
+            val url = it.attr("href")
+            val res = cfGet(url).document
+            val hTag = if (season == null) "h5" else "h4"
+            val sTag = if (season == null) "" else "Season $season"
+            val entries =
+                res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
+                    .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
+            
+            entries.safeAmap {
+                var href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
 
-        val res1 = cfGet(query).document
-        val url = res1.selectFirst("div > article > a")?.attr("href") ?: return
-        val res = cfGet(url).document
-        val hTag = if (season == null) "h5" else "h4"
-        val sTag = if (season == null) "" else "Season $season"
-        val entries =
-            res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
-                .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
-        entries.safeAmap {
-            var href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
+                if(href.contains("id=")) {
+                    val token = href.substringAfter("id=")
+                    val encodedurl =
+                        app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
+                            .substringBefore("\"};")
+                    href = base64Decode(encodedurl)
+                }
 
-            if(href.contains("id=")) {
-                val token = href.substringAfter("id=")
-                val encodedurl =
-                    app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
-                        .substringBefore("\"};")
-                href = base64Decode(encodedurl.replace("\\/", "/"))
-            }
-
-            if (season == null) {
-                loadSourceNameExtractor("Bollyflix", href , "", subtitleCallback, callback)
-            } else {
-                val episodeText = "Episode " + episode.toString().padStart(2, '0')
-                val link =
-                    app.get(href).document.selectFirst("article h3 a:contains($episodeText)")!!
-                        .attr("href")
-                loadSourceNameExtractor("Bollyflix", link , "", subtitleCallback, callback)
+                if (season == null) {
+                    loadSourceNameExtractor("Bollyflix", href , "", subtitleCallback, callback)
+                } else {
+                    val episodeText = "Episode " + episode.toString().padStart(2, '0')
+                    val link =
+                        app.get(href).document.selectFirst("article h3 a:contains($episodeText)")!!
+                            .attr("href")
+                    loadSourceNameExtractor("Bollyflix", link , "", subtitleCallback, callback)
+                }
             }
         }
     }
@@ -4213,6 +4212,9 @@ object CineStreamExtractors {
         val text = app.get(url).text
         val regex = Regex("""var\s+embedUrlValue\s*=\s*"([^"]+)";""")
         val embedUrl = regex.find(text)?.groupValues?.get(1) ?: return
+
+        Log.d("Autoembed", "Extracted embed URL: $embedUrl")
+        
         loadCustomExtractor("Autoembed", embedUrl, "", subtitleCallback, callback)
     }
 
