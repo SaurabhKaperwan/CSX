@@ -38,7 +38,6 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 
-import com.megix.ApiConstants
 import com.megix.settings.Settings
 
 import kotlinx.coroutines.sync.Mutex
@@ -49,82 +48,6 @@ object CineStreamExtractors {
     private val cfKiller by lazy { CloudflareKiller() }
     private val globalGson by lazy { Gson() }
     private val cfMutex = Mutex()
-
-    // ── ApiConstants ─────────────────────────────────────
-    // ── Static ────────────────────────────────────
-    private val AllanimeAPI      = ApiConstants.AllanimeAPI
-    private val CC_COOKIE        = ApiConstants.CC_COOKIE
-    private val MostraguardaAPI  = ApiConstants.MostraguardaAPI
-    private val PrimeSrcApi      = ApiConstants.PrimeSrcApi
-    private val WYZIESubsAPI     = ApiConstants.WYZIESubsAPI
-    private val YflixAPI         = ApiConstants.YflixAPI
-    private val akwamAPI         = ApiConstants.akwamAPI
-    private val allmovielandAPI  = ApiConstants.allmovielandAPI
-    private val animepaheAPI     = ApiConstants.animepaheAPI
-    private val animetoshoAPI    = ApiConstants.animetoshoAPI
-    private val animezAPI        = ApiConstants.animezAPI
-    private val aniversehdAPI    = ApiConstants.aniversehdAPI
-    private val anizipAPI        = ApiConstants.anizipAPI
-    private val anizoneAPI       = ApiConstants.anizoneAPI
-    private val asiaflixAPI      = ApiConstants.asiaflixAPI
-    private val autoembedAPI     = ApiConstants.autoembedAPI
-    private val bollywoodAPI     = ApiConstants.bollywoodAPI
-    private val bollywoodBaseAPI = ApiConstants.bollywoodBaseAPI
-    private val cinemaOSApi      = ApiConstants.cinemaOSApi
-    private val cinemacityAPI    = ApiConstants.cinemacityAPI
-    private val dahmerMoviesAPI  = ApiConstants.dahmerMoviesAPI
-    private val dramafullAPI     = ApiConstants.dramafullAPI
-    private val femBoxAPI        = ApiConstants.femBoxAPI
-    private val flixIndiaAPI     = ApiConstants.flixIndiaAPI
-    private val hexaAPI          = ApiConstants.hexaAPI
-    private val kissKhAPI        = ApiConstants.kissKhAPI
-    private val levidiaAPI       = ApiConstants.levidiaAPI
-    private val malsyncAPI       = ApiConstants.malsyncAPI
-    private val mappleAPI        = ApiConstants.mappleAPI
-    private val multiDecryptAPI  = ApiConstants.multiDecryptAPI
-    private val multiEmbededApi  = ApiConstants.multiEmbededApi
-    private val projectfreetvAPI = ApiConstants.projectfreetvAPI
-    private val sudatchiAPI      = ApiConstants.sudatchiAPI
-    private val tokyoInsiderAPI  = ApiConstants.tokyoInsiderAPI
-    private val twoembedAPI      = ApiConstants.twoembedAPI
-    private val vidSrcApi        = ApiConstants.vidSrcApi
-    private val vidSrcHindiApi   = ApiConstants.vidSrcHindiApi
-    private val videasyAPI       = ApiConstants.videasyAPI
-    private val vidfastProApi    = ApiConstants.vidfastProApi
-    private val vidlinkAPI       = ApiConstants.vidlinkAPI
-    private val vidsrcCCAPI      = ApiConstants.vidsrcCCAPI
-    private val vidstackAPI      = ApiConstants.vidstackAPI
-    private val vidstackBaseAPI  = ApiConstants.vidstackBaseAPI
-    private val vidzeeApi        = ApiConstants.vidzeeApi
-    private val watch32API       = ApiConstants.watch32API
-    private val xpassAPI         = ApiConstants.xpassAPI
-    private val kuudereAPI       = ApiConstants.kuudereAPI
-    private val vidrockAPI       = ApiConstants.vidrockAPI
-
-    // ── Dynamic ─────────────────────────────────
-    private val XDmoviesAPI      get() = ApiConstants.XDmoviesAPI
-    private val animekaiAPI      get() = ApiConstants.animekaiAPI
-    private val bollyflixAPI     get() = ApiConstants.bollyflixAPI
-    private val fourkhdhubAPI    get() = ApiConstants.fourkhdhubAPI
-    private val gojoBaseAPI      get() = ApiConstants.gojoBaseAPI
-    private val hdmovie2API      get() = ApiConstants.hdmovie2API
-    private val hianimeAPI       get() = ApiConstants.hianimeAPI
-    private val kaidoAPI         get() = ApiConstants.kaidoAPI
-    private val hindMoviezAPI    get() = ApiConstants.hindMoviezAPI
-    private val movies4uAPI      get() = ApiConstants.movies4uAPI
-    private val moviesdriveAPI   get() = ApiConstants.moviesdriveAPI
-    private val moviesmodAPI     get() = ApiConstants.moviesmodAPI
-    private val multimoviesAPI   get() = ApiConstants.multimoviesAPI
-    private val netflix2API      get() = ApiConstants.netflix2API
-    private val netflixAPI       get() = ApiConstants.netflixAPI
-    private val protonmoviesAPI  get() = ApiConstants.protonmoviesAPI
-    private val rogmoviesAPI     get() = ApiConstants.rogmoviesAPI
-    private val rtallyAPI        get() = ApiConstants.rtallyAPI
-    private val skymoviesAPI     get() = ApiConstants.skymoviesAPI
-    private val toonStreamAPI    get() = ApiConstants.toonStreamAPI
-    private val topmoviesAPI     get() = ApiConstants.topmoviesAPI
-    private val uhdmoviesAPI     get() = ApiConstants.uhdmoviesAPI
-    private val vegamoviesAPI    get() = ApiConstants.vegamoviesAPI
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
@@ -2659,7 +2582,7 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
         val res1 = cfGet("$bollyflixAPI/search/$id").document
-        
+
         res1.select("div > article > a").safeAmap {
             val url = it.attr("href")
             val res = cfGet(url).document
@@ -2668,7 +2591,7 @@ object CineStreamExtractors {
             val entries =
                 res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
                     .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
-            
+
             entries.safeAmap {
                 var href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
 
@@ -4214,7 +4137,7 @@ object CineStreamExtractors {
         val embedUrl = regex.find(text)?.groupValues?.get(1) ?: return
 
         Log.d("Autoembed", "Extracted embed URL: $embedUrl")
-        
+
         loadCustomExtractor("Autoembed", embedUrl, "", subtitleCallback, callback)
     }
 

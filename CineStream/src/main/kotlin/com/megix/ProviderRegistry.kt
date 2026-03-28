@@ -3,15 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-import com.megix.ApiConstants.torrentioAPI
-import com.megix.ApiConstants.torrentsdbAPI
-import com.megix.ApiConstants.webStreamrAPI
-import com.megix.ApiConstants.streamvixAPI
-import com.megix.ApiConstants.notorrentAPI
-import com.megix.ApiConstants.CASTLE_API
-import com.megix.ApiConstants.CINE_API
-import com.megix.ApiConstants.animeWorldAPI
-
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
     val title: String?,

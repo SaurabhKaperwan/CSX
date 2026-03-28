@@ -13,7 +13,7 @@ open class CineStream: Plugin() {
     override fun load(context: Context) {
 
         // Load dynamic API URLs once
-        runBlocking { ApiConstants.init() }
+        runBlocking { init() }
 
         // Seed seen-providers on every load so reinstalls/updates
         // don't treat existing providers as new

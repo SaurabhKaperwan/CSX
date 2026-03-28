@@ -327,7 +327,7 @@ open class Gofile : ExtractorApi() {
     override val requiresReferer = false
     private val mainApi = "https://api.gofile.io"
     private val browserLanguage = "en-GB"
-    private val secret = "gf2026x"
+    private val secret = "5d4f7g8sd45fsd"
 
     override suspend fun getUrl(
         url: String,
@@ -489,7 +489,7 @@ class GdFlix2: GDFlix() {
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new15.gdflix.*"
+    override var mainUrl = "https://new16.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
