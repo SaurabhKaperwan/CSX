@@ -91,12 +91,8 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_showbox", displayName = "ShowBox",
-            executeStandard = { res, subCb, cb ->
-                invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb)
-            },
-            executeAnime = { res, subCb, cb ->
-                invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb)
-            }
+            executeStandard = { res, subCb, cb -> invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_vidflix", displayName = "Vidflix",
@@ -253,11 +249,12 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_primesrc", displayName = "PrimeSrc",
-            executeStandard = { res, subCb, cb -> invokePrimeSrc(res.imdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
+        //Cloudflare protected
+        // ProviderDef(
+        //     key = "p_primesrc", displayName = "PrimeSrc",
+        //     executeStandard = { res, subCb, cb -> invokePrimeSrc(res.imdbId, res.season, res.episode, subCb, cb) },
+        //     executeAnime = { res, subCb, cb -> invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        // ),
         ProviderDef(
             key = "p_projectfreetv", displayName = "ProjectFreeTV",
             executeStandard = { res, subCb, cb -> invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subCb, cb) }
@@ -319,7 +316,7 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeWatch32(res.title, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeWatch32(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-
+        //cloudflare protected
         // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
 
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─
@@ -336,10 +333,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_hianime", displayName = "Hianime",
-            executeMalSync = { data, subCb, cb -> invokeHianime(data.hianimeurl, data.episode, subCb, cb) }
-        ),
+        // ProviderDef(
+        //     key = "p_hianime", displayName = "Hianime",
+        //     executeMalSync = { data, subCb, cb -> invokeHianime(data.hianimeurl, data.episode, subCb, cb) }
+        // ),
         ProviderDef(
             key = "p_kaido", displayName = "Kaido",
             executeMalSync = { data, subCb, cb -> invokeKaido(data.hianimeurl, data.episode, subCb, cb) }

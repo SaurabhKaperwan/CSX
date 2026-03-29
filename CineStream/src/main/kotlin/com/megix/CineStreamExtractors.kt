@@ -595,7 +595,6 @@ object CineStreamExtractors {
         }
     }
 
-    //Thanks to https://github.com/AzartX47/EncDecEndpoints
     suspend fun invokeVidstack(
         imdbId: String? = null,
         season: Int? = null,
@@ -904,7 +903,6 @@ object CineStreamExtractors {
         sourceList.safeAmap { loadSourceNameExtractor("Rtally", it, "", subtitleCallback, callback) }
     }
 
-    //Thanks to https://github.com/AzartX47/EncDecEndpoints
     suspend fun invokeYflix(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -1114,7 +1112,6 @@ object CineStreamExtractors {
         }
     }
 
-    //Thanks to https://github.com/AzartX47/EncDecEndpoints
     suspend fun invokeVideasy(
         title: String? = null,
         tmdbId: Int? = null,
@@ -1302,7 +1299,6 @@ object CineStreamExtractors {
         }
     }
 
-    //Thanks to https://github.com/AzartX47/EncDecEndpoints
     suspend fun invokeHexa(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -1359,7 +1355,6 @@ object CineStreamExtractors {
         }
     }
 
-    //Thanks to https://github.com/AzartX47/EncDecEndpoints
     suspend fun invokeVidlink(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -1998,6 +1993,9 @@ object CineStreamExtractors {
         )
 
         if (sourcesResponse.code != 200) return
+
+        Log.d("Kisskh", "sourcesResponse: ${sourcesResponse.text}")
+
         sourcesResponse.parsedSafe<KisskhSources>()?.let { source ->
             listOf(source.video, source.thirdParty).safeAmap { link ->
                 val safeLink = link ?: return@safeAmap null
@@ -2033,10 +2031,18 @@ object CineStreamExtractors {
             }
         }
 
-        val subJson = app.get("$multiDecryptAPI/enc-kisskh?text=$epsId&type=sub", referer = kissKhAPI).text
+        val subJson = app.get("$multiDecryptAPI/enc-kisskh?text=$epsId&type=sub").text
+
+        Log.d("Kisskh", "subJson: $subJson")
+
         val sub_key = JSONObject(subJson).getString("result")
-        val subResponse = app.get("$kissKhAPI/api/Sub/$epsId&kkey=$sub_key")
+
+        val subResponse = app.get("$kissKhAPI/api/Sub/$epsId?kkey=$sub_key", referer = kissKhAPI)
+
+        Log.d("Kisskh", "subResponse: ${subResponse.text}")
+
         if (subResponse.code != 200) return
+
         tryParseJson<List<KisskhSubtitle>>(subResponse.text)?.forEach { sub ->
             subtitleCallback.invoke(newSubtitleFile(getLanguage(sub.label) ?: return@forEach, sub.src ?: return@forEach))
         }
