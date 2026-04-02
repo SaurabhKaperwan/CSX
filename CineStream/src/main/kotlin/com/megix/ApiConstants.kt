@@ -12,7 +12,7 @@ const val MostraguardaAPI = "https://mostraguarda.stream"
 const val CC_COOKIE = BuildConfig.CC_COOKIE
 const val CINE_API = BuildConfig.CINE_API
 const val CASTLE_API = BuildConfig.CASTLE_API
-const val animepaheAPI = "https://animepahe.si"
+const val animepaheAPI = "https://animepahe.com"
 const val allmovielandAPI = "https://allmovieland.you"
 const val torrentioAPI = "https://torrentio.strem.fun/sort=seeders"
 const val anizoneAPI = "https://anizone.to"
@@ -56,7 +56,7 @@ const val femBoxAPI = "https://fembox.aether.mom"
 const val streamvixAPI = "https://streamvix.hayd.uk"
 const val projectfreetvAPI = "https://projectfreetv.sx"
 const val vidsrcCCAPI = "https://vidsrc.cc"
-const val autoembedAPI = "https://player2.autoembed.cc"
+const val autoembedAPI = "https://player.autoembed.app"
 const val watch32API = "https://watch32.sx"
 const val kuudereAPI = "https://kuudere.to"
 const val vidrockAPI = "https://vidrock.net"
