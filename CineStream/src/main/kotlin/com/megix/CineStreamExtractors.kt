@@ -2676,7 +2676,9 @@ object CineStreamExtractors {
             "User-Agent" to USER_AGENT,
             "Cookie" to "__ddg2_=1234567890"
         )
-        val id = app.get(url ?: return, headers).document.selectFirst("meta[property=og:url]")
+
+        val newUrl = animepaheAPI + URL(url).path
+        val id = app.get(newUrl ?: return, headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
         val animeData =
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
@@ -3165,67 +3167,6 @@ object CineStreamExtractors {
             Log.d("Kaido", "embedUrl: $embedUrl")
 
             loadCustomExtractor("Kaido[${type.uppercase()}]", embedUrl, "", subtitleCallback, callback)
-        }
-    }
-
-    suspend fun invokeHianime(
-        url: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val hiId = url?.substringAfterLast("/") ?: return
-        val id = hiId.substringAfterLast("-")
-
-        val epId = app.get(
-            "$hianimeAPI/ajax/v2/episode/list/$id",
-            headers = headers
-        ).parsedSafe<HianimeResponses>()?.html?.let {
-            Jsoup.parse(it)
-        }?.select("div.ss-list a")
-            ?.find { it.attr("data-number") == "${episode ?: 1}" }
-            ?.attr("data-id") ?: return
-
-        val videoHeaders = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
-            "Accept" to "*/*",
-            "Accept-Language" to "en-US,en;q=0.5",
-            "Accept-Encoding" to "gzip, deflate, br, zstd",
-            "Origin" to "https://megacloud.blog",
-            "Referer" to "https://megacloud.blog/",
-            "Connection" to "keep-alive",
-            "Pragma" to "no-cache",
-            "Cache-Control" to "no-cache"
-        )
-
-        val types = listOf("sub", "dub")
-        val servers = listOf("HD-1", "HD-2")
-
-        types.safeAmap { t ->
-            servers.safeAmap { server ->
-                val epData = app.get("$aniversehdAPI/api/v2/zoro/watch/$hiId?ep=$epId&type=$t&server=$server", referer = aniversehdAPI).parsedSafe<HianimeStreamResponse>() ?: return@safeAmap
-                val streamUrl = epData.sources.firstOrNull()?.url
-                if(streamUrl != null) {
-                    M3u8Helper.generateM3u8(
-                        "HiAnime [${t.uppercase()}]",
-                        streamUrl,
-                        "https://megacloud.blog/",
-                        headers = videoHeaders
-                    ).forEach(callback)
-                }
-
-                epData.tracks.forEach { track ->
-                    if(track.kind == "captions") {
-                        subtitleCallback.invoke(
-                            newSubtitleFile(
-                                getLanguage(track.label) ?: return@forEach,
-                                track.file
-                            )
-                        )
-                    }
-                }
-            }
         }
     }
 
@@ -3857,7 +3798,6 @@ object CineStreamExtractors {
         }
     }
 
-    //Thanks to https://github.com/AzartX47/EncDecEndpoints
     suspend fun invokeVidFastPro(
         tmdbId: Int? = null,
         season: Int? = null,

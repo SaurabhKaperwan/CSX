@@ -333,10 +333,6 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        // ProviderDef(
-        //     key = "p_hianime", displayName = "Hianime",
-        //     executeMalSync = { data, subCb, cb -> invokeHianime(data.hianimeurl, data.episode, subCb, cb) }
-        // ),
         ProviderDef(
             key = "p_kaido", displayName = "Kaido",
             executeMalSync = { data, subCb, cb -> invokeKaido(data.hianimeurl, data.episode, subCb, cb) }
