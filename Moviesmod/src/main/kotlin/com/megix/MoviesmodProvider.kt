@@ -1,6 +1,7 @@
 package com.megix
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
@@ -11,14 +12,19 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
+import java.util.concurrent.ConcurrentHashMap
+import android.util.Log
 
-open class MoviesmodProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://moviesmod.plus"
+open class MoviesmodProvider : MainAPI() {
+    override var mainUrl = "https://moviesmod.blue"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
     override val hasDownloadSupport = true
     val cinemeta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta"
+    private val cfKiller by lazy { CloudflareKiller() }
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -60,7 +66,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(mainUrl + request.data + page).document
+        val document = app.get(mainUrl + request.data + page, interceptor = cfKiller).document
         val home = document.select("div.post-cards > article").mapNotNull {
             it.toSearchResult()
         }
@@ -78,12 +84,11 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/search/$query/page/$page").document
+        val document = app.get("$mainUrl/search/$query/page/$page", interceptor = cfKiller).document
         val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
     }
-
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
@@ -93,7 +98,7 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
         var description = document.select("div.imdbwp__teaser").text()
         val div = document.select("div.thecontent").text()
         val tvtype = if (div.contains("season", ignoreCase = true) == true) "series" else "movie"
-        val imdbUrl = document.select("a.imdbwp__link").attr("href")
+        val imdbUrl = document.select("a[href*=\"imdb.com\"]").attr("href")
         val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
         val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
         val responseData = tryParseJson<ResponseData>(jsonResponse)
@@ -127,37 +132,41 @@ open class MoviesmodProvider : MainAPI() { // all providers must be an instance 
             }
 
             val tvSeriesEpisodes = mutableListOf<Episode>()
-            val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
+            val episodesMap = java.util.concurrent.ConcurrentHashMap<Pair<Int, Int>, MutableList<String>>()
             val buttons = document.select("a.maxbutton-episode-links,.maxbutton-g-drive,.maxbutton-af-download")
 
-            buttons.mapNotNull {
-                var link = it.attr("href")
-                val seasonText = it.parent()?.previousElementSibling()?.text().toString()
-                val realSeasonRegex = Regex("""(?:Season |S)(\d+)""")
-                val realSeason = realSeasonRegex.find(seasonText)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-                if(link.contains("url=")) {
-                    val base64Value = link.substringAfter("url=")
-                    link = base64Decode(base64Value)
-                }
-                val doc = app.get(link).document
-                val hTags = doc.select("h3,h4")
-                var e = 1
-                hTags.mapNotNull {
-                    val epUrl = it.select("a").attr("href")
-                    val key = Pair(realSeason, e)
-                    if(!epUrl.isEmpty()) {
-                        if (episodesMap.containsKey(key)) {
-                            val currentList = episodesMap[key] ?: emptyList()
-                            val newList = currentList.toMutableList()
-                            newList.add(epUrl)
-                            episodesMap[key] = newList
-                        } else {
-                            episodesMap[key] = mutableListOf(epUrl)
+            kotlinx.coroutines.supervisorScope {
+                buttons.map { button ->
+                    async {
+                        runCatching {
+                            var link = button.attr("href")
+                            val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
+                            val realSeason = Regex("""(?:Season |S)(\d+)""")
+                                .find(seasonText)
+                                ?.groupValues
+                                ?.get(1)
+                                ?.toIntOrNull() ?: 0
+
+                            if (link.contains("url=")) {
+                                val base64Value = link.substringAfter("url=")
+                                link = base64Decode(base64Value)
+                            }
+
+                            val doc = app.get(link).document
+                            val hTags = doc.select("h3,h4")
+                            var e = 1
+
+                            hTags.forEach { hTag ->
+                                val epUrl = hTag.select("a").attr("href").takeIf { it.isNotBlank() } ?: return@forEach
+                                val key = Pair(realSeason, e)
+                                episodesMap.compute(key) { _, current ->
+                                    (current ?: mutableListOf()).apply { add(epUrl) }
+                                }
+                                e++
+                            }
                         }
                     }
-                    e++
-                }
-                e = 1
+                }.forEach { it.await() }
             }
 
             for ((key, value) in episodesMap) {

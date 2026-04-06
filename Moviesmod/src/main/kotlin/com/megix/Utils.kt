@@ -7,6 +7,7 @@ import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import com.lagradost.api.Log
 import org.json.JSONObject
+import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class Driveseed : Driveleech() {
     override val name: String = "Driveseed"

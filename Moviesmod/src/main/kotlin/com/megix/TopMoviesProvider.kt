@@ -46,11 +46,4 @@ class TopmoviesProvider : MoviesmodProvider() { // all providers must be an inst
         "/web-series/page/" to "Latest Web Series",
         "/movies/hindi-movies/page/" to "Latest Hindi Movies",
     )
-
-    override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/search/$query/page/$page").document
-        val results = document.select("div.post-cards > article").mapNotNull { it.toSearchResult() }
-        val hasNext = if(results.isEmpty()) false else true
-        return newSearchResponseList(results, hasNext)
-    }
 }

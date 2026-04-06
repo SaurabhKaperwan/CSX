@@ -96,9 +96,18 @@ object CineStreamExtractors {
 
         val title = mal_response?.title
         val malsync = mal_response?.sites
-        val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":", " ")
-        val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
-        val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
+
+        val zorotitle = malsync?.zoro?.values?.firstNotNullOfOrNull {
+            (it as? Map<*, *>)?.get("title") as? String
+        }?.replace(":", " ")
+
+        val hianimeurl = malsync?.zoro?.values?.firstNotNullOfOrNull {
+            (it as? Map<*, *>)?.get("url") as? String
+        }
+
+        val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull {
+            (it as? Map<*, *>)?.get("url") as? String
+        }
 
         // Package the API results for the registry
         val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
@@ -138,14 +147,14 @@ object CineStreamExtractors {
         return server.contains("cloudflare", true) && response.code in listOf(403, 503)
     }
 
-    suspend fun cfGet(url: String, headers: Map<String, String> = emptyMap()): NiceResponse {
-        val response = app.get(url, headers = headers)
+    suspend fun cfGet(url: String, headers: Map<String, String> = emptyMap(), allowRedirects: Boolean = true): NiceResponse {
+        val response = app.get(url, headers = headers, allowRedirects = allowRedirects)
         return if (isCloudflarePage(response)) {
             cfMutex.withLock {
-                val retryResponse = app.get(url, headers = headers, interceptor = cfKiller)
+                val retryResponse = app.get(url, headers = headers, interceptor = cfKiller, allowRedirects = allowRedirects)
                 if (isCloudflarePage(retryResponse)) {
                     cfKiller.savedCookies.clear()
-                    app.get(url, headers = headers, interceptor = cfKiller)
+                    app.get(url, headers = headers, interceptor = cfKiller, allowRedirects = allowRedirects)
                 } else {
                     retryResponse
                 }
@@ -2677,9 +2686,9 @@ object CineStreamExtractors {
             "Cookie" to "__ddg2_=1234567890"
         )
 
-        val newUrl = animepaheAPI + URL(url).path
-        val id = app.get(newUrl ?: return, headers).document.selectFirst("meta[property=og:url]")
+        val id = app.get(url ?: return, headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
+
         val animeData =
             app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
@@ -3050,7 +3059,10 @@ object CineStreamExtractors {
         } else {
             url = "$api/search/$id $season"
         }
-        var href = app.get(url).document.selectFirst("#content_box article > a")?.attr("href")
+        var href = cfGet(url).document.selectFirst("#content_box article > a")?.attr("href")
+
+        Log.d("Moviesmod", "$href")
+
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"
@@ -3064,10 +3076,14 @@ object CineStreamExtractors {
             !text.contains("MoviesMod", true)
         }
 
+        Log.d("Moviesmod", "$entries")
+
         entries.safeAmap { it ->
             var link =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
                     ?.substringAfter("=") ?: ""
+
+            Log.d("Moviesmod", "$link")
             //link = base64Decode(href)
 
             val selector =
@@ -3323,7 +3339,9 @@ object CineStreamExtractors {
         val serverList = tryParseJson<PrimeSrcServerList>(serverJson) ?: return
 
         serverList.servers?.safeAmap {
-            val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
+            Log.d("Primesrc", "it: $it")
+            val rawServerJson = cfGet("$PrimeSrcApi/api/v1/l?key=${it.key}", headers).text
+            //val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
@@ -3425,8 +3443,8 @@ object CineStreamExtractors {
     //     tmdbId: Int? = null,
     //     season: Int? = null,
     //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
     // ) {
     //     val headers = mapOf("User-Agent" to USER_AGENT)
     //     val url = if (season == null) {
@@ -3435,13 +3453,9 @@ object CineStreamExtractors {
     //         "$multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
     //     }
 
-    //     val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
-    //         if (response.text.contains("Just a moment", ignoreCase = true)) {
-    //             app.get(url, allowRedirects = false, headers = headers).headers["Location"]
-    //         } else {
-    //             response.headers["Location"]
-    //         }
-    //     } ?: return
+    //     val streamingUrl = cfGet(url, headers, false).headers["Location"] ?: return
+
+    //     Log.d("Multiembed", "streamingUrl: $streamingUrl")
 
     //     val sourcesDoc = app.post(
     //         url = streamingUrl,

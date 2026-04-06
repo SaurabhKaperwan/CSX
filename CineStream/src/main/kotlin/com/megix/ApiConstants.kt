@@ -12,7 +12,7 @@ const val MostraguardaAPI = "https://mostraguarda.stream"
 const val CC_COOKIE = BuildConfig.CC_COOKIE
 const val CINE_API = BuildConfig.CINE_API
 const val CASTLE_API = BuildConfig.CASTLE_API
-const val animepaheAPI = "https://animepahe.com"
+const val animepaheAPI = "https://animepahe.pw"
 const val allmovielandAPI = "https://allmovieland.you"
 const val torrentioAPI = "https://torrentio.strem.fun/sort=seeders"
 const val anizoneAPI = "https://anizone.to"
