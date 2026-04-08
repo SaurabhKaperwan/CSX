@@ -122,11 +122,6 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeMadplayCDN(res.tmdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
-            key = "p_vidfastpro", displayName = "VidFastPro",
-            executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_hexa", displayName = "Hexa",
             executeStandard = { res, _, cb -> invokeHexa(res.tmdbId, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, cb) }
@@ -167,7 +162,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_mapple", displayName = "Mapple",
             executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeMapple(res.tmdbId, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
             key = "p_vidstack", displayName = "Vidstack",
