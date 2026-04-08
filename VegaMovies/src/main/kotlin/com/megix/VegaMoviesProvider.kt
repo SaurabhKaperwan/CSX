@@ -7,14 +7,13 @@ import org.jsoup.select.Elements
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.net.URI
 
-open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://vegamovies.cologne"
+open class VegaMoviesProvider : MainAPI() {
+    override var mainUrl = "https://vegamovies.vodka"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -73,7 +72,8 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("img").attr("alt").replace("Download ", "")
         val href = this.attr("href")
-        val posterUrl = httpsify(this.select("img").attr("src"))
+        var posterUrl = this.select("img").attr("src")
+        if(!posterUrl.contains("https:")) posterUrl =  this.select("img").attr("data-src")
 
         return newMovieSearchResponse(title, URI(href).path, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -136,7 +136,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
         if (tvtype == "series") {
             val hTags = document.select("main > h3:matches((?i)(4K|[0-9]*0p)),main > h5:matches((?i)(4K|[0-9]*0p))")
-                .filter { element -> !element.text().contains("Zip", true) } ?: emptyList()
+                .filter { element -> !element.text().contains("Zip", true) }
 
             val tvSeriesEpisodes = mutableListOf<Episode>()
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
