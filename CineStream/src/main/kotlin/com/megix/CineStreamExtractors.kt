@@ -111,8 +111,12 @@ object CineStreamExtractors {
             (it as? Map<*, *>)?.get("url") as? String
         }
 
+        val animepaheTitle = malsync?.animepahe?.values?.firstNotNullOfOrNull {
+            (it as? Map<*, *>)?.get("title") as? String
+        }
+
         // Package the API results for the registry
-        val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
+        val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin, animepaheTitle)
 
         Log.d("Malsync", "malData: $malData")
 
@@ -1229,94 +1233,94 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeMapple(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if(tmdbId == null) return
-        var mediaType = ""
-        var tv_slug = ""
-        var url = ""
+    // suspend fun invokeMapple(
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     if(tmdbId == null) return
+    //     var mediaType = ""
+    //     var tv_slug = ""
+    //     var url = ""
 
-        if(season == null) {
-          mediaType =  "movie"
-          url = "$mappleAPI/watch/movie/$tmdbId"
-        } else {
-            mediaType = "tv"
-            tv_slug = "$season-$episode"
-            url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
-        }
+    //     if(season == null) {
+    //       mediaType =  "movie"
+    //       url = "$mappleAPI/watch/movie/$tmdbId"
+    //     } else {
+    //         mediaType = "tv"
+    //         tv_slug = "$season-$episode"
+    //         url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
+    //     }
 
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer" to "$mappleAPI/",
-        )
+    //     val headers = mapOf(
+    //         "User-Agent" to USER_AGENT,
+    //         "Referer" to "$mappleAPI/",
+    //     )
 
-        val text = app.get(url, headers = headers).text
-        val regex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
-        val match = regex.find(text)
-        val token = match?.groupValues?.get(1) ?: return
-        Log.d("Mapple", "token: $token")
+    //     val text = app.get(url, headers = headers).text
+    //     val regex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
+    //     val match = regex.find(text)
+    //     val token = match?.groupValues?.get(1) ?: return
+    //     Log.d("Mapple", "token: $token")
 
-        val sources = listOf(
-            "mapple", "sakura", "oak", "willow",
-            "cherry", "pines", "magnolia", "sequoia"
-        )
+    //     val sources = listOf(
+    //         "mapple", "sakura", "oak", "willow",
+    //         "cherry", "pines", "magnolia", "sequoia"
+    //     )
 
-        sources.safeAmap { source ->
-            try {
-                val jsonBody = """
-                    {
-                        "data": {
-                            "mediaId": $tmdbId,
-                            "mediaType": "$mediaType",
-                            "tv_slug": "$tv_slug",
-                            "source": "$source"
-                        },
-                        "endpoint": "stream-encrypted"
-                    }
-                """.trimIndent()
+    //     sources.safeAmap { source ->
+    //         try {
+    //             val jsonBody = """
+    //                 {
+    //                     "data": {
+    //                         "mediaId": $tmdbId,
+    //                         "mediaType": "$mediaType",
+    //                         "tv_slug": "$tv_slug",
+    //                         "source": "$source"
+    //                     },
+    //                     "endpoint": "stream-encrypted"
+    //                 }
+    //             """.trimIndent()
 
-                val encryptResText = app.post(
-                    "$mappleAPI/api/encrypt",
-                    json = jsonBody,
-                    headers = headers
-                ).text
+    //             val encryptResText = app.post(
+    //                 "$mappleAPI/api/encrypt",
+    //                 json = jsonBody,
+    //                 headers = headers
+    //             ).text
 
-                val encryptRes = JSONObject(encryptResText)
-                val streamPath = encryptRes.getString("url")
-                val finalUrl = "$mappleAPI$streamPath&requestToken=$token"
-                Log.d("Mapple", "finalUrl of $source: $finalUrl")
+    //             val encryptRes = JSONObject(encryptResText)
+    //             val streamPath = encryptRes.getString("url")
+    //             val finalUrl = "$mappleAPI$streamPath&requestToken=$token"
+    //             Log.d("Mapple", "finalUrl of $source: $finalUrl")
 
-                val streamsDataText = app.get(
-                    finalUrl,
-                    headers = headers
-                ).text
+    //             val streamsDataText = app.get(
+    //                 finalUrl,
+    //                 headers = headers
+    //             ).text
 
-                Log.d("Mapple", "streamsDataText of $source: $streamsDataText")
+    //             Log.d("Mapple", "streamsDataText of $source: $streamsDataText")
 
-                val streamsData = JSONObject(streamsDataText)
+    //             val streamsData = JSONObject(streamsDataText)
 
-                if (streamsData.optBoolean("success")) {
-                    val data = streamsData.getJSONObject("data")
-                    val streamUrl = data.optString("stream_url")
+    //             if (streamsData.optBoolean("success")) {
+    //                 val data = streamsData.getJSONObject("data")
+    //                 val streamUrl = data.optString("stream_url")
 
-                    if (streamUrl.isNotEmpty()) {
-                        M3u8Helper.generateM3u8(
-                            "Mapple [${source.uppercase()}]",
-                            streamUrl,
-                            "$mappleAPI/",
-                            headers = headers
-                        ).forEach(callback)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
+    //                 if (streamUrl.isNotEmpty()) {
+    //                     M3u8Helper.generateM3u8(
+    //                         "Mapple [${source.uppercase()}]",
+    //                         streamUrl,
+    //                         "$mappleAPI/",
+    //                         headers = headers
+    //                     ).forEach(callback)
+    //                 }
+    //             }
+    //         } catch (e: Exception) {
+    //             e.printStackTrace()
+    //         }
+    //     }
+    // }
 
     suspend fun invokeHexa(
         tmdbId: Int? = null,
@@ -3145,15 +3149,23 @@ object CineStreamExtractors {
 
     suspend fun invokeKaido(
         url: String? = null,
+        title: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
         Log.d("Kaido", "url: $url")
-
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val hiId = url?.substringAfterLast("/") ?: return
-        val id = hiId.substringAfterLast("-")
+
+        val id = if(url != null) {
+            url.substringAfterLast("/").substringAfterLast("-")
+        } else {
+            val encodedQuery = URLEncoder.encode(title ?: return, StandardCharsets.UTF_8.toString())
+            val document = app.get("$kaidoAPI/search?keyword=$encodedQuery&page=1").document
+            document.select("div.flw-item h3 a[title=\"$title\"]").attr("href").substringBefore("?").substringAfterLast("-")
+        }
+
+        if(id.isNullOrBlank()) return
 
         Log.d("Kaido", "id: $id")
 
