@@ -92,9 +92,9 @@ internal object SettingsDialog {
                     when {
                         key == Settings.SHOWBOX_TOKEN_KEY && value == null   -> Settings.clearShowboxToken()
                         key == Settings.SHOWBOX_TOKEN_KEY && value is String -> Settings.saveShowboxToken(value)
-                        value is Boolean                                     -> com.lagradost.cloudstream3.AcraApplication.setKey(key, value)
-                        value is Int                                         -> com.lagradost.cloudstream3.AcraApplication.setKey(key, value)
-                        value == null                                        -> com.lagradost.cloudstream3.AcraApplication.setKey(key, null as String?)
+                        value is Boolean                                     -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, value)
+                        value is Int                                         -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, value)
+                        value == null                                        -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, null as String?)
                     }
                 }
                 commitAddons(); commitOrder()
@@ -181,7 +181,7 @@ internal object SettingsDialog {
     ): View {
         val theme   = SettingsTheme
         val checked = pending[databaseKey] as? Boolean
-            ?: com.lagradost.cloudstream3.AcraApplication.getKey<Boolean>(databaseKey) ?: defaultState
+            ?: com.lagradost.cloudstream3.CloudStreamApp.getKey<Boolean>(databaseKey) ?: defaultState
 
         val sw = SettingsWidgets.styledSwitch(context, checked)
 
