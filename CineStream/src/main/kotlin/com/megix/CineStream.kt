@@ -2,7 +2,7 @@ package com.megix
 
 import android.content.Context
 import com.lagradost.cloudstream3.MainActivity
-import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
+import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 import com.megix.settings.Settings
