@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 399
+version = 400
 
 android {
     defaultConfig {
@@ -12,6 +12,7 @@ android {
         buildConfigField("String", "CC_COOKIE", "\"${properties.getProperty("CC_COOKIE")}\"")
         buildConfigField("String", "CINE_API", "\"${properties.getProperty("CINE_API")}\"")
         buildConfigField("String", "CASTLE_API", "\"${properties.getProperty("CASTLE_API")}\"")
+        buildConfigField("String", "BOLLYWOOD_KEY", "\"${properties.getProperty("BOLLYWOOD_KEY")}\"")
     }
 }
 

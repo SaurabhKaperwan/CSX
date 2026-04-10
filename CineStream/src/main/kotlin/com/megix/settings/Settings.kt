@@ -27,7 +27,7 @@ object Settings {
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
     // ── Configuration Getters ────────────────────────────────
-    fun getConcurrency(): Int = getKey<Int>(CONCURRENCY_KEY) ?: 7
+    fun getConcurrency(): Int = getKey<Int>(CONCURRENCY_KEY) ?: 10
 
     val allowDownloadLinks: Boolean
         get() = getKey<Boolean>(DOWNLOAD_ENABLE) ?: false

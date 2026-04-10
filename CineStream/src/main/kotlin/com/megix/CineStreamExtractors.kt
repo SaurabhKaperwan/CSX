@@ -2528,11 +2528,12 @@ object CineStreamExtractors {
 
         res?.streams?.forEach { stream ->
 
-            val title = stream.title ?: stream.name ?: ""
-            val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
-            val match = regex.find(title)
-            var seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
-            val fileSize = match?.groupValues?.get(2) ?: ""
+            val title = stream.title ?: stream.description ?: stream.name ?: ""
+            val seedersRegex = """[👤👥]\s*(\d+)""".toRegex()
+            val seeders = seedersRegex.find(title)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            val sizeRegex = """💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
+            val fileSize = sizeRegex.find(title)?.groupValues?.get(1) ?: ""
+
             if (seeders < 25) return@forEach
 
             val magnet = buildMagnetString(stream)
@@ -3656,6 +3657,13 @@ object CineStreamExtractors {
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val titleSlug = title?.replace(" ", ".")
+        val headers = mapOf(
+            "Origin" to bollywoodBaseAPI,
+            "Referer" to "$bollywoodBaseAPI/",
+            "User-Agent" to USER_AGENT,
+            "Authorization" to "Bearer $BOLLYWOOD_KEY"
+        )
+
         val url = if (season == null) {
             "$bollywoodAPI/files/search?q=${titleSlug}.${year}&page=1"
         } else {
@@ -3664,7 +3672,7 @@ object CineStreamExtractors {
 
         val response = app.get(
             url,
-            referer = bollywoodBaseAPI
+            headers = headers
         ).text
         val jsonObject = JsonParser.parseString(response).asJsonObject
 
@@ -3679,7 +3687,7 @@ object CineStreamExtractors {
                 val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
-                    referer = bollywoodBaseAPI
+                    headers = headers
                 ).text
 
                 val linkJson = JsonParser.parseString(res).asJsonObject

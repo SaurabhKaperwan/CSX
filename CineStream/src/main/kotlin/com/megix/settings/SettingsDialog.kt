@@ -689,7 +689,6 @@ internal object SettingsDialog {
 
         val contributors = listOf(
             Triple("phisher98",     "For multi-source plugin inspiration", "github.com/phisher98"),
-            Triple("AzartX47",      "For providing multiple APIs",         "github.com/AzartX47"),
             Triple("yogesh-hacker", "For providing reference",             "github.com/yogesh-hacker"),
         )
 
