@@ -54,6 +54,7 @@ jobs:
           CC_COOKIE: ${{ secrets.CC_COOKIE }}
           CINE_API: ${{ secrets.CINE_API }}
           CASTLE_API: ${{ secrets.CASTLE_API }}
+          BOLLYWOOD_KEY: ${{ secrets.BOLLYWOOD_KEY }}
         run: |
           cd $GITHUB_WORKSPACE/src
           # Create file if it doesn't exist
@@ -63,6 +64,7 @@ jobs:
           echo "CC_COOKIE=$CC_COOKIE" >> local.properties
           echo "CINE_API=$CINE_API" >> local.properties
           echo "CASTLE_API=$CASTLE_API" >> local.properties
+          echo "BOLLYWOOD_KEY=$BOLLYWOOD_KEY" >> local.properties
 
       - name: Build Plugins
         run: |

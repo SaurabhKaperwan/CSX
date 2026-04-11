@@ -367,6 +367,11 @@ object ProviderRegistry {
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeGojo(data.title, data.aniId, data.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_animekizz", displayName = "Animekizz",
+            executeAnime = { res, subCb, cb -> invokeAnimekizz(res.title, res.anilistId, res.episode, subCb, cb) },
+            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnimekizz(data.title, data.aniId, data.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_sudatchi", displayName = "Sudatchi",
             executeAnime = { res, subCb, cb -> invokeSudatchi(res.anilistId, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeSudatchi(data.aniId, data.episode, subCb, cb) }

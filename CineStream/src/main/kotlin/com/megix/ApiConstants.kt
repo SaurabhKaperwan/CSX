@@ -57,6 +57,7 @@ const val autoembedAPI = "https://player.autoembed.app"
 const val watch32API = "https://watch32.sx"
 const val kuudereAPI = "https://kuudere.to"
 const val vidrockAPI = "https://vidrock.net"
+const val animekizzAPI = "https://animekizz.live"
 const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
