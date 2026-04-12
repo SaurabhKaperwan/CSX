@@ -4282,4 +4282,70 @@ object CineStreamExtractors {
             }
         }
     }
+
+    suspend fun invokePulp(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if (season == null) {
+            "$pulpAPI/movies/$tmdbId?provider=02moviedownloader"
+        } else {
+            "$pulpAPI/tv/$tmdbId/seasons/$season/episodes/$episode?provider=02moviedownloader"
+        }
+
+        val json = app.get(url, timeout = 30000L, referer = "https://tv.pulp.watch/").text
+        Log.d("Pulp", "Response JSON: $json")
+        val response = tryParseJson<PulpResponse>(json) ?: return
+        Log.d("Pulp", "Parsed Response: $response")
+
+        response.sources?.forEach { source ->
+            val sourceUrl = source.url?.takeIf { it.isNotBlank() } ?: return@forEach
+            val qualityTag = source.quality.orEmpty().ifEmpty { "Unknown" }
+            val providerName = source.provider?.name.takeIf { !it.isNullOrBlank() }
+                ?: source.provider?.id.takeIf { !it.isNullOrBlank() }
+                ?: "Pulp"
+
+            val extractorLinkType = when {
+                sourceUrl.contains(".m3u8", true) -> ExtractorLinkType.M3U8
+                source.type.equals("hls", true) -> ExtractorLinkType.M3U8
+                source.type.equals("dash", true) -> ExtractorLinkType.DASH
+                source.type.equals("mp4", true) || source.type.equals("mkv", true) -> ExtractorLinkType.VIDEO
+                else -> INFER_TYPE
+            }
+
+            Log.d("Pulp", "Adding source: provider=$providerName, quality=$qualityTag, url=$sourceUrl, type=$extractorLinkType")
+
+            callback.invoke(
+                newExtractorLink(
+                    "Pulp [$providerName]",
+                    "Pulp [$providerName]",
+                    sourceUrl,
+                    type = extractorLinkType
+                ) {
+                    this.headers = source.headers.orEmpty().filterValues { it.isNotBlank() }
+                    this.quality = qualityTag.toIntOrNull() ?: Qualities.Unknown.value
+                }
+            )
+        }
+
+        response.subtitles?.forEach { subtitle ->
+            val subtitleUrl = subtitle.url?.takeIf { it.isNotBlank() } ?: return@forEach
+            val label = subtitle.label.takeIf { !it.isNullOrBlank() }
+                ?: subtitle.language.takeIf { !it.isNullOrBlank() }
+                ?: "Unknown"
+
+            Log.d("Pulp", "Adding subtitle: label=$label, url=$subtitleUrl")
+
+            subtitleCallback.invoke(
+                newSubtitleFile(
+                    getLanguage(label) ?: label,
+                    subtitleUrl
+                )
+            )
+        }
+    }
+
 }

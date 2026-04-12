@@ -733,8 +733,29 @@ data class PrimeSrcServer(
     @param:JsonProperty("file_name") val fileName: String?
 )
 
+//Pulp
 
+data class PulpResponse(
+    val sources: List<PulpSource>?,
+    val subtitles: List<PulpSubtitle>?
+)
 
+data class PulpSource(
+    val url: String?,
+    val type: String?,
+    val quality: String?,
+    val provider: PulpProvider?,
+    val headers: Map<String, String>?
+)
 
+data class PulpProvider(
+    val id: String?,
+    val name: String?
+)
 
-
+data class PulpSubtitle(
+    val url: String?,
+    val label: String?,
+    val language: String?,
+    val format: String?
+)

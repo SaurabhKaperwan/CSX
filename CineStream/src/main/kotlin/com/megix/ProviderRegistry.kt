@@ -153,6 +153,11 @@ object ProviderRegistry {
             key = "p_vidlink", displayName = "Vidlink",
             executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
         ),
+        ProviderDef(
+            key = "p_pulp", displayName = "Pulp",
+            executeStandard = { res, subCb, cb -> invokePulp(res.tmdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokePulp(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) },
+        ),
         // ProviderDef(
         //     key = "p_mapple", displayName = "Mapple",
         //     executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
