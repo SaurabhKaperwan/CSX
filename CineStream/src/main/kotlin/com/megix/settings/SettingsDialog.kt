@@ -55,8 +55,8 @@ internal object SettingsDialog {
             addView(buildCookieClearRow(context))
         })
 
-        // ShowBox token card
-        layout.addView(buildShowboxTokenCard(context, pending))
+        // API Tokens card (Febbox + Wyzie Subs)
+        layout.addView(buildApiTokensCard(context, pending))
 
         // Active catalogs card
         val onCatalogChanged: () -> Unit = {
@@ -92,6 +92,10 @@ internal object SettingsDialog {
                     when {
                         key == Settings.SHOWBOX_TOKEN_KEY && value == null   -> Settings.clearShowboxToken()
                         key == Settings.SHOWBOX_TOKEN_KEY && value is String -> Settings.saveShowboxToken(value)
+                        key == Settings.WYZIE_SUBS_KEY    && value == null   -> Settings.clearWyzieSubsKey()
+                        key == Settings.WYZIE_SUBS_KEY    && value is String -> Settings.saveWyzieSubsKey(value)
+                        key == Settings.GRAMCINEMA_TOKEN_KEY && value == null   -> Settings.clearGramCinemaToken()
+                        key == Settings.GRAMCINEMA_TOKEN_KEY && value is String -> Settings.saveGramCinemaToken(value)
                         value is Boolean                                     -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, value)
                         value is Int                                         -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, value)
                         value == null                                        -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, null as String?)
@@ -249,20 +253,24 @@ internal object SettingsDialog {
     }
 
     // =========================================================
-    //  SHOWBOX TOKEN CARD
+    //  API TOKENS CARD  (Febbox + Wyzie Subs)
     // =========================================================
 
-    private fun buildShowboxTokenCard(
+    private fun buildApiTokensCard(
         context: Context,
         pending: MutableMap<String, Any?>
     ): View {
-        val theme         = SettingsTheme
+        val theme          = SettingsTheme
+        val TOKEN_ACCENT   = Color.parseColor("#F59E0B")
+        val CLIP_TEXT      = Color.parseColor("#94A3B8")
+        val CLIP_BG        = Color.parseColor("#0F1520")
+        val CLIP_BORDER    = Color.parseColor("#1E2A3A")
         val SHOWBOX_ACCENT = Color.parseColor("#F59E0B")
-        val SHOWBOX_BG    = Color.parseColor("#13100A")
+        val SHOWBOX_BG     = Color.parseColor("#13100A")
         val SHOWBOX_BORDER = Color.parseColor("#3A2800")
-        val CLIP_TEXT     = Color.parseColor("#94A3B8")
-        val CLIP_BG       = Color.parseColor("#0F1520")
-        val CLIP_BORDER   = Color.parseColor("#1E2A3A")
+        val WYZIE_ACCENT   = Color.parseColor("#818CF8")
+        val WYZIE_BG       = Color.parseColor("#0E0C1A")
+        val WYZIE_BORDER   = Color.parseColor("#2E2060")
 
         val card = SettingsWidgets.cardContainer(context)
 
@@ -273,104 +281,246 @@ internal object SettingsDialog {
             visibility  = View.GONE
         }
 
-        // Computed in two places (badge init + collapse); extract to avoid duplication
-        fun savedBadgeText() = when {
-            pending.containsKey(Settings.SHOWBOX_TOKEN_KEY) ->
-                if ((pending[Settings.SHOWBOX_TOKEN_KEY] as? String) != null) "✓ Staged" else ""
-            Settings.getShowboxToken() != null -> "✓ Saved"
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+        // ── helper: build a self-contained token input section ──
+        fun buildTokenSection(
+            labelText: String,
+            hint: String,
+            pendingKey: String,
+            getCurrent: () -> String?,
+            sectionAccent: Int,
+            sectionBg: Int,
+            sectionBorder: Int,
+            clipLabel: String,
+            extraButtons: (LinearLayout.(EditText, TextView) -> Unit)? = null
+        ): View {
+            val sectionLayout = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+            sectionLayout.addView(TextView(context).apply {
+                text = labelText; textSize = 12f; setTextColor(theme.TEXT_SECONDARY)
+                setPadding(4.dp(context), 0, 4.dp(context), 10.dp(context))
+            })
+
+            val initialVal = (pending[pendingKey] as? String) ?: getCurrent() ?: ""
+            val input = EditText(context).apply {
+                this.hint = hint; setText(initialVal)
+                setTextColor(theme.TEXT_PRIMARY); setHintTextColor(theme.TEXT_SECONDARY)
+                textSize = 13f; setSingleLine(true)
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                        android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                isFocusable = true; isFocusableInTouchMode = true
+                setOnFocusChangeListener { v, hasFocus ->
+                    if (hasFocus) (v.parent?.parent?.parent?.parent as? ScrollView)?.requestChildFocus(v, v)
+                }
+                setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
+                background = theme.inputBackground(context)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also { it.bottomMargin = 8.dp(context) }
+            }
+            sectionLayout.addView(input)
+
+            // Paste / Copy row
+            sectionLayout.addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also { it.bottomMargin = 10.dp(context) }
+
+                addView(SettingsWidgets.pillBtn(context, "📋 Paste", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
+                    val clip = clipboard.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
+                    if (!clip.isNullOrBlank()) {
+                        input.setText(clip); input.setSelection(input.text?.length ?: 0)
+                        Toast.makeText(context, "Pasted from clipboard", Toast.LENGTH_SHORT).show()
+                    } else Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                })
+                addView(SettingsWidgets.hSpacer(context, 8))
+                addView(SettingsWidgets.pillBtn(context, "📄 Copy", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
+                    val text = input.text?.toString()?.trim()
+                    if (!text.isNullOrBlank()) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText(clipLabel, text))
+                        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                    } else Toast.makeText(context, "Nothing to copy", Toast.LENGTH_SHORT).show()
+                })
+                extraButtons?.invoke(this, input, TextView(context)) // unused overload
+            })
+
+            val savedBadge = TextView(context).apply {
+                text = when {
+                    pending.containsKey(pendingKey) ->
+                        if ((pending[pendingKey] as? String) != null) "✓ Staged" else ""
+                    getCurrent() != null -> "✓ Saved"
+                    else -> ""
+                }
+                textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#4ADE80"))
+                setPadding(0, 0, 8.dp(context), 0)
+            }
+
+            // Show/Hide | Clear | Save row
+            sectionLayout.addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                var isVisible = false
+
+                addView(TextView(context).apply {
+                    text = "👁 Show"; textSize = 11f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    setTextColor(theme.TEXT_SECONDARY)
+                    setPadding(0, 0, 12.dp(context), 0)
+                    isClickable = true; isFocusable = true; isFocusableInTouchMode = false
+                    setOnClickListener {
+                        isVisible = !isVisible
+                        input.inputType = if (isVisible)
+                            android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                        else
+                            android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        input.setSelection(input.text?.length ?: 0)
+                        text = if (isVisible) "🙈 Hide" else "👁 Show"
+                    }
+                })
+                addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
+                addView(savedBadge)
+                addView(SettingsWidgets.dangerBtn(context, "Clear") {
+                    input.setText(""); pending[pendingKey] = null; savedBadge.text = ""
+                    Toast.makeText(context, "Cleared — tap outer Save to apply", Toast.LENGTH_SHORT).show()
+                })
+                addView(SettingsWidgets.hSpacer(context, 8))
+                addView(SettingsWidgets.pillBtn(context, "Save", sectionAccent, sectionBg, sectionBorder) {
+                    val token = input.text.toString().trim()
+                    if (token.isBlank()) Toast.makeText(context, "Cannot be empty", Toast.LENGTH_SHORT).show()
+                    else {
+                        pending[pendingKey] = token; savedBadge.text = "✓ Staged"
+                        Toast.makeText(context, "✓ Staged — tap outer Save to apply", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            })
+
+            return sectionLayout
+        }
+
+        // ── Febbox section ───────────────────────────────────────
+        content.addView(buildTokenSection(
+            labelText     = "Febbox token to enable ShowBox source",
+            hint          = "Paste UI token",
+            pendingKey    = Settings.SHOWBOX_TOKEN_KEY,
+            getCurrent    = Settings::getShowboxToken,
+            sectionAccent = SHOWBOX_ACCENT,
+            sectionBg     = SHOWBOX_BG,
+            sectionBorder = SHOWBOX_BORDER,
+            clipLabel     = "Febbox Token"
+        ))
+
+        // ── Divider between sections ─────────────────────────────
+        content.addView(SettingsWidgets.divider(context).apply {
+            (layoutParams as? LinearLayout.LayoutParams)
+                ?.setMargins(0, 12.dp(context), 0, 12.dp(context))
+        })
+
+        // ── Wyzie Subs section header ────────────────────────────
+        content.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity     = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 6.dp(context) }
+
+            addView(TextView(context).apply {
+                text = "📝  Wyzie Subs API Key"
+                textSize = 13f; setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(theme.TEXT_PRIMARY)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(SettingsWidgets.pillBtn(context, "🔑 Get Key", WYZIE_ACCENT, WYZIE_BG, WYZIE_BORDER) {
+                try {
+                    context.startActivity(android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://sub.wyzie.io/redeem")
+                    ))
+                } catch (_: Exception) {
+                    Toast.makeText(context, "https://sub.wyzie.io/redeem", Toast.LENGTH_LONG).show()
+                }
+            })
+        })
+
+        // ── Wyzie Subs token input ───────────────────────────────
+        content.addView(buildTokenSection(
+            labelText     = "Enter your Wyzie Subs API key to unlock subtitle sources",
+            hint          = "Paste API key",
+            pendingKey    = Settings.WYZIE_SUBS_KEY,
+            getCurrent    = Settings::getWyzieSubsKey,
+            sectionAccent = WYZIE_ACCENT,
+            sectionBg     = WYZIE_BG,
+            sectionBorder = WYZIE_BORDER,
+            clipLabel     = "Wyzie Subs Key"
+        ))
+
+        // ── Divider before GramCinema ────────────────────────────
+        content.addView(SettingsWidgets.divider(context).apply {
+            (layoutParams as? LinearLayout.LayoutParams)
+                ?.setMargins(0, 12.dp(context), 0, 12.dp(context))
+        })
+
+        // ── GramCinema section header ────────────────────────────
+        val GRAM_ACCENT = Color.parseColor("#F472B6")
+        val GRAM_BG     = Color.parseColor("#1A0A12")
+        val GRAM_BORDER = Color.parseColor("#4A1530")
+        content.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity     = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 6.dp(context) }
+
+            addView(TextView(context).apply {
+                text = "🎬  GramCinema Bearer Token"
+                textSize = 13f; setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(theme.TEXT_PRIMARY)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(SettingsWidgets.pillBtn(context, "🌐 Get Token", GRAM_ACCENT, GRAM_BG, GRAM_BORDER) {
+                try {
+                    context.startActivity(android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://bollywood.eu.org/")
+                    ))
+                } catch (_: Exception) {
+                    Toast.makeText(context, "https://bollywood.eu.org/", Toast.LENGTH_LONG).show()
+                }
+            })
+        })
+
+        // ── GramCinema token input ───────────────────────────────
+        content.addView(buildTokenSection(
+            labelText     = "Enter your GramCinema bearer token to enable the source",
+            hint          = "Paste bearer token",
+            pendingKey    = Settings.GRAMCINEMA_TOKEN_KEY,
+            getCurrent    = Settings::getGramCinemaToken,
+            sectionAccent = GRAM_ACCENT,
+            sectionBg     = GRAM_BG,
+            sectionBorder = GRAM_BORDER,
+            clipLabel     = "GramCinema Token"
+        ))
+
+        // ── Card header (badge reflects whichever token was last staged) ──
+        fun anyBadgeText() = when {
+            (pending[Settings.SHOWBOX_TOKEN_KEY]     as? String) != null ||
+            (pending[Settings.WYZIE_SUBS_KEY]        as? String) != null ||
+            (pending[Settings.GRAMCINEMA_TOKEN_KEY]  as? String) != null -> "✓ Staged"
+            Settings.getShowboxToken()    != null ||
+            Settings.getWyzieSubsKey()    != null ||
+            Settings.getGramCinemaToken() != null -> "✓ Saved"
             else -> ""
         }
 
-        content.addView(TextView(context).apply {
-            text = "Enter your Febbox token to enable ShowBox source"
-            textSize = 12f; setTextColor(theme.TEXT_SECONDARY)
-            setPadding(4.dp(context), 0, 4.dp(context), 10.dp(context))
-        })
-
-        val initialToken = (pending[Settings.SHOWBOX_TOKEN_KEY] as? String) ?: Settings.getShowboxToken() ?: ""
-        val input = EditText(context).apply {
-            hint = "Paste UI token"; setText(initialToken)
-            setTextColor(theme.TEXT_PRIMARY); setHintTextColor(theme.TEXT_SECONDARY)
-            textSize = 13f; setSingleLine(true)
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or
-                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            isFocusable = true; isFocusableInTouchMode = true
-            setOnFocusChangeListener { v, hasFocus ->
-                if (hasFocus) (v.parent?.parent as? ScrollView)?.requestChildFocus(v, v)
-            }
-            setPadding(14.dp(context), 12.dp(context), 14.dp(context), 12.dp(context))
-            background = theme.inputBackground(context)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 8.dp(context) }
-        }
-        content.addView(input)
-
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        content.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 10.dp(context) }
-
-            addView(SettingsWidgets.pillBtn(context, "📋 Paste", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
-                val clip = clipboard.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
-                if (!clip.isNullOrBlank()) {
-                    input.setText(clip); input.setSelection(input.text?.length ?: 0)
-                    Toast.makeText(context, "Pasted from clipboard", Toast.LENGTH_SHORT).show()
-                } else Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
-            })
-            addView(SettingsWidgets.hSpacer(context, 8))
-            addView(SettingsWidgets.pillBtn(context, "📄 Copy", CLIP_TEXT, CLIP_BG, CLIP_BORDER) {
-                val text = input.text?.toString()?.trim()
-                if (!text.isNullOrBlank()) {
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Febbox Token", text))
-                    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-                } else Toast.makeText(context, "Nothing to copy", Toast.LENGTH_SHORT).show()
-            })
-        })
-
         val savedBadge = TextView(context).apply {
-            text = savedBadgeText()
+            text = anyBadgeText()
             textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
             setTextColor(Color.parseColor("#4ADE80"))
             setPadding(0, 0, 8.dp(context), 0)
         }
-
-        content.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            var isVisible = false
-
-            addView(TextView(context).apply {
-                text = "👁 Show"; textSize = 11f
-                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(theme.TEXT_SECONDARY)
-                setPadding(0, 0, 12.dp(context), 0)
-                isClickable = true; isFocusable = true; isFocusableInTouchMode = false
-                setOnClickListener {
-                    isVisible = !isVisible
-                    input.inputType = if (isVisible)
-                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                    else
-                        android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                    input.setSelection(input.text?.length ?: 0)
-                    text = if (isVisible) "🙈 Hide" else "👁 Show"
-                }
-            })
-            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
-            addView(SettingsWidgets.dangerBtn(context, "Clear") {
-                input.setText(""); pending[Settings.SHOWBOX_TOKEN_KEY] = null; savedBadge.text = ""
-                Toast.makeText(context, "Cleared — tap outer Save to apply", Toast.LENGTH_SHORT).show()
-            })
-            addView(SettingsWidgets.hSpacer(context, 8))
-            addView(SettingsWidgets.pillBtn(context, "Save", SHOWBOX_ACCENT, SHOWBOX_BG, SHOWBOX_BORDER) {
-                val token = input.text.toString().trim()
-                if (token.isBlank()) Toast.makeText(context, "Token cannot be empty", Toast.LENGTH_SHORT).show()
-                else {
-                    pending[Settings.SHOWBOX_TOKEN_KEY] = token; savedBadge.text = "✓ Staged"
-                    Toast.makeText(context, "✓ Staged — tap outer Save to apply", Toast.LENGTH_SHORT).show()
-                }
-            })
-        })
 
         val chevron = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(theme.TEXT_SECONDARY) }
 
@@ -381,9 +531,9 @@ internal object SettingsDialog {
             isClickable = true; isFocusable = true; isFocusableInTouchMode = false
             background  = theme.stateDrawable(context)
 
-            addView(SettingsWidgets.accentBar(context, SHOWBOX_ACCENT, Color.parseColor("#D97706")))
+            addView(SettingsWidgets.accentBar(context, TOKEN_ACCENT, Color.parseColor("#818CF8")))
             addView(TextView(context).apply {
-                text = "📦  Febbox Token"; textSize = 12f
+                text = "🔑  API Tokens"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(theme.TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -392,7 +542,7 @@ internal object SettingsDialog {
 
             setOnClickListener {
                 expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
-                if (!expanded) savedBadge.text = savedBadgeText()
+                if (!expanded) savedBadge.text = anyBadgeText()
                 SettingsWidgets.animateExpand(content, expanded)
             }
         })

@@ -435,80 +435,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeDramafull(
-        title: String? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val jsonString = app.get("$dramafullAPI/api/live-search/$title").text
-        val searchTypeId = if(season != null) 1 else 2
-        val searchTitle = if(season == null) {
-            "$title ($year)"
-        } else if(season == 1) {
-            "$title ($year)"
-        } else {
-            "$title Season $season"
-        }
-
-        val rootObject = JSONObject(jsonString)
-        val dataArray = rootObject.getJSONArray("data")
-        var matchedObject: JSONObject? = null
-
-        for (i in 0 until dataArray.length()) {
-            val item = dataArray.getJSONObject(i)
-            val name = item.getString("name")
-            val typeId = item.getInt("type_id")
-
-            if (name.equals(searchTitle, ignoreCase = true) && typeId == searchTypeId) {
-                matchedObject = item
-                break
-            }
-        }
-
-        if(matchedObject == null) return
-
-        val document = app.get("$dramafullAPI/film/${matchedObject.getString("slug")}").document
-
-        val href = if(season != null) {
-            document
-            .selectFirst("div.episode-item a[title*='Episode $episode']")
-            ?.attr("href")
-        } else {
-            document
-            .selectFirst("div.last-episode a")
-            ?.attr("href")
-        }
-
-        val doc = app.get(href ?: return).document
-        val script = doc.select("script:containsData(signedUrl)").firstOrNull()?.toString() ?: return
-        val signedUrl = Regex("""window\.signedUrl\s*=\s*"(.+?)\"""").find(script)?.groupValues?.get(1)?.replace("\\/","/") ?: return
-        val res = app.get(signedUrl).text
-        val resJson = JSONObject(res)
-        val videoSource = resJson.optJSONObject("video_source") ?: return
-        val qualities = videoSource.keys().asSequence().toList()
-            .sortedByDescending { it.toIntOrNull() ?: 0 }
-        val bestQualityKey = qualities.firstOrNull() ?: return
-        val bestQualityUrl = videoSource.optString(bestQualityKey)
-
-        callback(
-            newExtractorLink(
-                "Dramafull",
-                "Dramafull",
-                bestQualityUrl
-            )
-        )
-
-        val subJson = resJson.optJSONObject("sub")
-        subJson?.optJSONArray(bestQualityKey)?.let { array ->
-            for (i in 0 until array.length()) {
-                subtitleCallback(newSubtitleFile("English", dramafullAPI + array.getString(i)))
-            }
-        }
-    }
-
     suspend fun invokeCinemacity(
         imdbId: String? = null,
         season: Int? = null,
@@ -2826,8 +2752,9 @@ object CineStreamExtractors {
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val url = if(season != null) "$WYZIESubsAPI/search?id=$id&season=$season&episode=$episode&source=all" else "$WYZIESubsAPI/search?id=$id&source=all"
-        val json = app.get(url).text
+        val url = if(season != null) "$WYZIESubsAPI/search?id=$id&season=$season&episode=$episode&source=all&key=${Settings.getWyzieSubsKey() ?: return}" else "$WYZIESubsAPI/search?id=$id&source=all&key=${Settings.getWyzieSubsKey() ?: return}"
+        val json = app.get(url, timeout = 10000).text
+        Log.d("WyzieSubs", "Received subtitle response: $json")
         val data = parseJson<ArrayList<WYZIESubtitle>>(json)
 
         data.forEach {
@@ -3661,8 +3588,10 @@ object CineStreamExtractors {
             "Origin" to bollywoodBaseAPI,
             "Referer" to "$bollywoodBaseAPI/",
             "User-Agent" to USER_AGENT,
-            "Authorization" to "Bearer $BOLLYWOOD_KEY"
+            "Authorization" to "Bearer ${Settings.getGramCinemaToken() ?: return}"
         )
+
+        Log.d("Bollywood", "Headers: $headers")
 
         val url = if (season == null) {
             "$bollywoodAPI/files/search?q=${titleSlug}.${year}&page=1"
@@ -3674,6 +3603,9 @@ object CineStreamExtractors {
             url,
             headers = headers
         ).text
+
+        Log.d("Bollywood", "Response: $response")
+
         val jsonObject = JsonParser.parseString(response).asJsonObject
 
         if (jsonObject.has("files")) {
@@ -3684,11 +3616,13 @@ object CineStreamExtractors {
                 val fileName = item.get("file_name").asString
                 if(fileName.contains(".$titleSlug")) return@forEach
                 val fileId = item.get("id").asString
+                Log.d("Bollywood", "Processing file ID: $fileId")
                 val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
                     headers = headers
                 ).text
+                Log.d("Bollywood", "Link response for file ID $fileId: $res")
 
                 val linkJson = JsonParser.parseString(res).asJsonObject
                 if (linkJson.has("url")) {

@@ -5,10 +5,6 @@ import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
 import com.megix.ProviderRegistry
 
-/**
- * Public API surface for CineStream settings.
- * UI is delegated to SettingsDialog; theme helpers live in SettingsTheme.
- */
 object Settings {
 
     // ── Global keys ──────────────────────────────────────────
@@ -18,6 +14,8 @@ object Settings {
     const val PROVIDER_SIMKL           = "ProviderSimkl"
     const val PROVIDER_TMDB            = "ProviderTmdb"
     const val SHOWBOX_TOKEN_KEY        = "showbox_ui_token"
+    const val WYZIE_SUBS_KEY           = "wyzie_subs_api_key"
+    const val GRAMCINEMA_TOKEN_KEY     = "gramcinema_bearer_token"
     const val STREMIO_ADDONS_KEY       = "stremio_addons"
     const val NEW_PROVIDER_DEFAULT_ON  = "new_provider_default_on"
 
@@ -189,6 +187,16 @@ object Settings {
     fun saveShowboxToken(token: String) = setKey(SHOWBOX_TOKEN_KEY, token.trim())
     fun getShowboxToken(): String?       = getKey<String>(SHOWBOX_TOKEN_KEY)?.takeIf { it.isNotBlank() }
     fun clearShowboxToken()              = setKey(SHOWBOX_TOKEN_KEY, null)
+
+    // ── Wyzie Subs API key helpers ───────────────────────────
+    fun saveWyzieSubsKey(key: String) = setKey(WYZIE_SUBS_KEY, key.trim())
+    fun getWyzieSubsKey(): String?     = getKey<String>(WYZIE_SUBS_KEY)?.takeIf { it.isNotBlank() }
+    fun clearWyzieSubsKey()            = setKey(WYZIE_SUBS_KEY, null)
+
+    // ── GramCinema bearer token helpers ──────────────────────
+    fun saveGramCinemaToken(token: String) = setKey(GRAMCINEMA_TOKEN_KEY, token.trim())
+    fun getGramCinemaToken(): String?       = getKey<String>(GRAMCINEMA_TOKEN_KEY)?.takeIf { it.isNotBlank() }
+    fun clearGramCinemaToken()              = setKey(GRAMCINEMA_TOKEN_KEY, null)
 
     // ── Entry point ──────────────────────────────────────────
     fun showSettingsDialog(context: Context, onSave: () -> Unit) =
