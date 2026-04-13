@@ -3601,7 +3601,8 @@ object CineStreamExtractors {
 
         val response = app.get(
             url,
-            headers = headers
+            headers = headers,
+            timeout = 300000
         ).text
 
         Log.d("Bollywood", "Response: $response")

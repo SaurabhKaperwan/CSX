@@ -293,7 +293,7 @@ internal object SettingsDialog {
             sectionBg: Int,
             sectionBorder: Int,
             clipLabel: String,
-            extraButtons: (LinearLayout.(EditText, TextView) -> Unit)? = null
+            loginType: SettingsWebView.LoginType? = null  // when set, shows a 🌐 Login button
         ): View {
             val sectionLayout = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -323,7 +323,20 @@ internal object SettingsDialog {
             }
             sectionLayout.addView(input)
 
-            // Paste / Copy row
+            // Hoist savedBadge so the Login callback can update it
+            val savedBadge = TextView(context).apply {
+                text = when {
+                    pending.containsKey(pendingKey) ->
+                        if ((pending[pendingKey] as? String) != null) "✓ Staged" else ""
+                    getCurrent() != null -> "✓ Saved"
+                    else -> ""
+                }
+                textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(Color.parseColor("#4ADE80"))
+                setPadding(0, 0, 8.dp(context), 0)
+            }
+
+            // Paste / Copy / Login row
             sectionLayout.addView(LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
@@ -345,20 +358,23 @@ internal object SettingsDialog {
                         Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
                     } else Toast.makeText(context, "Nothing to copy", Toast.LENGTH_SHORT).show()
                 })
-                extraButtons?.invoke(this, input, TextView(context)) // unused overload
-            })
-
-            val savedBadge = TextView(context).apply {
-                text = when {
-                    pending.containsKey(pendingKey) ->
-                        if ((pending[pendingKey] as? String) != null) "✓ Staged" else ""
-                    getCurrent() != null -> "✓ Saved"
-                    else -> ""
+                // Optional WebView login button
+                if (loginType != null) {
+                    addView(SettingsWidgets.hSpacer(context, 8))
+                    addView(SettingsWidgets.pillBtn(
+                        context, "🌐 Login",
+                        sectionAccent, sectionBg, sectionBorder
+                    ) {
+                        SettingsWebView.show(context, loginType) { token ->
+                            // Auto-fill field and stage the token
+                            input.setText(token)
+                            input.setSelection(token.length)
+                            pending[pendingKey] = token
+                            savedBadge.text = "✓ Staged"
+                        }
+                    })
                 }
-                textSize = 10f; setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(Color.parseColor("#4ADE80"))
-                setPadding(0, 0, 8.dp(context), 0)
-            }
+            })
 
             // Show/Hide | Clear | Save row
             sectionLayout.addView(LinearLayout(context).apply {
@@ -401,6 +417,22 @@ internal object SettingsDialog {
             return sectionLayout
         }
 
+        // ── Febbox section header ────────────────────────────────
+        content.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity     = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 6.dp(context) }
+
+            addView(TextView(context).apply {
+                text = "📦  Febbox Token"
+                textSize = 13f; setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(theme.TEXT_PRIMARY)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        })
+
         // ── Febbox section ───────────────────────────────────────
         content.addView(buildTokenSection(
             labelText     = "Febbox token to enable ShowBox source",
@@ -410,7 +442,8 @@ internal object SettingsDialog {
             sectionAccent = SHOWBOX_ACCENT,
             sectionBg     = SHOWBOX_BG,
             sectionBorder = SHOWBOX_BORDER,
-            clipLabel     = "Febbox Token"
+            clipLabel     = "Febbox Token",
+            loginType     = SettingsWebView.LoginType.SHOWBOX
         ))
 
         // ── Divider between sections ─────────────────────────────
@@ -480,16 +513,6 @@ internal object SettingsDialog {
                 setTextColor(theme.TEXT_PRIMARY)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
-            addView(SettingsWidgets.pillBtn(context, "🌐 Get Token", GRAM_ACCENT, GRAM_BG, GRAM_BORDER) {
-                try {
-                    context.startActivity(android.content.Intent(
-                        android.content.Intent.ACTION_VIEW,
-                        android.net.Uri.parse("https://bollywood.eu.org/")
-                    ))
-                } catch (_: Exception) {
-                    Toast.makeText(context, "https://bollywood.eu.org/", Toast.LENGTH_LONG).show()
-                }
-            })
         })
 
         // ── GramCinema token input ───────────────────────────────
@@ -501,7 +524,8 @@ internal object SettingsDialog {
             sectionAccent = GRAM_ACCENT,
             sectionBg     = GRAM_BG,
             sectionBorder = GRAM_BORDER,
-            clipLabel     = "GramCinema Token"
+            clipLabel     = "GramCinema Token",
+            loginType     = SettingsWebView.LoginType.GRAMCINEMA
         ))
 
         // ── Card header (badge reflects whichever token was last staged) ──
