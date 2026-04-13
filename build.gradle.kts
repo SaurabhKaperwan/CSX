@@ -89,6 +89,7 @@ subprojects {
         implementation("org.mozilla:rhino:1.9.0") //run JS
         implementation("com.google.code.gson:gson:2.13.2")
         implementation("androidx.annotation:annotation:1.9.1")
+        implementation("androidx.browser:browser:1.8.0")
     }
 }
 
