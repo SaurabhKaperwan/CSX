@@ -224,6 +224,11 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_dudefilms", displayName = "Dudefilms",
+            executeStandard = { res, subCb, cb -> invokeDudefilms(res.imdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeDudefilms(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_uhdmovies", displayName = "UHDMovies",
             executeStandard = { res, subCb, cb -> if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, cb, subCb) },
             executeAnime = { res, subCb, cb -> invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb, subCb) }
