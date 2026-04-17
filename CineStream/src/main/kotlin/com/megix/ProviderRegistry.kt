@@ -171,6 +171,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeVidzee(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_vidfastpro", displayName = "VidFastPro",
+            executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_netflix", displayName = "Netflix",
             executeStandard = { res, subCb, cb -> invokeNetflix(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
@@ -265,6 +269,10 @@ object ProviderRegistry {
             key = "p_dahmermovies", displayName = "DahmerMovies",
             executeStandard = { res, _, cb -> invokeDahmerMovies(res.title, res.year, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
+        ),
+        ProviderDef(
+            key = "p_m4ufree", displayName = "M4ufree",
+            executeStandard = { res, subCb, cb -> invokeM4ufree(res.title, res.year, res.season, res.episode, subCb, cb) },
         ),
         ProviderDef(
             key = "p_multimovies", displayName = "Multimovies",

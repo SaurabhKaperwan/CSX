@@ -543,6 +543,26 @@ fun isUpcoming(dateString: String?): Boolean {
     }
 }
 
+fun getUrlTitle(str: String?): String {
+    if(str.isNullOrBlank()) return ""
+    return str.replace(Regex("[^a-zA-Z\\d]"), "-")
+}
+
+suspend fun returnWorkingUrl(urls: List<String>): String? {
+    for (url in urls) {
+        try {
+            val res = app.head(url, timeout = 30000L)
+            if (res.code == 200) {
+                return url
+            }
+        } catch (e: Exception) {
+            //logError(e)
+            continue
+        }
+    }
+    return null
+}
+
 fun getKisskhTitle(str: String?): String? {
     return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
 }

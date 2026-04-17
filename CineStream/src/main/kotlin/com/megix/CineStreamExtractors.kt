@@ -544,9 +544,14 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit
     ) {
         val json = app.get("$multiDecryptAPI/enc-vidstack").text
+
+        Log.d("Vidstack", "enc response: $json"
+        )
         val result = JSONObject(json).getJSONObject("result")
         val token = result.getString("token")
         val user_id = result.getString("user_id")
+
+        Log.d("Vidstack", "token: $token, user_id: $user_id")
 
         if(token.isEmpty()) return
 
@@ -580,6 +585,8 @@ object CineStreamExtractors {
 
             val data_json = app.get(url, headers = headers).text
 
+            Log.d("Vidstack", "data response for server $server: $data_json")
+
             if(type == "1") {
                 val dataString = JSONObject(data_json).getString("data")
 
@@ -591,12 +598,17 @@ object CineStreamExtractors {
                 val id = parts[1]
                 val encrypted = app.get("$host/api/v1/video?id=$id", headers = headers).text
 
+                Log.d("Vidstack", "encrypted data for server $server: $encrypted")
+
                 val jsonBody = mapOf(
                     "text" to encrypted,
                     "type" to type
                 )
 
                 val decrypted = app.post("$multiDecryptAPI/dec-vidstack", json = jsonBody).text
+
+                Log.d("Vidstack", "decrypted data for server $server: $decrypted")
+
                 val resultObject = JSONObject(decrypted).getJSONObject("result")
                 val m3u8 = resultObject.getString("source")
 
@@ -919,6 +931,10 @@ object CineStreamExtractors {
             }
         }
 
+        val YflixAPI = returnWorkingUrl(multipleYflixAPI) ?: return
+
+        Log.d("Yflix", "Using API: $YflixAPI")
+
         val findUrl = "https://enc-dec.app/db/flix/find?tmdb_id=$tmdbId"
         val findResp = app.get(findUrl).text
         val findJson = JSONArray(findResp)
@@ -1076,8 +1092,8 @@ object CineStreamExtractors {
         val headers = mapOf(
             "Accept" to "*/*",
             "User-Agent" to USER_AGENT,
-            "Origin" to "https://cineby.gd",
-            "Referer" to "https://cineby.gd/"
+            "Origin" to "https://www.cineby.sc",
+            "Referer" to "https://www.cineby.sc/"
         )
 
         val servers = listOf(
@@ -1313,6 +1329,9 @@ object CineStreamExtractors {
     ) {
         val url = "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
         val json = app.get(url).text
+
+        Log.d("Vidlink", "enc response: $json")
+
         val enc_data = JSONObject(json).getString("result")
 
         val headers = mapOf(
@@ -1329,6 +1348,9 @@ object CineStreamExtractors {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
+
+        Log.d("Vidlink", "ep response: $epJson")
+
         val data = globalGson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist
 
@@ -3155,9 +3177,17 @@ object CineStreamExtractors {
         }
 
         val query = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$name"},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
+        val res = app.get(query, referer = privatereferer)
+        val response = res.parsedSafe<Anichi>()?.data?.shows?.edges
 
-        val response =
-            app.get(query, referer = privatereferer).parsedSafe<Anichi>()?.data?.shows?.edges
+        val headers =
+            mapOf(
+                "app-version" to "android_c-253",
+                "platformstr" to "android_c",
+                "Referer" to privatereferer,
+                "from-app" to base64Decode("YW5pbWVjaGlja2Vu")
+            )
+
         if (response != null) {
             val id = response.firstOrNull()?.id ?: return
             val langType = listOf("sub", "dub")
@@ -3165,19 +3195,16 @@ object CineStreamExtractors {
                 val epData =
                     """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
 
-                val eplinks = app.get(epData, referer = privatereferer)
+                Log.d("Allanime", "Episode Data URL: $epData")
+
+                val eplinks = app.get(epData, headers = headers)
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
+
+                Log.d("Allanime", "Episode Links: $eplinks")
+
                 eplinks?.safeAmap { source ->
                     safeApiCall {
-                        val headers =
-                            mapOf(
-                                "app-version" to "android_c-247",
-                                "platformstr" to "android_c",
-                                "Referer" to "https://allmanga.to"
-                            )
-
                         val sourceUrl = source.sourceUrl
-
                         if (sourceUrl.startsWith("http")) {
                             val sourcename = sourceUrl.getHost()
                             loadCustomExtractor(
@@ -3918,9 +3945,13 @@ object CineStreamExtractors {
         val userId  = Regex("""var userId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
         val movieId = Regex("""var movieId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
 
+        Log.d("VidsrcCC", "Extracted v: $v, userId: $userId, movieId: $movieId")
+
         val encrypted = JSONObject(
             app.get("$multiDecryptAPI/enc-vidsrc?user_id=$userId&movie_id=$movieId").text
         ).optString("result").ifEmpty { return }
+
+        Log.d("VidsrcCC", "Extracted encrypted: $encrypted")
 
         val serversUrl = buildString {
             append("$vidsrcCCAPI/api/$movieId/servers")
@@ -4343,4 +4374,197 @@ object CineStreamExtractors {
             }
         }
     }
+
+    suspend fun invokeVidFastPro(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
+
+        val headers = mutableMapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to "$vidfastProApi/",
+            "X-Requested-With" to "XMLHttpRequest",
+        )
+
+        val response = app.get(url, headers = headers).text
+        val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
+        val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText&version=1"
+        val decodedDataJson = app.get(decApiUrl).text
+        val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
+
+        val serversUrl = decodedData.servers ?: return
+        val streamBaseUrl = decodedData.stream ?: return
+        val token = decodedData.token ?: return
+
+        headers["X-CSRF-Token"] = token
+
+        val serversEncrypted = app.post(serversUrl, headers = headers).text
+        val serversListJson = app.post(
+            "$multiDecryptAPI/dec-vidfast",
+            json = mapOf("text" to serversEncrypted, "version" to "1")
+        ).text
+
+        val serversList = tryParseJson<VidfastStreamResponse>(serversListJson)?.result ?: return
+
+        serversList.forEach { server ->
+            try {
+                val serverHash = server.data ?: return@forEach
+                val finalStreamUrl = "$streamBaseUrl/$serverHash"
+
+                val streamDataEncrypted = app.post(finalStreamUrl, headers = headers).text
+                if(streamDataEncrypted.isNullOrBlank()) return@forEach
+                val streamDataJson = app.post(
+                    "$multiDecryptAPI/dec-vidfast",
+                    json = mapOf("text" to streamDataEncrypted , "version" to "1")
+                ).text
+
+                Log.d("VidFastPro", "Stream data JSON for server ${server.name}: $streamDataJson")
+
+                val streamData = tryParseJson<VidfastServersStreamRoot>(streamDataJson)?.result ?: return@forEach
+
+                streamData.tracks?.forEach { track ->
+                    if (track.file != null && track.label != null) {
+                        subtitleCallback.invoke(
+                            newSubtitleFile(
+                                getLanguage(track.label) ?: track.label,
+                                track.file
+                            )
+                        )
+                    }
+                }
+
+                val fileUrl = streamData.url ?: return@forEach
+                val type = if (fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+
+                val is4k = streamData.is4kAvailable == true || server.description?.contains("4K", true) == true
+                val quality = if (is4k) Qualities.P2160.value else Qualities.P1080.value
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Vidfast[${server.name}]",
+                        "Vidfast[${server.name}] ${server.description ?: ""}",
+                        fileUrl,
+                        type
+                    ) {
+                        this.headers = headers
+                        this.quality = quality
+                    }
+                )
+            } catch (e: Exception) {
+                Log.w("VidFastPro", "Failed to extract server: ${server.name}", e)
+            }
+        }
+    }
+
+    suspend fun invokeM4ufree(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(title == null || year == null) return
+        val searchQuery = if(season == null) {
+            "${getUrlTitle(title)}-${year}?type=movie"
+        } else {
+            "${getUrlTitle(title)}-${year}?type=tvs"
+        }
+
+        Log.d("M4ufree", "url: $m4ufreeAPI/search/$searchQuery")
+
+        val searchDoc = app.get("$m4ufreeAPI/search/$searchQuery").document
+
+        val matchedHref = searchDoc.select(".item > a").firstOrNull { element ->
+            val name = element.attr("title").ifEmpty { element.text() }
+            name.contains("$title ($year", ignoreCase = true) || name.contains("$title $year", ignoreCase = true)
+        }?.attr("href") ?: return
+
+        val link = fixUrl(matchedHref, m4ufreeAPI)
+
+        Log.d("M4ufree", "link: $link")
+
+        val request = app.get(link)
+        val doc = request.document
+        val cookies = request.cookies
+
+        Log.d("M4ufree", "cookies: $cookies")
+
+        val token = doc
+            .selectFirst("meta[name=csrf-token]")
+            ?.attr("content")
+
+        if (token.isNullOrBlank()) return
+
+        Log.d("M4ufree", "token: $token")
+
+        val m4uData = if (season == null && episode == null) {
+            doc.selectFirst("span.singlemv.active, span#fem")
+                ?.attr("data")
+        } else {
+            val epCode = "S%02d-E%02d".format(season, episode)
+            val episodeBtn = doc.select("button.episode")
+                .firstOrNull {
+                    it.text().trim().equals(epCode, true)
+                } ?: return
+
+            val idepisode = episodeBtn.attr("idepisode")
+
+            if (idepisode.isBlank()) return
+
+            val embed = app.post(
+                "$m4ufreeAPI/ajaxtv",
+                data = mapOf(
+                    "idepisode" to idepisode,
+                    "_token" to token
+                ),
+                referer = link,
+                headers = mapOf(
+                    "X-Requested-With" to "XMLHttpRequest"
+                ),
+                cookies = cookies
+            ).document
+
+            embed.selectFirst("span.singlemv.active, span#fem")
+                    ?.attr("data")
+
+        }
+
+        if (m4uData.isNullOrBlank()) return
+
+        Log.d("M4ufree", "m4uData: $m4uData")
+
+        val iframe = app.post(
+            "$m4ufreeAPI/ajax",
+            data = mapOf(
+                "m4u" to m4uData,
+                "_token" to token
+            ),
+            referer = link,
+            headers = mapOf(
+                "X-Requested-With" to "XMLHttpRequest"
+            ),
+            cookies = cookies
+        ).document
+            .selectFirst("iframe")
+            ?.attr("src")
+
+        if (iframe.isNullOrBlank()) return
+
+        Log.d("M4ufree", "iframe: $iframe")
+
+        loadSourceNameExtractor(
+            "M4uhd",
+            fixUrl(iframe, link),
+            m4ufreeAPI,
+            subtitleCallback,
+            callback
+        )
+
+    }
+
 }

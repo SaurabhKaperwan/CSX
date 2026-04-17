@@ -71,17 +71,30 @@ data class EncDecResponse(
 
 data class EncDecResult(
     @param:JsonProperty("servers") val servers: String?,
-    @param:JsonProperty("stream") val stream: String?
+    @param:JsonProperty("stream") val stream: String?,
+    @param:JsonProperty("token") val token: String?,
 )
 
 // Vidfast
-data class VidfastServer(
+data class VidfastServers(
     @param:JsonProperty("name") val name: String?,
     @param:JsonProperty("description") val description: String?,
     @param:JsonProperty("data") val data: String?
 )
 
 data class VidfastStreamResponse(
+    val status: Long,
+    val result: List<VidfastServers>,
+    val info: String,
+)
+
+data class VidfastServersStreamRoot(
+    val status: Long,
+    val result: VidfastServer,
+    val info: String,
+)
+
+data class VidfastServer(
     @param:JsonProperty("url") val url: String?,
     @param:JsonProperty("tracks") val tracks: List<VidfastTrack>?,
     @param:JsonProperty("4kAvailable") val is4kAvailable: Boolean?
