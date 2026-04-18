@@ -1444,11 +1444,13 @@ open class PpzjYoutube : ExtractorApi() {
 class Embedload : Asianload() {
     override val name = "Embedload"
     override val mainUrl = "https://embedload.cfd"
+    override val requiresReferer = false
 }
 
 open class Asianload : ExtractorApi() {
     override val name = "Asianload"
     override val mainUrl = "https://asianload.cfd"
+    override val requiresReferer = false
 
     override suspend fun getUrl(
         url: String,
