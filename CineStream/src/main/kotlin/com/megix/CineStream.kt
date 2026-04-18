@@ -61,6 +61,8 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Rapid())
         registerExtractorAPI(MegaPlay())
         registerExtractorAPI(PpzjYoutube())
+        registerExtractorAPI(Asianload())
+        registerExtractorAPI(Embedload())
 
         this.openSettings = { ctx: Context ->
             Settings.showSettingsDialog(ctx) {
