@@ -158,10 +158,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokePulp(res.tmdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokePulp(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) },
         ),
-        // ProviderDef(
-        //     key = "p_mapple", displayName = "Mapple",
-        //     executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
-        // ),
+        ProviderDef(
+            key = "p_mapple", displayName = "Mapple",
+            executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
+        ),
         ProviderDef(
             key = "p_vidstack", displayName = "Vidstack",
             executeStandard = { res, subCb, cb -> invokeVidstack(res.imdbId, res.season, res.episode, subCb, cb) }

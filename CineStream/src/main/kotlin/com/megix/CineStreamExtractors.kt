@@ -38,6 +38,8 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 
+import okhttp3.RequestBody.Companion.toRequestBody
+
 import com.megix.settings.Settings
 
 import kotlinx.coroutines.sync.Mutex
@@ -1175,94 +1177,116 @@ object CineStreamExtractors {
         }
     }
 
-    // suspend fun invokeMapple(
-    //     tmdbId: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     if(tmdbId == null) return
-    //     var mediaType = ""
-    //     var tv_slug = ""
-    //     var url = ""
+    suspend fun invokeMapple(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if (tmdbId == null) return
 
-    //     if(season == null) {
-    //       mediaType =  "movie"
-    //       url = "$mappleAPI/watch/movie/$tmdbId"
-    //     } else {
-    //         mediaType = "tv"
-    //         tv_slug = "$season-$episode"
-    //         url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
-    //     }
+        val base = mappleAPI.removeSuffix("/")
 
-    //     val headers = mapOf(
-    //         "User-Agent" to USER_AGENT,
-    //         "Referer" to "$mappleAPI/",
-    //     )
+        val mediaType = if (season == null) "movie" else "tv"
+        val tvSlug = if (season != null && episode != null) "$season-$episode" else ""
 
-    //     val text = app.get(url, headers = headers).text
-    //     val regex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
-    //     val match = regex.find(text)
-    //     val token = match?.groupValues?.get(1) ?: return
-    //     Log.d("Mapple", "token: $token")
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to "$base/",
+            "Origin" to base,
+            "Accept" to "*/*",
+            "Content-Type" to "application/json"
+        )
 
-    //     val sources = listOf(
-    //         "mapple", "sakura", "oak", "willow",
-    //         "cherry", "pines", "magnolia", "sequoia"
-    //     )
+        val watchUrl = if (mediaType == "movie") {
+            "$base/watch/movie/$tmdbId"
+        } else {
+            "$base/watch/tv/$tmdbId/$tvSlug"
+        }
 
-    //     sources.safeAmap { source ->
-    //         try {
-    //             val jsonBody = """
-    //                 {
-    //                     "data": {
-    //                         "mediaId": $tmdbId,
-    //                         "mediaType": "$mediaType",
-    //                         "tv_slug": "$tv_slug",
-    //                         "source": "$source"
-    //                     },
-    //                     "endpoint": "stream-encrypted"
-    //                 }
-    //             """.trimIndent()
+        val page = app.get(watchUrl, headers = headers).text
+        val tokenRegex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
+        val requestToken = tokenRegex.find(page)?.groupValues?.get(1) ?: return
 
-    //             val encryptResText = app.post(
-    //                 "$mappleAPI/api/encrypt",
-    //                 json = jsonBody,
-    //                 headers = headers
-    //             ).text
+        val body = """
+        {
+            "mediaId": $tmdbId,
+            "mediaType": "$mediaType",
+            "requestToken": "$requestToken"
+        }
+    """.trimIndent()
 
-    //             val encryptRes = JSONObject(encryptResText)
-    //             val streamPath = encryptRes.getString("url")
-    //             val finalUrl = "$mappleAPI$streamPath&requestToken=$token"
-    //             Log.d("Mapple", "finalUrl of $source: $finalUrl")
+        val tokenRes1 = JSONObject(
+            app.post("$base/api/stream-token", requestBody = body.toRequestBody(), headers = headers).text
+        )
 
-    //             val streamsDataText = app.get(
-    //                 finalUrl,
-    //                 headers = headers
-    //             ).text
+        if (!tokenRes1.optBoolean("success")) return
 
-    //             Log.d("Mapple", "streamsDataText of $source: $streamsDataText")
+        val finalToken = if (tokenRes1.optBoolean("requiresPow")) {
+            val pow = tokenRes1.getJSONObject("pow")
 
-    //             val streamsData = JSONObject(streamsDataText)
+            val nonce = solvePowChallenge(
+                pow.getString("challenge"),
+                pow.getInt("difficulty")
+            ) ?: return
 
-    //             if (streamsData.optBoolean("success")) {
-    //                 val data = streamsData.getJSONObject("data")
-    //                 val streamUrl = data.optString("stream_url")
+            val body2 = """
+            {
+                "mediaId": $tmdbId,
+                "mediaType": "$mediaType",
+                "requestToken": "$requestToken",
+                "pow": {
+                    "challengeId": "${pow.getString("challengeId")}",
+                    "nonce": "$nonce"
+                }
+            }
+        """.trimIndent()
 
-    //                 if (streamUrl.isNotEmpty()) {
-    //                     M3u8Helper.generateM3u8(
-    //                         "Mapple [${source.uppercase()}]",
-    //                         streamUrl,
-    //                         "$mappleAPI/",
-    //                         headers = headers
-    //                     ).forEach(callback)
-    //                 }
-    //             }
-    //         } catch (e: Exception) {
-    //             e.printStackTrace()
-    //         }
-    //     }
-    // }
+            val tokenRes2 = JSONObject(
+                app.post("$base/api/stream-token", requestBody = body2.toRequestBody(), headers = headers).text
+            )
+
+            if (!tokenRes2.optBoolean("success")) return
+            tokenRes2.getString("token")
+        } else {
+            tokenRes1.getString("token")
+        }
+
+        val sources = listOf(
+            "mapple",
+            "willow",
+            "cherry",
+            "pines",
+            "oak",
+            "sequoia",
+            "sakura",
+            "magnolia"
+        )
+
+        sources.safeAmap { source ->
+            val streamUrl =
+                "$base/api/stream?mediaId=$tmdbId&mediaType=$mediaType&tv_slug=$tvSlug" +
+                        "&source=$source&apikey=mptv_sk_a8f29c4e7b3d1f" +
+                        "&requestToken=$requestToken&token=$finalToken"
+
+            val streamRes = JSONObject(app.get(streamUrl, headers = headers).text)
+
+            if (!streamRes.optBoolean("success")) return@safeAmap
+
+            val m3u8 = streamRes
+                .getJSONObject("data")
+                .optString("stream_url")
+
+            if (m3u8.isNotEmpty()) {
+                M3u8Helper.generateM3u8(
+                    "Mapple [${source.uppercase()}]",
+                    m3u8,
+                    "$base/",
+                    headers = headers
+                ).forEach(callback)
+            }
+        }
+    }
 
     suspend fun invokeHexa(
         tmdbId: Int? = null,
@@ -2622,6 +2646,7 @@ object CineStreamExtractors {
         } else {
             "$multimoviesAPI/episodes/$fixTitle-${season}x${episode}"
         }
+
         val req = app.get(url).document
         req.select("ul#playeroptionsul li").map {
             Triple(
@@ -2643,6 +2668,7 @@ object CineStreamExtractors {
                     headers = mapOf("X-Requested-With" to "XMLHttpRequest")
                 ).parsed<ResponseHash>().embed_url
                 val link = source.substringAfter("\"").substringBefore("\"")
+
                 when {
                     !link.contains("youtube") -> {
                         loadSourceNameExtractor("Multimovies", link, referer = multimoviesAPI, subtitleCallback, callback)
