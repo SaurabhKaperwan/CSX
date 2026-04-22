@@ -15,6 +15,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
+import com.lagradost.cloudstream3.network.CloudflareKiller
 
 // JSON Parsing (Gson, Jackson, Org)
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -1163,7 +1164,11 @@ open class MegaUp : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val mediaUrl = url.replace("/e/", "/media/").replace("/e2/", "/media/")
+        val newUrl = app.get(url, headers = HEADERS, interceptor = CloudflareKiller()).document.selectFirst("iframe")?.attr("src") ?: return
+
+        Log.d("MegaUp", "newUrl: $newUrl")
+
+        val mediaUrl = newUrl.replace("/e/", "/media/").replace("/e2/", "/media/")
         val displayName = referer ?: this.name
 
         val encodedResult = app.get(mediaUrl, headers = HEADERS)

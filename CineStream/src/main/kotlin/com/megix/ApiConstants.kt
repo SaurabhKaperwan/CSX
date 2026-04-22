@@ -61,20 +61,14 @@ const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
 val multipleYflixAPI = listOf(
-    "https://solarmovie.fi",
+    "https://myflixer.bz",
     "https://yflix.to",
-    "https://1movies.bz",
+    "https://1moviesz.to",
     "https://sflix.fi",
-    "https://movhub.ws",
     "https://flixtor.mov",
-    "https://lookmovie.fi",
     "https://bflix.la",
     "https://myflixer.fi",
-    "https://123moviesfree.bz",
-    "https://hurawatch.la",
-    "https://soap2day.fi",
-    "https://myflixer.bz",
-    "https://watchseries.st"
+    "https://hurawatch.la"
 )
 
 // ── 2. Dynamic API Config ────────────────────────────────────

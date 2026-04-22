@@ -976,6 +976,7 @@ object CineStreamExtractors {
             val embed_url = decrypt(encryptedEmbed)
 
             Log.d("Yflix", "embed_url: $embed_url")
+
             MegaUp().getUrl(embed_url, "Yflix", subtitleCallback, callback)
         }
     }
@@ -1951,6 +1952,9 @@ object CineStreamExtractors {
             val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
             val encrypted = JSONObject(embed_resp).getString("result")
             val embed_url = decrypt(encrypted)
+
+            Log.d("Animekai", "embed_url: $embed_url")
+
             MegaUp().getUrl(embed_url, "Animekai[$type]", subtitleCallback, callback)
         }
     }

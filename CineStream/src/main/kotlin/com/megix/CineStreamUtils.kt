@@ -552,7 +552,7 @@ fun getUrlTitle(str: String?): String {
 suspend fun returnWorkingUrl(urls: List<String>): String? {
     for (url in urls) {
         try {
-            val res = app.head(url, timeout = 30000L)
+            val res = app.head(url, timeout = 30000L, allowRedirects = false)
             if (res.code == 200) {
                 return url
             }
