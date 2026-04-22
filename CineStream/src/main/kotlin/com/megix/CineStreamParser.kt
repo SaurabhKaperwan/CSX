@@ -772,3 +772,29 @@ data class PulpSubtitle(
     val language: String?,
     val format: String?
 )
+
+//Onetouchtv
+
+data class OneMediaItem(
+    val id: String,
+    val title: String,
+)
+
+data class OnePlaybackData(
+    val sources: List<OneVideoSource>,
+    val track: List<OneSubtitleTrack>
+)
+
+data class OneVideoSource(
+    val type: String,
+    val id: String,
+    val name: String,
+    val quality: String,
+    val url: String,
+    val headers: Map<String, String>?
+)
+
+data class OneSubtitleTrack(
+    val file: String,
+    val name: String,
+)

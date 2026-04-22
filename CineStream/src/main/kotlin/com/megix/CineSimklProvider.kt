@@ -359,7 +359,7 @@ class CineSimklProvider: MainAPI() {
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = tvdbData?.cast
-                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.logoUrl = logo
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
@@ -412,7 +412,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = duration
                 this.score = Score.from10(rating)
                 this.year = json.year
-                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.logoUrl = logo
                 this.actors = tvdbData?.cast
                 this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations

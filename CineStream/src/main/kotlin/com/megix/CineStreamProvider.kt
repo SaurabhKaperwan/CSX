@@ -239,7 +239,7 @@ open class CineStreamProvider : MainAPI() {
                 this.score = Score.from10(imdbRating)
                 this.year = year ?.toIntOrNull() ?: releaseInfo?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.backgroundPosterUrl = background
-                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.logoUrl = logo
                 // this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"
                 this.actors = actors
@@ -291,7 +291,7 @@ open class CineStreamProvider : MainAPI() {
                 this.year = year?.substringBefore("–")?.toIntOrNull() ?: releaseInfo?.substringBefore("–")?.toIntOrNull() ?: year?.substringBefore("-")?.toIntOrNull()
                 this.plot = description
                 this.tags = genre
-                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.logoUrl = logo
                 // this.duration = movieData?.runtime?.replace(" min", "")?.toIntOrNull()
                 this.score = Score.from10(imdbRating)
                 this.contentRating = if(isKitsu) "Kitsu" else "IMDB"

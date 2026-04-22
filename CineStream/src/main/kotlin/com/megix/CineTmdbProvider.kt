@@ -217,7 +217,7 @@ class CineTmdbProvider: MainAPI() {
                 this.year = year
                 this.plot = res.overview
                 this.contentRating = ageRating
-                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.logoUrl = logo
                 this.tags = keywords?.map { word -> word.replaceFirstChar { it.titlecase() } }
                     ?.takeIf { it.isNotEmpty() } ?: genres
                 this.score = Score.from10(res.vote_average.toString())
@@ -256,7 +256,7 @@ class CineTmdbProvider: MainAPI() {
                 this.plot = res.overview
                 this.duration = res.runtime
                 this.contentRating = ageRating
-                try { this.logoUrl = logo} catch(_:Throwable){}
+                this.logoUrl = logo
                 this.tags = keywords?.map { word -> word.replaceFirstChar { it.titlecase() } }
                     ?.takeIf { it.isNotEmpty() } ?: genres
 

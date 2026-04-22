@@ -331,6 +331,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_onetouchtv", displayName = "Onetouchtv",
+            executeStandard = { res, subCb, cb -> invokeOnetouchtv(res.title, res.airedYear, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_toonstream", displayName = "Toonstream",
             executeStandard = { res, subCb, cb -> if (res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }

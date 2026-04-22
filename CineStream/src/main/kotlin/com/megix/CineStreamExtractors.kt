@@ -444,7 +444,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$cinemacityAPI/index.php?do=search&subaction=search&search_start=1&full_search=0&story=$imdbId"
+        val url = "$cinemacityAPI/?do=search&subaction=search&search_start=0&full_search=0&story=$imdbId"
 
         val movieUrl = app.get(url).document
             .selectFirst("div.dar-short_item > a")
@@ -1959,6 +1959,85 @@ object CineStreamExtractors {
         }
     }
 
+    suspend fun invokeOnetouchtv(
+        title: String? = null,
+        airedYear: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(title == null || airedYear == null) return
+
+        var query = title
+
+        if(season != null && season != 1) {
+            query += " Season $season ($airedYear)"
+        } else {
+            query += " ($airedYear)"
+        }
+
+        val encrypt = app.get("$onetouchtvAPI/vod/search?page=1&keyword=$query").text
+
+        val decrypt = app.post(
+            "$multiDecryptAPI/dec-onetouchtv",
+            json = mapOf("text" to encrypt)
+        ).text
+
+        //get result
+        val result = JSONObject(decrypt).getJSONArray("result").toString()
+
+        val listType = object : TypeToken<List<OneMediaItem>>() {}.type
+        val mediaItems: List<OneMediaItem> = globalGson.fromJson(result, listType)
+
+        Log.d("Onetouchtv", "mediaItems: $mediaItems")
+
+        val matchedId = mediaItems.firstOrNull { it.title.equals(query, ignoreCase = true) }?.id ?: return
+
+        Log.d("Onetouchtv", "matchedId: $matchedId")
+
+        val encodeSource = app.get("$onetouchtvAPI/web/vod/$matchedId/episode/${episode ?: 0}").text
+
+        val decryptSource = app.post(
+            "$multiDecryptAPI/dec-onetouchtv",
+            json = mapOf("text" to encodeSource)
+        ).text
+
+        Log.d("Onetouchtv", "decryptSource: $decryptSource")
+
+        val sourceResult = JSONObject(decryptSource).getJSONObject("result").toString()
+
+        val playbackData = globalGson.fromJson(sourceResult, OnePlaybackData::class.java)
+
+        playbackData.sources.forEach { source ->
+
+            val type = if(source.type == "hls") ExtractorLinkType.M3U8 else INFER_TYPE
+            val quality = getIndexQuality(source.quality)
+
+            callback.invoke(
+                newExtractorLink(
+                    "Onetouchtv",
+                    "Onetouchtv",
+                    source.url,
+                    type
+                ) {
+                    this.headers = source.headers ?: emptyMap()
+                    this.quality = quality
+                }
+            )
+        }
+
+        playbackData.track.forEach { subtitle ->
+            subtitleCallback.invoke(
+                newSubtitleFile(
+                    subtitle.name,
+                    subtitle.file
+                )
+            )
+        }
+
+    }
+
     suspend fun invokeKisskh(
         title: String? = null,
         year: Int? = null,
@@ -1975,6 +2054,9 @@ object CineStreamExtractors {
         )
         if (searchResponse.code != 200) return
         val res = tryParseJson<ArrayList<KisskhResults>>(searchResponse.text) ?: return
+
+        Log.d("Kisskh", "res: $res")
+
         val (id, contentTitle) = if (res.size == 1) {
             res.first().id to res.first().title
         } else {
@@ -1990,16 +2072,28 @@ object CineStreamExtractors {
             } ?: res.find { it.title.equals(title, true) }
             data?.id to data?.title
         }
+
+        Log.d("Kisskh", "res: $res")
+
         val detailResponse = app.get(
             "$kissKhAPI/api/DramaList/Drama/$id?isq=false",
             referer = "$kissKhAPI/Drama/${getKisskhTitle(contentTitle)}?id=$id"
         )
         if (detailResponse.code != 200) return
         val resDetail = detailResponse.parsedSafe<KisskhDetail>() ?: return
+
+        Log.d("Kisskh", "resDetail: $resDetail")
+
         val epsId =
             if (season == null) resDetail.episodes?.first()?.id else resDetail.episodes?.find { it.number == episode }?.id
                 ?: return
+
+        Log.d("Kisskh", "epsId: $epsId")
+
         val epJson = app.get("$multiDecryptAPI/enc-kisskh?text=$epsId&type=vid", referer = kissKhAPI).text
+
+        Log.d("Kisskh", "epJson: $epJson")
+
         val vid_key = JSONObject(epJson).getString("result")
         val sourcesResponse = app.get(
             "$kissKhAPI/api/DramaList/Episode/$epsId.png?err=false&ts=&time=&kkey=$vid_key",
