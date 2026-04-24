@@ -101,14 +101,6 @@ object CineStreamExtractors {
         val title = mal_response?.title
         val malsync = mal_response?.sites
 
-        val zorotitle = malsync?.zoro?.values?.firstNotNullOfOrNull {
-            (it as? Map<*, *>)?.get("title") as? String
-        }?.replace(":", " ")
-
-        val hianimeurl = malsync?.zoro?.values?.firstNotNullOfOrNull {
-            (it as? Map<*, *>)?.get("url") as? String
-        }
-
         val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull {
             (it as? Map<*, *>)?.get("url") as? String
         }
@@ -118,7 +110,7 @@ object CineStreamExtractors {
         }
 
         // Package the API results for the registry
-        val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin, animepaheTitle)
+        val malData = MalSyncData(title, animepaheUrl, aniId, episode, year, origin, animepaheTitle)
 
         Log.d("Malsync", "malData: $malData")
 
@@ -3201,67 +3193,6 @@ object CineStreamExtractors {
         )
     }
 
-    suspend fun invokeKaido(
-        url: String? = null,
-        title: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        Log.d("Kaido", "url: $url")
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-
-        val id = if(url != null) {
-            url.substringAfterLast("/").substringAfterLast("-")
-        } else {
-            val encodedQuery = URLEncoder.encode(title ?: return, StandardCharsets.UTF_8.toString())
-            val document = app.get("$kaidoAPI/search?keyword=$encodedQuery&page=1").document
-            document.select("div.flw-item h3 a[title=\"$title\"]").attr("href").substringBefore("?").substringAfterLast("-")
-        }
-
-        if(id.isNullOrBlank()) return
-
-        Log.d("Kaido", "id: $id")
-
-        val epId = app.get(
-            "$kaidoAPI/ajax/episode/list/$id",
-            headers = headers
-        ).parsedSafe<HianimeResponses>()?.html?.let {
-            Jsoup.parse(it)
-        }?.select("div.ss-list a")
-            ?.find { it.attr("data-number") == "${episode ?: 1}" }
-            ?.attr("data-id") ?: return
-
-        Log.d("Kaido", "epId: $epId")
-
-        val servers = app.get(
-            "$kaidoAPI/ajax/episode/servers?episodeId=$epId",
-            headers = headers
-        ).parsedSafe<HianimeResponses>()?.html?.let{
-            Jsoup.parse(it)
-        }?.select("div.item.server-item")
-            ?.map {
-                Triple(
-                    it.text(),
-                    it.attr("data-id"),
-                    it.attr("data-type")
-                )
-            } ?: return
-
-        Log.d("Kaido", "servers: $servers")
-
-        servers.safeAmap { (label, serverId, type) ->
-            val embedUrl = app.get(
-                "$kaidoAPI/ajax/episode/sources?id=$serverId",
-                headers = headers
-            ).parsedSafe<HianimeEpisodeServers>()?.link ?: return@safeAmap
-
-            Log.d("Kaido", "embedUrl: $embedUrl")
-
-            loadCustomExtractor("Kaido[${type.uppercase()}]", embedUrl, "", subtitleCallback, callback)
-        }
-    }
-
     suspend fun invokeAllanime(
         name: String? = null,
         year: Int? = null,
@@ -4139,54 +4070,6 @@ object CineStreamExtractors {
         loadCustomExtractor("Autoembed", embedUrl, "", subtitleCallback, callback)
     }
 
-    suspend fun invokeWatch32(
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if (title.isNullOrBlank()) return
-
-        val type = if (season == null) "Movie" else "TV"
-        val searchUrl = "$watch32API/search/${title.trim().replace(" ", "-")}"
-
-        val matchedElement = app.get(searchUrl).document
-            .select("div.flw-item").firstOrNull { item ->
-                val name = item.selectFirst("h2.film-name a")?.text()?.trim() ?: ""
-                val mediaType = item.selectFirst("span.fdi-type")?.text()?.trim() ?: ""
-                name.contains(title, ignoreCase = true) && mediaType.equals(type, ignoreCase = true)
-            }?.selectFirst("h2.film-name a") ?: return
-
-        val infoId = matchedElement.attr("href").substringAfterLast("-")
-
-        if (season != null && episode != null) {
-            val seasonId = app.get("$watch32API/ajax/season/list/$infoId").document
-                .select("div.dropdown-menu a").firstOrNull { it.text().contains("Season $season", true) }
-                ?.attr("data-id") ?: return
-
-            val dataId = app.get("$watch32API/ajax/season/episodes/$seasonId").document
-                .select("li.nav-item a").firstOrNull { it.text().contains("Eps $episode:", true) }
-                ?.attr("data-id") ?: return
-
-            val servers = app.get("$watch32API/ajax/episode/servers/$dataId").document.select("li.nav-item a")
-
-            servers.toList().safeAmap { source ->
-                val iframeUrl = app.get("$watch32API/ajax/episode/sources/${source.attr("data-id")}")
-                    .parsedSafe<Watch32>()?.link ?: return@safeAmap
-                loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
-            }
-        } else {
-            val servers = app.get("$watch32API/ajax/episode/list/$infoId").document.select("li.nav-item a")
-
-            servers.safeAmap { ep ->
-                val iframeUrl = app.get("$watch32API/ajax/episode/sources/${ep.attr("data-id")}")
-                    .parsedSafe<Watch32>()?.link ?: return@safeAmap
-                loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
-            }
-        }
-    }
-
     suspend fun invokeKuudere(
         title: String? = null,
         year: Int? = null,
@@ -4679,5 +4562,4 @@ object CineStreamExtractors {
         )
 
     }
-
 }

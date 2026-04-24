@@ -58,8 +58,6 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Videostr())
         registerExtractorAPI(Streameeeeee())
         registerExtractorAPI(ZenCloudz())
-        registerExtractorAPI(Rapid())
-        registerExtractorAPI(MegaPlay())
         registerExtractorAPI(PpzjYoutube())
         registerExtractorAPI(Asianload())
         registerExtractorAPI(Embedload())

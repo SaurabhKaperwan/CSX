@@ -58,12 +58,6 @@ data class ExtractedMediaData(
     val logo: String?
 )
 
-//Watch32
-data class Watch32(
-    val type: String,
-    val link: String,
-)
-
 //Enc-dec
 data class EncDecResponse(
     @param:JsonProperty("result") val result: EncDecResult?
@@ -227,38 +221,6 @@ data class PrimewireClass(
     @param:JsonProperty("host_id")
     val hostId: Long,
     val host: String,
-)
-
-//Hianime
-data class HianimeResponses(
-    @param:JsonProperty("html") val html: String? = null,
-    @param:JsonProperty("link") val link: String? = null,
-)
-
-data class HianimeEpisodeServers(
-    val type: String? = null,
-    val link: String? = null,
-    val server: Long? = null,
-    val sources: List<Any?>? = null,
-    val tracks: List<Any?>? = null
-)
-
-
-//Anivers Hianime
-data class HianimeStreamResponse(
-    val sources: List<HianimeSources>,
-    val tracks: List<HianimeTracks>,
-)
-
-data class HianimeSources(
-    val url: String,
-    val type: String,
-)
-
-data class HianimeTracks(
-    val file: String,
-    val label: String?,
-    val kind: String,
 )
 
 //Stremio Subtitles

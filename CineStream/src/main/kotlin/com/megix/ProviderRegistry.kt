@@ -6,8 +6,6 @@ import com.lagradost.cloudstream3.utils.*
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
     val title: String?,
-    val zorotitle: String?,
-    val hianimeurl: String?,
     val animepaheUrl: String?,
     val aniId: Int?,
     val episode: Int?,
@@ -312,10 +310,6 @@ object ProviderRegistry {
             key = "p_autoembed", displayName = "AutoEmbed",
             executeStandard = { res, subCb, cb -> invokeAutoembed(res.imdbId, res.season, res.episode, subCb, cb) },
         ),
-        ProviderDef(
-            key = "p_watch32", displayName = "Watch32",
-            executeStandard = { res, subCb, cb -> invokeWatch32(res.title, res.season, res.episode, subCb, cb) },
-        ),
         // ProviderDef(
         //     key = "p_multiembeded", displayName = "Multiembeded",
         //     executeStandard = { res, subCb, cb -> invokeMultiEmbeded(res.tmdbId, res.season, res.episode, subCb, cb) },
@@ -336,16 +330,12 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_kaido", displayName = "Kaido",
-            executeMalSync = { data, subCb, cb -> invokeKaido(data.hianimeurl, data.animepaheTitle ?: data.title, data.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_animepahe", displayName = "AnimePahe",
             executeMalSync = { data, subCb, cb -> invokeAnimepahe(data.animepaheUrl, data.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_animekai", displayName = "Animekai",
-            executeMalSync = { data, subCb, cb -> invokeAnimekai(data.zorotitle ?: data.title, data.episode, subCb, cb) }
+            executeMalSync = { data, subCb, cb -> invokeAnimekai(data.title, data.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_allanime", displayName = "AllAnime",
