@@ -218,7 +218,6 @@ object CineStreamExtractors {
                 )
             )
         }
-
     }
 
     suspend fun invokeFlixIndia(
@@ -1471,40 +1470,6 @@ object CineStreamExtractors {
                     callback
                 )
             }
-        }
-    }
-
-    suspend fun invokeAnimez(
-        title: String? = null,
-        episode: Int?  = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if(title == null) return
-
-        val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
-
-        document.select("article > a").safeAmap {
-            val titles = it.attr("title").replace(" -Dub", "")
-            if(titles != title) return@safeAmap
-            val doc = app.get(animezAPI + it.attr("href")).document
-            val ep = episode ?: 1
-            val links  = doc.select("li.wp-manga-chapter > a")
-            val link = if (links.size >= ep) links[links.size - ep] else return@safeAmap
-            val type = if(link.text().contains("Dub", true)) "DUB" else "SUB"
-            val epDoc = app.get(animezAPI + link.attr("href")).document
-            val m3u8 = epDoc.select("iframe").attr("src").replace("/embed/", "/anime/").replace(Regex("\\s+"), "")
-
-            callback.invoke(
-                newExtractorLink(
-                    "Animez[$type]",
-                    "Animez[$type]",
-                    m3u8,
-                    type = ExtractorLinkType.M3U8
-                ) {
-                    this.quality = 1080
-                    this.referer = "$animezAPI/"
-                }
-            )
         }
     }
 

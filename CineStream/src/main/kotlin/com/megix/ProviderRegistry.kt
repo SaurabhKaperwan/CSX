@@ -352,11 +352,6 @@ object ProviderRegistry {
             executeMalSync = { data, subCb, cb -> invokeAnimekai(data.zorotitle ?: data.title, data.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_animez", displayName = "AnimeZ",
-            executeAnime = { res, _, cb -> invokeAnimez(res.title, res.episode, cb) },
-            executeMalSync = { data, _, cb -> invokeAnimez(data.title ?: data.zorotitle, data.episode, cb) }
-        ),
-        ProviderDef(
             key = "p_allanime", displayName = "AllAnime",
             executeAnime = { res, subCb, cb -> invokeAllanime(res.originalTitle ?: res.title, res.year, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAllanime(data.title, data.year, data.episode, subCb, cb) }
