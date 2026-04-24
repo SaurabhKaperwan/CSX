@@ -66,10 +66,6 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_animeworld", displayName = "AnimeWorld",
-            executeAnime = { res, subCb, cb -> invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_wyziesubs", displayName = "WYZIESubs",
             executeStandard = { res, subCb, _ -> invokeWYZIESubs(res.imdbId, res.season, res.episode, subCb) },
             executeAnime = { res, subCb, _ -> invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb) }

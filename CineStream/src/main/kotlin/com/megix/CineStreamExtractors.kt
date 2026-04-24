@@ -4065,6 +4065,9 @@ object CineStreamExtractors {
         }
 
         val serversData  = JSONObject(app.get(serversUrl, headers = headers).text)
+
+        Log.d("VidsrcCC", "serversData: $serversData")
+
         val serversArray = serversData.optJSONArray("data") ?: return
 
         val servers = (0 until serversArray.length()).associate {
@@ -4098,8 +4101,14 @@ object CineStreamExtractors {
         try {
             servers["UpCloud"]?.let { hash ->
                 val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+
+                Log.d("VidsrcCC", "UpCloud data: $data")
+
                 val dataObject = data.optJSONObject("data") ?: return@let
                 val iframeUrl = dataObject.optString("source")
+
+                Log.d("VidsrcCC", "UpCloud iframeUrl: $iframeUrl")
+
                 getUpcloud(iframeUrl, vidsrcCCAPI, callback)
             }
         } catch (e: Exception) {
