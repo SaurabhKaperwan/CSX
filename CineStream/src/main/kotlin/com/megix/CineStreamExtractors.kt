@@ -964,7 +964,13 @@ object CineStreamExtractors {
             val embedRespStr = app.get(embedUrlReq).text
             val encryptedEmbed = JSONObject(embedRespStr).getString("result")
             if (encryptedEmbed.isEmpty()) return@safeAmap
-            val embed_url = decrypt(encryptedEmbed)
+            var embed_url = decrypt(encryptedEmbed)
+
+            Log.d("Yflix", "embed_url: $embed_url")
+
+            if(embed_url.contains(YflixAPI)) {
+                embed_url = cfGet(embed_url).document.selectFirst("iframe")?.attr("src") ?: return@safeAmap
+            }
 
             Log.d("Yflix", "embed_url: $embed_url")
 
@@ -1908,7 +1914,13 @@ object CineStreamExtractors {
             val type = it.serverType
             val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
             val encrypted = JSONObject(embed_resp).getString("result")
-            val embed_url = decrypt(encrypted)
+            var embed_url = decrypt(encrypted)
+
+            Log.d("Animekai", "embed_url: $embed_url")
+
+            if(embed_url.contains(animekaiAPI)) {
+                embed_url = cfGet(embed_url).document.selectFirst("iframe")?.attr("src") ?: return@safeAmap
+            }
 
             Log.d("Animekai", "embed_url: $embed_url")
 
@@ -4114,9 +4126,10 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        if (aniId == null && title == null) return
+        if (aniId == null || title == null) return
 
-        val encodedTitle = URLEncoder.encode(title ?: "", StandardCharsets.UTF_8.toString())
+        // val encodedTitle = URLEncoder.encode(title ?: "", StandardCharsets.UTF_8.toString())
+        val encodedTitle = title.replace(" ", "-")
         val query = "${encodedTitle}-${aniId}:${episode ?: 1}"
 
         val serversJson = try {

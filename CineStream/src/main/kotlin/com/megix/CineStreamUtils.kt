@@ -392,36 +392,67 @@ suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaD
 }
 
 suspend fun NFBypass(mainUrl: String): String {
+
+    // Check persistent storage first
     val (savedCookie, savedTimestamp) = Settings.getCookie()
 
+    // Return cached cookie if valid (≤15 hours old)
     if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
+        Log.d("NF", "savedCookie: $savedCookie")
         return savedCookie
     }
+
+    val addhash = app.get(
+        "$mainUrl/mobile/home?app=1",
+        headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Linux; Android 12; RMX2117 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.55 Mobile Safari/537.36 /OS.Gatu v3.0",
+            "X-Requested-With" to "app.netmirror.netmirrornew"
+        )
+    ).document.select("body").attr("data-addhash")
+
+    Log.d("NF", "addhash: $addhash")
+
+    app.get("https://userver.net52.cc/?jjoii=$addhash&a=y&t=${APIHolder.unixTime}")
 
     val newCookie = try {
         var verifyCheck: String
         var verifyResponse: NiceResponse
         var count = 0
-
+        val requestBody = FormBody.Builder()
+            .addEncoded("verify", "$addhash")
+            .build()
         do {
-            verifyResponse = app.post("$mainUrl/tv/p.php")
+            delay(10000)
+            verifyResponse = app.post(
+                "$mainUrl/mobile/verify2.php",
+                headers = mapOf(
+                    "User-Agent" to "Mozilla/5.0 (Linux; Android 12; RMX2117 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.55 Mobile Safari/537.36 /OS.Gatu v3.0",
+                    "X-Requested-With" to "XMLHttpRequest"
+                ),
+                requestBody = requestBody
+            )
             verifyCheck = verifyResponse.text
-            count++
-            if (count > 5) {
-                throw Exception("Failed to get cookie after 5 attempts")
-            }
-        } while (!verifyCheck.contains("\"r\":\"n\""))
 
+            Log.d("NF", "verifyCheck: $verifyCheck")
+
+            count++
+            if (count > 7) {
+                throw Exception("Failed to verify cookie")
+            }
+        } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
         verifyResponse.cookies["t_hash_t"].orEmpty()
     } catch (e: Exception) {
+        // Clear invalid cookie on failure
         Settings.clearCookie()
         throw e
     }
 
+    // Persist the new cookie
     if (newCookie.isNotEmpty()) {
         Settings.saveCookie(newCookie)
     }
 
+    Log.d("NF", "newCookie: $newCookie")
     return newCookie
 }
 
@@ -434,32 +465,11 @@ suspend fun getNfVideoToken(mainUrl: String, newUrl: String, id: String, cookies
     val json = app.post(
         "$mainUrl/play.php",
         headers = headers,
-        cookies = cookies,
+        cookies = cookies + mapOf ("user_token" to "233123f803cf02184bf6c67e149cdd50"),
         data = mapOf("id" to id)
     ).text
-    val h = JSONObject(json).getString("h")
-
-    val headers2 = mapOf(
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language" to "en-GB,en;q=0.9",
-        "Connection" to "keep-alive",
-        "Host" to "net52.cc",
-        "Referer" to "$mainUrl/",
-        "sec-ch-ua" to "\"Chromium\";v=\"142\", \"Brave\";v=\"142\", \"Not_A Brand\";v=\"99\"",
-        "sec-ch-ua-mobile" to "?0",
-        "sec-ch-ua-platform" to "\"Linux\"",
-        "Sec-Fetch-Dest" to "iframe",
-        "Sec-Fetch-Mode" to "navigate",
-        "Sec-Fetch-Site" to "cross-site",
-        "Sec-Fetch-Storage-Access" to "none",
-        "Sec-Fetch-User" to "?1",
-        "Sec-GPC" to "1",
-        "Upgrade-Insecure-Requests" to "1",
-        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
-    )
-    val document = app.get("$newUrl/play.php?id=$id&$h", headers = headers2).document
-    val token = document.select("body").attr("data-h")
-    return token
+    val h = JSONObject(json).getString("h").substringAfter("in=")
+    return h
 }
 
 fun buildMagnetString(stream: TorrentioStream): String {

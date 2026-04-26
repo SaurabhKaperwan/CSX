@@ -210,7 +210,7 @@ class NetflixProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
 
-        val token = getVideoToken("https://net22.cc", mainUrl, id, getCookie())
+        val token = getVideoToken("https://net22.cc", mainUrl, id, getCookie()+ mapOf ("user_token" to "233123f803cf02184bf6c67e149cdd50"))
         val playlist = app.get(
             "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,

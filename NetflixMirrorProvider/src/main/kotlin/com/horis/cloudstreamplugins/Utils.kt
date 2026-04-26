@@ -149,8 +149,6 @@ suspend fun bypass(mainUrl: String): String {
 
 suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
 
-    Log.d("NF", "id: $id")
-
     val requestBody = FormBody.Builder().addEncoded("id", id).build()
 
     val headers = mapOf(
@@ -171,33 +169,6 @@ suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: 
     )
 
     val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
-
-    Log.d("NF", "json: $json")
-
     val h = JSONObject(json).getString("h")
-
-    Log.d("NF", "h: $h")
-
-    // return h.substringAfter("in=")
-
-    val headers2 = mapOf(
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language" to "en-US,en;q=0.5",
-        "Connection" to "keep-alive",
-        "Host" to "net52.cc",
-        "Priority" to "u=4",
-        "Referer" to "$mainUrl/",
-        "Sec-Fetch-Dest" to "iframe",
-        "Sec-Fetch-Mode" to "navigate",
-        "Sec-Fetch-Site" to "cross-site",
-        "Upgrade-Insecure-Requests" to "1",
-        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
-    )
-
-    val document = app.get("$newUrl/play.php?id=$id&$h", headers = headers2).document
-    val token = document.select("body").attr("data-h")
-
-    Log.d("NF", "token: $token")
-
-    return token
+    return h.substringAfter("in=")
 }
