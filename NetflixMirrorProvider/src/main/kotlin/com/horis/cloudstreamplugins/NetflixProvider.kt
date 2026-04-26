@@ -17,6 +17,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
+import com.lagradost.api.Log
 
 class NetflixProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -26,8 +27,7 @@ class NetflixProvider : MainAPI() {
         TvType.AsianDrama
     )
     override var lang = "en"
-    override var mainUrl = "https://net22.cc"
-    private var newUrl = "https://net52.cc"
+    override var mainUrl = "https://net52.cc"
     override var name = "Netflix"
     override val hasMainPage = true
     private val headers = mapOf(
@@ -40,7 +40,7 @@ class NetflixProvider : MainAPI() {
 
     private suspend fun getCookie(): Map<String, String> {
         if (cookie_value.isEmpty()) {
-            cookie_value = bypass(newUrl)
+            cookie_value = bypass(mainUrl)
         }
         return mapOf (
             "t_hash_t" to cookie_value,
@@ -51,12 +51,14 @@ class NetflixProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         val document = app.get(
-            "$mainUrl/home",
+            "https://net22.cc/home",
             cookies = getCookie() + mapOf (
                 "user_token" to "233123f803cf02184bf6c67e149cdd50"
             ),
             referer = "$mainUrl/",
         ).document
+
+
         val items = document.select(".lolomoRow").map {
             it.toHomePageList()
         }
@@ -208,11 +210,11 @@ class NetflixProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
 
-        val token = getVideoToken(mainUrl, newUrl, id, getCookie())
+        val token = getVideoToken("https://net22.cc", mainUrl, id, getCookie())
         val playlist = app.get(
-            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
+            "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,
-            referer = "$newUrl/",
+            referer = "$mainUrl/",
             cookies = getCookie()
         ).parsed<PlayList>()
 
@@ -222,10 +224,10 @@ class NetflixProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        newUrl + it.file,
+                        mainUrl + it.file,
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$newUrl/"
+                        this.referer = "$mainUrl/"
                         this.headers = mapOf(
                             "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
                             "Accept" to "*/*",
@@ -244,7 +246,7 @@ class NetflixProvider : MainAPI() {
                         httpsify(track.file.toString().replace("\\", "")),
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "$newUrl/"
+                            "Referer" to "$mainUrl/"
                         )
                     }
                 )

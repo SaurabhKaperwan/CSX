@@ -19,6 +19,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
+import com.lagradost.api.Log
 
 class PrimeVideoProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -53,11 +54,13 @@ class PrimeVideoProvider : MainAPI() {
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        val data = app.get(
-            "$mainUrl/tv/pv/homepage.php",
+        val res = app.get(
+            "$mainUrl/pv/homepage.php",
             cookies = getCookie(),
-            referer = "$mainUrl/home",
-        ).parsed<MainPage>()
+            referer = "$mainUrl/",
+        )
+
+        val data = res.parsed<MainPage>()
 
         val items = data.post.map {
             it.toHomePageList()
