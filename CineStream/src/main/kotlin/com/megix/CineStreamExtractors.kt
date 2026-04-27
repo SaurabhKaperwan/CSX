@@ -4597,7 +4597,21 @@ object CineStreamExtractors {
 
         if(!iframe.contains("https:")) iframe = "https:" + iframe
 
-        val iframeHtml = app.get(iframe, referer = "https://cloudnestra.com/").text
+        Log.d("Playimdb", "iframe: $iframe")
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0",
+            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language" to "en-US,en;q=0.5",
+            "Referer" to "$playImdbAPI/",
+            "Sec-Fetch-Dest" to "iframe",
+            "Sec-Fetch-Mode" to "navigate",
+            "Sec-Fetch-Site" to "cross-site",
+            "Upgrade-Insecure-Requests" to "1",
+            "Connection" to "keep-alive"
+        )
+
+        val iframeHtml = app.get(iframe, headers = headers).text
 
         val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
         val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
@@ -4660,6 +4674,7 @@ object CineStreamExtractors {
             url,
             headers = mapOf(
                 "User-Agent" to USER_AGENT,
+                "Referer" to "$av1encodesAPI/",
                 "Accept-Language" to "en-US,en;q=0.9",
                 "Sec-Ch-Ua" to "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\"",
                 "Sec-Ch-Ua-Mobile" to "?0",
@@ -4707,28 +4722,10 @@ object CineStreamExtractors {
         val fileSize = jsonObject.optString("file_size", "")
         // val fileName = jsonObject.optString("file_name", "")
 
-        var isDub = false
-        val audioDetails = jsonObject.optJSONObject("audio_details")
-        val audioArray = audioDetails?.optJSONArray("audio")
-
-        if (audioArray != null) {
-            for (i in 0 until audioArray.length()) {
-                val audioObj = audioArray.optJSONObject(i)
-                val language = audioObj?.optString("language") ?: ""
-
-                if (language.equals("English", ignoreCase = true)) {
-                    isDub = true
-                    break
-                }
-            }
-        }
-
-        val audioType = if (isDub) "[DUB]" else "[SUB]"
-
         callback.invoke(
             newExtractorLink(
                 "Av1encodes",
-                "Av1encodes $audioType $fileSize",
+                "Av1encodes $fileSize",
                 streamLink
             ) {
                 this.quality = Qualities.P1080.value
