@@ -153,6 +153,11 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokePulp(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) },
         ),
         ProviderDef(
+            key = "p_playimdb", displayName = "PlayImdb",
+            executeStandard = { res, _, cb -> invokePlayImdb(res.imdbId, res.season, res.episode, cb) },
+            executeAnime = { res, _, cb -> invokePlayImdb(res.imdbId, res.imdbSeason, res.imdbEpisode, cb) }
+        ),
+        ProviderDef(
             key = "p_mapple", displayName = "Mapple",
             executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
         ),
@@ -167,6 +172,11 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_vidfastpro", displayName = "VidFastPro",
             executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_av1encodes", displayName = "Av1encodes",
+            executeStandard = { res, _, cb -> invokeAv1encodes(res.title, res.season, res.episode, cb) },
+            executeAnime = { res, _, cb -> invokeAv1encodes(res.imdbTitle, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
             key = "p_netflix", displayName = "Netflix",

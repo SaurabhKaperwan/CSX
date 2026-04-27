@@ -55,6 +55,8 @@ const val animekizzAPI = "https://animekizz.live"
 const val vidfastProApi = "https://vidfast.pro"
 const val pulpAPI = "https://api.pulp.watch/v1"
 const val onetouchtvAPI = "https://api3.devcorp.me"
+const val playImdbAPI = "https://streamimdb.me"
+const val av1encodesAPI = "https://av1encodes.com"
 const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 

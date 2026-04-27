@@ -1104,7 +1104,12 @@ object CineStreamExtractors {
             "m4uhd",
             "hdmovie",
             "cdn",
-            "primesrcme"
+            "primesrcme",
+            "visioncine",
+            "overflix",
+            "superflix",
+            "cuevana",
+            "lamovie"
         )
 
         if(title == null) return
@@ -4391,7 +4396,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val url = if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
+        val url = if (season == null) "$vidfastProApi/movie/$tmdbId/" else "$vidfastProApi/tv/$tmdbId/$season/$episode/"
 
         val headers = mutableMapOf(
             "User-Agent" to USER_AGENT,
@@ -4575,4 +4580,162 @@ object CineStreamExtractors {
         )
 
     }
+
+    suspend fun invokePlayImdb(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$playImdbAPI/embed/$imdbId"
+        } else {
+            "$playImdbAPI/embed/tv?imdb=$imdbId&season=$season&episode=$episode"
+        }
+
+        var iframe = app.get(url).document.selectFirst("#player_iframe")?.attr("src") ?: return
+
+        if(!iframe.contains("https:")) iframe = "https:" + iframe
+
+        val iframeHtml = app.get(iframe, referer = "https://cloudnestra.com/").text
+
+        val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
+        val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
+
+        val cloudHtml = app.get(
+            url = "https://cloudnestra.com$prorcpSrc",
+            referer = "https://cloudnestra.com/"
+        ).text
+
+        val divMatch = Regex("""<div id="([^"]+)"[^>]*style=["']display\s*:\s*none;?["'][^>]*>([a-zA-Z0-9:\/.,{}\-_=+ ]+)</div>""", RegexOption.IGNORE_CASE).find(cloudHtml)
+        val divId = divMatch?.groupValues?.get(1) ?: return
+        val divText = divMatch.groupValues.get(2)
+
+        val requestBody = mapOf("text" to divText, "div_id" to divId)
+
+        val decrypted = app.post(
+            url = "$multiDecryptAPI/dec-cloudnestra",
+            json = requestBody,
+            headers = mapOf("Content-Type" to "application/json")
+        ).text
+
+        Log.d("Playimdb", "decrypted: $decrypted")
+
+        val jsonObject = JSONObject(decrypted)
+        val status = jsonObject.getInt("status")
+
+        if (status != 200) return
+
+        val resultArray = jsonObject.getJSONArray("result")
+
+        for (i in 0 until resultArray.length()) {
+            val streamUrl = resultArray.getString(i)
+
+            M3u8Helper.generateM3u8(
+                "PlayImdb",
+                streamUrl,
+                "https://cloudnestra.com/",
+            ).forEach(callback)
+        }
+
+    }
+
+    suspend fun invokeAv1encodes(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(title == null) return
+
+        val slug = title.lowercase().trim().replace(Regex("\\s+"), "-")
+
+        val url = if (season == null) {
+            "$av1encodesAPI/episodes/$slug/movie/1920%20x%201080"
+        } else {
+            "$av1encodesAPI/episodes/$slug/$season/1920%20x%201080"
+        }
+
+        val document = app.get(
+            url,
+            headers = mapOf(
+                "User-Agent" to USER_AGENT,
+                "Accept-Language" to "en-US,en;q=0.9",
+                "Sec-Ch-Ua" to "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\"",
+                "Sec-Ch-Ua-Mobile" to "?0",
+                "Sec-Ch-Ua-Platform" to "\"Windows\""
+            )
+        ).document
+
+        var targetPath: String? = null
+
+        if (season != null && episode != null) {
+            val episodeLinks = document.select("div.episode-item a")
+
+            Log.d("Av1", "episodeLinks: $episodeLinks")
+
+            for (link in episodeLinks) {
+                val labelText = link.selectFirst("span.episode-label")?.text() ?: ""
+
+                val parsedEpisodeNum = labelText.filter { it.isDigit() }.toIntOrNull()
+
+                if (parsedEpisodeNum == episode) {
+                    targetPath = link.attr("href")
+                    break
+                }
+            }
+        } else {
+            targetPath = document.selectFirst("div.episode-item a")?.attr("href")
+        }
+
+        if(targetPath == null) return
+
+        val fileName = targetPath.substringAfterLast("/").substringBefore("?")
+
+        val json = app.get("$av1encodesAPI/get_ddl/$fileName", referer = "$av1encodesAPI/").text
+
+        Log.d("Av1", "json: $json")
+
+        val jsonObject = org.json.JSONObject(json)
+
+        if (!jsonObject.optBoolean("success", false)) return
+
+        val streamLink = jsonObject.optString("stream_link", "")
+        if (streamLink.isBlank()) return
+        // val downloadLink = jsonObject.optString("download_link", "")
+        // val torrentLink = jsonObject.optString("torrent_link", "")
+        val fileSize = jsonObject.optString("file_size", "")
+        // val fileName = jsonObject.optString("file_name", "")
+
+        var isDub = false
+        val audioDetails = jsonObject.optJSONObject("audio_details")
+        val audioArray = audioDetails?.optJSONArray("audio")
+
+        if (audioArray != null) {
+            for (i in 0 until audioArray.length()) {
+                val audioObj = audioArray.optJSONObject(i)
+                val language = audioObj?.optString("language") ?: ""
+
+                if (language.equals("English", ignoreCase = true)) {
+                    isDub = true
+                    break
+                }
+            }
+        }
+
+        val audioType = if (isDub) "[DUB]" else "[SUB]"
+
+        callback.invoke(
+            newExtractorLink(
+                "Av1encodes",
+                "Av1encodes $audioType $fileSize",
+                streamLink
+            ) {
+                this.quality = Qualities.P1080.value
+                this.referer = "$av1encodesAPI/"
+            }
+        )
+
+    }
+
 }
