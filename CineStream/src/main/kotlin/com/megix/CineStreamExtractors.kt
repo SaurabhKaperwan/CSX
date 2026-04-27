@@ -4616,9 +4616,11 @@ object CineStreamExtractors {
         val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
         val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
 
+        Log.d("Playimdb", "prorcpSrc: https://cloudnestra.com$prorcpSrc")
+
         val cloudHtml = app.get(
             url = "https://cloudnestra.com$prorcpSrc",
-            referer = "https://cloudnestra.com/"
+            headers = headers
         ).text
 
         val divMatch = Regex("""<div id="([^"]+)"[^>]*style=["']display\s*:\s*none;?["'][^>]*>([a-zA-Z0-9:\/.,{}\-_=+ ]+)</div>""", RegexOption.IGNORE_CASE).find(cloudHtml)
