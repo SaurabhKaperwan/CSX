@@ -4689,8 +4689,6 @@ object CineStreamExtractors {
         if (season != null && episode != null) {
             val episodeLinks = document.select("div.episode-item a")
 
-            Log.d("Av1", "episodeLinks: $episodeLinks")
-
             for (link in episodeLinks) {
                 val labelText = link.selectFirst("span.episode-label")?.text() ?: ""
 
@@ -4710,9 +4708,6 @@ object CineStreamExtractors {
         val fileName = targetPath.substringAfterLast("/").substringBefore("?")
 
         val json = app.get("$av1encodesAPI/get_ddl/$fileName", referer = "$av1encodesAPI/").text
-
-        Log.d("Av1", "json: $json")
-
         val jsonObject = org.json.JSONObject(json)
 
         if (!jsonObject.optBoolean("success", false)) return
@@ -4724,10 +4719,28 @@ object CineStreamExtractors {
         val fileSize = jsonObject.optString("file_size", "")
         // val fileName = jsonObject.optString("file_name", "")
 
+        var isDual = false
+        val audioDetails = jsonObject.optJSONObject("audio_details")
+        val audioArray = audioDetails?.optJSONArray("audio")
+
+        if (audioArray != null) {
+            for (i in 0 until audioArray.length()) {
+                val audioObj = audioArray.optJSONObject(i)
+                val language = audioObj?.optString("language") ?: ""
+
+                if (language.equals("English", ignoreCase = true)) {
+                    isDual = true
+                    break
+                }
+            }
+        }
+
+        val audioType = if (isDual) "[DUAL]" else "[SUB]"
+
         callback.invoke(
             newExtractorLink(
-                "Av1encodes",
-                "Av1encodes $fileSize",
+                "Av1encodes $audioType",
+                "Av1encodes $audioType $fileSize",
                 streamLink
             ) {
                 this.quality = Qualities.P1080.value
@@ -4735,6 +4748,142 @@ object CineStreamExtractors {
             }
         )
 
+    }
+
+    suspend fun invokeVadapav(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        fun getJsonObject(htmlString: String): JSONObject? {
+            val regex = """window\.__INITIAL_DATA__\s*=\s*(\{.*?\});\s*window\.__INITIAL_META__""".toRegex(RegexOption.DOT_MATCHES_ALL)
+            val matchResult = regex.find(htmlString) ?: return null
+            val jsonString = matchResult.groupValues[1]
+            
+            return try {
+                JSONObject(jsonString)
+            } catch (e: Exception) {
+                Log.e("Vadapav", "Failed to parse JSON from HTML", e)
+                null
+            }
+        }
+
+        if(title == null || year == null) return
+
+        val query = "$title ($year)"
+
+        val htmlString = app.get("$vadapavAPI/s/$query", referer = "$vadapavAPI/").text
+        val jsonObject = getJsonObject(htmlString) ?: return
+        val items = jsonObject.optJSONArray("items") ?: return
+
+        var targetId: String? = null
+
+        for (i in 0 until items.length()) {
+            val item = items.getJSONObject(i)
+            val name = item.optString("name").trim()
+            val type = item.optString("type")
+
+            if (name.contains(query) && type == "folder") {
+                targetId = item.optString("id")
+                break
+            }
+        }
+
+        if(targetId == null) return
+
+        val folderUrl = fixUrl("/$targetId", vadapavAPI)
+
+        Log.d("Vadapav", "Folder URL: $folderUrl")
+
+        val folderDoc = app.get(folderUrl, referer = "$vadapavAPI/").text
+        val folderJsonObject = getJsonObject(folderDoc) ?: return
+        val folderItems = folderJsonObject.optJSONArray("items") ?: return
+
+        if(season != null && episode != null) {
+            val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+            var targetSeasonId: String? = null
+
+            for (i in 0 until folderItems.length()) {
+                val item = folderItems.getJSONObject(i)
+                val name = item.optString("name").trim()
+                val type = item.optString("type")
+
+                if (name == "Season $seasonSlug" && type == "folder") {
+                    targetSeasonId = item.optString("id")
+                    break
+                }
+            }
+
+            if (targetSeasonId == null) return
+
+            val seasonUrl = fixUrl("/$targetSeasonId", vadapavAPI)
+
+            Log.d("Vadapav", "Season URL: $seasonUrl")
+
+            val seasonDoc = app.get(seasonUrl, referer = "$vadapavAPI/").text
+            val seasonJsonObject = getJsonObject(seasonDoc) ?: return
+            val seasonItems = seasonJsonObject.optJSONArray("items") ?: return
+
+            var targetEpisodeId: String? = null
+            var targetEpisodeName: String? = null
+
+            for (i in 0 until seasonItems.length()) {
+                val item = seasonItems.getJSONObject(i)
+                val name = item.optString("name").trim()
+                val category = item.optString("category")
+
+                if (name.contains("E$episodeSlug") && category == "video") {
+                    targetEpisodeId = item.optString("id")
+                    targetEpisodeName = item.optString("name")
+                    break
+                }
+            }
+
+            if (targetEpisodeId == null || targetEpisodeName == null) return
+
+            val entryUrl = fixUrl("/f/$targetEpisodeId", vadapavAPI)
+
+            Log.d("Vadapav", "Episode URL: $entryUrl")
+
+            val simplifiedTitle = getSimplifiedTitle(targetEpisodeName)
+
+            callback.invoke(
+                newExtractorLink(
+                    "Vadapav",
+                    "Vadapav $simplifiedTitle",
+                    entryUrl,
+                    ExtractorLinkType.VIDEO
+                )
+            )
+        } else {
+            for (i in 0 until folderItems.length()) {
+                val item = folderItems.getJSONObject(i)
+                val name = item.optString("name").trim()
+                val category = item.optString("category")
+
+                if (category == "video") {
+                    val targetEpisodeId = item.optString("id")
+                    val entryUrl = fixUrl("/f/$targetEpisodeId", vadapavAPI)
+
+                    Log.d("Vadapav", "Video URL: $entryUrl")
+
+                    val simplifiedTitle = getSimplifiedTitle(name)
+                    
+                    callback.invoke(
+                        newExtractorLink(
+                            "Vadapav",
+                            "Vadapav $simplifiedTitle",
+                            entryUrl,
+                            ExtractorLinkType.VIDEO
+                        )
+                    )
+                    
+                }
+            }
+        }
     }
 
 }

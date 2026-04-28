@@ -275,6 +275,11 @@ object ProviderRegistry {
             executeAnime = { res, _, cb -> invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
+            key = "p_vadapav", displayName = "Vadapav",
+            executeStandard = { res, _, cb -> invokeVadapav(res.title, res.year, res.season, res.episode, cb) },
+            executeAnime = { res, _, cb -> invokeVadapav(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
+        ),
+        ProviderDef(
             key = "p_m4ufree", displayName = "M4ufree",
             executeStandard = { res, subCb, cb -> invokeM4ufree(res.title, res.year, res.season, res.episode, subCb, cb) },
         ),
