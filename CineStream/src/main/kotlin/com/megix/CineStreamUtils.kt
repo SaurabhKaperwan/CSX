@@ -689,49 +689,50 @@ fun String.encodeUrl(): String {
     return uri.toURL().toString()
 }
 
+//Hindmoviez
+
+val HindmoviezSECRET = base64Decode("NWU5NjA4NWM1NmUwZjU0ZWRhNjU3NzkwYWM1OGQxOWIyNzE0NzljNTA0MzY3ZmM5ZTZhNmMzM2YxZjgyNGU2Yg==")
+
+fun hindmoviezbase64Url(input: String): String {
+    return base64Encode(input.toByteArray())
+        .replace("+", "-")
+        .replace("/", "_")
+        .replace("=", "")
+}
+
+fun hindmoviezhmacSha256(key: String, data: String): String {
+    val mac = Mac.getInstance("HmacSHA256")
+    val secretKey = SecretKeySpec(key.toByteArray(), "HmacSHA256")
+    mac.init(secretKey)
+    return mac.doFinal(data.toByteArray())
+        .joinToString("") { "%02x".format(it) }
+        .substring(0, 16)
+}
+
+fun hindmoviezsignHShare(rawId: String, domain: String): String {
+    val t = System.currentTimeMillis() / 1000
+    val encoded = hindmoviezbase64Url(rawId)
+    val s = hindmoviezhmacSha256(HindmoviezSECRET, "$encoded|$t")
+    return "$domain/r.php?d=${URLEncoder.encode(encoded, "UTF-8")}&t=$t&s=$s"
+}
+
 suspend fun getHindMoviezLinks(
     source: String,
     url: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
 ) {
     val response = app.get(url)
     val doc = response.document
-    val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ")
-    val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
-    val simplifiedTitle = getSimplifiedTitle(name + fileSize)
+    // val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ")
+    // val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
+    // val simplifiedTitle = getSimplifiedTitle(name + fileSize)
+    val link = doc.select("a.btn-danger").attr("href")
 
-    runLimitedAsync( concurrency = 2,
-        {
-            val link = doc.select("a.btn-info").attr("href")
-            val referer = response.url
-            val document = app.get(link, referer = referer).document
-            document.select("a.button").map {
-                callback.invoke(
-                    newExtractorLink(
-                        source,
-                        source.toSansSerifBold() +" $simplifiedTitle",
-                        it.attr("href"),
-                        ExtractorLinkType.VIDEO,
-                    ) {
-                        this.quality = getIndexQuality(name)
-                    }
-                )
-            }
-        },
-        {
-            val link = doc.select("a.btn-dark").attr("href")
-            callback.invoke(
-                newExtractorLink(
-                    "$source[HCloud]",
-                    "$source[HCloud]".toSansSerifBold() + " $simplifiedTitle",
-                    link,
-                    ExtractorLinkType.VIDEO,
-                ) {
-                    this.quality = getIndexQuality(name)
-                }
-            )
-        },
-    )
+    Log.d("HindMoviez", "link: $link")
+
+    loadSourceNameExtractor(source, link, "", subtitleCallback, callback)
+
 }
 
 //For Extractor new domain
@@ -1830,4 +1831,37 @@ fun solvePowChallenge(challenge: String, difficulty: Int): String? {
         md.reset()
         if (nonce > 10_000_000) return null
     }
+}
+
+
+fun peachifyDecrypt(encrypt: String): String? {
+    return try {
+        val parts = encrypt.split(".")
+        if (parts.size < 3) return null
+
+        val iv         = b64UrlDecode(parts[0])
+        val cipherData = b64UrlDecode(parts[1]) + b64UrlDecode(parts[2])
+
+        val keyBytes = "d8f2a1b5e9c470814f6b2c3a5d8e7f901a2b3c4d5e3f7a8b9c0d1e2f3a4b5c6d"
+            .chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(keyBytes, "AES"),
+            GCMParameterSpec(128, iv)
+        )
+        String(cipher.doFinal(cipherData), Charsets.UTF_8)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+fun b64UrlDecode(s: String): ByteArray {
+    val padded = s.replace('-', '+').replace('_', '/')
+        .let { it + "=".repeat((4 - it.length % 4) % 4) }
+    return Base64.decode(padded, Base64.NO_WRAP)
 }

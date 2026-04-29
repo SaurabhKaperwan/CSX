@@ -37,6 +37,7 @@ import java.security.SecureRandom
 import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
+import android.net.Uri
 
 import okhttp3.RequestBody.Companion.toRequestBody
 
@@ -1815,25 +1816,55 @@ object CineStreamExtractors {
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        app.get("$hindMoviezAPI/?s=$id", timeout = 50L).document.select("h2.entry-title > a").safeAmap {
-            val doc = app.get(it.attr("href"), timeout = 50L).document
+        app.get("$hindMoviezAPI/?s=$id", timeout = 5000L).document.select("h2.entry-title > a").safeAmap {
+
+            Log.d("HindMoviez", "matched link: ${it.attr("href")}")
+
+            val doc = app.get(it.attr("href"), timeout = 5000L).document
             if(episode == null) {
                 doc.select("a.maxbutton").safeAmap {
-                    val res = app.get(it.attr("href"), timeout = 50L).document
-                    val link = res.select("a.get-link-btn").attr("href")
-                    getHindMoviezLinks("HindMoviez", link, callback)
+
+                    Log.d("HindMoviez", "link1: ${it.attr("href")}")
+
+                    val res = app.get(it.attr("href"), timeout = 5000L).document
+
+                    val link = res.selectFirst("a.get-link-btn")
+                        ?.attr("href")
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { href ->
+                            val baseurl=href.substringBefore("/?id=")
+                            val rawId = href.substringAfter("id=")
+                            hindmoviezsignHShare(rawId, baseurl)
+                        }
+                        ?: return@safeAmap
+
+                    Log.d("HindMoviez", "link2: $link")
+
+                    getHindMoviezLinks("HindMoviez", link, subtitleCallback, callback)
                 }
             }
             else {
                 doc.select("a.maxbutton").safeAmap {
                     val text = it.parent()?.parent()?.previousElementSibling()?.text() ?: ""
                     if(text.contains("Season $season")) {
-                        val res = app.get(it.attr("href"), timeout = 50L).document
-                        res.select("h3 > a").getOrNull(episode-1)?.let { link ->
-                            getHindMoviezLinks("HindMoviez", link.attr("href"), callback)
-                        }
+                        val res = app.get(it.attr("href"), timeout = 5000L).document
+                        val link = res.select("h3 > a")
+                            .getOrNull(episode-1)
+                            ?.attr("href")
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { href ->
+                                val baseurl = href.substringBefore("/?id=")
+                                val rawId = href.substringAfter("id=")
+                                hindmoviezsignHShare(rawId, baseurl)
+
+                            } ?: return@safeAmap
+
+                        Log.d("HindMoviez", "link: $link")
+
+                        getHindMoviezLinks("HindMoviez", link, subtitleCallback, callback)
                     }
                 }
             }
@@ -3870,7 +3901,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        globalGson.fromJson(app.get(url, timeout = 50000L).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url, timeout = 100000L).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.description ?: s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
@@ -3922,7 +3953,7 @@ object CineStreamExtractors {
             "$api/subtitles/movie/$imdbId.json"
         }
 
-        val json = app.get(url, timeout = 50000L).text
+        val json = app.get(url, timeout = 100000L).text
         val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
 
         subtitleResponse.subtitles.forEach {
@@ -3953,7 +3984,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        val res = app.get(url, timeout = 50000L).parsedSafe<TorrentioResponse>()
+        val res = app.get(url, timeout = 100000L).parsedSafe<TorrentioResponse>()
 
         res?.streams?.forEach { stream ->
 
@@ -4856,7 +4887,9 @@ object CineStreamExtractors {
                     "Vadapav $simplifiedTitle",
                     entryUrl,
                     ExtractorLinkType.VIDEO
-                )
+                ) {
+                    this.quality = getIndexQuality(targetEpisodeName)
+                }
             )
         } else {
             for (i in 0 until folderItems.length()) {
@@ -4878,10 +4911,96 @@ object CineStreamExtractors {
                             "Vadapav $simplifiedTitle",
                             entryUrl,
                             ExtractorLinkType.VIDEO
-                        )
+                        ) {
+                            this.quality = getIndexQuality(name)
+                        }
                     )
                     
                 }
+            }
+        }
+    }
+
+    suspend fun invokePeachify(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Accept"          to "*/*",
+            "Accept-Language" to "en-US,en;q=0.5",
+            "Origin"          to "$peachifyBaseAPI",
+            "Referer"         to "$peachifyBaseAPI/",
+            "Sec-Fetch-Dest"  to "empty",
+            "Sec-Fetch-Mode"  to "cors",
+            "Sec-Fetch-Site"  to "cross-site",
+            "User-Agent"      to "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+        )
+
+        val servers = listOf(
+            "https://usa.eat-peach.sbs/holly",
+            "https://usa.eat-peach.sbs/multi",
+            "https://usa.eat-peach.sbs/ice",
+            "https://usa.eat-peach.sbs/air",
+            "https://uwu.peachify.top/moviebox"
+        )
+
+        servers.safeAmap { server ->
+            val url = if(season == null) "$server/movie/$tmdbId" else "$server/tv/$tmdbId/$season/$episode"
+            val text = app.get(url, headers = headers).text
+            val encrypt = JSONObject(text).optString("data").ifEmpty { return@safeAmap }
+            val decrypted = peachifyDecrypt(encrypt) ?: return@safeAmap
+            val json      = JSONObject(decrypted)
+            val provider  = json.optString("providerName", "Peachify")
+            val sources   = json.optJSONArray("sources") ?: return@safeAmap
+
+             for (i in 0 until sources.length()) {
+                val src     = sources.getJSONObject(i)
+                val rawUrl  = src.optString("url").ifEmpty { continue }
+                val dub     = src.optString("dub", "")
+                val srcType = src.optString("type", "hls")
+                val quality = src.optInt("quality", 0)
+                val srcHeaders  = src.optJSONObject("headers")
+
+                val isProxy = rawUrl.contains("/m3u8-proxy") || rawUrl.contains("/mp4-proxy")
+                val (finalUrl, proxyHeaders) = if (isProxy) {
+                    val uri        = Uri.parse(rawUrl)
+                    val realUrl    = uri.getQueryParameter("url") ?: rawUrl
+                    val headersObj = uri.getQueryParameter("headers")
+                        ?.let { runCatching { JSONObject(it) }.getOrNull() }
+                    val map = mutableMapOf<String, String>()
+                    headersObj?.keys()?.forEach { k -> map[k] = headersObj.getString(k) }
+                    realUrl to map
+                } else {
+                    val map = mutableMapOf<String, String>()
+                    srcHeaders?.keys()?.forEach { k -> map[k] = srcHeaders.getString(k) }
+                    rawUrl to map
+                }
+
+                val finalReferer = proxyHeaders["referer"] ?: srcHeaders?.optString("referer") ?: "$peachifyBaseAPI/"
+                val finalOrigin  = proxyHeaders["origin"]  ?: srcHeaders?.optString("origin")  ?: peachifyBaseAPI
+                val finalUA      = proxyHeaders["user-agent"] ?: srcHeaders?.optString("user-agent") ?: USER_AGENT
+
+                val name = buildString {
+                    append("Peachify[$provider]")
+                    if (dub.isNotEmpty()) append(" • $dub")
+                }
+
+                val type = if (srcType == "hls") ExtractorLinkType.M3U8 else INFER_TYPE
+
+                Log.d("Peachify", "finalUrl: $finalUrl")
+
+                callback.invoke(
+                    newExtractorLink("Peachify", name, finalUrl, type) {
+                        this.headers = mapOf(
+                            "Origin"     to finalOrigin,
+                            "Referer"    to finalReferer,
+                            "User-Agent" to finalUA
+                        )
+                        this.quality = quality
+                    }
+                )
             }
         }
     }

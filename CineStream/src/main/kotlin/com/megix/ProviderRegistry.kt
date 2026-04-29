@@ -170,6 +170,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeVidzee(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_peachify", displayName = "Peachify",
+            executeStandard = { res, _, cb -> invokePeachify(res.tmdbId, res.season, res.episode, cb) }
+        ),
+        ProviderDef(
             key = "p_vidfastpro", displayName = "VidFastPro",
             executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
@@ -248,8 +252,8 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_hindmoviez", displayName = "Hindmoviez",
-            executeStandard = { res, _, cb -> if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, cb) }
+            executeStandard = { res, subCb, cb -> if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_4khdhub", displayName = "4KHDHub",
