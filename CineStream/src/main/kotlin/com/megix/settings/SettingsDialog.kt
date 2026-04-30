@@ -51,8 +51,6 @@ internal object SettingsDialog {
                 Settings.DOWNLOAD_ENABLE, false, pending))
             addView(SettingsWidgets.divider(context))
             addView(buildConcurrencyRow(context, pending))
-            addView(SettingsWidgets.divider(context))
-            addView(buildCookieClearRow(context))
         })
 
         // API Tokens card (Febbox + Wyzie Subs)
@@ -218,37 +216,6 @@ internal object SettingsDialog {
                 }.start()
                 onChanged()
             }
-        }
-    }
-
-    // =========================================================
-    //  COOKIE CLEAR ROW
-    // =========================================================
-
-    private fun buildCookieClearRow(context: Context): View {
-        val theme = SettingsTheme
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
-            gravity     = Gravity.CENTER_VERTICAL
-
-            val textCol = LinearLayout(context).apply {
-                orientation  = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            textCol.addView(TextView(context).apply {
-                text = "Clear Netmirror Cookies"; textSize = 15f
-                setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(theme.TEXT_PRIMARY)
-            })
-            textCol.addView(TextView(context).apply {
-                text = "Remove saved Netmirror session cookies"
-                textSize = 12f; setTextColor(theme.TEXT_SECONDARY); setPadding(0, 3.dp(context), 0, 0)
-            })
-            addView(textCol)
-            addView(SettingsWidgets.dangerBtn(context, "Clear") {
-                Settings.clearCookie()
-                Toast.makeText(context, "🍪 Cookies cleared!", Toast.LENGTH_SHORT).show()
-            })
         }
     }
 

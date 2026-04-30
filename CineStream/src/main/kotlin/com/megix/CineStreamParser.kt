@@ -330,6 +330,13 @@ data class NfSearchResult(
     val t: String
 )
 
+data class NfPlaylist(
+    val status: String,
+    val usertoken: String,
+    val video_link: String,
+    val referer: String,
+)
+
 data class NetflixSources(
     @param:JsonProperty("file") val file: String? = null,
     @param:JsonProperty("label") val label: String? = null,

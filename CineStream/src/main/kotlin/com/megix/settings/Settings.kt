@@ -19,8 +19,6 @@ object Settings {
     const val STREMIO_ADDONS_KEY       = "stremio_addons"
     const val NEW_PROVIDER_DEFAULT_ON  = "new_provider_default_on"
 
-    private const val COOKIE_KEY         = "nf_cookie"
-    private const val TIMESTAMP_KEY      = "nf_cookie_timestamp"
     private const val SEEN_PROVIDERS_KEY = "seen_providers"
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
@@ -167,20 +165,6 @@ object Settings {
             ?.split(",")?.filter { it.isNotBlank() } ?: return
         val pruned = current.filter { !it.startsWith("stremio_") || it in validKeys }
         if (pruned.size != current.size) saveOrder(pruned)
-    }
-
-    // ── Cookie helpers ───────────────────────────────────────
-    fun saveCookie(cookie: String) {
-        setKey(COOKIE_KEY, cookie)
-        setKey(TIMESTAMP_KEY, System.currentTimeMillis())
-    }
-
-    fun getCookie(): Pair<String?, Long> =
-        Pair(getKey<String>(COOKIE_KEY), getKey<Long>(TIMESTAMP_KEY) ?: 0L)
-
-    fun clearCookie() {
-        setKey(COOKIE_KEY, null)
-        setKey(TIMESTAMP_KEY, null)
     }
 
     // ── ShowBox token helpers ────────────────────────────────

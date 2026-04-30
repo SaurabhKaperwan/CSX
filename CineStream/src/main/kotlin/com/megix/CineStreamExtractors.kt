@@ -2191,84 +2191,78 @@ object CineStreamExtractors {
     }
 
     suspend fun invokeNetmirror(
-        title: String?,
-        year: Int?,
-        season: Int?,
-        episode: Int?,
-        callback: (ExtractorLink) -> Unit,
         serviceName: String,
         ottCode: String,
-        urlPrefix: String,
-        epPrefix: String = "E",
-        ignoreYear: Boolean = false,
-        requiresToken: Boolean = false
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
     ) {
-        if (netflixAPI.isEmpty()) return
-        val nfCookie = NFBypass(netflix2API)
-        val cookies = mapOf("t_hash_t" to nfCookie, "ott" to ottCode, "hd" to "on")
-        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val headers = mapOf(
+            "ott" to ottCode,
+            "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
+            "x-requested-with" to "NetmirrorNewTV v1.0"
+        )
 
-        val searchAPI = if(serviceName == "Netflix" || serviceName == "PrimeVideo") netflix2API else netflixAPI
+        val searchUrl = "$nfmirrorAPI/search.php?s=$title"
+        val searchData = app.get(searchUrl, headers = headers).parsedSafe<NfSearchData>()
 
-        // 1. Search
-        val searchUrl = "$searchAPI$urlPrefix/search.php?s=$title&t=${APIHolder.unixTime}"
-        val searchData = app.get(searchUrl, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
-        val netflixId = searchData?.searchResult?.firstOrNull { it.t.equals("${title?.trim()}", true) }?.id ?: return
+        Log.d("Netmirror", "$serviceName searchData: $searchData")
 
-        // 2. Get Metadata (Post)
-        val postUrl = "$searchAPI$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
+        val netId = searchData?.searchResult?.firstOrNull { it.t.equals("${title?.trim()}", true) }?.id ?: return
 
-        val (nfTitle, finalId) = app.get(postUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/")
+        Log.d("Netmirror", "$serviceName netId: $netId")
+
+        val finalId = app.get("$nfmirrorAPI/post.php?id=$netId", headers = headers)
             .parsedSafe<NetflixResponse>().let { media ->
-                // Year check logic
-                if (!ignoreYear && year != null && media?.year.toString() != year.toString()) return@let null to null
-
                 if (season == null) {
-                    media?.title to netflixId
+                    netId
                 } else {
-                    val seasonId = media?.season?.find { it.s == "$season" }?.id
+                    val seasonId = media?.season?.find { it.s.toString().contains("Season $season") }?.id
                     var episodeId: String? = null
                     var page = 1
 
                     // Loop for episodes
                     while (episodeId == null && page < 10) {
-                        val epUrl = "$searchAPI$urlPrefix/episodes.php?s=$seasonId&series=$netflixId&t=${APIHolder.unixTime}&page=$page"
-                        val data = app.get(epUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/").parsedSafe<NetflixResponse>()
-                        episodeId = data?.episodes?.find { it.ep == "$epPrefix$episode" }?.id
+                        val epUrl = "$nfmirrorAPI/episodes.php?id=$seasonId&page=$page"
+                        val data = app.get(epUrl, headers = headers).parsedSafe<NetflixResponse>()
+
+                        Log.d("Netmirror", "$serviceName data: $data")
+
+                        episodeId = data?.episodes?.find { it.ep == "$episode" }?.id
                         if ((data?.nextPageShow ?: 0) != 1) break
                         page++
                     }
-                    media?.title to episodeId
+                    episodeId
                 }
-            }
-
-        if (finalId == null || nfTitle == null) return
-
-        // 3. Get Playlist
-        // Handle Token for Netflix
-        val tokenParam = if (requiresToken) {
-            "&h=${getNfVideoToken(netflixAPI, netflix2API, finalId, cookies)}"
-        } else ""
-
-        val playlistUrl = "$netflix2API$urlPrefix/playlist.php?id=$finalId&t=$nfTitle&tm=${APIHolder.unixTime}$tokenParam"
-
-        app.get(playlistUrl, headers = headers, cookies = cookies, referer = "$netflix2API/").text.let {
-            tryParseJson<ArrayList<NetflixResponse>>(it)
-        }?.firstOrNull()?.sources?.map { source ->
-            callback.invoke(
-                newExtractorLink(
-                    serviceName,
-                    "$serviceName Multi Audio 🌐",
-                    "$netflix2API${source.file}",
-                    ExtractorLinkType.M3U8
-                ) {
-                    this.referer = "$netflix2API/"
-                    this.quality = getQualityFromName(source.file?.substringAfter("q=")?.substringBefore("&in"))
-                    this.headers = mapOf("Cookie" to "hd=on; ott=$ottCode; t_hash_t=$nfCookie")
-                }
-            )
         }
+
+        if (finalId == null) return
+
+        Log.d("Netmirror", "$serviceName finalId: $finalId")
+
+        val playlistUrl = "$nfmirrorAPI/player.php?id=$finalId"
+
+        val playlist = app.get(
+            playlistUrl,
+            headers = headers,
+        ).parsed<NfPlaylist>()
+
+        Log.d("Netmirror", "$serviceName playlist: $playlist")
+
+        callback.invoke(
+            newExtractorLink(
+                serviceName,
+                serviceName,
+                playlist.video_link,
+                ExtractorLinkType.M3U8
+            ) {
+                this.referer = playlist.referer
+            }
+        )
     }
+
 
     suspend fun invokeDisney(
         title: String? = null,
@@ -2278,11 +2272,14 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        invokeNetmirror(title, year, season, episode, callback,
-            serviceName = "Hotstar",
-            ottCode = "hs",
-            urlPrefix = "/mobile/hs",
-            ignoreYear = true
+        invokeNetmirror(
+            "Hotstar",
+            "hs",
+            title,
+            year,
+            season,
+            episode,
+            callback
         )
     }
 
@@ -2294,10 +2291,14 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        invokeNetmirror(title, year, season, episode, callback,
-            serviceName = "PrimeVideo",
-            ottCode = "pv",
-            urlPrefix = "/pv"
+        invokeNetmirror(
+            "PrimeVideo",
+            "pv",
+            title,
+            year,
+            season,
+            episode,
+            callback
         )
     }
 
@@ -2309,12 +2310,14 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        invokeNetmirror(title, year, season, episode, callback,
-            serviceName = "Netflix",
-            ottCode = "nf",
-            urlPrefix = "",
-            epPrefix = "",
-            requiresToken = true
+        invokeNetmirror(
+            "Netflix",
+            "nf",
+            title,
+            year,
+            season,
+            episode,
+            callback
         )
     }
 

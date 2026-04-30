@@ -10,7 +10,6 @@ import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import com.lagradost.nicehttp.NiceResponse
 
 // Coroutines
 import kotlinx.coroutines.*
@@ -389,87 +388,6 @@ suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaD
     } else null
 
     return ExtractedMediaData(castList, posterUrl, backgroundUrl, logoUrl)
-}
-
-suspend fun NFBypass(mainUrl: String): String {
-
-    // Check persistent storage first
-    val (savedCookie, savedTimestamp) = Settings.getCookie()
-
-    // Return cached cookie if valid (≤15 hours old)
-    if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
-        Log.d("NF", "savedCookie: $savedCookie")
-        return savedCookie
-    }
-
-    val addhash = app.get(
-        "$mainUrl/mobile/home?app=1",
-        headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Linux; Android 12; RMX2117 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.55 Mobile Safari/537.36 /OS.Gatu v3.0",
-            "X-Requested-With" to "app.netmirror.netmirrornew"
-        )
-    ).document.select("body").attr("data-addhash")
-
-    Log.d("NF", "addhash: $addhash")
-
-    app.get("https://userver.net52.cc/?jjoii=$addhash&a=y&t=${APIHolder.unixTime}")
-
-    val newCookie = try {
-        var verifyCheck: String
-        var verifyResponse: NiceResponse
-        var count = 0
-        val requestBody = FormBody.Builder()
-            .addEncoded("verify", "$addhash")
-            .build()
-        do {
-            delay(10000)
-            verifyResponse = app.post(
-                "$mainUrl/mobile/verify2.php",
-                headers = mapOf(
-                    "User-Agent" to "Mozilla/5.0 (Linux; Android 12; RMX2117 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.55 Mobile Safari/537.36 /OS.Gatu v3.0",
-                    "X-Requested-With" to "XMLHttpRequest"
-                ),
-                requestBody = requestBody
-            )
-            verifyCheck = verifyResponse.text
-
-            Log.d("NF", "verifyCheck: $verifyCheck")
-
-            count++
-            if (count > 7) {
-                throw Exception("Failed to verify cookie")
-            }
-        } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
-        verifyResponse.cookies["t_hash_t"].orEmpty()
-    } catch (e: Exception) {
-        // Clear invalid cookie on failure
-        Settings.clearCookie()
-        throw e
-    }
-
-    // Persist the new cookie
-    if (newCookie.isNotEmpty()) {
-        Settings.saveCookie(newCookie)
-    }
-
-    Log.d("NF", "newCookie: $newCookie")
-    return newCookie
-}
-
-suspend fun getNfVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
-    val headers = mapOf(
-        "X-Requested-With" to "XMLHttpRequest",
-        "Referer" to "$mainUrl/",
-    )
-
-    val json = app.post(
-        "$mainUrl/play.php",
-        headers = headers,
-        cookies = cookies + mapOf ("user_token" to "233123f803cf02184bf6c67e149cdd50"),
-        data = mapOf("id" to id)
-    ).text
-    val h = JSONObject(json).getString("h").substringAfter("in=")
-    return h
 }
 
 fun buildMagnetString(stream: TorrentioStream): String {
