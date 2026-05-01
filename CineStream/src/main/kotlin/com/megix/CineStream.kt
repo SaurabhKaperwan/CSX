@@ -62,6 +62,7 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Asianload())
         registerExtractorAPI(Embedload())
         registerExtractorAPI(Gdshine())
+        registerExtractorAPI(Cloudnestra())
 
         this.openSettings = { ctx: Context ->
             Settings.showSettingsDialog(ctx) {

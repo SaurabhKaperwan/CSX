@@ -217,7 +217,6 @@ open class Videostr : ExtractorApi() {
     }
 }
 
-//Thanks to https://github.com/yogesh-hacker/MediaVanced
 open class Gofile : ExtractorApi() {
     override val name = "Gofile"
     override val mainUrl = "https://gofile.io"
@@ -1009,6 +1008,69 @@ class Akamaicdn : ExtractorApi() {
     }
 }
 
+class Cloudnestra : ExtractorApi() {
+    override val name = "Cloudnestra"
+    override val mainUrl = "https://cloudnestra.com"
+    override val requiresReferer = true
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0",
+            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language" to "en-US,en;q=0.5",
+            "Referer" to "$referer/",
+            "Sec-Fetch-Dest" to "iframe",
+            "Sec-Fetch-Mode" to "navigate",
+            "Sec-Fetch-Site" to "cross-site",
+            "Upgrade-Insecure-Requests" to "1",
+            "Connection" to "keep-alive"
+        )
+
+        val iframeHtml = app.get(url, headers = headers).text
+
+        val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
+        val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
+
+        val cloudHtml = app.get(
+            url = "$mainUrl$prorcpSrc",
+            headers = headers
+        ).text
+
+        val divMatch = Regex("""<div id="([^"]+)"[^>]*style=["']display\s*:\s*none;?["'][^>]*>([a-zA-Z0-9:\/.,{}\-_=+ ]+)</div>""", RegexOption.IGNORE_CASE).find(cloudHtml)
+        val divId = divMatch?.groupValues?.get(1) ?: return
+        val divText = divMatch.groupValues.get(2)
+
+        val requestBody = mapOf("text" to divText, "div_id" to divId)
+
+        val decrypted = app.post(
+            url = "$multiDecryptAPI/dec-cloudnestra",
+            json = requestBody,
+            headers = mapOf("Content-Type" to "application/json")
+        ).text
+
+        val jsonObject = JSONObject(decrypted)
+        val status = jsonObject.getInt("status")
+
+        if (status != 200) return
+
+        val resultArray = jsonObject.getJSONArray("result")
+
+        for (i in 0 until resultArray.length()) {
+            val streamUrl = resultArray.getString(i)
+
+            M3u8Helper.generateM3u8(
+                name,
+                streamUrl,
+                "$mainUrl/",
+            ).forEach(callback)
+        }
+    }
+}
 
 class Rapidshare : MegaUp() {
     override var mainUrl = "https://rapidshare.cc"

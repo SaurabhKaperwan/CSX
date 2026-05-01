@@ -20,8 +20,6 @@ const val PrimeSrcApi = "https://primesrc.me"
 const val asiaflixAPI = "https://asiaflix.net"
 const val twoembedAPI = "https://2embed.cc"
 const val sudatchiAPI = "https://sudatchi.com"
-const val cinemaOSApi = "https://cinemaos.tech"
-const val multiEmbededApi = "https://multiembed.mov"
 const val vidSrcApi = "https://api.rgshows.ru"
 const val vidSrcHindiApi = "https://hindi.rgshows.ru"
 const val dahmerMoviesAPI = "https://a.111477.xyz"
@@ -42,7 +40,6 @@ const val notorrentAPI = "https://addon-osvh.onrender.com"
 const val xpassAPI = "https://play.xpass.top"
 const val cinemacityAPI = "https://cinemacity.cc"
 const val akwamAPI = "https://ak.sv"
-const val flixIndiaAPI = "https://m.flixindia.xyz"
 const val levidiaAPI = "https://www.levidia.ch"
 const val femBoxAPI = "https://fembox.aether.mom"
 const val streamvixAPI = "https://streamvix.hayd.uk"
@@ -58,7 +55,7 @@ const val onetouchtvAPI = "https://api3.devcorp.me"
 const val playImdbAPI = "https://streamimdb.me"
 const val av1encodesAPI = "https://av1encodes.com"
 const val vadapavAPI = "https://vadapav.mov"
-val peachifyBaseAPI = "https://peachify.top"
+const val peachifyBaseAPI = "https://peachify.top"
 const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
@@ -72,6 +69,16 @@ val multipleYflixAPI = listOf(
     "https://myflixer.fi",
     "https://hurawatch.la"
 )
+
+val multipleAnimekaiAPI = listOf(
+    "https://animekai.fi",
+    "https://anikai.to",
+    "https://animekai.fo",
+    "https://animekai.gs",
+    "https://animekai.la"
+)
+
+
 
 // ── 2. Dynamic API Config ────────────────────────────────────
 // Loaded once via init() called from CineStream.load()
@@ -90,7 +97,6 @@ suspend fun init() {
 private fun api(key: String) = _apiConfig?.optString(key).orEmpty()
 
 // ── 3. Dynamic APIs ──────────────────────────────────────────
-val protonmoviesAPI get() = api("protonmovies")
 val fourkhdhubAPI get() = api("4khdhub")
 val multimoviesAPI get() = api("multimovies")
 val bollyflixAPI get() = api("bollyflix")
@@ -107,9 +113,6 @@ val uhdmoviesAPI get() = api("uhdmovies")
 val moviesmodAPI get() = api("moviesmod")
 val topmoviesAPI get() = api("topmovies")
 val toonStreamAPI get() = api("toonstream")
-val hianimeAPI get() = api("hianime")
-val XDmoviesAPI get() = api("xdmovies")
-val animekaiAPI get() = api("animekai")
 val rtallyAPI get() = api("rtally")
 val dudefilmsAPI get() = api("dudefilms")
 val m4ufreeAPI get() = api("m4ufree")

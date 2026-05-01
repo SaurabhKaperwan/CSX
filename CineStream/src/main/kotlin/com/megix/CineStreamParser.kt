@@ -640,8 +640,7 @@ data class Daum(
 
 //Malsync
 data class MALSyncSites(
-    @param:JsonProperty("AniXL") val AniXL: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
-    @param:JsonProperty("Zoro") val zoro: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
+    @param:JsonProperty("AnimeKAI") val animekai: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
     @param:JsonProperty("animepahe") val animepahe: HashMap<String?, HashMap<String, String?>>? = hashMapOf(),
 )
 
