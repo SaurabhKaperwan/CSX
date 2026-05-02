@@ -14,6 +14,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.lagradost.api.Log
 
 // Cloudstream Sync Providers
 import com.lagradost.cloudstream3.syncproviders.AccountManager

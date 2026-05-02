@@ -1,11 +1,5 @@
 package com.megix
 
-// Android
-import android.os.Build
-import android.util.Base64
-import android.util.Log
-import androidx.annotation.RequiresApi
-
 // Cloudstream Core & Utils
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.mvvm.safeApiCall
@@ -14,6 +8,7 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.nicehttp.NiceResponse
+import com.lagradost.api.Log
 
 // Gson & Jackson
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -39,14 +34,10 @@ import java.net.URL
 import java.net.URLEncoder
 import android.net.Uri
 
-import okhttp3.RequestBody.Companion.toRequestBody
-
 import com.megix.settings.Settings
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 object CineStreamExtractors {
 
@@ -957,8 +948,12 @@ object CineStreamExtractors {
 
             val type = if (sourceName.contains("Castle") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
             val req = s.behaviorHints?.proxyHeaders?.request
-            val streamUrl = if(sourceName.contains("Castle")){
-                s.url.toHttpUrlOrNull()?.queryParameter("url") ?: return@forEach
+            val streamUrl = if (sourceName.contains("Castle")) {
+                URI(s.url).query
+                ?.split("&")
+                ?.firstOrNull { it.startsWith("url=") }
+                ?.removePrefix("url=")
+                ?: return@forEach
             } else {
                 s.url
             }
@@ -1170,16 +1165,16 @@ object CineStreamExtractors {
         val tokenRegex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
         val requestToken = tokenRegex.find(page)?.groupValues?.get(1) ?: return
 
-        val body = """
-        {
-            "mediaId": $tmdbId,
-            "mediaType": "$mediaType",
-            "requestToken": "$requestToken"
-        }
-    """.trimIndent()
-
         val tokenRes1 = JSONObject(
-            app.post("$base/api/stream-token", requestBody = body.toRequestBody(), headers = headers).text
+            app.post(
+                "$base/api/stream-token",
+                json = mapOf(
+                    "mediaId"      to tmdbId,
+                    "mediaType"    to mediaType,
+                    "requestToken" to requestToken
+                ),
+                headers = headers
+            ).text
         )
 
         if (!tokenRes1.optBoolean("success")) return
@@ -1192,20 +1187,20 @@ object CineStreamExtractors {
                 pow.getInt("difficulty")
             ) ?: return
 
-            val body2 = """
-            {
-                "mediaId": $tmdbId,
-                "mediaType": "$mediaType",
-                "requestToken": "$requestToken",
-                "pow": {
-                    "challengeId": "${pow.getString("challengeId")}",
-                    "nonce": "$nonce"
-                }
-            }
-        """.trimIndent()
-
             val tokenRes2 = JSONObject(
-                app.post("$base/api/stream-token", requestBody = body2.toRequestBody(), headers = headers).text
+                app.post(
+                    "$base/api/stream-token",
+                    json = mapOf(
+                        "mediaId"      to tmdbId,
+                        "mediaType"    to mediaType,
+                        "requestToken" to requestToken,
+                        "pow"          to mapOf(
+                            "challengeId" to pow.getString("challengeId"),
+                            "nonce"       to nonce
+                        )
+                    ),
+                    headers = headers
+                ).text
             )
 
             if (!tokenRes2.optBoolean("success")) return
@@ -1835,8 +1830,14 @@ object CineStreamExtractors {
         val id = app.get(postUrl)
             .document
             .selectFirst("div.rate-box")?.attr("data-id") ?: return
+
+        Log.d("Animekai", "id: $id")
+
         val enc_id = encrypt(id)
         val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
+
+        Log.d("Animekai", "json: $json")
+
         val html = JSONObject(json).getString("result")
         val token = getEpisodeToken(html, episode ?: 1) ?: return
         val enc_token = encrypt(token)
@@ -2611,6 +2612,8 @@ object CineStreamExtractors {
                     val href = it.attr("href")
                     var type = "SUB"
                     if(it.select("span").text().contains("eng")) type = "DUB"
+
+                    Log.d("Animepahe", "href: $href")
 
                     loadCustomExtractor(
                         "Animepahe [$type]",
@@ -3483,29 +3486,32 @@ object CineStreamExtractors {
         val SEASON_SUFFIX_REGEX = """\sS\d+(?:-S?\d+)*$""".toRegex(RegexOption.IGNORE_CASE)
 
         val baseHeaders = mapOf(
-            "X-Client-Info" to "{\"timezone\":\"Africa/Nairobi\"}",
+            "X-Client-Info"   to "{\"timezone\":\"Africa/Nairobi\"}",
             "Accept-Language" to "en-US,en;q=0.5",
-            "Accept" to "application/json",
-            "Referer" to BASE_URL,
-            "Host" to HOST,
-            "Connection" to "keep-alive"
+            "Accept"          to "application/json",
+            "Referer"         to BASE_URL,
+            "Host"            to HOST,
+            "Connection"      to "keep-alive"
         )
 
         app.get("$BASE_URL/wefeed-h5-bff/app/get-latest-app-pkgs?app_name=moviebox", headers = baseHeaders)
 
         val subjectType = if (season != null) 2 else 1
-        val searchResponseString = app.post(
-            "$BASE_URL/wefeed-h5-bff/web/subject/search",
-            headers = baseHeaders,
-            json = mapOf(
-                "keyword" to title,
-                "page" to 1,
-                "perPage" to 24,
-                "subjectType" to subjectType
+        val searchObj = try {
+            JSONObject(
+                app.post(
+                    "$BASE_URL/wefeed-h5-bff/web/subject/search",
+                    headers = baseHeaders,
+                    json = mapOf(
+                        "keyword"     to title,
+                        "page"        to 1,
+                        "perPage"     to 24,
+                        "subjectType" to subjectType
+                    )
+                ).text
             )
-        ).text
+        } catch (e: Exception) { return }
 
-        val searchObj = try { JSONObject(searchResponseString) } catch (e: Exception) { return }
         val items = unwrapData(searchObj).optJSONArray("items") ?: return
 
         val titleMatchRegex = """^${Regex.escape(title ?: "")}(?: \[([^\]]+)\])?$""".toRegex(RegexOption.IGNORE_CASE)
@@ -3515,42 +3521,45 @@ object CineStreamExtractors {
             val item = items.optJSONObject(i) ?: continue
             val id = item.optString("subjectId")
             if (id.isEmpty()) continue
-
-            val rawTitle = item.optString("title", "")
-            val cleanTitle = rawTitle.replace(SEASON_SUFFIX_REGEX, "")
-            val matchResult = titleMatchRegex.find(cleanTitle)
-
-            if (matchResult != null) {
-                val language = matchResult.groups[1]?.value ?: "Original"
-                uniqueIdsWithLang.putIfAbsent(id, language)
-            }
+            val cleanTitle = item.optString("title", "").replace(SEASON_SUFFIX_REGEX, "")
+            val matchResult = titleMatchRegex.find(cleanTitle) ?: continue
+            val language = matchResult.groups[1]?.value ?: "Original"
+            uniqueIdsWithLang.putIfAbsent(id, language)
         }
 
         if (uniqueIdsWithLang.isEmpty()) return
 
         uniqueIdsWithLang.forEach { (subjectId, language) ->
-            val detailUrl = "$BASE_URL/wefeed-h5-bff/web/subject/detail?subjectId=${subjectId}"
-            val detailResponseString = app.get(detailUrl, headers = baseHeaders).text
+            val detailObj = try {
+                JSONObject(
+                    app.get(
+                        "$BASE_URL/wefeed-h5-bff/web/subject/detail?subjectId=$subjectId",
+                        headers = baseHeaders
+                    ).text
+                )
+            } catch (e: Exception) { return@forEach }
 
-            val detailObj = try { JSONObject(detailResponseString) } catch (e: Exception) { return@forEach }
             val detailPath = unwrapData(detailObj).optJSONObject("subject")?.optString("detailPath") ?: ""
 
-            val params = StringBuilder("subjectId=$subjectId")
-            if (season != null) {
-                params.append("&se=$season&ep=$episode")
+            val params = buildString {
+                append("subjectId=$subjectId")
+                if (season != null) append("&se=$season&ep=$episode")
             }
 
             val downloadHeaders = baseHeaders + mapOf(
                 "Referer" to "https://fmoviesunblocked.net/spa/videoPlayPage/movies/$detailPath?id=$subjectId&type=/movie/detail",
-                "Origin" to "https://fmoviesunblocked.net"
+                "Origin"  to "https://fmoviesunblocked.net"
             )
 
-            val downloadResponseString = app.get(
-                "$BASE_URL/wefeed-h5-bff/web/subject/download?$params",
-                headers = downloadHeaders
-            ).text
+            val sourceObj = try {
+                JSONObject(
+                    app.get(
+                        "$BASE_URL/wefeed-h5-bff/web/subject/download?$params",
+                        headers = downloadHeaders
+                    ).text
+                )
+            } catch (e: Exception) { return@forEach }
 
-            val sourceObj = try { JSONObject(downloadResponseString) } catch (e: Exception) { return@forEach }
             val sourceData = unwrapData(sourceObj)
 
             val downloads = sourceData.optJSONArray("downloads")
@@ -3559,7 +3568,6 @@ object CineStreamExtractors {
                     val d = downloads.optJSONObject(i) ?: continue
                     val dlink = d.optString("url")
                     if (dlink.isNotEmpty()) {
-                        val resolution = d.optInt("resolution")
                         callback.invoke(
                             newExtractorLink(
                                 "MovieBox [$language]",
@@ -3568,9 +3576,9 @@ object CineStreamExtractors {
                             ) {
                                 this.headers = mapOf(
                                     "Referer" to "https://fmoviesunblocked.net/",
-                                    "Origin" to "https://fmoviesunblocked.net"
+                                    "Origin"  to "https://fmoviesunblocked.net"
                                 )
-                                this.quality = resolution
+                                this.quality = d.optInt("resolution")
                             }
                         )
                     }
@@ -3585,10 +3593,7 @@ object CineStreamExtractors {
                     if (slink.isNotEmpty()) {
                         val lan = s.optString("lan")
                         subtitleCallback.invoke(
-                            newSubtitleFile(
-                                getLanguage(lan) ?: lan,
-                                slink
-                            )
+                            newSubtitleFile(getLanguage(lan) ?: lan, slink)
                         )
                     }
                 }
@@ -3784,7 +3789,7 @@ object CineStreamExtractors {
                 )
             }
         } catch (e: Exception) {
-            Log.w("Vidsrc", "Failed to extract server: VidPlay", e)
+            Log.w("Vidsrc", "Failed to extract server: VidPlay")
         }
 
         try {
@@ -3801,7 +3806,7 @@ object CineStreamExtractors {
                 getUpcloud(iframeUrl, vidsrcCCAPI, callback)
             }
         } catch (e: Exception) {
-            Log.w("Vidsrc", "Failed to extract server: UpCloud", e)
+            Log.w("Vidsrc", "Failed to extract server: UpCloud")
         }
 
     }
@@ -3884,7 +3889,7 @@ object CineStreamExtractors {
                 referer = "$animekizzAPI/"
             ).text
         } catch (e: Exception) {
-            Log.e("Animekizz", "Failed to fetch servers for query=$query", e)
+            Log.e("Animekizz", "Failed to fetch servers for query=$query")
             return
         }
 
@@ -3893,7 +3898,7 @@ object CineStreamExtractors {
         val serversArray = try {
             JSONObject(serversJson).optJSONArray("servers") ?: return
         } catch (e: Exception) {
-            Log.e("Animekizz", "Unable to parse servers response", e)
+            Log.e("Animekizz", "Unable to parse servers response")
             return
         }
 
@@ -3915,7 +3920,7 @@ object CineStreamExtractors {
                     referer = "$animekizzAPI/"
                 ).text
             } catch (e: Exception) {
-                Log.e("Animekizz", "Failed to resolve server $name ($id)", e)
+                Log.e("Animekizz", "Failed to resolve server $name ($id)")
                 continue
             }
 
@@ -3924,7 +3929,7 @@ object CineStreamExtractors {
             val sourcesArray = try {
                 JSONObject(resolveJson).optJSONArray("sources") ?: continue
             } catch (e: Exception) {
-                Log.e("Animekizz", "Unable to parse resolve response for server $name", e)
+                Log.e("Animekizz", "Unable to parse resolve response for server $name")
                 continue
             }
 
@@ -4210,7 +4215,7 @@ object CineStreamExtractors {
                     }
                 )
             } catch (e: Exception) {
-                Log.w("VidFastPro", "Failed to extract server: ${server.name}", e)
+                Log.w("VidFastPro", "Failed to extract server: ${server.name}")
             }
         }
     }
@@ -4455,7 +4460,7 @@ object CineStreamExtractors {
             return try {
                 JSONObject(jsonString)
             } catch (e: Exception) {
-                Log.e("Vadapav", "Failed to parse JSON from HTML", e)
+                Log.e("Vadapav", "Failed to parse JSON from HTML")
                 null
             }
         }
@@ -4626,17 +4631,13 @@ object CineStreamExtractors {
 
                 val isProxy = rawUrl.contains("/m3u8-proxy") || rawUrl.contains("/mp4-proxy")
                 val (finalUrl, proxyHeaders) = if (isProxy) {
-                    val uri        = Uri.parse(rawUrl)
-                    val realUrl    = uri.getQueryParameter("url") ?: rawUrl
-                    val headersObj = uri.getQueryParameter("headers")
+                    val query      = java.net.URI(rawUrl).query?.queryParams() ?: emptyMap()
+                    val realUrl    = query["url"] ?: rawUrl
+                    val headersObj = query["headers"]
                         ?.let { runCatching { JSONObject(it) }.getOrNull() }
-                    val map = mutableMapOf<String, String>()
-                    headersObj?.keys()?.forEach { k -> map[k] = headersObj.getString(k) }
-                    realUrl to map
+                    realUrl to headersObj.toStringMap()
                 } else {
-                    val map = mutableMapOf<String, String>()
-                    srcHeaders?.keys()?.forEach { k -> map[k] = srcHeaders.getString(k) }
-                    rawUrl to map
+                    rawUrl to srcHeaders.toStringMap()
                 }
 
                 val finalReferer = proxyHeaders["referer"] ?: srcHeaders?.optString("referer") ?: "$peachifyBaseAPI/"

@@ -71,8 +71,8 @@ val multipleYflixAPI = listOf(
 )
 
 val multipleAnimekaiAPI = listOf(
-    "https://animekai.fi",
     "https://anikai.to",
+    "https://animekai.fi",
     "https://animekai.fo",
     "https://animekai.gs",
     "https://animekai.la"

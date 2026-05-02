@@ -1,8 +1,5 @@
 package com.megix
 
-// Android
-import android.util.Base64
-
 // Cloudstream & NiceHttp
 import com.lagradost.api.Log
 import com.lagradost.cloudstream3.*
@@ -317,6 +314,20 @@ fun getLanguage(language: String?): String? {
 
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
+}
+
+fun String.queryParams(): Map<String, String> {
+    return split("&").mapNotNull {
+        val parts = it.split("=", limit = 2)
+        if (parts.size == 2) parts[0] to java.net.URLDecoder.decode(parts[1], "UTF-8")
+        else null
+    }.toMap()
+}
+
+fun JSONObject?.toStringMap(): Map<String, String> {
+    val map = mutableMapOf<String, String>()
+    this?.keys()?.forEach { k -> map[k] = this.optString(k) }
+    return map
 }
 
 suspend fun checkPosterAvailable(posterUrl: String? = null): String? {
@@ -1199,11 +1210,11 @@ suspend fun getGojoStreams(
 
 suspend fun getRedirectLinks(url: String): String {
     fun encode(value: String): String {
-        return Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
+        return base64Encode(value.toByteArray())
     }
 
     fun decode(value: String): String {
-        return String(Base64.decode(value, Base64.DEFAULT))
+        return base64Decode(value)
     }
 
     fun rot13(value: String): String {
@@ -1250,21 +1261,17 @@ suspend fun getRedirectLinks(url: String): String {
 
 fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String? {
     return try {
-        val decodedBytes = Base64.decode(encryptedUrl, Base64.DEFAULT)
-        val decodedString = String(decodedBytes, Charsets.UTF_8)
+        val decodedString = base64Decode(encryptedUrl)
         val parts = decodedString.split(":", limit = 2)
         if (parts.size < 2) return null
-        val ivB64 = parts[0]
-        val ciphertextB64 = parts[1]
-        val iv = Base64.decode(ivB64, Base64.DEFAULT)
-        val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
+
+        val iv         = base64DecodeArray(parts[0])
+        val ciphertext = base64DecodeArray(parts[1])
+
         val key = secret.padEnd(32, '\u0000').toByteArray(Charsets.UTF_8)
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        val secretKeySpec = SecretKeySpec(key, "AES")
-        val ivParameterSpec = IvParameterSpec(iv)
-        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
-        val decryptedData = cipher.doFinal(ciphertext)
-        String(decryptedData, Charsets.UTF_8)
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
+        String(cipher.doFinal(ciphertext), Charsets.UTF_8)
     } catch (e: Exception) {
         null
     }
@@ -1319,14 +1326,11 @@ fun getVidrockUrlEncode(itemId: String): String {
     val passphrase = "x7k9mPqT2rWvY8zA5bC3nF6hJ2lK4mN9"
     val keyBytes = passphrase.toByteArray(Charsets.UTF_8)
     val ivBytes = keyBytes.copyOfRange(0, 16)
-    val secretKey = SecretKeySpec(keyBytes, "AES")
-    val ivSpec = IvParameterSpec(ivBytes)
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
+    cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(keyBytes, "AES"), IvParameterSpec(ivBytes))
     val encryptedBytes = cipher.doFinal(itemId.toByteArray(Charsets.UTF_8))
-    val base64Encoded = android.util.Base64.encodeToString(encryptedBytes, android.util.Base64.NO_WRAP)
-    val urlEncoded = URLEncoder.encode(base64Encoded, "UTF-8").replace("%2F", "/")
-    return urlEncoded
+    val base64Encoded = base64Encode(encryptedBytes)
+    return URLEncoder.encode(base64Encoded, "UTF-8").replace("%2F", "/")
 }
 
 //Xpass
@@ -1392,7 +1396,7 @@ fun peachifyDecrypt(encrypt: String): String? {
 }
 
 fun b64UrlDecode(s: String): ByteArray {
-    val padded = s.replace('-', '+').replace('_', '/')
+    return s.replace('-', '+').replace('_', '/')
         .let { it + "=".repeat((4 - it.length % 4) % 4) }
-    return Base64.decode(padded, Base64.NO_WRAP)
+        .let { base64DecodeArray(it) }
 }

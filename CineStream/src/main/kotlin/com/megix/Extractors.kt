@@ -6,15 +6,10 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.network.WebViewResolver
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.getAndUnpack
+import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
 
 // Network (OkHttp & Java Net)
 import java.net.URI
-import okhttp3.*
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
-import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
 
 // JSON Parsing (Gson, Jackson, Org)
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -30,7 +25,6 @@ import java.io.IOException
 import java.security.MessageDigest
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import android.util.Base64
 import java.security.SecureRandom
 import javax.crypto.Cipher
 
@@ -88,11 +82,11 @@ open class ZenCloudz : ExtractorApi() {
         val encryptedVideoB64 = tokenJson.getString("video_b64")
         val dynamicKeyB64 = tokenJson.getString("key_frag")
 
-        val encryptedKeyBytes = Base64.decode(encryptedKeyB64, Base64.DEFAULT)
-        val secondaryKeyBytes = Base64.decode(secondaryKeyB64, Base64.DEFAULT)
-        val dynamicKeyBytes = Base64.decode(dynamicKeyB64, Base64.DEFAULT)
-        val ivBytes = Base64.decode(ivB64, Base64.DEFAULT)
-        val ciphertextBytes = Base64.decode(encryptedVideoB64, Base64.DEFAULT)
+        val encryptedKeyBytes = base64DecodeArray(encryptedKeyB64)
+        val secondaryKeyBytes = base64DecodeArray(secondaryKeyB64)
+        val dynamicKeyBytes   = base64DecodeArray(dynamicKeyB64)
+        val ivBytes           = base64DecodeArray(ivB64)
+        val ciphertextBytes   = base64DecodeArray(encryptedVideoB64)
 
         val sboxSeed = obfuscationSeed.substring(0, 8).toLong(16).toInt()
         val sboxTable = generateSbox(sboxSeed)
@@ -611,12 +605,9 @@ open class Driveleech : ExtractorApi() {
         val resumeBotToken = Regex("formData\\.append\\('token', '([a-f0-9]+)'\\)").find(resumeBotDoc)?.groups?.get(1)?.value
         val resumeBotPath = Regex("fetch\\('/download\\?id=([a-zA-Z0-9/+]+)'").find(resumeBotDoc)?.groups?.get(1)?.value
         val resumeBotBaseUrl = url.split("/download")[0]
-        val requestBody = FormBody.Builder()
-            .addEncoded("token", "$resumeBotToken")
-            .build()
-
-        val jsonResponse = app.post(resumeBotBaseUrl + "/download?id=" + resumeBotPath,
-            requestBody = requestBody,
+        val jsonResponse = app.post(
+            resumeBotBaseUrl + "/download?id=" + resumeBotPath,
+            data = mapOf("token" to "$resumeBotToken"),
             headers = mapOf(
                 "Accept" to "*/*",
                 "Origin" to resumeBotBaseUrl,
@@ -880,17 +871,16 @@ class Pahe : ExtractorApi() {
     override val name = "Pahe"
     override val mainUrl = "https://pahe.win"
     override val requiresReferer = true
+
     private val kwikParamsRegex = Regex("""\("(\w+)",\d+,"(\w+)",(\d+),(\d+),\d+\)""")
     private val kwikDUrl = Regex("action=\"([^\"]+)\"")
     private val kwikDToken = Regex("value=\"([^\"]+)\"")
-    private val client = OkHttpClient()
 
     private fun decrypt(fullString: String, key: String, v1: Int, v2: Int): String {
         val keyIndexMap = key.withIndex().associate { it.value to it.index }
         val sb = StringBuilder()
         var i = 0
         val toFind = key[v2]
-
         while (i < fullString.length) {
             val nextIndex = fullString.indexOf(toFind, i)
             val decodedCharStr = buildString {
@@ -898,86 +888,71 @@ class Pahe : ExtractorApi() {
                     append(keyIndexMap[fullString[j]] ?: -1)
                 }
             }
-
             i = nextIndex + 1
-
-            val decodedChar = (decodedCharStr.toInt(v2) - v1).toChar()
-            sb.append(decodedChar)
+            sb.append((decodedCharStr.toInt(v2) - v1).toChar())
         }
-
         return sb.toString()
     }
 
-    override suspend fun getUrl(url: String, referer: String?, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit) {
-        val noRedirects = OkHttpClient.Builder()
-            .followRedirects(false)
-            .followSslRedirects(false)
-            .build()
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val kwikUrl = "https://" + app.get(
+            "$url/i",
+            allowRedirects = false
+        ).headers["location"]!!.substringAfterLast("https://")
 
-        val initialRequest = Request.Builder()
-            .url("$url/i")
-            .get()
-            .build()
+        val fContent = app.get(
+            kwikUrl,
+            headers = mapOf(
+                "Referer"    to "https://kwik.cx/",
+                "User-Agent" to USER_AGENT
+            )
+        )
+        val fContentString = fContent.text
 
-        val kwikUrl = "https://" + noRedirects.newCall(initialRequest).execute()
-                        .header("location")!!.substringAfterLast("https://")
-
-        val fContentRequest = Request.Builder()
-            .url(kwikUrl)
-            .header("referer", "https://kwik.cx/")
-            .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
-            .get()
-            .build()
-
-        val fContent = client.newCall(fContentRequest).execute()
-        val fContentString = fContent.body.string()
 
         val (fullString, key, v1, v2) = kwikParamsRegex.find(fContentString)!!.destructured
         val decrypted = decrypt(fullString, key, v1.toInt(), v2.toInt())
-
         val uri = kwikDUrl.find(decrypted)!!.destructured.component1()
         val tok = kwikDToken.find(decrypted)!!.destructured.component1()
 
-        val noRedirectClient = OkHttpClient().newBuilder()
-            .followRedirects(false)
-            .followSslRedirects(false)
-            .cookieJar(client.cookieJar)
-            .build()
-
         var code = 419
         var tries = 0
-        var content: Response? = null
+        var location = ""
 
         while (code != 302 && tries < 20) {
-            val formBody = FormBody.Builder()
-                .add("_token", tok)
-                .build()
-
-            val postRequest = Request.Builder()
-                .url(uri)
-                .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
-                .header("referer", fContent.request.url.toString())
-                .header("cookie",  fContent.headers("set-cookie").firstOrNull().toString())
-                .post(formBody)
-                .build()
-
-            content = noRedirectClient.newCall(postRequest).execute()
-            code = content.code
+            val response = app.post(
+                uri,
+                headers = mapOf(
+                    "User-Agent" to USER_AGENT,
+                    "Referer"    to fContent.url
+                ),
+                data = mapOf("_token" to tok),
+                allowRedirects = false
+            )
+            code = response.code
+            if (code == 302) {
+                location = response.headers["location"] ?: ""
+            }
             tries++
         }
 
-        val location = content?.header("location").toString()
-        content?.close()
+        if (location.isBlank()) return
 
         callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                location,
-            ) {
+            newExtractorLink(name, name, location) {
                 this.referer = "https://kwik.cx/"
             }
         )
+    }
+
+    companion object {
+        const val USER_AGENT =
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
     }
 }
 
@@ -1131,16 +1106,13 @@ open class MegaUp : ExtractorApi() {
 
         if (encodedResult == null) return
 
-        val body = """
-        {
-        "text": "$encodedResult",
-        "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-        }
-        """.trimIndent()
-            .trim()
-            .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-
-        val m3u8Data = app.post("https://enc-dec.app/api/dec-mega", requestBody = body).text
+        val m3u8Data = app.post(
+            "$multiDecryptAPI/dec-mega",
+            json = mapOf(
+                "text"  to encodedResult,
+                "agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+            )
+        ).text
 
         Log.d("MegaUp", "m3u8Data: $m3u8Data")
 
@@ -1284,12 +1256,10 @@ open class PpzjYoutube : ExtractorApi() {
 
             val signatureInput = encryptedPayload + "KRWN3AdgmxEMcd2vLN1ju9qKe8Feco5h"
             val signature = md5(signatureInput)
-            val body = "data=$encryptedPayload%7C$signature".toRequestBody("application/x-www-form-urlencoded".toMediaType())
-
             val response = app.post(
                 apiUrl,
-                headers     = headers,
-                requestBody = body
+                headers = headers,
+                data = mapOf("data" to "$encryptedPayload|$signature")
             ).parsedSafe<Map<String, Any>>() ?: return
 
             val encryptedVideo = (response["data"] as? String)?.substringBefore("|")
@@ -1480,7 +1450,7 @@ open class Asianload : ExtractorApi() {
 
 
         for (base64EncodedUrl in allBase64Links) {
-            val decodedLink = String(Base64.decode(base64EncodedUrl, Base64.DEFAULT))
+            val decodedLink = base64Decode(base64EncodedUrl)
                         
             if (decodedLink.contains(".mp4")) {
                 callback(
