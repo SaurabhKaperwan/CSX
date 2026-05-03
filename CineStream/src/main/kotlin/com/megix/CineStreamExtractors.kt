@@ -2662,11 +2662,24 @@ object CineStreamExtractors {
             matchTitle && matchYear
         }?.attr("href") ?: return
 
+        Log.d("4Khdhub", "matched: $fourkhdhubAPI$link")
+
         val doc = app.get("$fourkhdhubAPI$link").document
 
         if(season == null) {
             doc.select("div.download-item a").safeAmap {
-               val source = getRedirectLinks(it.attr("href"))
+               var source = it.attr("href")
+
+               Log.d("4Khdhub", "source: $source")
+
+               if(source.contains("hubcloud") || source.contains("hubdrive")) {
+
+               } else {
+                    source = getRedirectLinks(source)
+               }
+
+               Log.d("4Khdhub", "source: $source")
+
                loadSourceNameExtractor(
                     "4Khdhub",
                     source,
@@ -2680,7 +2693,18 @@ object CineStreamExtractors {
 
             doc.select("div.episode-download-item:has(div.episode-file-title:contains(S${seasonText}E${episodeText}))").safeAmap {
                 it.select("div.episode-links > a").safeAmap {
-                    val source = getRedirectLinks(it.attr("href"))
+                    var source = it.attr("href")
+
+                    Log.d("4Khdhub", "source: $source")
+
+                    if(source.contains("hubcloud") || source.contains("hubdrive")) {
+
+                    } else {
+                        source = getRedirectLinks(source)
+                    }
+
+                    Log.d("4Khdhub", "source: $source")
+
                     loadSourceNameExtractor(
                         "4Khdhub",
                         source,
@@ -2791,7 +2815,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$moviesdriveAPI/searchapi.php?q=$imdbId"
+        val url = "$moviesdriveAPI/search.php?q=$imdbId"
         val jsonString = app.get(url).text
         val root = JSONObject(jsonString)
         if (!root.has("hits")) return
@@ -2802,13 +2826,17 @@ object CineStreamExtractors {
             val doc = hit.getJSONObject("document")
             val currentImdbId = doc.optString("imdb_id")
             if(imdbId == currentImdbId) {
-                val document = app.get(moviesdriveAPI + doc.optString("permalink")).document
+                val matchedItem = moviesdriveAPI + doc.optString("permalink")
+
+                Log.d("Moviesdrive", "matchedItem: $matchedItem")
+
+                val document = app.get(matchedItem).document
                 if (season == null) {
                     document.select("h5 > a").safeAmap {
                         val href = it.attr("href")
                         val server = extractMdrive(href)
                         server.safeAmap {
-                            loadSourceNameExtractor("MoviesDrive",it, "", subtitleCallback, callback)
+                            loadSourceNameExtractor("MoviesDrive", it, "", subtitleCallback, callback)
                         }
                     }
                 } else {

@@ -82,7 +82,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
         val text = app.get(
-            "$mainUrl/searchapi.php?q=$query&page=$page"
+            "$mainUrl/search.php?q=$query&page=$page"
         ).text
         val gson = Gson()
         val response = gson.fromJson(text, MSearchResponse::class.java)
