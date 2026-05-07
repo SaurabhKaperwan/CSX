@@ -371,7 +371,7 @@ object ProviderRegistry {
             key = "p_sudatchi", displayName = "Sudatchi",
             executeAnime = { res, subCb, cb -> invokeSudatchi(res.anilistId, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeSudatchi(data.aniId, data.episode, subCb, cb) }
-        )
+        ),
     )
 
     // Dynamically provided to Settings.kt

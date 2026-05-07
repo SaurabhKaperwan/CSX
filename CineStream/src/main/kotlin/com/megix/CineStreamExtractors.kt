@@ -1063,7 +1063,8 @@ object CineStreamExtractors {
             "overflix",
             "superflix",
             "cuevana",
-            "lamovie"
+            "lamovie",
+            "mb-flix",
         )
 
         if(title == null) return
@@ -1264,6 +1265,8 @@ object CineStreamExtractors {
         val tokenResponseText = app.get("$multiDecryptAPI/enc-hexa").text
         val token = JSONObject(tokenResponseText).getJSONObject("result").getString("token")
 
+        Log.d("Hexa", "token: $token")
+
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
             "Accept" to "text/plain",
@@ -1275,6 +1278,8 @@ object CineStreamExtractors {
 
         val enc_data = app.get(url, headers = headers).text
 
+        Log.d("Hexa", "enc_data: $enc_data")
+
         val jsonBody = mapOf("text" to enc_data, "key" to key)
         val response = app.post(
             "$multiDecryptAPI/dec-hexa",
@@ -1284,6 +1289,9 @@ object CineStreamExtractors {
 
         if(response.isSuccessful) {
             val json = response.text
+
+            Log.d("Hexa", "json: $json")
+
             val result = JSONObject(json).getJSONObject("result")
             val sourcesArray = result.getJSONArray("sources")
 
@@ -4179,9 +4187,15 @@ object CineStreamExtractors {
         )
 
         val response = app.get(url, headers = headers).text
+
+        Log.d("VidFastPro", "response: $response")
+
         val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
         val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText&version=1"
         val decodedDataJson = app.get(decApiUrl).text
+
+        Log.d("VidFastPro", "decodedDataJson: $decodedDataJson")
+
         val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
 
         val serversUrl = decodedData.servers ?: return
@@ -4191,12 +4205,19 @@ object CineStreamExtractors {
         headers["X-CSRF-Token"] = token
 
         val serversEncrypted = app.post(serversUrl, headers = headers).text
+
+        Log.d("VidFastPro", "serversEncrypted: $serversEncrypted")
+
         val serversListJson = app.post(
             "$multiDecryptAPI/dec-vidfast",
             json = mapOf("text" to serversEncrypted, "version" to "1")
         ).text
 
+        Log.d("VidFastPro", "serversListJson: $serversListJson")
+
         val serversList = tryParseJson<VidfastStreamResponse>(serversListJson)?.result ?: return
+
+        Log.d("VidFastPro", "serversList: $serversList")
 
         serversList.forEach { server ->
             try {
@@ -4204,7 +4225,11 @@ object CineStreamExtractors {
                 val finalStreamUrl = "$streamBaseUrl/$serverHash"
 
                 val streamDataEncrypted = app.post(finalStreamUrl, headers = headers).text
+
                 if(streamDataEncrypted.isNullOrBlank()) return@forEach
+
+                Log.d("VidFastPro", "streamDataEncrypted: $streamDataEncrypted")
+
                 val streamDataJson = app.post(
                     "$multiDecryptAPI/dec-vidfast",
                     json = mapOf("text" to streamDataEncrypted , "version" to "1")
@@ -4388,22 +4413,39 @@ object CineStreamExtractors {
 
         val slug = title.lowercase().trim().replace(Regex("\\s+"), "-")
 
-        val url = if (season == null) {
-            "$av1encodesAPI/episodes/$slug/movie/1920%20x%201080"
+        val slug2 = if(season == null) {
+            "movie/1920%20x%201080"
         } else {
-            "$av1encodesAPI/episodes/$slug/$season/1920%20x%201080"
+            "$season/1920%20x%201080"
         }
+
+        val url = if (season == null) {
+            "$av1encodesAPI/episodes/$slug/$slug2"
+        } else {
+            "$av1encodesAPI/episodes/$slug/$slug2"
+        }
+
+        val headers = mapOf(
+            "accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language" to "en-GB,en-US;q=0.9,en;q=0.8",
+            "dnt" to "1",
+            "priority" to "u=0, i",
+            "referer" to "$av1encodesAPI/",
+            "sec-ch-ua" to "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Linux\"",
+            "sec-fetch-dest" to "document",
+            "sec-fetch-mode" to "navigate",
+            "sec-fetch-site" to "same-origin",
+            "sec-fetch-user" to "?1",
+            "sec-gpc" to "1",
+            "upgrade-insecure-requests" to "1",
+            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        )
 
         val document = app.get(
             url,
-            headers = mapOf(
-                "User-Agent" to USER_AGENT,
-                "Referer" to "$av1encodesAPI/",
-                "Accept-Language" to "en-US,en;q=0.9",
-                "Sec-Ch-Ua" to "\"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\"",
-                "Sec-Ch-Ua-Mobile" to "?0",
-                "Sec-Ch-Ua-Platform" to "\"Windows\""
-            )
+            headers = headers
         ).document
 
         var targetPath: String? = null
@@ -4427,10 +4469,30 @@ object CineStreamExtractors {
 
         if(targetPath == null) return
 
+        Log.d("Av1encodes", "Target path: $targetPath")
+
         val fileName = targetPath.substringAfterLast("/").substringBefore("?")
 
-        val json = app.get("$av1encodesAPI/get_ddl/$fileName", referer = "$av1encodesAPI/").text
-        val jsonObject = org.json.JSONObject(json)
+        val epText = app.get(av1encodesAPI + targetPath, headers = headers).text
+        val regex = Regex("""'X-DDL-Token'\s*:\s*"([^"]+)\"""")
+        val ddlToken = regex.find(epText)?.groupValues?.get(1) ?: return
+
+        Log.d("Av1encodes", "ddlToken: $ddlToken")
+
+        val updatedHeaders = buildMap {
+            putAll(headers)
+            put("accept", "application/json")
+            put("x-ddl-token", ddlToken)
+        }
+
+        val json = app.get(
+            "$av1encodesAPI/get_ddl/$fileName",
+            headers = updatedHeaders
+        ).text
+
+        Log.d("Av1encodes", "DDL JSON: $json")
+
+        val jsonObject = JSONObject(json)
 
         if (!jsonObject.optBoolean("success", false)) return
 
@@ -4459,14 +4521,31 @@ object CineStreamExtractors {
 
         val audioType = if (isDual) "[DUAL]" else "[SUB]"
 
+        val videoHeaders = mapOf(
+            "accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-language" to "en-GB,en;q=0.9",
+            "dnt" to "1",
+            "priority" to "u=0, i",
+            "sec-ch-ua" to "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Linux\"",
+            "sec-fetch-dest" to "iframe",
+            "sec-fetch-mode" to "navigate",
+            "sec-fetch-site" to "same-origin",
+            "sec-fetch-user" to "?1",
+            "sec-gpc" to "1",
+            "upgrade-insecure-requests" to "1",
+            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        )
+
         callback.invoke(
             newExtractorLink(
                 "Av1encodes $audioType",
                 "Av1encodes $audioType $fileSize",
-                streamLink
+                av1encodesAPI + streamLink
             ) {
                 this.quality = Qualities.P1080.value
-                this.referer = "$av1encodesAPI/"
+                this.headers = videoHeaders
             }
         )
 
@@ -4484,7 +4563,6 @@ object CineStreamExtractors {
             val regex = """window\.__INITIAL_DATA__\s*=\s*(\{.*?\});\s*window\.__INITIAL_META__""".toRegex(RegexOption.DOT_MATCHES_ALL)
             val matchResult = regex.find(htmlString) ?: return null
             val jsonString = matchResult.groupValues[1]
-            
             return try {
                 JSONObject(jsonString)
             } catch (e: Exception) {
