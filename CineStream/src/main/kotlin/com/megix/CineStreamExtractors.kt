@@ -106,7 +106,7 @@ object CineStreamExtractors {
         }
 
         // Package the API results for the registry
-        val malData = MalSyncData(title, animepaheUrl, aniId, episode, year, origin, animepaheTitle, animekaiUrl)
+        val malData = MalSyncData(title, animepaheUrl, aniId, malId, episode, year, origin, animepaheTitle, animekaiUrl)
 
         Log.d("Malsync", "malData: $malData")
 
@@ -2448,6 +2448,42 @@ object CineStreamExtractors {
         }
     }
 
+    suspend fun invokeAnimetoshoHttp(
+        title: String? = null,
+        malId: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        if(title == null || malId == null) return
+        val json = app.get("$anizipAPI/mappings?mal_id=$malId").text
+        val epId = getEpAnizipId(json, episode ?: 1) ?: return
+        val slug = title.createSlug()
+        val url = "$animetoshoBaseAPI/episode/$slug-$episode.$epId"
+        val document = app.get(url).document
+
+        document.select("div.home_list_entry:has(div.links)").safeAmap {
+            val text = it.select("div.link > a").text()
+            val size = it.select("div.size").text()
+            val quality = getIndexQuality(text)
+
+            val type = if(text.contains("Dual Audio", true) || text.contains("Dub", true)) {
+                "DUB"
+            } else {
+                "SUB"
+            }
+
+            it.select("div.links > a.dllink").safeAmap { anchor ->
+                val href = anchor.attr("href")
+                val anchorText = anchor.text()
+                if(anchorText.contains("Torrent") || anchorText.contains("Magnet")) return@safeAmap
+                loadSourceNameExtractor("Animetosho[$type]", href, "", subtitleCallback, callback, quality, size)
+
+            }
+        }
+
+    }
+
     suspend fun invokeAnimetosho(
         kitsuId: String? = null,
         malId: Int? = null,
@@ -4497,8 +4533,8 @@ object CineStreamExtractors {
         if (!jsonObject.optBoolean("success", false)) return
 
         val streamLink = jsonObject.optString("stream_link", "")
-        if (streamLink.isBlank()) return
-        // val downloadLink = jsonObject.optString("download_link", "")
+        val downloadLink = jsonObject.optString("download_link", "")
+        val streamLinks = listOf(streamLink, downloadLink)
         // val torrentLink = jsonObject.optString("torrent_link", "")
         val fileSize = jsonObject.optString("file_size", "")
         // val fileName = jsonObject.optString("file_name", "")
@@ -4531,23 +4567,25 @@ object CineStreamExtractors {
             "sec-ch-ua-platform" to "\"Linux\"",
             "sec-fetch-dest" to "iframe",
             "sec-fetch-mode" to "navigate",
-            "sec-fetch-site" to "same-origin",
-            "sec-fetch-user" to "?1",
+            "sec-fetch-site" to "cross-site",
             "sec-gpc" to "1",
             "upgrade-insecure-requests" to "1",
             "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
         )
 
-        callback.invoke(
-            newExtractorLink(
-                "Av1encodes $audioType",
-                "Av1encodes $audioType $fileSize",
-                av1encodesAPI + streamLink
-            ) {
-                this.quality = Qualities.P1080.value
-                this.headers = videoHeaders
-            }
-        )
+        streamLinks.forEach { stream ->
+            callback.invoke(
+                newExtractorLink(
+                    "Av1encodes $audioType",
+                    "Av1encodes $audioType $fileSize",
+                    av1encodesAPI + stream,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.quality = Qualities.P1080.value
+                    this.headers = videoHeaders
+                }
+            )
+        }
 
     }
 

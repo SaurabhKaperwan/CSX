@@ -8,6 +8,7 @@ data class MalSyncData(
     val title: String?,
     val animepaheUrl: String?,
     val aniId: Int?,
+    val malId: Int?,
     val episode: Int?,
     val year: Int?,
     val origin: String,
@@ -329,6 +330,10 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_animepahe", displayName = "AnimePahe",
             executeMalSync = { data, subCb, cb -> invokeAnimepahe(data.animepaheUrl, data.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_animetoshohttp", displayName = "AnimeToshoHttp",
+            executeMalSync = { data, subCb, cb -> invokeAnimetoshoHttp(data.title, data.malId, data.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_animekai", displayName = "Animekai",
