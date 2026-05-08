@@ -57,6 +57,8 @@ const val playImdbAPI = "https://streamimdb.me"
 const val av1encodesAPI = "https://av1encodes.com"
 const val vadapavAPI = "https://vadapav.mov"
 const val peachifyBaseAPI = "https://peachify.top"
+const val reanimeAPI = "https://reanime.to"
+const val animesaltAPI = "https://animesalt.ac"
 const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 

@@ -176,6 +176,10 @@ object ProviderRegistry {
             executeAnime = { res, _, cb -> invokeAv1encodes(res.imdbTitle, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
+            key = "p_reanime", displayName = "Reanime",
+            executeAnime = { res, subCb, cb -> invokeReanime(res.anilistId, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_netflix", displayName = "Netflix",
             executeStandard = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
@@ -265,6 +269,11 @@ object ProviderRegistry {
             key = "p_dahmermovies", displayName = "DahmerMovies",
             executeStandard = { res, _, cb -> invokeDahmerMovies(res.title, res.year, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
+        ),
+        ProviderDef(
+            key = "p_animesalt", displayName = "Animesalt",
+            executeStandard = { res, subCb, cb -> if (res.isAnime || res.isCartoon) invokeAnimesalt(res.title, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeAnimesalt(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_vadapav", displayName = "Vadapav",

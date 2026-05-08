@@ -10,6 +10,9 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.api.Log
 
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaType
+
 // Gson & Jackson
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.Gson
@@ -391,6 +394,7 @@ object CineStreamExtractors {
             .selectFirst("div.dar-short_item > a")
             ?.attr("href")
             ?: return
+
 
         val headers = mapOf(
             "Cookie" to CC_COOKIE
@@ -4728,6 +4732,86 @@ object CineStreamExtractors {
                     
                 }
             }
+        }
+    }
+
+    suspend fun invokeAnimesalt(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val slug = title?.createSlug()
+
+        val headers = mapOf(
+            "Referer" to "$animesaltAPI/",
+            "User-Agent" to USER_AGENT
+        )
+
+        val url = if(season == null) {
+            "$animesaltAPI/movies/$slug/"
+        } else {
+            "$animesaltAPI/episode/$slug-${season}x${episode}/"
+        }
+
+        val html = app.get(url, headers = headers).text
+
+        val iframeMatch = Regex("""src="(https://as-cdn\d+\.top/video/([a-f0-9]+))\"""")
+            .find(html) ?: return
+
+        val playerUrl = iframeMatch.groupValues[1]
+        val hash = iframeMatch.groupValues[2]
+        val playerCdn = playerUrl.split("/video/")[0]
+
+        val data = app.post(
+            "$playerCdn/player/index.php?data=$hash&do=getVideo",
+            requestBody = "hash=$hash&r=${URLEncoder.encode("$animesaltAPI/", "UTF-8")}"
+                .toRequestBody("application/x-www-form-urlencoded".toMediaType()),
+            headers = mapOf(
+                "Referer" to "$animesaltAPI/",
+                "Origin" to playerCdn,
+                "X-Requested-With" to "XMLHttpRequest"
+            )
+        ).parsedSafe<AnimeSaltData>() ?: return
+
+        val m3u8 = data.videoSource ?: data.securedLink ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "AnimeSalt[Multi]",
+                "AnimeSalt[Multi]",
+                m3u8,
+                ExtractorLinkType.M3U8
+            ) {
+                this.headers = headers
+                this.quality = Qualities.P1080.value
+            }
+        )
+    }
+
+    suspend fun invokeReanime(
+        aniId: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val headers = mapOf(
+            "Referer" to "$reanimeAPI/",
+            "User-Agent" to USER_AGENT
+        )
+
+        val response = app.get(
+            "$reanimeAPI/api/flix/$aniId/${episode ?: 1}",
+            headers = headers
+        ).parsedSafe<ReanimeResponse>() ?: return
+
+        if (!response.success) return
+
+        response.servers.safeAmap { server ->
+            val type = server.dataType.uppercase()
+            val dataLink = server.dataLink
+            loadCustomExtractor("Reanime[$type]", dataLink, "", subtitleCallback, callback)
         }
     }
 

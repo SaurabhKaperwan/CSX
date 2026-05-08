@@ -63,6 +63,7 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Embedload())
         registerExtractorAPI(Gdshine())
         registerExtractorAPI(Cloudnestra())
+        registerExtractorAPI(FlixCloud())
 
         this.openSettings = { ctx: Context ->
             Settings.showSettingsDialog(ctx) {

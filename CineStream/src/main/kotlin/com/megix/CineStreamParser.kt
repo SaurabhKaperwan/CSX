@@ -766,3 +766,44 @@ data class OneSubtitleTrack(
     val file: String,
     val name: String,
 )
+
+//Reanime
+
+data class ReanimeResponse(
+    val success: Boolean,
+    val servers: List<ReanimeServer>
+)
+
+data class ReanimeServer(
+    val serverName: String,
+    val dataLink: String,
+    val dataType: String,
+)
+
+data class ResolvedReAnime(
+    val result: ResolvedReAnimeResult,
+)
+
+data class ResolvedReAnimeResult(
+    val token: String,
+    val state: ResolvedReAnimeState,
+)
+
+data class ResolvedReAnimeState(
+    val token: String,
+)
+
+data class ReAnimeStream(
+    val result: ReAnimeStreamResult,
+)
+
+data class ReAnimeStreamResult(
+    val stream: String,
+)
+
+//Animesalt
+
+data class AnimeSaltData(
+    val videoSource: String? = null,
+    val securedLink: String? = null,
+)
