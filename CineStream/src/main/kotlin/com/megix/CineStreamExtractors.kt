@@ -4815,6 +4815,162 @@ object CineStreamExtractors {
         }
     }
 
+    suspend fun invokeLordflix(
+        title: String? = null,
+        imdbId: String? = null,
+        tmdbId: Int? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+
+        if(title == null || imdbId == null || tmdbId == null) return
+
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "Origin" to lordflixBaseAPI,
+            "Referer" to "$lordflixBaseAPI/",
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+        )
+
+        val servers = listOf("Berlin", "Tokyo", "Bogota", "Oslo", "Luna", "LordFlix", "Sakura", "Rio", "Ativa")
+
+        servers.safeAmap { server ->
+
+            val serverUrl = buildString {
+                append("$lordflixAPI/?title=${quote(title)}&type=")
+                if(season == null) append("movie")
+                if(season != null) append("series")
+                append("&year=$year&imdb=$imdbId&tmdb=$tmdbId&server=$server")
+                if (season  != null) append("&season=$season")
+                if (episode != null) append("&episode=$episode")
+            }
+
+            val encData = app.get("$multiDecryptAPI/enc-lordflix?url=${quote(serverUrl)}").text
+            val encJson = JSONObject(encData)
+            if (encJson.getInt("status") != 200) return@safeAmap
+
+            val result = encJson.getJSONObject("result")
+            val encUrl = result.getString("url")
+            val sign   = result.getString("sign")
+
+            val encData2 = app.get(encUrl, headers = headers).text
+
+
+            val decResponse = app.post(
+                "$multiDecryptAPI/dec-lordflix",
+                json = mapOf(
+                    "text" to encData2,
+                    "sign" to sign
+                )
+            ).parsedSafe<LordflixDecResponse>() ?: return@safeAmap
+
+            if (decResponse.status != 200) return@safeAmap
+            val decResult = decResponse.result ?: return@safeAmap
+            if (decResult.error != null) return@safeAmap
+            val stream = decResult.stream?.firstOrNull() ?: return@safeAmap
+
+            stream.captions?.forEach { caption ->
+                subtitleCallback.invoke(newSubtitleFile(getLanguage(caption.language) ?: "Unknown", caption.url))
+            }
+
+            when (stream.type) {
+                "hls" -> {
+                    val playlist = stream.playlist ?: return@safeAmap
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Lordflix[$server]",
+                            "Lordflix[$server]",
+                            playlist,
+                            ExtractorLinkType.M3U8
+                        ) {
+                            this.headers = headers
+                        }
+                    )
+                }
+            }
+
+        }
+    }
+
+    suspend fun invokeVidsync(
+        title: String? = null,
+        tmdbId: Int? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        if(title == null || tmdbId == null) return
+
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "Origin" to vidsyncAPI,
+            "Referer" to "$vidsyncAPI/",
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "X-Requested-With" to "XMLHttpRequest"
+        )
+
+        val encTitle = URLEncoder.encode(title, "UTF-8")
+
+        val servers = listOf("cinevault","cinedub","cinebox","cinevip","cinecloud","cine4k")
+
+        servers.safeAmap { server ->
+
+            val serverUrl = buildString {
+                append("$vidsyncAPI/api/stream/fetch?type=")
+                if(season == null) append("movie")
+                if(season != null) append("tv")
+                append("&title=$encTitle&mediaId=$tmdbId&releaseYear=$year&serverName=$server")
+                if (season  != null) append("&season=$season")
+                if (episode != null) append("&episode=$episode")
+            }
+
+            val encData = app.get(serverUrl, headers = headers).text
+
+            val response = app.post(
+                "$multiDecryptAPI/dec-vidsync",
+                json = mapOf(
+                    "text" to encData,
+                    "id" to "$tmdbId"
+                )
+            ).parsedSafe<VidsyncResponse>() ?: return@safeAmap
+
+            Log.d("Vidsync", "$server response: $response")
+
+            if (response.status != 200) return@safeAmap
+            val result = response.result ?: return@safeAmap
+
+            result.subtitles?.forEach { sub ->
+                val file  = sub.file
+                val label = sub.label ?: "Unknown"
+                subtitleCallback(newSubtitleFile(label, file))
+            }
+
+            result.sources?.forEach { source ->
+
+                val type = if(source.streamType == "hls") ExtractorLinkType.M3U8 else INFER_TYPE
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Vidsync[${server.capitalizeServer()}]",
+                        "Vidsync[${server.capitalizeServer()}]",
+                        source.url,
+                        type
+                    ) {
+                        this.headers = headers
+                        this.quality = getIndexQuality(source.quality)
+                    }
+                )
+            }
+
+        }
+    }
+
     suspend fun invokePeachify(
         tmdbId: Int? = null,
         season: Int? = null,

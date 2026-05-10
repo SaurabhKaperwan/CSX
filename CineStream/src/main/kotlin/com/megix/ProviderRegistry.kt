@@ -129,6 +129,14 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
+            key = "p_lordflix", displayName = "Lordflix",
+            executeStandard = { res, subCb, cb -> invokeLordflix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_vidsync", displayName = "Vidsync",
+            executeStandard = { res, subCb, cb -> invokeVidsync(res.title, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_videasy", displayName = "Videasy",
             executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
         ),

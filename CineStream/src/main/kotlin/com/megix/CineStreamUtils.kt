@@ -434,6 +434,11 @@ fun String?.createSlug(): String? {
         ?.lowercase()
 }
 
+fun quote(s: String): String =
+    URLEncoder.encode(s, "UTF-8").replace("+", "%20")
+
+fun String.capitalizeServer() = replaceFirstChar { it.uppercase() }
+
 suspend fun extractMdrive(url: String): List<String> {
     val doc = app.get(url).document
     return doc.select("a")
