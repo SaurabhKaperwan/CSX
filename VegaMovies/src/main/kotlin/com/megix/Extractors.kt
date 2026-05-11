@@ -139,7 +139,7 @@ open class VCloud : ExtractorApi() {
                 if(dlink != "") myCallback( baseUrl + dlink, "[BuzzServer]")
             }
             else if (link.contains("pixeldra")) {
-                val pixelLink = extractPxlUrl(document.toString()) ?: return@safeAmap
+                val pixelLink = extractPxlUrl(document.toString()) ?: return@amap
                 val baseUrlLink = getBaseUrl(pixelLink)
                 val finalURL = if (pixelLink.contains("download", true)) pixelLink
                 else "$baseUrlLink/api/file/${pixelLink.substringAfterLast("/")}?download"
