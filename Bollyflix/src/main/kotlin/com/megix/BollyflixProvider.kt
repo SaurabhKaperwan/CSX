@@ -154,7 +154,7 @@ class BollyflixProvider : MainAPI() {
                         try {
                             var link = button.attr("href")
 
-                            if(link.contains("id=")) {
+                            if (!link.contains("fastdlserver") && link.contains("?id=")) {
                                 val id = button.attr("href").substringAfterLast("id=")
                                 link = bypass(id)
                             }
@@ -218,7 +218,7 @@ class BollyflixProvider : MainAPI() {
                     async {
                         try {
                             var decodeUrl = link.attr("href")
-                            if(decodeUrl.contains("id=")) {
+                            if(!decodeUrl.contains("fastdlserver")) {
                                 val id = link.attr("href").substringAfterLast("id=")
                                 decodeUrl = bypass(id)
                             }

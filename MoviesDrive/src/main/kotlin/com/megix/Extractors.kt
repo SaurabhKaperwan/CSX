@@ -69,6 +69,11 @@ open class HubCloud : ExtractorApi() {
     override val mainUrl: String = "https://hubcloud.*"
     override val requiresReferer = false
 
+    fun extractPxlUrl(html: String): String? {
+        val regex = Regex("""var\s+pxl\s*=\s*["']([^"']+)["']""")
+        return regex.find(html)?.groupValues?.get(1)
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -134,9 +139,10 @@ open class HubCloud : ExtractorApi() {
                 if(dlink != "") myCallback( baseUrl + dlink, "[BuzzServer]")
             }
             else if (link.contains("pixeldra")) {
-                val baseUrlLink = getBaseUrl(link)
-                val finalURL = if (link.contains("download", true)) link
-                else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+                val pixelLink = extractPxlUrl(document.toString()) ?: return@safeAmap
+                val baseUrlLink = getBaseUrl(pixelLink)
+                val finalURL = if (pixelLink.contains("download", true)) pixelLink
+                else "$baseUrlLink/api/file/${pixelLink.substringAfterLast("/")}?download"
                 myCallback(finalURL, "[Pixeldrain]")
             }
             else if (text.contains("Server : 10Gbps")) {

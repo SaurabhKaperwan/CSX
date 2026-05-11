@@ -2449,12 +2449,12 @@ object CineStreamExtractors {
             val sTag = if (season == null) "" else "Season $season"
             val entries =
                 res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
-                    .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
+                    .filter { element -> !element.text().contains("Download", true) }
 
             entries.safeAmap {
                 var href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
 
-                if(href.contains("id=")) {
+                if(!href.contains("fastdlserver") && href.contains("?id=")) {
                     val token = href.substringAfter("id=")
                     val encodedurl =
                         app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
