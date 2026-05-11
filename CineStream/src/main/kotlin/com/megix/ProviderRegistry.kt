@@ -163,10 +163,6 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
         ),
         ProviderDef(
-            key = "p_vidstack", displayName = "Vidstack",
-            executeStandard = { res, subCb, cb -> invokeVidstack(res.imdbId, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_vidzee", displayName = "Vidzee",
             executeStandard = { res, subCb, cb -> invokeVidzee(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
@@ -320,10 +316,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_mostraguarda", displayName = "Mostraguarda",
             executeStandard = { res, subCb, cb -> if (res.season == null) invokeMostraguarda(res.imdbId, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_vidsrccc", displayName = "VidsrcCC",
-            executeStandard = { res, _, cb -> invokeVidsrcCC(res.imdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
             key = "p_autoembed", displayName = "AutoEmbed",

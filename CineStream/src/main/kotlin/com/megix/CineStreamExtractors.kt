@@ -388,9 +388,14 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = "$cinemacityAPI/?do=search&subaction=search&search_start=0&full_search=0&story=$imdbId"
-
-        val movieUrl = app.get(url).document
+        val movieUrl = app.post(
+            cinemacityAPI,
+            data = mapOf(
+                "do"        to "search",
+                "subaction" to "search",
+                "story"     to "$imdbId",
+            )
+        ).document
             .selectFirst("div.dar-short_item > a")
             ?.attr("href")
             ?: return
@@ -479,115 +484,6 @@ object CineStreamExtractors {
                 emitExtractorLinks(
                     files = epJson.getString("file")
                 )
-            }
-        }
-    }
-
-    suspend fun invokeVidstack(
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val json = app.get("$multiDecryptAPI/enc-vidstack").text
-
-        Log.d("Vidstack", "enc response: $json"
-        )
-        val result = JSONObject(json).getJSONObject("result")
-        val token = result.getString("token")
-        val user_id = result.getString("user_id")
-
-        Log.d("Vidstack", "token: $token, user_id: $user_id")
-
-        if(token.isEmpty()) return
-
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer" to vidstackBaseAPI
-        )
-
-        // val servers = listOf(
-        //     "videosmashyi", "smashystream",
-        //     "short2embed", "videoophim", "videofsh"
-        // )
-
-        val servers = listOf(
-            "videosmashyi"
-        )
-
-        servers.safeAmap { server ->
-
-            val type = if(server == "videosmashyi" || server == "smashystream") {
-                "1"
-            } else {
-                "2"
-            }
-
-            val url = if(season == null) {
-                "$vidstackAPI/$server/$imdbId?token=$token&user_id=$user_id"
-            } else {
-                "$vidstackAPI/$server/$imdbId/$season/$episode?token=$token&user_id=$user_id"
-            }
-
-            val data_json = app.get(url, headers = headers).text
-
-            Log.d("Vidstack", "data response for server $server: $data_json")
-
-            if(type == "1") {
-                val dataString = JSONObject(data_json).getString("data")
-
-                if(dataString.isEmpty()) return@safeAmap
-
-                val parts = dataString.split("/#")
-                if (parts.size < 2) return@safeAmap
-                val host = parts[0]
-                val id = parts[1]
-                val encrypted = app.get("$host/api/v1/video?id=$id", headers = headers).text
-
-                Log.d("Vidstack", "encrypted data for server $server: $encrypted")
-
-                val jsonBody = mapOf(
-                    "text" to encrypted,
-                    "type" to type
-                )
-
-                val decrypted = app.post("$multiDecryptAPI/dec-vidstack", json = jsonBody).text
-
-                Log.d("Vidstack", "decrypted data for server $server: $decrypted")
-
-                val resultObject = JSONObject(decrypted).getJSONObject("result")
-                val m3u8 = resultObject.getString("source")
-
-                callback.invoke(
-                    newExtractorLink(
-                        "Vidstack",
-                        "Vidstack",
-                        m3u8,
-                        ExtractorLinkType.M3U8
-                    ) {
-                        this.headers = headers
-                        this.quality = Qualities.P1080.value
-                    }
-                )
-
-                if (resultObject.has("subtitle")) {
-                    val subtitleObject = resultObject.getJSONObject("subtitle")
-                    val keysIterator = subtitleObject.keys()
-
-                    while (keysIterator.hasNext()) {
-                        val languageName = keysIterator.next()
-                        val relativePath = subtitleObject.getString(languageName)
-                        val fullUrl = "$vidstackBaseAPI$relativePath"
-
-                        subtitleCallback.invoke(
-                            newSubtitleFile(
-                                getLanguage(languageName) ?: languageName,
-                                fullUrl
-                            )
-                        )
-                    }
-                }
             }
         }
     }
@@ -1042,11 +938,6 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit
     ) {
 
-        fun quote(text: String): String {
-            return URLEncoder.encode(text, StandardCharsets.UTF_8.toString())
-                .replace("+", "%20")
-        }
-
         val headers = mapOf(
             "Accept" to "*/*",
             "User-Agent" to USER_AGENT,
@@ -1111,8 +1002,8 @@ object CineStreamExtractors {
 
                     callback.invoke(
                         newExtractorLink(
-                            "Videasy[${server.uppercase()}]",
-                            "Videasy[${server.uppercase()}] $quality",
+                            "Videasy[${server.capitalizeServer()}]",
+                            "Videasy[${server.capitalizeServer()}] $quality",
                             source,
                             type
                         ) {
@@ -1241,7 +1132,7 @@ object CineStreamExtractors {
 
             if (m3u8.isNotEmpty()) {
                 M3u8Helper.generateM3u8(
-                    "Mapple [${source.uppercase()}]",
+                    "Mapple [${source.capitalizeServer()}]",
                     m3u8,
                     "$base/",
                     headers = headers
@@ -1305,7 +1196,7 @@ object CineStreamExtractors {
                 val m3u8 = src.getString("url")
 
                 M3u8Helper.generateM3u8(
-                    "Hexa ${server.uppercase()}",
+                    "Hexa ${server.capitalizeServer()}",
                     m3u8,
                     "https://hexa.su/",
                 ).forEach(callback)
@@ -3795,98 +3686,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeVidsrcCC(
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer"    to "$vidsrcCCAPI/"
-        )
-
-        val type = if (season == null) "movie" else "tv"
-
-        val embedUrl = if (season != null && episode != null)
-            "$vidsrcCCAPI/v2/embed/$type/$imdbId/$season/$episode"
-        else
-            "$vidsrcCCAPI/v2/embed/$type/$imdbId"
-
-        val html = app.get(embedUrl, headers = headers).text
-
-        val v       = Regex("""var v = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
-        val userId  = Regex("""var userId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
-        val movieId = Regex("""var movieId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
-
-        Log.d("VidsrcCC", "Extracted v: $v, userId: $userId, movieId: $movieId")
-
-        val encrypted = JSONObject(
-            app.get("$multiDecryptAPI/enc-vidsrc?user_id=$userId&movie_id=$movieId").text
-        ).optString("result").ifEmpty { return }
-
-        Log.d("VidsrcCC", "Extracted encrypted: $encrypted")
-
-        val serversUrl = buildString {
-            append("$vidsrcCCAPI/api/$movieId/servers")
-            append("?id=$movieId&type=$type&v=$v&vrf=$encrypted&imdbId=$imdbId")
-            if (season  != null) append("&season=$season")
-            if (episode != null) append("&episode=$episode")
-        }
-
-        val serversData  = JSONObject(app.get(serversUrl, headers = headers).text)
-
-        Log.d("VidsrcCC", "serversData: $serversData")
-
-        val serversArray = serversData.optJSONArray("data") ?: return
-
-        val servers = (0 until serversArray.length()).associate {
-            val obj = serversArray.getJSONObject(it)
-            obj.optString("name") to obj.optString("hash")
-        }
-
-        try {
-            servers["VidPlay"]?.let { hash ->
-                val jsonResponse = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
-                val dataObject = jsonResponse.optJSONObject("data") ?: return@let
-                val streamUrl = dataObject.optString("source")
-                if(streamUrl.isNullOrBlank()) return@let
-
-                callback.invoke(
-                    newExtractorLink(
-                        "VidsrcCC [VidPlay]",
-                        "VidsrcCC [VidPlay]",
-                        streamUrl,
-                        ExtractorLinkType.M3U8
-                    ) {
-                        this.headers = headers
-                        this.quality = 1080
-                    }
-                )
-            }
-        } catch (e: Exception) {
-            Log.w("Vidsrc", "Failed to extract server: VidPlay")
-        }
-
-        try {
-            servers["UpCloud"]?.let { hash ->
-                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
-
-                Log.d("VidsrcCC", "UpCloud data: $data")
-
-                val dataObject = data.optJSONObject("data") ?: return@let
-                val iframeUrl = dataObject.optString("source")
-
-                Log.d("VidsrcCC", "UpCloud iframeUrl: $iframeUrl")
-
-                getUpcloud(iframeUrl, vidsrcCCAPI, callback)
-            }
-        } catch (e: Exception) {
-            Log.w("Vidsrc", "Failed to extract server: UpCloud")
-        }
-
-    }
-
     suspend fun invokeAutoembed(
         imdbId: String? = null,
         season: Int? = null,
@@ -3942,7 +3741,7 @@ object CineStreamExtractors {
             val embedUrl = episodeLinks.getJSONObject(i).optString("dataLink")
             val dataType = episodeLinks.getJSONObject(i).optString("dataType")
             val serverName = episodeLinks.getJSONObject(i).optString("serverName")
-            loadCustomExtractor("Kuudere[${dataType.uppercase()}] $serverName", embedUrl, "$kuudereAPI/", subtitleCallback, callback, null, serverName)
+            loadCustomExtractor("Kuudere[${dataType.capitalizeServer()}] $serverName", embedUrl, "$kuudereAPI/", subtitleCallback, callback, null, serverName)
         }
     }
 
@@ -3981,8 +3780,8 @@ object CineStreamExtractors {
         for (i in 0 until serversArray.length()) {
             val serverObj = serversArray.optJSONObject(i) ?: continue
             val id = serverObj.optString("id").takeIf { it.isNotBlank() } ?: continue
-            val name = serverObj.optString("name").uppercase()
-            val serverType = serverObj.optString("server_type").uppercase()
+            val name = serverObj.optString("name").capitalizeServer()
+            val serverType = serverObj.optString("server_type").capitalizeServer()
 
             Log.d("Animekizz", "Processing server: id=$id, name=$name, type=$serverType")
 
@@ -4809,7 +4608,7 @@ object CineStreamExtractors {
         if (!response.success) return
 
         response.servers.safeAmap { server ->
-            val type = server.dataType.uppercase()
+            val type = server.dataType.capitalizeServer()
             val dataLink = server.dataLink
             loadCustomExtractor("Reanime[$type]", dataLink, "", subtitleCallback, callback)
         }
@@ -5029,7 +4828,7 @@ object CineStreamExtractors {
                 val finalUA      = proxyHeaders["user-agent"] ?: srcHeaders?.optString("user-agent") ?: USER_AGENT
 
                 val name = buildString {
-                    append("Peachify[$provider]")
+                    append("Peachify[${provider.capitalizeServer()}]")
                     if (dub.isNotEmpty()) append(" • $dub")
                 }
 
