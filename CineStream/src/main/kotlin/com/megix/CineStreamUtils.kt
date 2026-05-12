@@ -649,14 +649,27 @@ suspend fun getHindMoviezLinks(
 ) {
     val response = app.get(url)
     val doc = response.document
-    // val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ")
-    // val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
-    // val simplifiedTitle = getSimplifiedTitle(name + fileSize)
-    val link = doc.select("a.btn-danger").attr("href")
+    val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ")
+    val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
+    val simplifiedTitle = getSimplifiedTitle(name + fileSize)
+    val link = doc.select("a.btn-info").attr("href")
+    val document = app.get(link, timeout = 30000L).document
 
-    Log.d("HindMoviez", "link: $link")
+    document.select("a.button").safeAmap {
+        val source = it.attr("href")
 
-    loadSourceNameExtractor(source, link, "", subtitleCallback, callback)
+        callback.invoke(
+            newExtractorLink(
+                "Hindmoviez",
+                "Hindmoviez $simplifiedTitle $fileSize",
+                source,
+                ExtractorLinkType.VIDEO
+            ) {
+                this.quality = getIndexQuality(name)
+            }
+        )
+
+    }
 
 }
 

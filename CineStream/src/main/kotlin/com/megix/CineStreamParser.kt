@@ -77,15 +77,11 @@ data class VidfastServers(
 )
 
 data class VidfastStreamResponse(
-    val status: Long,
-    val result: List<VidfastServers>,
-    val info: String,
+    val result: List<VidfastServers>
 )
 
 data class VidfastServersStreamRoot(
-    val status: Long,
     val result: VidfastServer,
-    val info: String,
 )
 
 data class VidfastServer(
