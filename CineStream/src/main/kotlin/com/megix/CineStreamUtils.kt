@@ -1189,7 +1189,7 @@ suspend fun getGojoStreams(
                 newExtractorLink(
                     "Animetsu [${lang.uppercase()}] [${provider.uppercase()}]",
                     "Animetsu [${lang.uppercase()}] [${provider.uppercase()}]",
-                    fixUrl(url, "https://mega-cloud.top/proxy"),
+                    fixUrl(url, "https://swiftstream.top/proxy"),
                     type = if (videoType == "video/mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
                 ) {
                     this.quality = quality ?: Qualities.P1080.value

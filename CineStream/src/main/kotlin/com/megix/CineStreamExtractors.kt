@@ -3719,16 +3719,12 @@ object CineStreamExtractors {
                 referer = "$animekizzAPI/"
             ).text
         } catch (e: Exception) {
-            Log.e("Animekizz", "Failed to fetch servers for query=$query")
             return
         }
-
-        Log.d("Animekizz", "Servers JSON: $serversJson")
 
         val serversArray = try {
             JSONObject(serversJson).optJSONArray("servers") ?: return
         } catch (e: Exception) {
-            Log.e("Animekizz", "Unable to parse servers response")
             return
         }
 
@@ -3737,8 +3733,6 @@ object CineStreamExtractors {
             val id = serverObj.optString("id").takeIf { it.isNotBlank() } ?: continue
             val name = serverObj.optString("name").capitalizeServer()
             val serverType = serverObj.optString("server_type").capitalizeServer()
-
-            Log.d("Animekizz", "Processing server: id=$id, name=$name, type=$serverType")
 
             val resolveJson = try {
                 app.post(
@@ -3750,7 +3744,6 @@ object CineStreamExtractors {
                     referer = "$animekizzAPI/"
                 ).text
             } catch (e: Exception) {
-                Log.e("Animekizz", "Failed to resolve server $name ($id)")
                 continue
             }
 
@@ -3766,7 +3759,7 @@ object CineStreamExtractors {
             for (j in 0 until sourcesArray.length()) {
                 val sourceObj = sourcesArray.optJSONObject(j) ?: continue
                 var streamUrl = sourceObj.optString("url").takeIf { it.isNotBlank() } ?: continue
-                if(streamUrl.startsWith("/api/")) streamUrl = animekizzAPI + streamUrl
+                if(streamUrl.startsWith("/proxy/")) streamUrl = animekizzAPI + streamUrl
                 val quality = sourceObj.optString("quality", "Unknown")
                 val format = sourceObj.optString("format", "Unknown")
 
