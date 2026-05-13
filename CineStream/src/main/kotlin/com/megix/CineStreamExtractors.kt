@@ -316,6 +316,7 @@ object CineStreamExtractors {
 
         val res = app.get(url)
         val sessionId = res.cookies["PHPSESSID"] ?: return
+
         val regex = Regex("""_3chk\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\)""")
         val match = regex.find(res.text)
 
@@ -353,6 +354,8 @@ object CineStreamExtractors {
                     allowRedirects = false
                 ).headers["Location"] ?: return@safeAmap
 
+                Log.d("Levidia", "embedUrl: $embedUrl")
+
                 loadSourceNameExtractor("Levidia", embedUrl, "$levidiaAPI/", subtitleCallback, callback)
             }
         } else {
@@ -375,6 +378,8 @@ object CineStreamExtractors {
                     headers = headers,
                     allowRedirects = false
                 ).headers["Location"] ?: return@safeAmap
+
+                 Log.d("Levidia", "embedUrl: $embedUrl")
 
                 loadSourceNameExtractor("Levidia", embedUrl, "$levidiaAPI/", subtitleCallback, callback)
             }
@@ -4628,17 +4633,24 @@ object CineStreamExtractors {
     ) {
         if(title == null || tmdbId == null) return
 
+        val token = JSONObject(app.get("$multiDecryptAPI/enc-vidsync").text)
+            .getJSONObject("result")
+            .getString("token")
+
+        Log.d("Vidsync", "token: $token")
+
         val headers = mapOf(
             "Accept" to "*/*",
             "Origin" to vidsyncAPI,
             "Referer" to "$vidsyncAPI/",
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "X-Requested-With" to "XMLHttpRequest"
+            "X-Requested-With" to "XMLHttpRequest",
+            "X-Cf-Turnstile" to token
         )
 
         val encTitle = URLEncoder.encode(title, "UTF-8")
 
-        val servers = listOf("cinevault","cinedub","cinebox","cinevip","cinecloud","cine4k")
+        val servers = listOf("cinevault","cinedub","cinebox","cinevip","cinecloud","cine4k", "cineflix")
 
         servers.safeAmap { server ->
             val serverUrl = buildString {

@@ -1045,6 +1045,23 @@ class FlixCloud : ExtractorApi() {
             timeout = 10000L
         ).parsedSafe<ReAnimeStream>()?.result ?: return
 
+        val videoHeaders = mapOf(
+            "accept" to "*/*",
+            "accept-language" to "en-GB,en-US;q=0.9,en;q=0.8",
+            "dnt" to "1",
+            "origin" to mainUrl,
+            "priority" to "u=1, i",
+            "referer" to "$mainUrl/",
+            "sec-ch-ua" to "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Linux\"",
+            "sec-fetch-dest" to "empty",
+            "sec-fetch-mode" to "cors",
+            "sec-fetch-site" to "same-site",
+            "sec-gpc" to "1",
+            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        )
+
         callback.invoke(
             newExtractorLink(
                 name,
@@ -1052,7 +1069,7 @@ class FlixCloud : ExtractorApi() {
                 decrypted.stream,
                 ExtractorLinkType.M3U8
             ) {
-                this.referer = "$mainUrl/"
+                this.headers = videoHeaders
                 this.quality = Qualities.P1080.value
             }
         )
