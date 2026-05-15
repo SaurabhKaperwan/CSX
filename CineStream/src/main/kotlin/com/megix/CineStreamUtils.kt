@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.Semaphore
 import java.net.*
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.RequestBody.Companion.toRequestBody
 
 // JSON & HTML Parsing
 import com.google.gson.Gson
@@ -23,6 +24,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 
 // Java Utils
 import java.text.SimpleDateFormat
@@ -499,12 +501,33 @@ suspend fun returnWorkingUrl(urls: List<String>): String? {
     return null
 }
 
+suspend fun <T> retry(
+    times: Int = 3,
+    delayMs: Long = 1000,
+    block: suspend () -> T?
+): T? {
+
+    repeat(times - 1) {
+        runCatching {
+            block()
+        }.getOrNull()?.let {
+            return it
+        }
+
+        delay(delayMs)
+    }
+
+    return runCatching {
+        block()
+    }.getOrNull()
+}
+
 fun getKisskhTitle(str: String?): String? {
     return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
 }
 
 suspend fun <A, B> Iterable<A>.safeAmap(
-    concurrency: Int = 5,
+    concurrency: Int = 7,
     f: suspend (A) -> B?
 ): List<B> = supervisorScope {
     val semaphore = Semaphore(concurrency)
@@ -1364,4 +1387,177 @@ fun b64UrlDecode(s: String): ByteArray {
     return s.replace('-', '+').replace('_', '/')
         .let { it + "=".repeat((4 - it.length % 4) % 4) }
         .let { base64DecodeArray(it) }
+}
+
+//Zinkmovies
+
+fun extractSeasonLinks(content: org.jsoup.nodes.Element, season: Int): List<String> {
+    val links = mutableListOf<String>()
+    var inTargetSeason = false
+    content.children().forEach { child ->
+        when {
+            child.hasClass("lgtagmessage") -> {
+                inTargetSeason = Regex("""Season\s+0*$season\b""", RegexOption.IGNORE_CASE)
+                .containsMatchIn(child.text())
+            }
+            child.hasClass("movie-button-container") && inTargetSeason -> {
+                child.selectFirst("a.movie-simple-button")
+                    ?.attr("href")
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { links.add(it) }
+            }
+        }
+    }
+    return links
+}
+
+suspend fun generateZinkLinks(url: String): List<ZinkLink> {
+    return runCatching {
+
+        val firstDoc = app.get(url).document
+        val title = firstDoc.select("h1.file-title").text()
+        val firstHtml = firstDoc.html()
+
+        val randomId = Regex("""generateDownloadLink\(['"]([^'"]+)""")
+            .find(firstHtml)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?: return emptyList()
+
+        val ajaxEndpoint = Regex("""https://[^"'\\s]+ajax_generate_token\.php""")
+            .find(firstHtml)
+            ?.value
+            ?: return emptyList()
+
+        val downloadBase = Regex("""https://[^"'\\s]+/dl/""")
+            .find(firstHtml)
+            ?.value
+            ?: return emptyList()
+
+        val token = retry  { app.post(
+            url = "$ajaxEndpoint?random_id=$randomId",
+            data = mapOf(
+                "random_id" to randomId
+            ),
+            headers = mapOf(
+                "X-Requested-With" to "XMLHttpRequest"
+            )
+        ).parsedSafe<ZinkTokenResponse>()
+            ?.token
+
+        } ?: return emptyList()
+
+        val generatedUrl = downloadBase + token
+
+        val generatedDoc = app.get(generatedUrl).document
+
+        val results = generatedDoc
+            .select("#mirror-buttons a[href]")
+            .mapNotNull { element ->
+
+                val href = element.attr("href").trim()
+
+                if (href.isBlank()) return@mapNotNull null
+
+                ZinkLink(
+                    name = element.text()
+                        .replace("Generate", "", true)
+                        .trim(),
+                    url = href,
+                    title = title,
+                )
+            }
+            .toMutableList()
+
+        generatedDoc.selectFirst("#worker-btn")?.let { btn: Element ->
+
+            val workerId = Regex("""handleServerRequest\(['"]worker['"]\s*,\s*['"]([^'"]+)""")
+                .find(btn.attr("onclick"))
+                ?.groupValues
+                ?.getOrNull(1)
+
+            val serverHandler = Regex("""SERVER_HANDLER_URL\s*=\s*["']([^"']+)""")
+                .find(generatedDoc.html())
+                ?.groupValues
+                ?.getOrNull(1)
+
+            if (
+                !workerId.isNullOrBlank() &&
+                !serverHandler.isNullOrBlank()
+            ) {
+
+                runCatching {
+
+                    val workerJson = JSONObject(
+                        app.post(
+                            url = serverHandler,
+                            requestBody = """
+                                {
+                                    "server":"worker",
+                                    "random_id":"$workerId"
+                                }
+                            """.trimIndent().toRequestBody(),
+                            headers = mapOf(
+                                "X-Requested-With" to "XMLHttpRequest",
+                                "Content-Type" to "application/json",
+                                "Origin" to generatedUrl.substringBefore("/dl/"),
+                                "Referer" to generatedUrl
+                            )
+                        ).text
+                    )
+
+                    workerJson.optString("url")
+                        .ifBlank {
+                            workerJson.optString("download")
+                        }
+                        .takeIf { it.isNotBlank() }
+                        ?.let {
+                            results += ZinkLink(
+                                name = "WORKER",
+                                url = it,
+                                title = title,
+                            )
+                        }
+
+                }
+            }
+        }
+
+        results.distinctBy { it.url }
+
+    }.getOrElse {
+        emptyList()
+    }
+}
+
+
+suspend fun getZinkLinks(
+    source: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+) {
+    generateZinkLinks(source).safeAmap { link ->
+
+        val simplifiedTitle = getSimplifiedTitle(link.title)
+
+        if (link.name.contains("worker", true)) {
+            callback(
+                newExtractorLink(
+                    source = "Zinkmovies Worker",
+                    name = "Zinkmovies Worker $simplifiedTitle",
+                    url = link.url
+                ) {
+                    this.quality = getIndexQuality(link.title)
+                }
+            )
+        } else {
+            loadSourceNameExtractor(
+                "Zinkmovies",
+                link.url,
+                "",
+                subtitleCallback,
+                callback
+            )
+        }
+    }
 }

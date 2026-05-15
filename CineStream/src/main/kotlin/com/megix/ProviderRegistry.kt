@@ -132,10 +132,10 @@ object ProviderRegistry {
             key = "p_lordflix", displayName = "Lordflix",
             executeStandard = { res, subCb, cb -> invokeLordflix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_vidsync", displayName = "Vidsync",
-            executeStandard = { res, subCb, cb -> invokeVidsync(res.title, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
-        ),
+        // ProviderDef(
+        //     key = "p_vidsync", displayName = "Vidsync",
+        //     executeStandard = { res, subCb, cb -> invokeVidsync(res.title, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
+        // ),
         ProviderDef(
             key = "p_videasy", displayName = "Videasy",
             executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
@@ -158,10 +158,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_mapple", displayName = "Mapple",
-            executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
-        ),
+        // ProviderDef(
+        //     key = "p_mapple", displayName = "Mapple",
+        //     executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
+        // ),
         ProviderDef(
             key = "p_vidzee", displayName = "Vidzee",
             executeStandard = { res, subCb, cb -> invokeVidzee(res.tmdbId, res.season, res.episode, subCb, cb) }
@@ -184,24 +184,29 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeReanime(res.anilistId, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_zinkmovies", displayName = "Zinkmovies",
+            executeStandard = { res, subCb, cb -> invokeZinkmovies(res.title, res.year, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeZinkmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_netflix", displayName = "Netflix",
             executeStandard = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_primevideo", displayName = "Prime Video",
             executeStandard = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_disney", displayName = "Hotstar",
             executeStandard = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_bollywood", displayName = "Gramcinema",
             executeStandard = { res, _, cb -> invokeBollywood(res.title, res.year, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, cb) }
+            executeAnime = { res, _, cb -> invokeBollywood(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
             key = "p_vegamovies", displayName = "VegaMovies",

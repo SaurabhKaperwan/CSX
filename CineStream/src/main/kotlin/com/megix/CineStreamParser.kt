@@ -853,3 +853,16 @@ data class VidsyncResponse(
     val result: VidsyncResult? = null,
     val error: String? = null
 )
+
+//Zinkmovies
+
+data class ZinkTokenResponse(
+    val status: String? = null,
+    val token: String? = null
+)
+
+data class ZinkLink(
+    val name: String,
+    val url: String,
+    val title: String,
+)
