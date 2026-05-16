@@ -2813,8 +2813,6 @@ object CineStreamExtractors {
                 val epData =
                     """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
 
-                Log.d("Allanime", "Episode Data URL: $epData")
-
                 val eplinks = app.get(epData, headers = headers)
                     .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
 
@@ -2823,6 +2821,7 @@ object CineStreamExtractors {
                 eplinks?.safeAmap { source ->
                     safeApiCall {
                         val sourceUrl = source.sourceUrl
+
                         if (sourceUrl.startsWith("http")) {
                             val sourcename = sourceUrl.getHost()
                             loadCustomExtractor(
@@ -4433,7 +4432,7 @@ object CineStreamExtractors {
             "https://usa.eat-peach.sbs/multi",
             "https://usa.eat-peach.sbs/ice",
             "https://usa.eat-peach.sbs/air",
-            "https://usa.eat-peach.sbs/net"
+            "https://usa.eat-peach.sbs/net",
             "https://uwu.peachify.top/moviebox"
         )
 
@@ -4488,6 +4487,67 @@ object CineStreamExtractors {
                         this.quality = quality
                     }
                 )
+            }
+        }
+    }
+
+    suspend fun invokeAnimedao(
+        title: String? = null,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+
+        val searchUrl = "$animedaoAPI/search.html?keyword=$title&year%5B%5D=$year&sort=title_az"
+
+        val matchedUrl = app.get(searchUrl, referer = "$animedaoAPI/")
+            .document
+            .selectFirst("div.row > div.col-xs-12 > a")
+            ?.attr("href")
+            ?.replace("/anime/", "/watch-online/")
+            ?: return
+
+        Log.d("AnimeDao", "matchedUrl: $matchedUrl")
+
+        val document = app.get(animedaoAPI + matchedUrl + "-episode-${episode ?: 1}", referer = "$animedaoAPI/").document
+
+        document.select("ul.server-items").safeAmap { ul ->
+            val type = ul.selectFirst("li span strong")
+                ?.text()
+                ?.trim()
+                ?.removeSuffix(":")
+                ?.removeSuffix(" ")
+                ?: return@safeAmap
+
+
+            ul.select("li.server a").safeAmap { a ->
+                val rawUrl = a.attr("data-video").takeIf { it.isNotBlank() } ?: return@safeAmap
+
+                val server = a.text()
+
+                Log.d("AnimeDao", "$type rawUrl: $rawUrl")
+
+                val queryParams: Map<String, String> = rawUrl.substringAfter("?", "")
+                    .split("&")
+                    .filter { it.contains("=") }
+                    .associate<String, String, String> { param ->
+                    param.substringBefore("=") to java.net.URLDecoder.decode(
+                        param.substringAfter("="), "UTF-8"
+                    )
+                }
+
+                val subtitleUrl: String? = queryParams["sub"]
+                    ?: queryParams["caption_1"]
+                    ?: queryParams["c1_file"]
+
+                val subtitleLang: String = queryParams["sub_1"]
+                    ?: queryParams["c1_label"]
+                    ?: "English"
+
+                if(subtitleUrl != null) subtitleCallback(newSubtitleFile(subtitleLang, subtitleUrl))
+
+                loadCustomExtractor("Animedao[$type] $server", rawUrl, "$animedaoAPI/", subtitleCallback, callback)
             }
         }
     }

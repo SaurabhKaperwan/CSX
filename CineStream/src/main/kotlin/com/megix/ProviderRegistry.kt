@@ -323,6 +323,10 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_animedao", displayName = "Animedao",
+            executeAnime = { res, subCb, cb -> invokeAnimedao(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_animepahe", displayName = "AnimePahe",
             executeMalSync = { data, subCb, cb -> invokeAnimepahe(data.animepaheUrl, data.episode, subCb, cb) }
         ),
