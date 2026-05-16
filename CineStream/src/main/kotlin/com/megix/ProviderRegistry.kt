@@ -13,7 +13,6 @@ data class MalSyncData(
     val year: Int?,
     val origin: String,
     val animepaheTitle: String?,
-    val animekaiUrl: String?,
 )
 
 /** * Defines a provider and its execution logic for Standard, Anime, and MALSync data.
@@ -55,15 +54,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_notorrent", displayName = "NoTorrent",
             executeStandard = { res, subCb, cb -> invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_castle", displayName = "Castle",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> if (res.imdbSeason == null || res.imdbSeason == 1) invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_cine", displayName = "Cine",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_wyziesubs", displayName = "WYZIESubs",
@@ -113,10 +103,6 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeHexa(res.tmdbId, res.season, res.episode, cb) },
         ),
         ProviderDef(
-            key = "p_yflix", displayName = "Yflix",
-            executeStandard = { res, subCb, cb -> invokeYflix(res.tmdbId, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_xpass", displayName = "Xpass",
             executeStandard = { res, subCb, cb -> invokeXpass(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
@@ -147,11 +133,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_vidlink", displayName = "Vidlink",
             executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
-        ),
-        ProviderDef(
-            key = "p_pulp", displayName = "Pulp",
-            executeStandard = { res, subCb, cb -> invokePulp(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokePulp(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) },
         ),
         ProviderDef(
             key = "p_playimdb", displayName = "PlayImdb",
@@ -350,10 +331,6 @@ object ProviderRegistry {
             executeMalSync = { data, subCb, cb -> invokeAnimetoshoHttp(data.title, data.malId, data.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_animekai", displayName = "Animekai",
-            executeMalSync = { data, subCb, cb -> invokeAnimekai(data.animekaiUrl, data.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_allanime", displayName = "AllAnime",
             executeAnime = { res, subCb, cb -> invokeAllanime(res.originalTitle ?: res.title, res.year, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAllanime(data.title, data.year, data.episode, subCb, cb) }
@@ -381,11 +358,6 @@ object ProviderRegistry {
             key = "p_animekizz", displayName = "Animekizz",
             executeAnime = { res, subCb, cb -> invokeAnimekizz(res.title, res.anilistId, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnimekizz(data.title, data.aniId, data.episode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_sudatchi", displayName = "Sudatchi",
-            executeAnime = { res, subCb, cb -> invokeSudatchi(res.anilistId, res.episode, subCb, cb) },
-            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeSudatchi(data.aniId, data.episode, subCb, cb) }
         ),
     )
 

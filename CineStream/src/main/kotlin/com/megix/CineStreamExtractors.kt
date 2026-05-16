@@ -104,12 +104,8 @@ object CineStreamExtractors {
             (it as? Map<*, *>)?.get("title") as? String
         }
 
-        val animekaiUrl = malsync?.animekai?.values?.firstNotNullOfOrNull {
-            (it as? Map<*, *>)?.get("url") as? String
-        }
-
         // Package the API results for the registry
-        val malData = MalSyncData(title, animepaheUrl, aniId, malId, episode, year, origin, animepaheTitle, animekaiUrl)
+        val malData = MalSyncData(title, animepaheUrl, aniId, malId, episode, year, origin, animepaheTitle)
 
         Log.d("Malsync", "malData: $malData")
 
@@ -704,135 +700,6 @@ object CineStreamExtractors {
         sourceList.safeAmap { loadSourceNameExtractor("Rtally", it, "", subtitleCallback, callback) }
     }
 
-    suspend fun invokeYflix(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        data class ServerItem(val name: String, val lid: String)
-
-        suspend fun encrypt(id: String): String {
-            val body = app.get("$multiDecryptAPI/enc-movies-flix?text=$id").text
-            val json = JSONObject(body)
-            return json.getString("result")
-        }
-
-        suspend fun decrypt(text: String): String {
-            val jsonBody = mapOf("text" to text)
-            val text = app.post(
-                "$multiDecryptAPI/dec-movies-flix",
-                json = jsonBody
-            ).text
-
-            val json = JSONObject(text)
-            return json.getJSONObject("result").getString("url")
-        }
-
-        fun extractAllServers(root: JSONObject): List<ServerItem> {
-            val list = mutableListOf<ServerItem>()
-
-            try {
-                val result = root.optJSONObject("result")
-                val defaultObj = result?.optJSONObject("default")
-
-                if (defaultObj != null) {
-                    val keys = defaultObj.keys()
-
-                    while (keys.hasNext()) {
-                        val key = keys.next()
-                        val serverNode = defaultObj.optJSONObject(key)
-
-                        val lid = serverNode?.optString("lid")
-                        val name = serverNode?.optString("name")
-
-                        if (!lid.isNullOrEmpty() && !name.isNullOrEmpty()) {
-                            list.add(ServerItem(name, lid))
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            return list
-        }
-
-        suspend fun parseHtml(html: String): JSONObject {
-            val resp = app.post(
-                "$multiDecryptAPI/parse-html",
-                json = mapOf("text" to html)
-            ).text
-
-            return try {
-                JSONObject(resp)
-            } catch (e: Exception) {
-                val clean = resp.trim('"')
-                    .replace("\\\"", "\"")
-                    .replace("\\\\", "\\")
-
-                try {
-                    JSONObject(clean)
-                } catch (fatal: Exception) {
-                    JSONObject()
-                }
-            }
-        }
-
-        val YflixAPI = returnWorkingUrl(multipleYflixAPI) ?: return
-
-        Log.d("Yflix", "Using API: $YflixAPI")
-
-        val findUrl = "https://enc-dec.app/db/flix/find?tmdb_id=$tmdbId"
-        val findResp = app.get(findUrl).text
-        val findJson = JSONArray(findResp)
-        if (findJson.length() == 0) return
-
-        val contentId = findJson.getJSONObject(0).optJSONObject("info")?.optString("flix_id")
-            ?: return
-        val encId = encrypt(contentId)
-        val seasonText = if(season == null) "1" else "$season"
-        val episodeText = if(episode == null) "1" else "$episode"
-        val episodesUrl = "$YflixAPI/ajax/episodes/list?id=$contentId&_=$encId"
-        val episodesResp = app.get(episodesUrl).text
-        val episodesHtml = JSONObject(episodesResp).getString("result")
-        val episodesObj = parseHtml(episodesHtml)
-        val result = episodesObj.optJSONObject("result")
-        val seasonObj = result?.optJSONObject(seasonText)
-        val episodeObj = seasonObj?.optJSONObject(episodeText)
-        val eid = episodeObj?.optString("eid")
-
-        if (eid.isNullOrEmpty()) return
-
-        val encTargetId = encrypt(eid)
-        val serversUrl = "$YflixAPI/ajax/links/list?eid=$eid&_=$encTargetId"
-        val serversResp = app.get(serversUrl).text
-        val serversHtml = JSONObject(serversResp).getString("result")
-        val serversObj = parseHtml(serversHtml)
-        val servers = extractAllServers(serversObj)
-
-        servers.safeAmap { server ->
-            val lid = server.lid
-            val encLid = encrypt(lid)
-            val serverName = server.name
-            val embedUrlReq = "$YflixAPI/ajax/links/view?id=$lid&_=$encLid"
-            val embedRespStr = app.get(embedUrlReq).text
-            val encryptedEmbed = JSONObject(embedRespStr).getString("result")
-            if (encryptedEmbed.isEmpty()) return@safeAmap
-            var embed_url = decrypt(encryptedEmbed)
-
-            Log.d("Yflix", "embed_url: $embed_url")
-
-            if(embed_url.contains(YflixAPI)) {
-                embed_url = cfGet(embed_url).document.selectFirst("iframe")?.attr("src") ?: return@safeAmap
-            }
-
-            Log.d("Yflix", "embed_url: $embed_url")
-
-            MegaUp().getUrl(embed_url, "Yflix", subtitleCallback, callback)
-        }
-    }
-
     suspend fun invokeStremioStreams(
         sourceName: String, api: String, imdbId: String? = null,
         season: Int? = null, episode: Int? = null,
@@ -848,21 +715,12 @@ object CineStreamExtractors {
 
             // Block filters
             if (s.url.contains("github.com") || s.url.contains("googleusercontent") ||
-                listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM").any { name.contains(it) } ||
+                listOf("Instant Download").any { name.contains(it) } ||
                 title.contains("redirecting")) return@forEach
 
-            val type = if (sourceName.contains("Castle") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
+            val type = if (listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
             val req = s.behaviorHints?.proxyHeaders?.request
-            val streamUrl = if (sourceName.contains("Castle")) {
-                URI(s.url).query
-                ?.split("&")
-                ?.firstOrNull { it.startsWith("url=") }
-                ?.removePrefix("url=")
-                ?: return@forEach
-            } else {
-                s.url
-            }
-
+            val streamUrl = s.url
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers
 
@@ -871,10 +729,9 @@ object CineStreamExtractors {
             val extractedUserAgent = proxyReq?.userAgent ?: stdHeaders?.get("User-Agent") ?: stdHeaders?.get("user-agent") ?: USER_AGENT
 
             // Quality fallback
-            val quality = getIndexQuality(title + name).takeIf { it != Qualities.Unknown.value }
-                ?: if (sourceName.contains("Castle")) Qualities.P1080.value else Qualities.Unknown.value
+            val quality = getIndexQuality(title + name)
 
-            callback(newExtractorLink(sourceName, "[$sourceName]".toSansSerifBold() + " ${if (sourceName == "Hdmovielover") getSimplifiedTitle(title) else title}", streamUrl, type) {
+            callback(newExtractorLink(sourceName, "[$sourceName]".toSansSerifBold() + " ${title}", streamUrl, type) {
                 this.quality = quality
                 this.headers = mapOf(
                     "User-Agent" to extractedUserAgent,
@@ -1319,50 +1176,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeSudatchi(
-        aniId: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "Referer" to sudatchiAPI,
-            "Origin" to sudatchiAPI,
-        )
-
-        val json = app.get("$sudatchiAPI/api/episode/$aniId/$episode", headers = headers).text
-        val jsonObject = JSONObject(json)
-        val episode = jsonObject.getJSONObject("episode")
-        val epId = episode.getInt("id")
-        val url = "$sudatchiAPI/api/streams?episodeId=$epId"
-        callback.invoke(
-            newExtractorLink(
-                "Sudatchi",
-                "Sudatchi Multi Audio 🌐",
-                url,
-                type = ExtractorLinkType.M3U8
-            ) {
-                this.quality = 1080
-                this.headers = headers
-            }
-        )
-
-        val subsJson = JSONArray(jsonObject.getString("subtitlesJson"))
-
-        for (i in 0 until subsJson.length()) {
-            val sub = subsJson.getJSONObject(i)
-            val subUrl = sub.getString("url").replace("/ipfs", "").replace("\\", "")
-            val file = "$sudatchiAPI/api/proxy$subUrl"
-            val label = sub.getJSONObject("SubtitlesName").getString("name")
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    getLanguage(label) ?: label,
-                    file
-                )
-            )
-        }
-    }
-
     suspend fun invokeGojo(
         title: String? = null,
         aniId: Int? = null,
@@ -1662,106 +1475,6 @@ object CineStreamExtractors {
                     }
                 }
             }
-        }
-    }
-
-    suspend fun invokeAnimekai(
-        animekaiUrl: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Connection" to "keep-alive",
-        )
-
-        suspend fun encrypt(id: String): String {
-            val body = app.get("$multiDecryptAPI/enc-kai?text=$id").text
-            val json = JSONObject(body)
-            return json.getString("result")
-        }
-
-        data class ServerInfo(
-            val serverType: String,
-            val lid: String?,
-        )
-
-        fun getEpisodeToken(html: String, episode: Int): String? {
-            val doc = Jsoup.parse(html)
-            val selector = "div.eplist ul.range li a[num=\"$episode\"]"
-            val episodeElement = doc.selectFirst(selector)
-            return episodeElement?.attr("token")
-        }
-
-        fun parseServersFromHtml(html: String): List<ServerInfo> {
-            val doc = Jsoup.parse(html)
-            val servers = mutableListOf<ServerInfo>()
-
-            val groups = doc.select("div.server-items.lang-group")
-            for (grp in groups) {
-                val serverType = grp.attr("data-id").uppercase()
-                for (span in grp.select("span.server")) {
-                    val lid = span.attr("data-lid").ifBlank { null }
-                    servers.add(ServerInfo(serverType, lid))
-                }
-            }
-            return servers
-        }
-
-        suspend fun decrypt(text: String): String {
-            val jsonBody = mapOf("text" to text)
-
-            val text = app.post(
-                "$multiDecryptAPI/dec-kai",
-                json = jsonBody
-            ).text
-
-            val json = JSONObject(text)
-            return json.getJSONObject("result").getString("url")
-        }
-
-        val animekaiAPI = returnWorkingUrl(multipleAnimekaiAPI) ?: return
-        val oldBaseUrl = getBaseUrl(animekaiUrl ?: return)
-        val postUrl = animekaiUrl.replace(oldBaseUrl, animekaiAPI)
-
-        Log.d("Animekai", "postUrl: $postUrl")
-
-        val id = app.get(postUrl)
-            .document
-            .selectFirst("div.rate-box")?.attr("data-id") ?: return
-
-        Log.d("Animekai", "id: $id")
-
-        val enc_id = encrypt(id)
-        val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
-
-        Log.d("Animekai", "json: $json")
-
-        val html = JSONObject(json).getString("result")
-        val token = getEpisodeToken(html, episode ?: 1) ?: return
-        val enc_token = encrypt(token)
-        val servers_resp = app.get("$animekaiAPI/ajax/links/list?token=$token&_=$enc_token", headers = headers).text
-        val servers = JSONObject(servers_resp).getString("result")
-        val all = parseServersFromHtml(servers)
-
-        all.safeAmap {
-            val lid = it.lid ?: return@safeAmap
-            val enc_lid = encrypt(lid)
-            val type = it.serverType
-            val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
-            val encrypted = JSONObject(embed_resp).getString("result")
-            var embed_url = decrypt(encrypted)
-
-            Log.d("Animekai", "embed_url: $embed_url")
-
-            if(embed_url.contains(animekaiAPI)) {
-                embed_url = cfGet(embed_url).document.selectFirst("iframe")?.attr("src") ?: return@safeAmap
-            }
-
-            Log.d("Animekai", "embed_url: $embed_url")
-
-            MegaUp().getUrl(embed_url, "Animekai[$type]", subtitleCallback, callback)
         }
     }
 
@@ -3893,71 +3606,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokePulp(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = if (season == null) {
-            "$pulpAPI/movies/$tmdbId?provider=02moviedownloader"
-        } else {
-            "$pulpAPI/tv/$tmdbId/seasons/$season/episodes/$episode?provider=02moviedownloader"
-        }
-
-        val json = app.get(url, timeout = 30000L, referer = "https://tv.pulp.watch/").text
-        Log.d("Pulp", "Response JSON: $json")
-        val response = tryParseJson<PulpResponse>(json) ?: return
-        Log.d("Pulp", "Parsed Response: $response")
-
-        response.sources?.forEach { source ->
-            val sourceUrl = source.url?.takeIf { it.isNotBlank() } ?: return@forEach
-            val qualityTag = source.quality.orEmpty().ifEmpty { "Unknown" }
-            val providerName = source.provider?.name.takeIf { !it.isNullOrBlank() }
-                ?: source.provider?.id.takeIf { !it.isNullOrBlank() }
-                ?: "Pulp"
-
-            val extractorLinkType = when {
-                sourceUrl.contains(".m3u8", true) -> ExtractorLinkType.M3U8
-                source.type.equals("hls", true) -> ExtractorLinkType.M3U8
-                source.type.equals("dash", true) -> ExtractorLinkType.DASH
-                source.type.equals("mp4", true) || source.type.equals("mkv", true) -> ExtractorLinkType.VIDEO
-                else -> INFER_TYPE
-            }
-
-            Log.d("Pulp", "Adding source: provider=$providerName, quality=$qualityTag, url=$sourceUrl, type=$extractorLinkType")
-
-            callback.invoke(
-                newExtractorLink(
-                    "Pulp [$providerName]",
-                    "Pulp [$providerName]",
-                    sourceUrl,
-                    type = extractorLinkType
-                ) {
-                    this.headers = source.headers.orEmpty().filterValues { it.isNotBlank() }
-                    this.quality = qualityTag.toIntOrNull() ?: Qualities.Unknown.value
-                }
-            )
-        }
-
-        response.subtitles?.forEach { subtitle ->
-            val subtitleUrl = subtitle.url?.takeIf { it.isNotBlank() } ?: return@forEach
-            val label = subtitle.label.takeIf { !it.isNullOrBlank() }
-                ?: subtitle.language.takeIf { !it.isNullOrBlank() }
-                ?: "Unknown"
-
-            Log.d("Pulp", "Adding subtitle: label=$label, url=$subtitleUrl")
-
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    getLanguage(label) ?: label,
-                    subtitleUrl
-                )
-            )
-        }
-    }
-
     suspend fun invokeDudefilms(
         imdbId: String? = null,
         season: Int? = null,
@@ -4785,6 +4433,7 @@ object CineStreamExtractors {
             "https://usa.eat-peach.sbs/multi",
             "https://usa.eat-peach.sbs/ice",
             "https://usa.eat-peach.sbs/air",
+            "https://usa.eat-peach.sbs/net"
             "https://uwu.peachify.top/moviebox"
         )
 

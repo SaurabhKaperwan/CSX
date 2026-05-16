@@ -10,8 +10,6 @@ const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
 const val WYZIESubsAPI = "https://sub.wyzie.io"
 const val MostraguardaAPI = "https://mostraguarda.stream"
 const val CC_COOKIE = BuildConfig.CC_COOKIE
-const val CINE_API = BuildConfig.CINE_API
-const val CASTLE_API = BuildConfig.CASTLE_API
 const val animepaheAPI = "https://animepahe.pw"
 const val allmovielandAPI = "https://allmovieland.one"
 const val anizoneAPI = "https://anizone.to"
@@ -19,7 +17,6 @@ const val AllanimeAPI = "https://api.allanime.day/api"
 const val PrimeSrcApi = "https://primesrc.me"
 const val asiaflixAPI = "https://asiaflix.net"
 const val twoembedAPI = "https://2embed.cc"
-const val sudatchiAPI = "https://sudatchi.com"
 const val vidSrcApi = "https://api.rgshows.ru"
 const val vidSrcHindiApi = "https://hindi.rgshows.ru"
 const val dahmerMoviesAPI = "https://a.111477.xyz"
@@ -47,7 +44,6 @@ const val autoembedAPI = "https://player.autoembed.app"
 const val vidrockAPI = "https://vidrock.net"
 const val animekizzAPI = "https://animekizz.live"
 const val vidfastProApi = "https://vidfast.pro"
-const val pulpAPI = "https://api.pulp.watch/v1"
 const val onetouchtvAPI = "https://api3.devcorp.me"
 const val playImdbAPI = "https://streamimdb.me"
 const val av1encodesAPI = "https://av1encodes.com"
@@ -60,27 +56,6 @@ const val reanimeAPI = "https://reanime.to"
 const val animesaltAPI = "https://animesalt.ac"
 const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
-
-val multipleYflixAPI = listOf(
-    "https://myflixer.bz",
-    "https://yflix.to",
-    "https://1moviesz.to",
-    "https://sflix.fi",
-    "https://flixtor.mov",
-    "https://bflix.la",
-    "https://myflixer.fi",
-    "https://hurawatch.la"
-)
-
-val multipleAnimekaiAPI = listOf(
-    "https://anikai.to",
-    "https://animekai.fi",
-    "https://animekai.fo",
-    "https://animekai.gs",
-    "https://animekai.la"
-)
-
-
 
 // ── 2. Dynamic API Config ────────────────────────────────────
 // Loaded once via init() called from CineStream.load()
