@@ -13,13 +13,8 @@ import com.lagradost.api.Log
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 
-// Gson & Jackson
+// Jackson
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
-import com.google.gson.reflect.TypeToken
 
 // Org JSON & Jsoup
 import org.json.JSONArray
@@ -35,7 +30,6 @@ import java.security.SecureRandom
 import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
-import android.net.Uri
 
 import com.megix.settings.Settings
 
@@ -45,7 +39,6 @@ import kotlinx.coroutines.sync.withLock
 object CineStreamExtractors {
 
     private val cfKiller by lazy { CloudflareKiller() }
-    private val globalGson by lazy { Gson() }
     private val cfMutex = Mutex()
 
     suspend fun invokeAllSources(
@@ -709,7 +702,7 @@ object CineStreamExtractors {
         val url = if (sourceName == "Hdmovielover") "$api/${if (isMovie) "movie?imdbid=$imdbId" else "series?imdbid=$imdbId&s=$season&e=$episode"}"
                 else "$api/stream/${if (isMovie) "movie/$imdbId" else "series/$imdbId:$season:$episode"}.json"
 
-        globalGson.fromJson(app.get(url, timeout = 50000L).text, StreamifyResponse::class.java).streams.forEach { s ->
+        parseJson<StreamifyResponse>(app.get(url, timeout = 50000L).text).streams.forEach { s ->
             val title = s.title ?: ""
             val name = s.name ?: title
 
@@ -1097,7 +1090,7 @@ object CineStreamExtractors {
 
         Log.d("Vidlink", "ep response: $epJson")
 
-        val data = globalGson.fromJson(epJson, VidlinkResponse::class.java)
+        val data = parseJson<VidlinkResponse>(epJson)
         val m3u8 = data.stream.playlist
 
         M3u8Helper.generateM3u8(
@@ -1156,7 +1149,7 @@ object CineStreamExtractors {
                 }
 
                 val json = app.get(url).text
-                val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
+                val subtitleResponse = parseJson<StremioSubtitleResponse>(json)
 
                 subtitleResponse.subtitles.forEach {
                     val lang = it.lang ?: it.lang_code
@@ -1506,8 +1499,7 @@ object CineStreamExtractors {
         //get result
         val result = JSONObject(decrypt).getJSONArray("result").toString()
 
-        val listType = object : TypeToken<List<OneMediaItem>>() {}.type
-        val mediaItems: List<OneMediaItem> = globalGson.fromJson(result, listType)
+        val mediaItems: List<OneMediaItem> = parseJson<List<OneMediaItem>>(result)
 
         Log.d("Onetouchtv", "mediaItems: $mediaItems")
 
@@ -1526,7 +1518,7 @@ object CineStreamExtractors {
 
         val sourceResult = JSONObject(decryptSource).getJSONObject("result").toString()
 
-        val playbackData = globalGson.fromJson(sourceResult, OnePlaybackData::class.java)
+        val playbackData = parseJson<OnePlaybackData>(sourceResult)
 
         playbackData.sources.forEach { source ->
 
@@ -2100,8 +2092,7 @@ object CineStreamExtractors {
         val json = app.get("$anizipAPI/mappings?$type=$id").text
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
         val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
-        val listType = object : TypeToken<List<Animetosho>>() {}.type
-        val items: List<Animetosho> = globalGson.fromJson(json2, listType)
+        val items: List<Animetosho> = parseJson<List<Animetosho>>(json2)
         // val filtered = items.filter { (it.seeders ?: 0) > 25 }
         // val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
 
@@ -3162,27 +3153,27 @@ object CineStreamExtractors {
 
         Log.d("Bollywood", "Response: $response")
 
-        val jsonObject = JsonParser.parseString(response).asJsonObject
+        val jsonObject = JSONObject(response)
 
         if (jsonObject.has("files")) {
-            val filesArray = jsonObject.getAsJsonArray("files")
+            val filesArray = jsonObject.getJSONArray("files")
 
-            filesArray.forEach { element ->
-                val item = element.asJsonObject
-                val fileName = item.get("file_name").asString
-                if(fileName.contains(".$titleSlug")) return@forEach
-                val fileId = item.get("id").asString
+            for (i in 0 until filesArray.length()) {
+                val item = filesArray.getJSONObject(i)
+                val fileName = item.optString("file_name")
+                if (fileName.contains(".$titleSlug")) continue
+                val fileId = item.optString("id")
                 Log.d("Bollywood", "Processing file ID: $fileId")
-                val size = formatSize(item.get("file_size").asString.toLong())
+                val size = formatSize(item.optString("file_size").toLong())
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
                     headers = headers
                 ).text
                 Log.d("Bollywood", "Link response for file ID $fileId: $res")
 
-                val linkJson = JsonParser.parseString(res).asJsonObject
+                val linkJson = JSONObject(res)
                 if (linkJson.has("url")) {
-                    val streamUrl = linkJson.get("url").asString
+                    val streamUrl = linkJson.optString("url")
                     val simplifiedTitle = getSimplifiedTitle("$fileName $size")
 
                     callback.invoke(
@@ -3348,7 +3339,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        globalGson.fromJson(app.get(url, timeout = 100000L).text, StreamifyResponse::class.java).streams.forEach { s ->
+        parseJson<StreamifyResponse>(app.get(url, timeout = 100000L).text).streams.forEach { s ->
             val title = s.description ?: s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
@@ -3401,7 +3392,7 @@ object CineStreamExtractors {
         }
 
         val json = app.get(url, timeout = 100000L).text
-        val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
+        val subtitleResponse = parseJson<StremioSubtitleResponse>(json)
 
         subtitleResponse.subtitles.forEach {
             val lang = it.lang ?: it.lang_code

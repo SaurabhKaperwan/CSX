@@ -5,12 +5,22 @@ import com.lagradost.api.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
 // Coroutines
-import kotlinx.coroutines.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 // Network
 import java.net.*
@@ -19,7 +29,6 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.RequestBody.Companion.toRequestBody
 
 // JSON & HTML Parsing
-import com.google.gson.Gson
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -526,6 +535,7 @@ fun getKisskhTitle(str: String?): String? {
     return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
 }
 
+
 suspend fun <A, B> Iterable<A>.safeAmap(
     concurrency: Int = 7,
     f: suspend (A) -> B?
@@ -533,18 +543,16 @@ suspend fun <A, B> Iterable<A>.safeAmap(
     val semaphore = Semaphore(concurrency)
     map { item ->
         async<B?>(Dispatchers.IO) {
-            semaphore.acquire()
-            try {
-                f(item)
-            } catch (e: CancellationException) {
-                if (!this@supervisorScope.isActive) throw e
-                Log.w("safeAmap", "Item cancelled locally: ${e.message}")
-                null
-            } catch (e: Throwable) {
-                Log.e("safeAmap", "Item failed: ${e.message}")
-                null
-            } finally {
-                semaphore.release()
+            semaphore.withPermit {
+                try {
+                    f(item)
+                } catch (e: CancellationException) {
+                    if (!isActive) throw e
+                    null
+                } catch (e: Throwable) {
+                    Log.e("safeAmap", "Item failed: $item — ${e.message}")
+                    null
+                }
             }
         }
     }.awaitAll().filterNotNull()
@@ -557,16 +565,14 @@ suspend fun runLimitedAsync(
     val semaphore = Semaphore(concurrency)
     tasks.map { task ->
         async<Unit>(Dispatchers.IO) {
-            semaphore.acquire()
-            try {
-                task()
-            } catch (e: CancellationException) {
-                if (!this@supervisorScope.isActive) throw e
-                Log.w("runLimitedAsync", "Task cancelled locally: ${e.message}")
-            } catch (e: Throwable) {
-                Log.e("runLimitedAsync", "Task failed: ${e.message}")
-            } finally {
-                semaphore.release()
+            semaphore.withPermit {
+                try {
+                    task()
+                } catch (e: CancellationException) {
+                    if (!isActive) throw e
+                } catch (e: Throwable) {
+                    Log.e("runLimitedAsync", "Task failed: ${e.message}")
+                }
             }
         }
     }.awaitAll()
@@ -825,8 +831,7 @@ fun fixUrl(url: String, domain: String): String {
 
 //Anizip
 fun getEpAnizipId(json: String, ep: Int): Int? {
-    val gson = Gson()
-    val root = gson.fromJson(json, Anizip::class.java)
+    val root = parseJson<Anizip>(json)
     val episode = root.episodes?.get(ep.toString())
     val anidbEid = episode?.anidbEid
     return anidbEid

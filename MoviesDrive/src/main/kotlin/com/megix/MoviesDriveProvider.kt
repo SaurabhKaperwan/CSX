@@ -10,8 +10,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
+
 // import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
@@ -84,9 +83,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val text = app.get(
             "$mainUrl/search.php?q=$query&page=$page"
         ).text
-        val gson = Gson()
-        val response = gson.fromJson(text, MSearchResponse::class.java)
-        //val response = parseJson<MSearchResponse>(text)
+        val response = parseJson<MSearchResponse>(text)
         val hasNext = response.hits.isNotEmpty()
         val results = response.hits.map { hit ->
             val doc = hit.document
@@ -355,10 +352,10 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     data class Document(
         val permalink: String,
 
-        @SerializedName("post_thumbnail")
+        @param:JsonProperty("post_thumbnail")
         val postThumbnail: String,
 
-        @SerializedName("post_title")
+        @param:JsonProperty("post_title")
         val postTitle: String
     )
 }

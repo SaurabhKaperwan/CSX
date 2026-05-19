@@ -3,7 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.gson.annotations.SerializedName
 
 //year => for movie : release year for series : season 1 release year
 //airedYear => for movie : release year for series : episode release year
@@ -161,8 +160,8 @@ class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>()
 
 //Anizip
 data class AnizipEpisode(
-    @SerializedName("anidbEid") val anidbEid: Int?,
-    @SerializedName("episode") val episode: String?,
+    @param:JsonProperty("anidbEid") val anidbEid: Int?,
+    @param:JsonProperty("episode") val episode: String?,
 )
 
 data class Anizip(val episodes: Map<String, AnizipEpisode>?)
@@ -170,19 +169,19 @@ data class Anizip(val episodes: Map<String, AnizipEpisode>?)
 //Animetosho
 data class Animetosho(
     val title: String?,
-    @SerializedName("magnet_uri") val magnetUri: String?,
+    @param:JsonProperty("magnet_uri") val magnetUri: String?,
     val seeders: Int?,
     val leechers: Int?,
-    @SerializedName("total_size") val totalSize: String?
+    @param:JsonProperty("total_size") val totalSize: String?
 )
 
 //Vidlink
 data class VidlinkResponse(
-    @SerializedName("stream") val stream: VidlinkStream
+    @param:JsonProperty("stream") val stream: VidlinkStream
 )
 
 data class VidlinkStream(
-    @SerializedName("playlist") val playlist: String
+    @param:JsonProperty("playlist") val playlist: String
 )
 
 data class TmdbDate(
@@ -194,21 +193,21 @@ data class TmdbDate(
 
 //Tmdb
 data class TmdbResponse(
-    @SerializedName("meta") val meta: TmdbMeta?
+    @param:JsonProperty("meta") val meta: TmdbMeta?
 )
 
 data class TmdbMeta(
-    @SerializedName("app_extras") val appExtras: TmdbAppExtras?
+    @param:JsonProperty("app_extras") val appExtras: TmdbAppExtras?
 )
 
 data class TmdbAppExtras(
-    @SerializedName("cast") val cast: List<TmdbCastMember>?
+    @param:JsonProperty("cast") val cast: List<TmdbCastMember>?
 )
 
 data class TmdbCastMember(
-    @SerializedName("name") val name: String?,
-    @SerializedName("character") val character: String?,
-    @SerializedName("photo") val photo: String?
+    @param:JsonProperty("name") val name: String?,
+    @param:JsonProperty("character") val character: String?,
+    @param:JsonProperty("photo") val photo: String?
 )
 
 //Primewire
@@ -559,22 +558,22 @@ data class Streamify(
     var title: String? = null,
     var description: String? = null,
     var subtitles: List<StreamifySubs>? = null,
-    @SerializedName("behaviorHints" ) var behaviorHints: StreamifyBehaviorHints? = StreamifyBehaviorHints()
+    @param:JsonProperty("behaviorHints" ) var behaviorHints: StreamifyBehaviorHints? = StreamifyBehaviorHints()
 )
 
 data class StreamifyBehaviorHints(
-    @SerializedName("proxyHeaders" ) var proxyHeaders: StreamifyProxyHeaders? = StreamifyProxyHeaders(),
-    @SerializedName("headers") var headers: Map<String, String>? = null
+    @param:JsonProperty("proxyHeaders" ) var proxyHeaders: StreamifyProxyHeaders? = StreamifyProxyHeaders(),
+    @param:JsonProperty("headers") var headers: Map<String, String>? = null
 )
 
 data class StreamifyProxyHeaders(
-    @SerializedName("request" ) var request: StreamifyRequest? = StreamifyRequest()
+    @param:JsonProperty("request" ) var request: StreamifyRequest? = StreamifyRequest()
 )
 
 data class StreamifyRequest(
-    @SerializedName("Referer" ) var Referer: String? = null,
-    @SerializedName("Origin"  ) var Origin  : String? = null,
-    @SerializedName("User-Agent") var userAgent: String? = null
+    @param:JsonProperty("Referer" ) var Referer: String? = null,
+    @param:JsonProperty("Origin"  ) var Origin  : String? = null,
+    @param:JsonProperty("User-Agent") var userAgent: String? = null
 )
 
 data class JikanExternal(

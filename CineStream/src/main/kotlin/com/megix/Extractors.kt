@@ -20,10 +20,8 @@ import okhttp3.MediaType.Companion.toMediaType
 // Network (OkHttp & Java Net)
 import java.net.URI
 
-// JSON Parsing (Gson, Jackson, Org)
+// JSON Parsing (Jackson, Org)
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.gson.JsonElement
-import com.google.gson.JsonParser
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject

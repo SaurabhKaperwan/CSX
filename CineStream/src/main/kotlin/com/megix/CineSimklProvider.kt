@@ -27,7 +27,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
 // JSON Parsing
-import com.google.gson.Gson
 import org.json.JSONObject
 
 import com.megix.CineStreamExtractors.invokeAllSources
