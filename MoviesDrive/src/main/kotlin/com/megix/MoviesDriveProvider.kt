@@ -8,6 +8,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.fasterxml.jackson.annotation.JsonProperty
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
