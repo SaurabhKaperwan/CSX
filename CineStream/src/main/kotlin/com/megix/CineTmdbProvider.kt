@@ -10,6 +10,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAnimes
+import kotlin.random.Random
 
 class CineTmdbProvider: MainAPI() {
     override var name = "CineTmdb"
@@ -56,8 +57,8 @@ class CineTmdbProvider: MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val type = if (request.data.contains("/movie")) "movie" else "tv"
-        val home = app.get("$apiUrl/${request.data}&without_keywords=190370|13059|226161|195669&page=$page", timeout = 10000)
-            .parsedSafe<Results>()?.results?.mapNotNull { media ->
+        val home = app.get("$apiUrl/${request.data}&without_keywords=190370|13059|226161|195669&page=$page&random=${Random.nextInt()}", timeout = 10000)
+            .parsed<Results>().results?.mapNotNull { media ->
                 media.toSearchResponse(type)
             } ?: throw ErrorLoadingException("Invalid Json reponse")
         return newHomePageResponse(request.name, home)
@@ -101,7 +102,7 @@ class CineTmdbProvider: MainAPI() {
     override suspend fun quickSearch(query: String): List<SearchResponse>? = search(query)
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        return app.get("$apiUrl/search/multi?api_key=$apiKey&language=en-US&query=$query&page=$page")
+        return app.get("$apiUrl/search/multi?api_key=$apiKey&language=en-US&query=$query&page=$page&random=${Random.nextInt()}")
             .parsedSafe<Results>()?.results?.mapNotNull { media ->
                 if (media.mediaType.toString() == "person") return@mapNotNull null
                 media.toSearchResponse()
@@ -115,9 +116,9 @@ class CineTmdbProvider: MainAPI() {
         val append = "alternative_titles,credits,external_ids,videos,recommendations,content_ratings,release_dates"
 
         val resUrl = if (type == TvType.Movie) {
-            "$apiUrl/movie/${data.id}?api_key=$apiKey&append_to_response=$append"
+            "$apiUrl/movie/${data.id}?api_key=$apiKey&append_to_response=$append&random=${Random.nextInt()}"
         } else {
-            "$apiUrl/tv/${data.id}?api_key=$apiKey&append_to_response=$append"
+            "$apiUrl/tv/${data.id}?api_key=$apiKey&append_to_response=$append&random=${Random.nextInt()}"
         }
 
         val res = app.get(resUrl).parsedSafe<MediaDetail>()
@@ -168,7 +169,7 @@ class CineTmdbProvider: MainAPI() {
          if (type == TvType.TvSeries) {
             val lastSeason = res.last_episode_to_air?.season_number
             val episodes = res.seasons?.filter { it.seasonNumber != 0 }?.mapNotNull { season ->
-                app.get("$apiUrl/${data.type}/${data.id}/season/${season.seasonNumber}?api_key=$apiKey")
+                app.get("$apiUrl/${data.type}/${data.id}/season/${season.seasonNumber}?api_key=$apiKey&random=${Random.nextInt()}")
                     .parsedSafe<MediaDetailEpisodes>()?.episodes?.map { eps ->
                         newEpisode(
                             LinkData(

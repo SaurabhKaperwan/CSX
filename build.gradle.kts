@@ -75,7 +75,6 @@ subprojects {
         implementation("com.squareup.okhttp3:okhttp:4.12.0")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
         implementation("org.mozilla:rhino:1.9.1")
-        implementation("com.google.code.gson:gson:2.11.0")
         implementation("org.json:json:20231013")
         implementation("androidx.annotation:annotation:1.10.0")
         implementation("androidx.browser:browser:1.8.0")
