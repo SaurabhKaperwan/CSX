@@ -2258,7 +2258,7 @@ object CineStreamExtractors {
                     loadCustomExtractor(
                         "Animepahe [$type]",
                         href,
-                        "",
+                        "$animepaheAPI/",
                         subtitleCallback,
                         callback,
                         getIndexQuality(it.text())
@@ -2275,7 +2275,7 @@ object CineStreamExtractors {
                         loadCustomExtractor(
                             "Animepahe(VLC) [$type]",
                             href,
-                            "",
+                            "$animepaheAPI/",
                             subtitleCallback,
                             callback,
                             getQualityFromName(quality)
@@ -4494,7 +4494,7 @@ object CineStreamExtractors {
 
         val matchedUrl = app.get(searchUrl, referer = "$animedaoAPI/")
             .document
-            .selectFirst("div.row > div.col-xs-12 > a")
+            .selectFirst("article.an-anime-card > a")
             ?.attr("href")
             ?.replace("/anime/", "/watch-online/")
             ?: return
@@ -4503,19 +4503,13 @@ object CineStreamExtractors {
 
         val document = app.get(animedaoAPI + matchedUrl + "-episode-${episode ?: 1}", referer = "$animedaoAPI/").document
 
-        document.select("ul.server-items").safeAmap { ul ->
-            val type = ul.selectFirst("li span strong")
-                ?.text()
-                ?.trim()
-                ?.removeSuffix(":")
-                ?.removeSuffix(" ")
-                ?: return@safeAmap
+        document.select("div.an-server-panel").safeAmap { div ->
+            val type = div.attr("data-an-panel")
 
+            div.select("div.an-server-list > button").safeAmap { button ->
+                val rawUrl = button.attr("data-an-video").takeIf { it.isNotBlank() } ?: return@safeAmap
 
-            ul.select("li.server a").safeAmap { a ->
-                val rawUrl = a.attr("data-video").takeIf { it.isNotBlank() } ?: return@safeAmap
-
-                val server = a.text()
+                val server = button.select("span").text()
 
                 Log.d("AnimeDao", "$type rawUrl: $rawUrl")
 

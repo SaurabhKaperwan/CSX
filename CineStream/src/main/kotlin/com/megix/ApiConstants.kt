@@ -53,7 +53,6 @@ const val vidsyncAPI = "https://vidsync.xyz"
 const val lordflixBaseAPI = "https://lordflix.org"
 const val lordflixAPI = "https://network.hasta-la-vista.site"
 const val reanimeAPI = "https://reanime.to"
-const val animedaoAPI = "https://animedao.ac"
 const val animesaltAPI = "https://animesalt.ac"
 const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
@@ -95,3 +94,4 @@ val rtallyAPI get() = api("rtally")
 val dudefilmsAPI get() = api("dudefilms")
 val m4ufreeAPI get() = api("m4ufree")
 val zinkmoviesAPI get() = api("zinkmovies")
+val animedaoAPI get() = api("animedao")

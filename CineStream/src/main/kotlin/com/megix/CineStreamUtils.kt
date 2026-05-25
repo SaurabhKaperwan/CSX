@@ -55,7 +55,6 @@ import java.math.BigInteger
 // Settings
 import com.megix.settings.Settings
 
-import kotlin.random.Random
 
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
@@ -1029,9 +1028,9 @@ suspend fun fetchTmdbLogoUrl(
     if (tmdbId == null) return null
 
     val url = if (type == TvType.Movie)
-        "$tmdbAPI/movie/$tmdbId/images?api_key=$apiKey&random=${Random.nextInt()}"
+        "$tmdbAPI/movie/$tmdbId/images?api_key=$apiKey"
     else
-        "$tmdbAPI/tv/$tmdbId/images?api_key=$apiKey&random=${Random.nextInt()}"
+        "$tmdbAPI/tv/$tmdbId/images?api_key=$apiKey"
 
     val json = runCatching { JSONObject(app.get(url).text) }.getOrNull() ?: return null
     val logos = json.optJSONArray("logos") ?: return null
