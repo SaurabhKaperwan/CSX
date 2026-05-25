@@ -4509,7 +4509,7 @@ object CineStreamExtractors {
             div.select("div.an-server-list > button").safeAmap { button ->
                 val rawUrl = button.attr("data-an-video").takeIf { it.isNotBlank() } ?: return@safeAmap
 
-                val server = button.select("span").text()
+                val server = button.select("span").ownText().capitalizeServer()
 
                 Log.d("AnimeDao", "$type rawUrl: $rawUrl")
 
