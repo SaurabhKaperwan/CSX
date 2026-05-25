@@ -4504,12 +4504,12 @@ object CineStreamExtractors {
         val document = app.get(animedaoAPI + matchedUrl + "-episode-${episode ?: 1}", referer = "$animedaoAPI/").document
 
         document.select("div.an-server-panel").safeAmap { div ->
-            val type = div.attr("data-an-panel")
+            val type = div.attr("data-an-panel").capitalizeServer()
 
             div.select("div.an-server-list > button").safeAmap { button ->
                 val rawUrl = button.attr("data-an-video").takeIf { it.isNotBlank() } ?: return@safeAmap
 
-                val server = button.select("span").ownText().capitalizeServer()
+                val server = button.select("span").ownText()
 
                 Log.d("AnimeDao", "$type rawUrl: $rawUrl")
 
