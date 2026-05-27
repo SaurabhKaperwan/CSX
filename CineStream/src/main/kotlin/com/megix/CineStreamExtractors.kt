@@ -4424,17 +4424,24 @@ object CineStreamExtractors {
             "https://usa.eat-peach.sbs/ice",
             "https://usa.eat-peach.sbs/air",
             "https://usa.eat-peach.sbs/net",
-            "https://uwu.peachify.top/moviebox"
         )
 
         servers.safeAmap { server ->
             val url = if(season == null) "$server/movie/$tmdbId" else "$server/tv/$tmdbId/$season/$episode"
             val text = app.get(url, headers = headers).text
+
+            Log.d("Peachify", "Response from $server: $text")
+
             val encrypt = JSONObject(text).optString("data").ifEmpty { return@safeAmap }
             val decrypted = peachifyDecrypt(encrypt) ?: return@safeAmap
+
+            Log.d("Peachify", "Decrypted data from $server: $decrypted")
+
             val json      = JSONObject(decrypted)
             val provider  = json.optString("providerName", "Peachify")
             val sources   = json.optJSONArray("sources") ?: return@safeAmap
+
+            Log.d("Peachify", "Sources from $server: $sources")
 
              for (i in 0 until sources.length()) {
                 val src     = sources.getJSONObject(i)

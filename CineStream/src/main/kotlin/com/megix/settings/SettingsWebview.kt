@@ -89,6 +89,14 @@ internal object SettingsWebView {
             }
         }
 
+        fun clearWebLoginSession(onCleared: () -> Unit) {
+            WebStorage.getInstance().deleteAllData()
+            CookieManager.getInstance().removeAllCookies { _ ->
+                CookieManager.getInstance().flush()
+                mainHandler.post { onCleared() }
+            }
+        }
+
         val progressBar = ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 3.dp(context))
             progressTintList = android.content.res.ColorStateList.valueOf(cfg.accentColor)
@@ -255,7 +263,11 @@ internal object SettingsWebView {
             show()
         }
 
-        webView.loadUrl(cfg.startUrl)
-        webView.requestFocus()
+        clearWebLoginSession {
+            webView.clearCache(true)
+            webView.clearHistory()
+            webView.loadUrl(cfg.startUrl)
+            webView.requestFocus()
+        }
     }
 }
