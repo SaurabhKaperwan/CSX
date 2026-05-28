@@ -153,51 +153,89 @@ object CineStreamExtractors {
     }
 
     suspend fun invokeShowbox(
-        tmdbId: Int? = null,
+        imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season == null) {
-            "$femBoxAPI/movie/$tmdbId?ui=${Settings.getShowboxToken() ?: return}"
+        val token = Settings.getShowboxToken()
+
+        if(imdbId == null || token == null) return
+
+        Log.d("Showbox", "Searching Showbox for IMDb ID: $imdbId with token: $token")
+
+        val mediaId = searchSuperstream(imdbId)     ?: return
+
+        Log.d("Showbox", "Found media ID: $mediaId")
+
+        val type    = if (season != null) 2 else 1
+        val shareKey = getShareKey(mediaId, type)   ?: return
+
+        Log.d("Showbox", "Obtained share key: $shareKey")
+
+        val rootData = getFileList(shareKey) ?: return
+
+        Log.d("Showbox", "rootData: $rootData")
+
+        val fileList = rootData.file_list    ?: return
+
+        val qualities: List<VideoQuality> = if (season != null && episode != null) {
+            val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+
+            val seasonFolder = fileList.firstOrNull { f ->
+                f.is_dir && f.file_name?.lowercase()?.let {
+                    it.contains("season $season") || it.contains("s$seasonSlug")
+                } == true
+            } ?: fileList.firstOrNull { it.is_dir } ?: return
+
+            val epData = getFileList(shareKey, seasonFolder.fid) ?: return
+            val epList = epData.file_list                        ?: return
+
+            val epFile = epList.firstOrNull { f ->
+                if (f.is_dir) false
+                else f.file_name?.lowercase()?.let {
+                    it.contains("e$episodeSlug") ||
+                    it.contains("ep$episodeSlug") ||
+                    it.contains("episode $episode")
+                } == true
+            } ?: epList.firstOrNull { !it.is_dir } ?: return
+
+            getVideoQualities(epFile.fid, shareKey, token)
+
         } else {
-            "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=${Settings.getShowboxToken() ?: return}"
+            val videoFile = fileList.firstOrNull { !it.is_dir } ?: return
+            getVideoQualities(videoFile.fid, shareKey, token)
         }
 
-        val response = app.get(url).parsedSafe<ShowboxResponse>() ?: return
+        Log.d("Showbox", "Found qualities: $qualities")
 
-        response.sources.forEach { source ->
-            val isM3u8 = source.url.contains(".m3u8")
+        val VIDEO_HEADERS = mapOf(
+            "Accept"          to "*/*",
+            "Accept-Language" to "en-US,en;q=0.8",
+            "Connection"      to "keep-alive",
+            "Range"           to "bytes=0-",
+            "Referer"         to "https://www.febbox.com",
+            "User-Agent"      to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+        )
+
+        qualities.forEach { q ->
+
+            val isOrg = if(q.quality == "ORG") "ORG" else ""
 
             callback.invoke(
                 newExtractorLink(
                     "Showbox",
-                    "ShowBox" + (source.size?.let { " [$it]" } ?: ""),
-                    source.url,
-                    if(isM3u8) ExtractorLinkType.M3U8 else  ExtractorLinkType.VIDEO
+                    "ShowBox $isOrg",
+                    q.url,
+                    if(q.url.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
                 ) {
-                    this.quality = when (source.quality.uppercase()) {
-                        "4K", "ORG" -> Qualities.P2160.value
-                        "1080P"     -> Qualities.P1080.value
-                        "720P"      -> Qualities.P720.value
-                        "480P"      -> Qualities.P480.value
-                        "360P"      -> Qualities.P360.value
-                        else        -> Qualities.Unknown.value
-                    }
+                    this.quality = if(isOrg == "ORG") Qualities.P2160.value else getIndexQuality(q.quality)
+                    this.headers = VIDEO_HEADERS
                 }
             )
-
         }
-
-        response.subtitles.forEach { sub ->
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    sub.language,
-                    sub.url
-                )
-            )
-        }
+        
     }
 
     suspend fun invokeAkwam(
@@ -3140,9 +3178,9 @@ object CineStreamExtractors {
         Log.d("Bollywood", "Headers: $headers")
 
         val url = if (season == null) {
-            "$bollywoodAPI/files/search?q=${titleSlug}.${year}&page=1"
+            "$bollywoodAPI/mix_media_files/search?q=${titleSlug}.${year}&page=1"
         } else {
-            "$bollywoodAPI/files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"
+            "$bollywoodAPI/mix_media_files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"
         }
 
         val response = app.get(
@@ -3166,7 +3204,7 @@ object CineStreamExtractors {
                 Log.d("Bollywood", "Processing file ID: $fileId")
                 val size = formatSize(item.optString("file_size").toLong())
                 val res = app.get(
-                    "$bollywoodAPI/genLink?type=files&id=$fileId",
+                    "$bollywoodAPI/genLink?type=mix_media&id=$fileId",
                     headers = headers
                 ).text
                 Log.d("Bollywood", "Link response for file ID $fileId: $res")

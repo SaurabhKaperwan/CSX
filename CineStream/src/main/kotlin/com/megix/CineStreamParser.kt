@@ -30,25 +30,6 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
-//Showbox
-data class ShowboxSource(
-    @param:JsonProperty("url")     val url: String,
-    @param:JsonProperty("quality") val quality: String,
-    @param:JsonProperty("size")    val size: String? = null
-)
-
-data class ShowboxSubtitle(
-    @param:JsonProperty("language")    val language: String,
-    @param:JsonProperty("url")         val url: String,
-    @param:JsonProperty("name")        val name: String? = null,
-    @param:JsonProperty("upload_date") val uploadDate: String? = null
-)
-
-data class ShowboxResponse(
-    @param:JsonProperty("sources")   val sources: List<ShowboxSource> = emptyList(),
-    @param:JsonProperty("subtitles") val subtitles: List<ShowboxSubtitle> = emptyList()
-)
-
 //AIO
 data class ExtractedMediaData(
     val cast: List<ActorData>?,
@@ -837,3 +818,22 @@ data class ZinkLink(
     val url: String,
     val title: String,
 )
+
+//Showbox
+
+data class ShareLinkData(val link: String? = null)
+
+data class ShareLinkResponse(val data: ShareLinkData? = null)
+
+data class FileItem(
+    val fid: Long = 0L,
+    val file_name: String? = null,
+    val is_dir: Boolean = false
+)
+data class FileListData(val file_list: List<FileItem>? = null)
+
+data class FileListResponse(val data: FileListData? = null)
+
+data class VideoQualityResponse(val html: String? = null)
+
+data class VideoQuality(val url: String, val quality: String)

@@ -69,8 +69,8 @@ object ProviderRegistry {
         // ── Direct HTTP Providers ─────────────────────────────────
         ProviderDef(
             key = "p_showbox", displayName = "ShowBox",
-            executeStandard = { res, subCb, cb -> invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeShowbox(res.imdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeShowbox(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_vidflix", displayName = "Vidflix",
