@@ -535,7 +535,7 @@ data class StreamifySubs(
 data class Streamify(
     var name: String? = null,
     var type: String? = null,
-    var url: String,
+    var url: String? = null,
     var title: String? = null,
     var description: String? = null,
     var subtitles: List<StreamifySubs>? = null,
@@ -734,11 +734,25 @@ data class ResolvedReAnime(
 
 data class ResolvedReAnimeResult(
     val token: String,
-    val state: ResolvedReAnimeState,
+    val context: ResolvedReAnimeContext,
 )
 
-data class ResolvedReAnimeState(
+data class ResolvedReAnimeContext(
     val token: String,
+    @param:JsonProperty("frag1_b64")
+    val frag1B64: String,
+
+    @param:JsonProperty("frag2_b64")
+    val frag2B64: String,
+
+    @param:JsonProperty("iv_b64")
+    val ivB64: String,
+
+    @param:JsonProperty("obfuscation_seed")
+    val obfuscationSeed: String,
+
+    @param:JsonProperty("w_payload")
+    val wPayload: String,
 )
 
 data class ReAnimeStream(
@@ -747,6 +761,12 @@ data class ReAnimeStream(
 
 data class ReAnimeStreamResult(
     val stream: String,
+    val context: ReAnimeStreamContext,
+)
+
+data class ReAnimeStreamContext(
+    @param:JsonProperty("w_payload")
+    val wPayload: String,
 )
 
 //Animesalt

@@ -743,15 +743,15 @@ object CineStreamExtractors {
         parseJson<StreamifyResponse>(app.get(url, timeout = 50000L).text).streams.forEach { s ->
             val title = s.title ?: ""
             val name = s.name ?: title
+            val streamUrl = s.url ?: return@forEach
 
             // Block filters
-            if (s.url.contains("github.com") || s.url.contains("googleusercontent") ||
+            if (streamUrl.contains("github.com") || streamUrl.contains("googleusercontent") ||
                 listOf("Instant Download").any { name.contains(it) } ||
                 title.contains("redirecting")) return@forEach
 
             val type = if (listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
             val req = s.behaviorHints?.proxyHeaders?.request
-            val streamUrl = s.url
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers
 
@@ -804,13 +804,13 @@ object CineStreamExtractors {
             val quality = getIndexQuality(it.first)
             val tags = getIndexQualityTags(it.first)
             val href = if (it.second.contains(dahmerMoviesAPI)) it.second else (dahmerMoviesAPI + it.second)
-            val videoLink = resolveFinalUrl(href) ?: return@safeAmap
+            // val videoLink = resolveFinalUrl(href) ?: return@safeAmap
 
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
                     "[DahmerMovies]".toSansSerifBold() + " $tags",
-                    videoLink,
+                    href,
                     ExtractorLinkType.VIDEO
                 ) {
                     this.quality = quality
@@ -3377,16 +3377,26 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        parseJson<StreamifyResponse>(app.get(url, timeout = 100000L).text).streams.forEach { s ->
-            val title = s.description ?: s.title ?: s.name ?: ""
+        Log.d("StreamioStreams", "url: $url")
 
-            val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
+        val json = app.get(url, timeout = 100000L).text
+
+        Log.d("StreamioStreams", "json: $json")
+
+        parseJson<StreamifyResponse>(json).streams.forEach { s ->
+
+            Log.d("StreamioStreams", "s: $s")
+
+            val title = s.description ?: s.title ?: s.name ?: ""
+            val streamUrl = s.url ?: return@forEach
+
+            val type = if(streamUrl.contains(".m3u8") || streamUrl.contains("hls")) {
                 ExtractorLinkType.M3U8
             } else {
                 INFER_TYPE
             }
 
-            if(s.url.contains("video-downloads.googleusercontent") && Settings.allowDownloadLinks == false) return@forEach
+            if(streamUrl.contains("video-downloads.googleusercontent") && Settings.allowDownloadLinks == false) return@forEach
 
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers
@@ -3401,7 +3411,7 @@ object CineStreamExtractors {
                 newExtractorLink(
                     sourceName,
                     "[$sourceName] $title",
-                    s.url,
+                    streamUrl,
                     type
                 ) {
                     this.quality = quality
@@ -4259,16 +4269,21 @@ object CineStreamExtractors {
             "User-Agent" to USER_AGENT
         )
 
-        val response = app.get(
+        val response = cfGet(
             "$reanimeAPI/api/flix/$aniId/${episode ?: 1}",
             headers = headers
         ).parsedSafe<ReanimeResponse>() ?: return
+
+        Log.d("Reanime", "Response: $response")
 
         if (!response.success) return
 
         response.servers.safeAmap { server ->
             val type = server.dataType.capitalizeServer()
             val dataLink = server.dataLink
+
+            Log.d("Reanime", "DataLink: $dataLink")
+
             loadCustomExtractor("Reanime[$type]", dataLink, "", subtitleCallback, callback)
         }
     }

@@ -275,7 +275,7 @@ class GdFlix2: GDFlix() {
 }
 
 class GDFlixNet : GDFlix() {
-    override var mainUrl = "https://new16.gdflix.*"
+    override var mainUrl = "https://new18.gdflix.*"
 }
 
 open class GDFlix : ExtractorApi() {
@@ -807,15 +807,18 @@ class Pahe : ExtractorApi() {
             allowRedirects = false
         ).headers["location"]!!.substringAfterLast("https://")
 
+        Log.d("Kwik", "Kwik URL: $kwikUrl")
+
         val fContent = app.get(
             kwikUrl,
-            headers = mapOf(
+            mapOf(
+                "User-Agent" to USER_AGENT,
                 "Referer"    to "https://kwik.cx/",
-                "User-Agent" to USER_AGENT
-            )
+            ),
         )
         val fContentString = fContent.text
 
+        Log.d("Kwik", "fcontent : ${fContentString.take(100)}")
 
         val (fullString, key, v1, v2) = kwikParamsRegex.find(fContentString)!!.destructured
         val decrypted = decrypt(fullString, key, v1.toInt(), v2.toInt())
@@ -1013,8 +1016,10 @@ class FlixCloud : ExtractorApi() {
 
         data.remove("subtitles")
 
+        Log.d("FlixCloud", "Data to decrypt: $data")
+
         val resolvedRes = app.post(
-            "$multiDecryptAPI/dec-reanime?type=resolve",
+            "$multiDecryptAPI/dec-flixcloud?type=token",
             requestBody = JSONObject().put("data", data)
                 .toString()
                 .toRequestBody("application/json".toMediaType()),
@@ -1022,6 +1027,8 @@ class FlixCloud : ExtractorApi() {
         )
 
         val resolvedJson = JSONObject(resolvedRes.text)
+
+        Log.d("FlixCloud", "resolved json: $resolvedJson")
 
         val resolved = resolvedRes
             .parsedSafe<ResolvedReAnime>()
@@ -1035,15 +1042,17 @@ class FlixCloud : ExtractorApi() {
             )
         )
 
+        Log.d("FlixCloud", "Token response: ${tokenResponse.text}")
+
         val decryptBody = JSONObject()
             .put(
                 "data", JSONObject()
-                    .put("state", resolvedJson.getJSONObject("result").getJSONObject("state"))
-                    .put("token_response", JSONObject(tokenResponse.text))
+                    .put("context", resolvedJson.getJSONObject("result").getJSONObject("context"))
+                    .put("stream_response", JSONObject(tokenResponse.text))
             ).toString()
 
         val decrypted = app.post(
-            "$multiDecryptAPI/dec-reanime?type=decrypt",
+            "$multiDecryptAPI/dec-flixcloud?type=stream",
             requestBody = decryptBody.toRequestBody("application/json".toMediaType()),
             timeout = 10000L
         ).parsedSafe<ReAnimeStream>()?.result ?: return
@@ -1064,6 +1073,9 @@ class FlixCloud : ExtractorApi() {
             "sec-gpc" to "1",
             "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
         )
+
+        Log.d("FlixCloud", "Decrypted: ${decrypted}")
+
 
         callback.invoke(
             newExtractorLink(
