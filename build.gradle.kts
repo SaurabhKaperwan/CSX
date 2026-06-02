@@ -41,7 +41,7 @@ subprojects {
 
     android {
         namespace = "com.megix"
-        compileSdk = 35
+        compileSdk = 36
         defaultConfig {
             minSdk = 21
         }
@@ -69,13 +69,12 @@ subprojects {
         val cloudstream by configurations
         cloudstream("com.lagradost:cloudstream3:pre-release")
         implementation(kotlin("stdlib"))
-        implementation("com.github.Blatzar:NiceHttp:0.4.17")
-        implementation("org.jsoup:jsoup:1.22.1")
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.20.1")
+        implementation("com.github.Blatzar:NiceHttp:0.4.18")
+        implementation("org.jsoup:jsoup:1.22.2")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
         implementation("com.squareup.okhttp3:okhttp:4.12.0")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-        implementation("org.mozilla:rhino:1.9.1")
-        implementation("org.json:json:20231013")
+        implementation("org.mozilla:rhino:1.8.1")
         implementation("androidx.annotation:annotation:1.10.0")
         implementation("androidx.browser:browser:1.8.0")
     }
