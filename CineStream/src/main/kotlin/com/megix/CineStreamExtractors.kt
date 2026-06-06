@@ -834,8 +834,8 @@ object CineStreamExtractors {
         val headers = mapOf(
             "Accept" to "*/*",
             "User-Agent" to USER_AGENT,
-            "Origin" to "https://player.videasy.net",
-            "Referer" to "https://player.videasy.net/"
+            "Origin" to "https://player.videasy.to",
+            "Referer" to "https://player.videasy.to/"
         )
 
         val servers = listOf(
