@@ -3287,7 +3287,7 @@ object CineStreamExtractors {
 
         val items = unwrapData(searchObj).optJSONArray("items") ?: return
 
-        val titleMatchRegex = """^${Regex.escape(title ?: "")}(?: \[([^\]]+)\])?$""".toRegex(RegexOption.IGNORE_CASE)
+        val titleMatchRegex = """^${Regex.escape(title ?: "")}(?:\s+\[([^\]]+)\])?$""".toRegex(RegexOption.IGNORE_CASE)
         val uniqueIdsWithLang = mutableMapOf<String, String>()
 
         for (i in 0 until items.length()) {
@@ -3305,11 +3305,11 @@ object CineStreamExtractors {
         Log.d("Moviebox", "uniqueIdsWithLang: $uniqueIdsWithLang")
 
         uniqueIdsWithLang.forEach { (subjectId, language) ->
+
             val detailObj = try {
                 JSONObject(
                     app.get(
-                        "$BASE_URL/wefeed-h5api-bff/subject/detail-rec?subjectId=$subjectId&page=1&perPage=1",
-                        headers = baseHeaders
+                        "https://h5.aoneroom.com/wefeed-h5-bff/web/post/list/subject?id=$subjectId"
                     ).text
                 )
             } catch (e: Exception) { return@forEach }
@@ -3320,6 +3320,7 @@ object CineStreamExtractors {
             .optJSONObject("data")
             ?.optJSONArray("items")
             ?.optJSONObject(0)
+            ?.optJSONObject("subject")
             ?.optString("detailPath", "") ?: return@forEach
 
             Log.d("Moviebox", "detailPath: $detailPath")
