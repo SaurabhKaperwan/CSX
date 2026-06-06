@@ -834,14 +834,14 @@ object CineStreamExtractors {
         val headers = mapOf(
             "Accept" to "*/*",
             "User-Agent" to USER_AGENT,
-            "Origin" to "https://www.cineby.sc",
-            "Referer" to "https://www.cineby.sc/"
+            "Origin" to "https://player.videasy.net",
+            "Referer" to "https://player.videasy.net/"
         )
 
         val servers = listOf(
             "myflixerzupcloud",
             "1movies",
-            "moviebox",
+            "downloader2",
             "primewire",
             "m4uhd",
             "hdmovie",
@@ -3242,9 +3242,19 @@ object CineStreamExtractors {
             return data.optJSONObject("data") ?: data
         }
 
-        val HOST = "h5.aoneroom.com"
+        val HOST = "h5-api.aoneroom.com"
         val BASE_URL = "https://$HOST"
         val SEASON_SUFFIX_REGEX = """\sS\d+(?:-S?\d+)*$""".toRegex(RegexOption.IGNORE_CASE)
+
+        val xUser = app.get(
+            "$BASE_URL/wefeed-h5api-bff/app/get-latest-app-pkgs?app_name=moviebox"
+        ).headers.get("x-user")
+
+        if(xUser.isNullOrEmpty()) return
+
+        val token = JSONObject(xUser).optString("token", "")
+
+        if(token.isNullOrEmpty()) return
 
         val baseHeaders = mapOf(
             "X-Client-Info"   to "{\"timezone\":\"Africa/Nairobi\"}",
@@ -3252,16 +3262,16 @@ object CineStreamExtractors {
             "Accept"          to "application/json",
             "Referer"         to BASE_URL,
             "Host"            to HOST,
-            "Connection"      to "keep-alive"
+            "Connection"      to "keep-alive",
+            "Authorization"   to "Bearer $token",
+            "User-Agent"      to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
         )
-
-        app.get("$BASE_URL/wefeed-h5-bff/app/get-latest-app-pkgs?app_name=moviebox", headers = baseHeaders)
 
         val subjectType = if (season != null) 2 else 1
         val searchObj = try {
             JSONObject(
                 app.post(
-                    "$BASE_URL/wefeed-h5-bff/web/subject/search",
+                    "$BASE_URL/wefeed-h5api-bff/subject/search",
                     headers = baseHeaders,
                     json = mapOf(
                         "keyword"     to title,
@@ -3272,6 +3282,8 @@ object CineStreamExtractors {
                 ).text
             )
         } catch (e: Exception) { return }
+
+        Log.d("Moviebox", "searchObj: $searchObj")
 
         val items = unwrapData(searchObj).optJSONArray("items") ?: return
 
@@ -3290,17 +3302,27 @@ object CineStreamExtractors {
 
         if (uniqueIdsWithLang.isEmpty()) return
 
+        Log.d("Moviebox", "uniqueIdsWithLang: $uniqueIdsWithLang")
+
         uniqueIdsWithLang.forEach { (subjectId, language) ->
             val detailObj = try {
                 JSONObject(
                     app.get(
-                        "$BASE_URL/wefeed-h5-bff/web/subject/detail?subjectId=$subjectId",
+                        "$BASE_URL/wefeed-h5api-bff/subject/detail-rec?subjectId=$subjectId&page=1&perPage=1",
                         headers = baseHeaders
                     ).text
                 )
             } catch (e: Exception) { return@forEach }
 
-            val detailPath = unwrapData(detailObj).optJSONObject("subject")?.optString("detailPath") ?: ""
+            Log.d("Moviebox", "detailObj: $detailObj")
+
+            val detailPath = detailObj
+            .optJSONObject("data")
+            ?.optJSONArray("items")
+            ?.optJSONObject(0)
+            ?.optString("detailPath", "") ?: return@forEach
+
+            Log.d("Moviebox", "detailPath: $detailPath")
 
             val params = buildString {
                 append("subjectId=$subjectId")
@@ -3315,11 +3337,13 @@ object CineStreamExtractors {
             val sourceObj = try {
                 JSONObject(
                     app.get(
-                        "$BASE_URL/wefeed-h5-bff/web/subject/download?$params",
+                        "$BASE_URL/wefeed-h5api-bff/subject/download?$params",
                         headers = downloadHeaders
                     ).text
                 )
             } catch (e: Exception) { return@forEach }
+
+            Log.d("Moviebox", "sourceObj: $sourceObj")
 
             val sourceData = unwrapData(sourceObj)
 
