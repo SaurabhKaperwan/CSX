@@ -893,7 +893,7 @@ class Cloudorchestranova : Cloudnestra() {
     override val mainUrl: String = "https://cloudorchestranova.com"
 }
 
-class Cloudnestra : ExtractorApi() {
+open class Cloudnestra : ExtractorApi() {
     override val name = "Cloudnestra"
     override val mainUrl = "https://cloudnestra.com"
     override val requiresReferer = true
