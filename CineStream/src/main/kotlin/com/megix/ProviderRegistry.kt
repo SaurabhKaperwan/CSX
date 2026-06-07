@@ -111,17 +111,9 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokePlaysrc(res.tmdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
-            key = "p_2embed", displayName = "2Embed",
-            executeStandard = { res, _, cb -> if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, cb) }
-        ),
-        ProviderDef(
             key = "p_lordflix", displayName = "Lordflix",
             executeStandard = { res, subCb, cb -> invokeLordflix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
         ),
-        // ProviderDef(
-        //     key = "p_vidsync", displayName = "Vidsync",
-        //     executeStandard = { res, subCb, cb -> invokeVidsync(res.title, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
-        // ),
         ProviderDef(
             key = "p_videasy", displayName = "Videasy",
             executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
@@ -302,10 +294,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_mostraguarda", displayName = "Mostraguarda",
             executeStandard = { res, subCb, cb -> if (res.season == null) invokeMostraguarda(res.imdbId, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_autoembed", displayName = "AutoEmbed",
-            executeStandard = { res, subCb, cb -> invokeAutoembed(res.imdbId, res.season, res.episode, subCb, cb) },
         ),
 
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─

@@ -1261,73 +1261,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invoke2embed(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "Referer" to twoembedAPI,
-            "sec-fetch-dest" to "iframe"
-        )
-
-        val slug = if (season != null) {
-            "embedtv/$id&s=$season&e=$episode"
-            } else {
-            "embed/$id"
-        }
-
-        val api = "$twoembedAPI/$slug"
-
-        val text = app.get(api, headers = headers).text
-        var sKey = "swish?id="
-        var start = text.indexOf(sKey)
-
-        if(start < 0) return
-
-        start += sKey.length
-
-        val eKey = "'"
-        var end = text.indexOf(eKey, start)
-        val strmId = text.substring(start, end)
-
-        val uplUrl = "https://uqloads.xyz/e/$strmId"
-
-        val res = app.get(uplUrl, headers = headers).text
-
-        sKey = "eval(function"
-        start = res.indexOf(sKey)
-
-        if(start < 0) return
-
-        val eKey2 = "split('|')))"
-        end = res.indexOf(eKey2, start) + eKey2.length
-        val data = res.substring(start, end)
-
-        val strmData = JsUnpacker(data).unpack() ?: return
-
-        sKey = "\"hls2\":\""
-        start = strmData.indexOf(sKey)
-
-        if(start < 0) return
-
-        start += sKey.length
-        end = strmData.indexOf("\"}", start)
-        val streamUrl = strmData.substring(start, end)
-
-        callback.invoke(
-            newExtractorLink(
-                "2Embed",
-                "2Embed",
-                streamUrl,
-                type = ExtractorLinkType.M3U8
-            ) {
-                this.headers = headers
-            }
-        )
-    }
-
     suspend fun invokeAsiaflix(
         title: String? = null,
         season: Int? = null,
@@ -3515,28 +3448,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeAutoembed(
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = if(season == null) {
-            "$autoembedAPI/embed/movie/$imdbId"
-        } else {
-            "$autoembedAPI/embed/tv/$imdbId/$season/$episode"
-        }
-
-        val text = app.get(url).text
-        val regex = Regex("""var\s+embedUrlValue\s*=\s*"([^"]+)";""")
-        val embedUrl = regex.find(text)?.groupValues?.get(1) ?: return
-
-        Log.d("Autoembed", "Extracted embed URL: $embedUrl")
-
-        loadCustomExtractor("Autoembed", embedUrl, autoembedAPI, subtitleCallback, callback)
-    }
-
     suspend fun invokeAnimekizz(
         title: String? = null,
         aniId: Int? = null,
@@ -4389,91 +4300,6 @@ object CineStreamExtractors {
                         }
                     )
                 }
-            }
-
-        }
-    }
-
-    suspend fun invokeVidsync(
-        title: String? = null,
-        tmdbId: Int? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        if(title == null || tmdbId == null) return
-
-        val token = JSONObject(app.get("$multiDecryptAPI/enc-vidsync").text)
-            .getJSONObject("result")
-            .getString("token")
-
-        Log.d("Vidsync", "token: $token")
-
-        val headers = mapOf(
-            "Accept" to "*/*",
-            "Origin" to vidsyncAPI,
-            "Referer" to "$vidsyncAPI/",
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "X-Requested-With" to "XMLHttpRequest",
-            "X-Cf-Turnstile" to token
-        )
-
-        val encTitle = URLEncoder.encode(title, "UTF-8")
-
-        val servers = listOf("cinevault","cinedub","cinebox","cinevip","cinecloud","cine4k", "cineflix")
-
-        servers.safeAmap { server ->
-            val serverUrl = buildString {
-                append("$vidsyncAPI/api/stream/fetch?type=")
-                if(season == null) append("movie")
-                if(season != null) append("tv")
-                append("&title=$encTitle&mediaId=$tmdbId&releaseYear=$year&serverName=$server")
-                if (season  != null) append("&season=$season")
-                if (episode != null) append("&episode=$episode")
-            }
-
-            Log.d("Vidsync", "serverUrl: $serverUrl")
-
-            val encData = app.get(serverUrl, headers = headers).text
-
-            Log.d("Vidsync", "encData: $encData")
-
-            val response = app.post(
-                "$multiDecryptAPI/dec-vidsync",
-                json = mapOf(
-                    "text" to encData,
-                    "id" to "$tmdbId"
-                )
-            ).parsedSafe<VidsyncResponse>() ?: return@safeAmap
-
-            Log.d("Vidsync", "$server response: $response")
-
-            if (response.status != 200) return@safeAmap
-            val result = response.result ?: return@safeAmap
-
-            result.subtitles?.forEach { sub ->
-                val file  = sub.file
-                val label = sub.label ?: "Unknown"
-                subtitleCallback(newSubtitleFile(label, file))
-            }
-
-            result.sources?.forEach { source ->
-
-                val type = if(source.streamType == "hls") ExtractorLinkType.M3U8 else INFER_TYPE
-
-                callback.invoke(
-                    newExtractorLink(
-                        "Vidsync[${server.capitalizeServer()}]",
-                        "Vidsync[${server.capitalizeServer()}]",
-                        source.url,
-                        type
-                    ) {
-                        this.headers = headers
-                        this.quality = getIndexQuality(source.quality)
-                    }
-                )
             }
 
         }

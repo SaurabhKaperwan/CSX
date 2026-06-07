@@ -799,33 +799,6 @@ data class LordflixDecResponse(
     val result: LordflixDecResult? = null
 )
 
-//Vidsync
-
-data class VidsyncSource(
-    val url: String,
-    val quality: String? = null,
-    val streamType: String,
-    val server: String? = null
-)
-
-data class VidsyncSubtitle(
-    val file: String,
-    val label: String? = null,
-    val type: String? = null
-)
-
-data class VidsyncResult(
-    val sourceMode: String? = null,
-    val sources: List<VidsyncSource>? = null,
-    val subtitles: List<VidsyncSubtitle>? = null
-)
-
-data class VidsyncResponse(
-    val status: Int,
-    val result: VidsyncResult? = null,
-    val error: String? = null
-)
-
 //Zinkmovies
 
 data class ZinkTokenResponse(

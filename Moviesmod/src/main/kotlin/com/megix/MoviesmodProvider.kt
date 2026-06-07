@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 import android.util.Log
 
 open class MoviesmodProvider : MainAPI() {
-    override var mainUrl = "https://moviesmod.blue"
+    override var mainUrl = "https://moviesmod.army"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
@@ -76,7 +76,7 @@ open class MoviesmodProvider : MainAPI() {
     fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("a").attr("title").replace("Download ", "")
         val href = this.select("a").attr("href")
-        val posterUrl = this.select("a > div > img").attr("src")
+        val posterUrl = this.select("div > img").attr("data-src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
