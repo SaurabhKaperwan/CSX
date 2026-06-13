@@ -148,12 +148,21 @@ data class AnizipEpisode(
 data class Anizip(val episodes: Map<String, AnizipEpisode>?)
 
 //Animetosho
-data class Animetosho(
+
+data class AnimetoshoResponse(
+    val data: AnimetoshoData?
+)
+
+data class AnimetoshoData(
+    val releases: List<AnimetoshoRelease>?
+)
+
+data class AnimetoshoRelease(
     val title: String?,
-    @param:JsonProperty("magnet_uri") val magnetUri: String?,
+    val magnet: String?,
     val seeders: Int?,
     val leechers: Int?,
-    @param:JsonProperty("total_size") val totalSize: String?
+    @param:JsonProperty("size_bytes") val sizeBytes: Long?
 )
 
 //Vidlink

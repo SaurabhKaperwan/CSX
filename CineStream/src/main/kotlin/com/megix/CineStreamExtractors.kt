@@ -2027,7 +2027,7 @@ object CineStreamExtractors {
         val json = app.get("$anizipAPI/mappings?mal_id=$malId").text
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
         val slug = title.createSlug()
-        val url = "$animetoshoBaseAPI/episode/$slug-$episode.$epId"
+        val url = "$animetoshoBaseAPI/episode/$epId"
         val document = app.get(url).document
 
         document.select("div.home_list_entry:has(div.links)").safeAmap {
@@ -2061,22 +2061,28 @@ object CineStreamExtractors {
         val id = malId ?: kitsuId?.toIntOrNull() ?: return
         val type = if(malId == null) "kitsu_id" else "mal_id"
         val json = app.get("$anizipAPI/mappings?$type=$id").text
+
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
-        val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
-        val items: List<Animetosho> = parseJson<List<Animetosho>>(json2)
+
+        val json2 = app.get("$animetoshoAPI/json/v1/episodes/$epId").text
+
+        val response = parseJson<AnimetoshoResponse>(json2)
+        val items = response.data?.releases ?: return
+
+        val sorted = items
+            .filter { (it.seeders ?: 0) >= 25 && !it.magnet.isNullOrBlank() }
+            .sortedBy { it.sizeBytes ?: Long.MAX_VALUE }
+
         // val filtered = items.filter { (it.seeders ?: 0) > 25 }
         // val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
 
-        val sorted = items
-        .filter { (it.seeders ?: 0) >= 25 && !it.magnetUri.isNullOrBlank() }
-        .sortedBy { it.totalSize?.toLongOrNull() ?: Long.MAX_VALUE }
 
          for (it in sorted) {
             val title = it.title ?: ""
             val s = it.seeders ?: 0
             val l = it.leechers ?: 0
-            val magnet = it.magnetUri ?: continue
-            val size = it.totalSize?.toLongOrNull() ?: 0L
+            val magnet = it.magnet ?: continue
+            val size = it.sizeBytes ?: 0L
             val sizeStr = formatSize(size)
             val type = if(
                 title.contains("Dual", ignoreCase = true)

@@ -905,21 +905,21 @@ open class Cloudnestra : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0",
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language" to "en-US,en;q=0.5",
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language" to "en-GB,en-US;q=0.9,en;q=0.8",
             "Referer" to "$referer/",
-            "Sec-Fetch-Dest" to "iframe",
+            "Sec-Fetch-Dest" to "document",
             "Sec-Fetch-Mode" to "navigate",
-            "Sec-Fetch-Site" to "cross-site",
+            "Sec-Fetch-Site" to "none",
             "Upgrade-Insecure-Requests" to "1",
-            "Connection" to "keep-alive"
         )
 
         val iframeHtml = app.get(url, headers = headers).text
-
         val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
         val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
+
+        Log.d(name, "cloudUrl : $mainUrl$prorcpSrc")
 
         val cloudHtml = app.get(
             url = "$mainUrl$prorcpSrc",
@@ -932,11 +932,15 @@ open class Cloudnestra : ExtractorApi() {
 
         val requestBody = mapOf("text" to divText, "div_id" to divId)
 
+        Log.d(name, "requestBody : $requestBody")
+
         val decrypted = app.post(
             url = "$multiDecryptAPI/dec-cloudnestra",
             json = requestBody,
             headers = mapOf("Content-Type" to "application/json")
         ).text
+
+        Log.d(name, "decrypted : $decrypted")
 
         val jsonObject = JSONObject(decrypted)
         val status = jsonObject.getInt("status")
@@ -1081,12 +1085,25 @@ class FlixCloud : ExtractorApi() {
 
         Log.d("FlixCloud", "Decrypted: ${decrypted}")
 
+        val stream = decrypted.stream
+
+        val wPayload = decrypted.context.wPayload
+
+        val parseManifest = "$multiDecryptAPI/parse-flixcloud?url=$stream&w_payload=$wPayload"
+
+        Log.d("FlixCloud", "parseManifest: ${parseManifest}")
+
+        // val manifestResponse = app.get(
+        //     parseManifest,
+        //     referer = "$mainUrl/"
+        // ).text
+
 
         callback.invoke(
             newExtractorLink(
                 name,
                 name,
-                decrypted.stream,
+                parseManifest,
                 ExtractorLinkType.M3U8
             ) {
                 this.headers = videoHeaders
