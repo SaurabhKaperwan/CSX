@@ -2030,8 +2030,8 @@ object CineStreamExtractors {
         val url = "$animetoshoBaseAPI/episode/$epId"
         val document = app.get(url).document
 
-        document.select("div.home_list_entry:has(div.links)").safeAmap {
-            val text = it.select("div.link > a").text()
+        document.select("div.home_list_entry").safeAmap {
+            val text = it.select("div.link > a").attr("title")
             val size = it.select("div.size").text()
             val quality = getIndexQuality(text)
 
@@ -2041,7 +2041,7 @@ object CineStreamExtractors {
                 "SUB"
             }
 
-            it.select("div.links > a.dllink").safeAmap { anchor ->
+            it.select("div.links > a").safeAmap { anchor ->
                 val href = anchor.attr("href")
                 val anchorText = anchor.text()
                 if(anchorText.contains("Torrent") || anchorText.contains("Magnet")) return@safeAmap
@@ -2764,7 +2764,12 @@ object CineStreamExtractors {
 
         val query = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$name"},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
         val res = app.get(query, referer = privatereferer)
+
+        Log.d("Allanime", "res: ${res.text}")
+
         val response = res.parsedSafe<Anichi>()?.data?.shows?.edges
+
+        Log.d("Allanime", "response: $response")
 
         val headers =
             mapOf(
@@ -4397,6 +4402,52 @@ object CineStreamExtractors {
                 )
             }
         }
+    }
+
+    suspend fun invokeAnidb(
+        title: String? = null,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val searchUrl = "$anidbAPI/browse?q=$title&type=&status=&season=&year=$year&genres=&sort=order_top"
+
+        val matchedId = app.get(searchUrl).document
+            .selectFirst("div.anime-grid > a")
+            ?.attr("href")?.substringAfterLast("-")
+            ?: return
+
+        val episodes = app.get("$anidbAPI/api/frontend/anime/$matchedId/episodes")
+            .parsedSafe<AnidbResponse>() ?: return
+
+        val episodeId = episodes.episodes
+            ?.getOrNull((episode ?: 1) - 1)
+            ?.id ?: return
+
+        val languages = app.get("$anidbAPI/api/frontend/episode/$episodeId/languages")
+            .parsedSafe<AnidbLanguagesResponse>()?.languages ?: return
+
+        languages.forEach { language ->
+            val embedUrl = language.embedUrl ?: return@forEach
+            val isDub = language.code == "eng"
+
+            val embedDoc = app.get(embedUrl).document
+            val videoUrl = Regex("""file:\s*'([^']+)'""").find(embedDoc.html())?.groupValues?.get(1) ?: return@forEach
+
+            callback.invoke(
+                newExtractorLink(
+                    "Anidb",
+                    "Anidb ${if (isDub) "[DUB]" else "[SUB]"}",
+                    videoUrl,
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.quality = Qualities.P1080.value
+                    this.referer = embedUrl
+                }
+            )
+        }
+
     }
 
     suspend fun invokeAnimedao(

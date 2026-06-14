@@ -52,7 +52,8 @@ const val lordflixBaseAPI = "https://lordflix.org"
 const val lordflixAPI = "https://snowhouse.lordflix.club"
 const val reanimeAPI = "https://reanime.to"
 const val animesaltAPI = "https://animesalt.ac"
-const val meteorAPI = "https://meteorfortheweebs.midnightignite.me"
+const val anidbAPI = "https://anidb.app"
+const val torrentioAPI = "https://torrentio.strem.fun/limit=4/manifest.json"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
 // ── 2. Dynamic API Config ────────────────────────────────────

@@ -839,3 +839,24 @@ data class FileListResponse(val data: FileListData? = null)
 data class VideoQualityResponse(val html: String? = null)
 
 data class VideoQuality(val url: String, val quality: String)
+
+//Anidb
+
+data class AnidbResponse(
+    val episodes: List<AnidbEpisode>? = null
+)
+
+data class AnidbEpisode(
+    val id: Int? = null,
+    val number: Int? = null,
+)
+
+data class AnidbLanguagesResponse(
+    val languages: List<AnidbLanguage>? = null
+)
+
+data class AnidbLanguage(
+    val code: String? = null,
+    val name: String? = null,
+    @param:JsonProperty("embed_url") val embedUrl: String? = null
+)

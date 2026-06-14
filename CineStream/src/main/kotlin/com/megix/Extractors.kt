@@ -107,13 +107,13 @@ open class Videostr : ExtractorApi() {
     }
 }
 
-open class Gofile : ExtractorApi() {
+class Gofile : ExtractorApi() {
     override val name = "Gofile"
     override val mainUrl = "https://gofile.io"
     override val requiresReferer = false
     private val mainApi = "https://api.gofile.io"
-    private val browserLanguage = "en-GB"
-    private val secret = "5d4f7g8sd45fsd"
+    private val browserLanguage = "en-US"
+    private val secret = "9844d94d963d30"
 
     override suspend fun getUrl(
         url: String,
@@ -123,14 +123,19 @@ open class Gofile : ExtractorApi() {
     ) {
         val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
 
+        val websiteTokenForAccountCreation = generateWebsiteToken(USER_AGENT, "")
+
         val token = app.post(
             "$mainApi/accounts",
+            headers = mapOf(
+                "X-Website-Token" to websiteTokenForAccountCreation,
+                "X-BL" to browserLanguage
+            )
         ).parsedSafe<AccountResponse>()?.data?.token ?: return
 
-        val currentTimeSeconds = System.currentTimeMillis() / 1000
-        val interval = (currentTimeSeconds / 14400).toString()
-        val message = listOf(USER_AGENT, browserLanguage, token, interval, secret).joinToString("::")
-        val hashedToken = sha256(message)
+        val token = check.parsedSafe<AccountResponse>()?.data?.token ?: return
+
+        val hashedToken = generateWebsiteToken(USER_AGENT, token)
 
         val headers = mapOf(
             "Referer" to "$mainUrl/",
@@ -141,18 +146,18 @@ open class Gofile : ExtractorApi() {
         )
 
         val parsedResponse = app.get(
-            "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
+            "$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
             headers = headers
         ).parsedSafe<GofileResponse>()
 
-        val childrenMap = parsedResponse?.data?.children ?: return
+        Log.d(name, "parsedResponse: $parsedResponse")
 
+        val childrenMap = parsedResponse?.data?.children ?: return
         for ((_, file) in childrenMap) {
             if (file.link.isNullOrEmpty() || file.type != "file") continue
             val fileName = file.name ?: ""
             val size = file.size ?: 0L
             val formattedSize = formatBytes(size)
-
             callback.invoke(
                 newExtractorLink(
                     "Gofile",
@@ -165,6 +170,12 @@ open class Gofile : ExtractorApi() {
                 }
             )
         }
+    }
+
+    private fun generateWebsiteToken(userAgent: String, accountToken: String): String {
+        val timeSlot = System.currentTimeMillis() / 1000 / 14400
+        val raw = "$userAgent::$browserLanguage::$accountToken::$timeSlot::$secret"
+        return sha256(raw)
     }
 
     private fun getQuality(str: String?): Int {
@@ -188,19 +199,15 @@ open class Gofile : ExtractorApi() {
     data class AccountResponse(
         @param:JsonProperty("data") val data: AccountData? = null
     )
-
     data class AccountData(
         @param:JsonProperty("token") val token: String? = null
     )
-
     data class GofileResponse(
         @param:JsonProperty("data") val data: GofileData? = null
     )
-
     data class GofileData(
         @param:JsonProperty("children") val children: Map<String, GofileFile>? = null
     )
-
     data class GofileFile(
         @param:JsonProperty("type") val type: String? = null,
         @param:JsonProperty("name") val name: String? = null,
@@ -904,6 +911,8 @@ open class Cloudnestra : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        Log.d(name, "url : $url")
+
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
             "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -925,6 +934,8 @@ open class Cloudnestra : ExtractorApi() {
             url = "$mainUrl$prorcpSrc",
             headers = headers
         ).text
+
+        Log.d(name, "cloudHtml : $cloudHtml")
 
         val divMatch = Regex("""<div id="([^"]+)"[^>]*style=["']display\s*:\s*none;?["'][^>]*>([a-zA-Z0-9:\/.,{}\-_=+ ]+)</div>""", RegexOption.IGNORE_CASE).find(cloudHtml)
         val divId = divMatch?.groupValues?.get(1) ?: return
