@@ -133,7 +133,6 @@ class Gofile : ExtractorApi() {
             )
         ).parsedSafe<AccountResponse>()?.data?.token ?: return
 
-        val token = check.parsedSafe<AccountResponse>()?.data?.token ?: return
 
         val hashedToken = generateWebsiteToken(USER_AGENT, token)
 
