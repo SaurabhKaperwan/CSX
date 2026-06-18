@@ -860,3 +860,15 @@ data class AnidbLanguage(
     val name: String? = null,
     @param:JsonProperty("embed_url") val embedUrl: String? = null
 )
+
+
+//MkvBase
+
+data class MkvBaseResponse(
+    val results: List< MkvBaseSearchResult>? = null,
+)
+
+data class  MkvBaseSearchResult(
+    val title: String? = null,
+    val url: String? = null,
+)
