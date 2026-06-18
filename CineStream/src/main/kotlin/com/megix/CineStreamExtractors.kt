@@ -4421,14 +4421,25 @@ object CineStreamExtractors {
             "x-requested-with" to "XMLHttpRequest"
         )
 
-        val results = app.get(
+         val response = app.get(
             "$mkvBaseAPI/api/links?q=$query",
             headers = headers
         ).parsedSafe<MkvBaseResponse>() ?: return
 
-        results.safeAmap { item ->
-            if(item?.url.isNullOrEmpty()) return@safeAmap
-            loadSourceNameExtractor("MkvBase", item.url, "", subtitleCallback, callback)
+        response.results?.safeAmap { item ->
+            if (item?.url.isNullOrEmpty()) {
+                return@safeAmap null
+            }
+
+            loadSourceNameExtractor(
+                "MkvBase",
+                item.url!!,
+                "",
+                subtitleCallback,
+                callback
+            )
+            // Return dummy value (safeAmap expects B?, not Unit)
+            true
         }
     }
 
