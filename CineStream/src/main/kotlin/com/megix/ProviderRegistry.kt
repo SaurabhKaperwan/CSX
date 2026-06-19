@@ -153,6 +153,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_vidcore", displayName = "Vidcore",
+            executeStandard = { res, subCb, cb -> invokeVidcore(res.tmdbId, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_av1encodes", displayName = "Av1encodes",
             executeStandard = { res, _, cb -> invokeAv1encodes(res.title, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeAv1encodes(res.imdbTitle, res.imdbSeason, res.imdbEpisode, cb) }

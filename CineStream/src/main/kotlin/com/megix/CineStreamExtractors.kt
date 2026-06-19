@@ -3669,7 +3669,7 @@ object CineStreamExtractors {
 
         val response = app.get(url, headers = headers).text
         val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
-        val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText&version=1"
+        val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText"
         val decodedDataJson = app.get(decApiUrl).text
         val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
         val serversUrl = decodedData.servers ?: return
@@ -3680,7 +3680,7 @@ object CineStreamExtractors {
         val serversEncrypted = app.post(serversUrl, headers = headers).text
         val serversListJson = app.post(
             "$multiDecryptAPI/dec-vidfast",
-            json = mapOf("text" to serversEncrypted, "version" to "1")
+            json = mapOf("text" to serversEncrypted)
         ).text
 
         val serversList = tryParseJson<VidfastStreamResponse>(serversListJson)?.result ?: return
@@ -3695,7 +3695,7 @@ object CineStreamExtractors {
 
             val streamDataJson = app.post(
                 "$multiDecryptAPI/dec-vidfast",
-                json = mapOf("text" to streamDataEncrypted , "version" to "1")
+                json = mapOf("text" to streamDataEncrypted)
             ).text
 
             val streamData = tryParseJson<VidfastServersStreamRoot>(streamDataJson)?.result ?: return@safeAmap
@@ -3729,6 +3729,87 @@ object CineStreamExtractors {
                 }
             )
         }
+    }
+
+    suspend fun invokeVidcore(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val headers = mutableMapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Referer" to "$vidcoreAPI/",
+            "X-Requested-With" to "XMLHttpRequest"
+        )
+
+        val baseUrl = if(season == null) {
+            "$vidcoreAPI/movie/$tmdbId"
+        } else {
+            "$vidcoreAPI/tv/$tmdbId/$season/$episode"
+        }
+
+        val pageContent = app.get(baseUrl).text
+        val regex = Regex("""\\\"en\\\":\\\"(.*?)\\\"""")
+        val match = regex.find(pageContent) ?: return
+        val encryptedText = match.groupValues[1]
+
+        Log.d("Vidcore", "encryptedText: $encryptedText")
+
+        val encVidcoreUrl = "$multiDecryptAPI/enc-vidcore?text=${URLEncoder.encode(encryptedText, "UTF-8")}"
+        val initialResponse = app.get(encVidcoreUrl).parsedSafe<VidcoreResponse>()?.result ?: return
+
+        Log.d("Vidcore", "initialResponse: $initialResponse")
+
+        val serversUrl = initialResponse.servers
+        val streamUrl = initialResponse.stream
+        val token = initialResponse.token
+        headers["X-CSRF-Token"] = token
+
+        val serversEncrypted = app.post(serversUrl, headers = headers).text
+
+        Log.d("Vidcore", "serversEncrypted: $serversEncrypted")
+
+        val decServersResponse = app.post(
+            "$multiDecryptAPI/dec-vidcore",
+            json = mapOf("text" to serversEncrypted),
+            headers = headers
+        ).parsedSafe<VidcoreServers>()?.result ?: return
+
+        Log.d("Vidcore", "decServersResponse: $decServersResponse")
+
+
+        decServersResponse.safeAmap { server ->
+            val stream = "$streamUrl/${server.data}"
+
+            val streamEncrypted = app.post(stream, headers = headers).text
+
+            val decryptedStream = app.post(
+                "$multiDecryptAPI/dec-vidcore",
+                json = mapOf("text" to streamEncrypted)
+            ).parsedSafe<VidcoreStreamResponse>()?.result ?: return@safeAmap
+
+            Log.d("Vidcore", "decryptedStream: $decryptedStream")
+
+            val m3u8Url = decryptedStream.url
+
+            M3u8Helper.generateM3u8(
+                "Vidcore - ${server.name}",
+                m3u8Url,
+                "$vidcoreAPI/",
+            ).forEach(callback)
+
+            decryptedStream.tracks?.forEach { track ->
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        getLanguage(track.label) ?: track.label,
+                        track.file
+                    )
+                )
+            }
+        }
+
     }
 
     suspend fun invokeM4ufree(
@@ -4427,13 +4508,13 @@ object CineStreamExtractors {
         ).parsedSafe<MkvBaseResponse>() ?: return
 
         response.results?.safeAmap { item ->
-            if (item?.url.isNullOrEmpty()) {
+            if (item.url.isNullOrEmpty()) {
                 return@safeAmap null
             }
 
             loadSourceNameExtractor(
                 "MkvBase",
-                item.url!!,
+                item.url,
                 "",
                 subtitleCallback,
                 callback

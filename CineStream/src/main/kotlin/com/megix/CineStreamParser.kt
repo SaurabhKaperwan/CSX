@@ -872,3 +872,40 @@ data class  MkvBaseSearchResult(
     val title: String? = null,
     val url: String? = null,
 )
+
+//Vidcore
+
+data class VidcoreResponse(
+    val result: VidcoreResult? = null,
+)
+
+data class VidcoreResult(
+    val servers: String,
+    val stream: String,
+    val token: String
+)
+
+data class VidcoreServers(
+    val result: List<VidcoreServersResult>? = null,
+)
+
+data class VidcoreServersResult(
+    val name: String,
+    val description: String,
+    val data: String
+)
+
+data class VidcoreTrack(
+    val file: String,
+    val label: String
+)
+
+data class VidcoreStreamResponse(
+    val result: VidcoreStreamData?
+)
+
+data class VidcoreStreamData(
+    val url: String,
+    val noReferrer: Boolean?,
+    val tracks: List<VidcoreTrack>?,
+)
