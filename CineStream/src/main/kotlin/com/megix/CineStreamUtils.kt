@@ -1661,3 +1661,37 @@ fun parseQualityDivs(html: String): List<VideoQuality> {
             VideoQuality(url = url.replace("\\/", "/"), quality = quality)
         }.toList()
 }
+
+//Anichi
+
+fun decodeToBeParsed(encoded: String): String? {
+    return try {
+        val raw = base64DecodeArray(encoded)
+
+        if (raw.size < 29) return null
+
+        val iv = raw.copyOfRange(1, 13)
+
+        val ctr = ByteArray(16)
+        System.arraycopy(iv, 0, ctr, 0, iv.size)
+        ctr[15] = 0x02
+
+        val ciphertext = raw.copyOfRange(13, raw.size - 16)
+
+        val key = MessageDigest
+            .getInstance("SHA-256")
+            .digest("Xot36i3lK3:v1".toByteArray())
+
+        val cipher = Cipher.getInstance("AES/CTR/NoPadding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(key, "AES"),
+            IvParameterSpec(ctr)
+        )
+
+        cipher.doFinal(ciphertext).toString(Charsets.UTF_8)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}

@@ -76,7 +76,7 @@ open class MoviesmodProvider : MainAPI() {
     fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("a").attr("title").replace("Download ", "")
         val href = this.select("a").attr("href")
-        val posterUrl = this.select("div > img").attr("data-src")
+        val posterUrl = this.selectFirst("div > img").attr("data-src") ?: this.select("div > img").attr("src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl

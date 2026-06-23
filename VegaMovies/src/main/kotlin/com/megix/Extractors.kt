@@ -74,6 +74,11 @@ open class VCloud : ExtractorApi() {
         return regex.find(html)?.groupValues?.get(1)
     }
 
+    fun extractDoubleAtob(html: String): String? {
+        val regex = Regex("""var\s+url\s*=\s*atob\s*\(\s*atob\s*\(\s*['"]([^'"]+)['"]\s*\)\s*\)""")
+        return regex.find(html)?.groupValues?.get(1)?.let { base64Decode(base64Decode(it)) }
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -102,7 +107,12 @@ open class VCloud : ExtractorApi() {
         }
         else {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
-            Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+
+            if(newUrl.contains("vcloud")) {
+                extractDoubleAtob(scriptTag) ?: ""
+            } else {
+                Regex("var url = '([^']*)'").find(scriptTag) ?. groupValues ?. get(1) ?: ""
+            }
         }
 
         if(!link.startsWith("https://")) link = baseUrl + link
@@ -150,6 +160,7 @@ open class VCloud : ExtractorApi() {
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")
             }
+            else if (text.contains("Gofile")) loadExtractor(link, "", subtitleCallback, callback)
             else { Log.d("Error", "No Server matched") }
         }
     }

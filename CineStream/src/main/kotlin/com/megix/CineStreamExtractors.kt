@@ -2781,17 +2781,36 @@ object CineStreamExtractors {
 
         if (response != null) {
             val id = response.firstOrNull()?.id ?: return
-            val langType = listOf("sub", "dub")
-            for (i in langType) {
+            val langTypes = listOf("sub", "dub")
+            langTypes.safeAmap { i ->
                 val epData =
                     """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
 
-                val eplinks = app.get(epData, headers = headers)
-                    .parsedSafe<AnichiEP>()?.data?.episode?.sourceUrls
+                val responseText = app.get(
+                    epData,
+                    referer = privatereferer,
+                ).text
 
-                Log.d("Allanime", "Episode Links: $eplinks")
+                Log.d("Allanime", "responseText: $responseText")
 
-                eplinks?.safeAmap { source ->
+                val episodeLinks = run {
+                    val encrypted = tryParseJson<EncryptedResponse>(responseText)
+                        ?.data
+                        ?.tobeparsed
+
+                    val finalJson = encrypted
+                        ?.let { decodeToBeParsed(it) }
+                        ?: responseText
+
+                    tryParseJson<AnichiEP>(finalJson)?.let {
+                        it.data?.episode?.sourceUrls
+                            ?: it.episode?.sourceUrls
+                    }
+                } ?: return@safeAmap
+
+                Log.d("Allanime", "Episode Links: $episodeLinks")
+
+                episodeLinks.safeAmap { source ->
                     safeApiCall {
                         val sourceUrl = source.sourceUrl
 
@@ -3035,9 +3054,11 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit
     ) {
         val secret = base64Decode("cGxlYXNlZG9udHNjcmFwZW1lc2F5d2FsbGFoaQ==")
-        val defaultReferer = "https://player.vidzee.wtf/"
+        val defaultReferer = "$vidzeeApi/"
 
-        (1..13).toList().safeAmap { sr ->
+        val servers = listOf(0, 1, 2, 4, 5, 6, 7)
+
+        servers.safeAmap { sr ->
             try {
                 val apiUrl = if (season == null) {
                     "$vidzeeApi/api/server?id=$id&sr=$sr"
@@ -3046,6 +3067,9 @@ object CineStreamExtractors {
                 }
 
                 val response = app.get(apiUrl).text
+
+                Log.d("Vidzee", "response: $response")
+
                 val json = JSONObject(response)
 
                 val globalHeaders = mutableMapOf<String, String>()
@@ -3059,6 +3083,9 @@ object CineStreamExtractors {
                 for (i in 0 until urls.length()) {
                     val obj = urls.getJSONObject(i)
                     val encryptedLink = obj.optString("link")
+
+                    Log.d("Vidzee", "encryptedLink: $encryptedLink")
+
                     val name = obj.optString("name", "")
                     val type = obj.optString("type", "hls")
                     val lang = obj.optString("lang", "Unknown")
@@ -3066,6 +3093,9 @@ object CineStreamExtractors {
 
                     if (encryptedLink.isNotBlank()) {
                         val finalUrl = decryptVidzeeUrl(encryptedLink, secret) ?: continue
+
+                        Log.d("Vidzee", "finalUrl: $finalUrl")
+
                         if(!finalUrl.contains("https:")) continue
                         val headersMap = mutableMapOf<String, String>()
                         headersMap.putAll(globalHeaders)
@@ -3098,7 +3128,7 @@ object CineStreamExtractors {
                 }
 
             } catch (e: Exception) {
-                Log.e("VidzeeApi", "Failed sr=$sr: $e")
+                Log.e("Vidzee", "Failed sr=$sr: $e")
             }
         }
     }

@@ -8,12 +8,13 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.lagradost.api.Log
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.net.URI
 
 open class VegaMoviesProvider : MainAPI() {
-    override var mainUrl = "https://vegamovies.vodka"
+    override var mainUrl = "https://vegamovies.mq"
     override var name = "VegaMovies"
     override val hasMainPage = true
     override var lang = "hi"
@@ -176,6 +177,9 @@ open class VegaMoviesProvider : MainAPI() {
                     }
 
                     vcloudLinks.mapNotNull { vcloudlink ->
+
+                        Log.d("Vega", "source: $vcloudlink")
+
                         val key = Pair(realSeason, vcloudLinks.indexOf(vcloudlink) + 1)
                         if (episodesMap.containsKey(key)) {
                             val currentList = episodesMap[key] ?: emptyList()
@@ -218,11 +222,14 @@ open class VegaMoviesProvider : MainAPI() {
                 addImdbUrl(imdbUrl)
             }
         } else {
-            val buttons = document.select("a:has(button.dwd-button)")
+            val buttons = document.select("a:has(button.btn-sm)")
             val data = buttons.mapNotNull { button ->
                 val link = fixUrl(button.attr("href"))
                 val doc = app.get(link).document
                 val source = doc.select("a:contains(V-Cloud)").attr("href")
+
+                Log.d("Vega", "source: $source")
+
                 EpisodeLink(source)
             }
             return newMovieLoadResponse(title, url, TvType.Movie, data) {

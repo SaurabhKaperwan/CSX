@@ -3,6 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.fasterxml.jackson.annotation.JsonProperty
+import kotlinx.serialization.Serializable
 
 //year => for movie : release year for series : season 1 release year
 //airedYear => for movie : release year for series : episode release year
@@ -410,6 +411,17 @@ data class VegaDocument(
 
 //Anichi
 
+@Serializable
+data class EncryptedResponse(
+    val data: EncryptedData? = null
+)
+
+@Serializable
+data class EncryptedData(
+    val _m: String? = null,
+    val tobeparsed: String? = null
+)
+
 data class AkIframe(
     @param:JsonProperty("idUrl") val idUrl: String? = null,
 )
@@ -478,26 +490,27 @@ data class Edge(
 //Anichi Ep Parser
 
 data class AnichiEP(
-    val data: AnichiEPData,
+    val data: AnichiEPData? = null,
+    val episode: AnichiEpisode? = null,
 )
 
 data class AnichiEPData(
-    val episode: AnichiEpisode,
+    val episode: AnichiEpisode? = null,
 )
 
 data class AnichiEpisode(
-    val sourceUrls: List<SourceUrl>,
+    val sourceUrls: List<SourceUrl> = emptyList(),
 )
 
 data class SourceUrl(
     val sourceUrl: String,
     val sourceName: String,
-    val downloads: AnichiDownloads?,
+    val downloads: AnichiDownloads? = null,
 )
 
 data class AnichiDownloads(
-    val sourceName: String,
-    val downloadUrl: String,
+    val sourceName: String? = null,
+    val downloadUrl: String? = null,
 )
 
 //Anichi Download URL Parser
