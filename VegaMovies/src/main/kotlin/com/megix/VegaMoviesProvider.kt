@@ -222,7 +222,7 @@ open class VegaMoviesProvider : MainAPI() {
                 addImdbUrl(imdbUrl)
             }
         } else {
-            val buttons = document.select("a:has(button.btn-sm)")
+            val buttons = document.select("a:has(button.dwd-button)")
             val data = buttons.mapNotNull { button ->
                 val link = fixUrl(button.attr("href"))
                 val doc = app.get(link).document
