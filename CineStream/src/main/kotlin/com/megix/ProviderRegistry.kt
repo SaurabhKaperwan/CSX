@@ -250,7 +250,11 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_projectfreetv", displayName = "ProjectFreeTV",
-            executeStandard = { res, subCb, cb -> invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeProjectfreetv(res.title, res.airedYear ?: res.year, res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_mlsbd", displayName = "Mlsbd",
+            executeStandard = { res, subCb, cb -> invokeMlsbd(res.title, res.airedYear ?: res.year, res.season, subCb, cb) }
         ),
         ProviderDef(
             key = "p_levidia", displayName = "Levidia",
@@ -282,7 +286,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_akwam", displayName = "Akwam",
-            executeStandard = { res, subCb, cb -> invokeAkwam(res.imdbId, res.title, res.airedYear, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeAkwam(res.imdbId, res.title, res.airedYear ?: res.year, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_rtally", displayName = "Rtally",
@@ -290,15 +294,15 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_asiaflix", displayName = "Asiaflix",
-            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subCb, cb) }
+            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear ?: res.year, subCb, cb) }
         ),
         ProviderDef(
             key = "p_skymovies", displayName = "SkyMovies",
-            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeSkymovies(res.title, res.airedYear ?: res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_hdmovie2", displayName = "HDMovie2",
-            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear ?: res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_mostraguarda", displayName = "Mostraguarda",
@@ -312,7 +316,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_onetouchtv", displayName = "Onetouchtv",
-            executeStandard = { res, subCb, cb -> invokeOnetouchtv(res.title, res.airedYear, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeOnetouchtv(res.title, res.airedYear ?: res.year, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_toonstream", displayName = "Toonstream",

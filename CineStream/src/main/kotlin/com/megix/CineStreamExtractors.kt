@@ -2153,6 +2153,50 @@ object CineStreamExtractors {
         }
     }
 
+    suspend fun invokeMlsbd(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val query = "$title $year".createSlug()
+        val tag = if(season != null) "[Combined]" else ""
+        val url = "$mlsbdAPI/$query"
+
+        Log.d("Mlsbd", "url: $url")
+
+        val document = app.get(url).document
+
+        val downloadSection = document.selectFirst(".post-section-title.download")
+
+        if (downloadSection?.text() != "Download Now") {
+            Log.d("Mlsbd", "No download section found")
+            return
+        }
+
+        document.select(".post-content p > a")
+            .safeAmap {
+
+                val link = it.attr("href")
+
+                Log.d("Mlsbd", "link: $link")
+
+                app.get(link).document.select("li > a").safeAmap { source ->
+
+                    Log.d("Mlsbd", "source: ${source.attr("href")}")
+
+                    loadSourceNameExtractor(
+                        "Mlsbd$tag",
+                        source.attr("href"),
+                        "",
+                        subtitleCallback,
+                        callback
+                    )
+                }
+            }
+    }
+
     suspend fun invokeMultimovies(
         title: String? = null,
         season: Int? = null,
