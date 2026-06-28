@@ -73,10 +73,6 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeShowbox(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_vidflix", displayName = "Vidflix",
-            executeStandard = { res, _, cb -> invokeVidflix(res.tmdbId, res.season, res.episode, cb) }
-        ),
-        ProviderDef(
             key = "p_vidrock", displayName = "Vidrock",
             executeStandard = { res, _, cb -> invokeVidrock(res.tmdbId, res.season, res.episode, cb) }
         ),
@@ -90,18 +86,14 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeMkvbase(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeMkvbase(res.imdbTitle, res.imdbYear ,res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_cinemacity", displayName = "Cinemacity",
-            executeStandard = { res, subCb, cb -> invokeCinemacity(res.imdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
+        // ProviderDef(
+        //     key = "p_cinemacity", displayName = "Cinemacity",
+        //     executeStandard = { res, subCb, cb -> invokeCinemacity(res.imdbId, res.season, res.episode, subCb, cb) },
+        //     executeAnime = { res, subCb, cb -> invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        // ),
         ProviderDef(
             key = "p_allmovieland", displayName = "Allmovieland",
             executeStandard = { res, _, cb -> invokeAllmovieland(res.imdbId, res.season, res.episode, cb) },
-        ),
-        ProviderDef(
-            key = "p_madplaycdn", displayName = "MadplayCDN",
-            executeStandard = { res, _, cb -> invokeMadplayCDN(res.tmdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
             key = "p_hexa", displayName = "Hexa",
@@ -271,11 +263,6 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeAnimesalt(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_vadapav", displayName = "Vadapav",
-            executeStandard = { res, _, cb -> invokeVadapav(res.title, res.year, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeVadapav(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
-        ),
-        ProviderDef(
             key = "p_m4ufree", displayName = "M4ufree",
             executeStandard = { res, subCb, cb -> invokeM4ufree(res.title, res.year, res.season, res.episode, subCb, cb) },
         ),
@@ -326,6 +313,10 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_animedao", displayName = "Animedao",
             executeAnime = { res, subCb, cb -> invokeAnimedao(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_anikage", displayName = "Anikage",
+            executeAnime = { res, subCb, cb -> invokeAnikage(res.title, res.anilistId, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_anidb", displayName = "Anidb",

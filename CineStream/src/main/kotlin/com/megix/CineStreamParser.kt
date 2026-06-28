@@ -922,3 +922,34 @@ data class VidcoreStreamData(
     val noReferrer: Boolean?,
     val tracks: List<VidcoreTrack>?,
 )
+
+//Anikage
+data class AnikageSearch(
+    @param:JsonProperty("results") val results: List<AnikageResult>? = null
+)
+data class AnikageResult(
+    @param:JsonProperty("slug") val slug: String? = null,
+    @param:JsonProperty("anilistId") val anilistId: Int? = null,
+)
+data class AnikageServer(
+    @param:JsonProperty("id") val id: String? = null,
+)
+data class AnikageSource(
+    @param:JsonProperty("sources") val sources: List<AnikageStreamSource>? = null,
+    @param:JsonProperty("subtitles") val subtitles: List<AnikageSub>? = null,
+    @param:JsonProperty("embeds") val embeds: List<AnikageEmbed>? = null,
+)
+data class AnikageSub(
+    @param:JsonProperty("file") val file: String? = null,
+    @param:JsonProperty("label") val label: String? = null,
+)
+data class AnikageEmbed(
+    @param:JsonProperty("url") val url: String,
+    @param:JsonProperty("type") val type: String,
+    @param:JsonProperty("server") val server: String,
+)
+data class AnikageStreamSource(
+    @param:JsonProperty("url") val url: String? = null,
+    @param:JsonProperty("quality") val quality: String? = null,
+    @param:JsonProperty("isM3U8") val isM3U8: Boolean? = null,
+)
