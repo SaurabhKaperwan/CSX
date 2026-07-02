@@ -953,3 +953,37 @@ data class AnikageStreamSource(
     @param:JsonProperty("quality") val quality: String? = null,
     @param:JsonProperty("isM3U8") val isM3U8: Boolean? = null,
 )
+
+//Fshare
+
+data class FshareDownload(
+    val src: String,
+    val label: String
+)
+
+data class FshareFile(
+    val sources: List<FshareSource>,
+    val backups: List<FshareSource>,
+    val alternatives: List<List<FshareSource>>,
+    val downloads: List<FshareDownload>?,
+    val vast: Int?
+)
+
+data class FshareData(
+    val file: FshareFile
+)
+
+data class FshareResponse(
+    val data: FshareData,
+    val status: String
+)
+
+data class FshareSource(
+    val src: String,
+    val label: String,
+    val type: String,
+    val quality: String?,
+    val storage: String,
+    val id: String,
+    val selected: Boolean? = null
+)

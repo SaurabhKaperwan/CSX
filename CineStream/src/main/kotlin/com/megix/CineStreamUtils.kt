@@ -1341,27 +1341,6 @@ fun extractXpassBackups(html: String): List<Pair<String, String>> {
 }
 
 
-//Mapple
-fun solvePowChallenge(challenge: String, difficulty: Int): String? {
-    val target = BigInteger.ONE.shiftLeft(256 - difficulty)
-    val md = MessageDigest.getInstance("SHA-256")
-
-    var nonce = 0L
-    while (true) {
-        val input = challenge + nonce.toString()
-        val hashBytes = md.digest(input.toByteArray())
-        val hashInt = BigInteger(1, hashBytes)
-
-        if (hashInt < target) {
-            return nonce.toString()
-        }
-
-        nonce++
-        md.reset()
-        if (nonce > 10_000_000) return null
-    }
-}
-
 //Peachify
 fun peachifyDecrypt(encrypt: String): String? {
     return try {

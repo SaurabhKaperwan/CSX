@@ -112,12 +112,12 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeLordflix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_videasy", displayName = "Videasy",
-            executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
+            key = "p_fshare", displayName = "Fshare",
+            executeStandard = { res, subCb, cb -> if (res.season == null) invokeFshare(res.title, res.imdbId, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_vicsrcwtf", displayName = "VicSrcWtf",
-            executeStandard = { res, subCb, cb -> invokeVicSrcWtf(res.tmdbId, res.season, res.episode, cb, subCb) }
+            key = "p_videasy", displayName = "Videasy",
+            executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_vidlink", displayName = "Vidlink",
@@ -128,10 +128,6 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        // ProviderDef(
-        //     key = "p_mapple", displayName = "Mapple",
-        //     executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
-        // ),
         ProviderDef(
             key = "p_vidzee", displayName = "Vidzee",
             executeStandard = { res, subCb, cb -> invokeVidzee(res.tmdbId, res.season, res.episode, subCb, cb) }

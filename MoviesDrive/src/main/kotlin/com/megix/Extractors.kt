@@ -191,22 +191,6 @@ open class GDFlix : ExtractorApi() {
     override val mainUrl = "https://gdflix.*"
     override val requiresReferer = false
 
-    private suspend fun CFType(url: String): List<String> {
-        val types = listOf("1", "2")
-        val downloadLinks = mutableListOf<String>()
-
-        types.amap { t ->
-            try {
-                val document = app.get(url + "?type=$t").document
-                val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
-                downloadLinks.addAll(links)
-            } catch (e: Exception) {
-                Log.d("Error", e.toString())
-            }
-        }
-        return downloadLinks
-    }
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -256,6 +240,21 @@ open class GDFlix : ExtractorApi() {
 
                 text.contains("CLOUD DOWNLOAD [R2]") -> { myCallback(link, "[Cloud]") }
 
+                text.contains("GD Index") -> {
+                    val cfLink = baseUrl + link
+                    val cfTypes = listOf(1, 2)
+
+                    cfTypes.amap { cfType ->
+                        app.get(cfLink + "?type=$cfType")
+                        .document
+                        .select("a.btn-success")
+                        .amap {
+                            val source = it.attr("href")
+                            myCallback(source, "[CF]")
+                        }
+                    }
+                }
+
                 text.contains("FAST CLOUD") -> {
 
                     val dlink = app.get(baseUrl + link)
@@ -302,18 +301,6 @@ open class GDFlix : ExtractorApi() {
                     Log.d("Error", "No Server matched")
                 }
             }
-        }
-
-        //Cloudflare backup links
-        try {
-            val sources = CFType(newUrl.replace("file", "wfile"))
-
-            sources.amap { source ->
-                val redirectUrl = resolveFinalUrl(source) ?: return@amap
-                myCallback(redirectUrl, "[CF]")
-            }
-        } catch (e: Exception) {
-            Log.d("CF", e.toString())
         }
     }
 }
