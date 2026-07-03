@@ -37,6 +37,8 @@ import javax.crypto.Cipher
 
 import com.megix.settings.Settings
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+
 class Streameeeeee : Videostr() {
     override var name = "Streameeeeee"
     override var mainUrl = "https://streameeeeee.site"
@@ -908,8 +910,6 @@ open class Cloudnestra : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        Log.d(name, "url : $url")
-
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
             "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -920,45 +920,50 @@ open class Cloudnestra : ExtractorApi() {
             "Sec-Fetch-Site" to "none",
             "Upgrade-Insecure-Requests" to "1",
         )
-
         val iframeHtml = app.get(url, headers = headers).text
         val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
         val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
-
-        Log.d(name, "cloudUrl : $mainUrl$prorcpSrc")
-
-        val cloudHtml = app.get(
-            url = "$mainUrl$prorcpSrc",
-            headers = headers
-        ).text
-
-        Log.d(name, "cloudHtml : $cloudHtml")
+        val cloudHtml = app.get(url = "$mainUrl$prorcpSrc", headers = headers).text
 
         val divMatch = Regex("""<div id="([^"]+)"[^>]*style=["']display\s*:\s*none;?["'][^>]*>([a-zA-Z0-9:\/.,{}\-_=+ ]+)</div>""", RegexOption.IGNORE_CASE).find(cloudHtml)
         val divId = divMatch?.groupValues?.get(1) ?: return
         val divText = divMatch.groupValues.get(2)
 
-        val requestBody = mapOf("text" to divText, "div_id" to divId)
-
-        Log.d(name, "requestBody : $requestBody")
-
         val decrypted = app.post(
             url = "$multiDecryptAPI/dec-cloudnestra",
-            json = requestBody,
+            json = mapOf("text" to divText, "div_id" to divId),
             headers = mapOf("Content-Type" to "application/json")
         ).text
 
-        Log.d(name, "decrypted : $decrypted")
-
         val jsonObject = JSONObject(decrypted)
-        val status = jsonObject.getInt("status")
-
-        if (status != 200) return
-
+        if (jsonObject.getInt("status") != 200) return
         val resultArray = jsonObject.getJSONArray("result")
 
+        // cache tokens per host so we don't call generate.php repeatedly for same domain
+        val tokenCache = mutableMapOf<String, String>()
+
+        suspend fun fetchToken(host: String): String {
+            return tokenCache.getOrPut(host) {
+                app.get("https://$host/generate.php", headers = headers).text.trim()
+            }
+        }
+
         for (i in 0 until resultArray.length()) {
-            val streamUrl = resultArray.getString(i)
+            var streamUrl = resultArray.getString(i)
+
+            when {
+                streamUrl.contains("__TOKENPG__") -> {
+                    val token = fetchToken("app2.putgate.com")
+                    streamUrl = streamUrl.replace("__TOKENPG__", token)
+                }
+                streamUrl.contains("__TOKEN__") -> {
+                    val host = streamUrl.toHttpUrlOrNull()?.host
+                        ?: Regex("""https?://([^/]+)""").find(streamUrl)?.groupValues?.get(1)
+                        ?: continue
+                    val token = fetchToken(host)
+                    streamUrl = streamUrl.replace("__TOKEN__", token)
+                }
+            }
 
             M3u8Helper.generateM3u8(
                 name,

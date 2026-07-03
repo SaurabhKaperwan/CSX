@@ -1350,7 +1350,7 @@ fun peachifyDecrypt(encrypt: String): String? {
         val iv         = b64UrlDecode(parts[0])
         val cipherData = b64UrlDecode(parts[1]) + b64UrlDecode(parts[2])
 
-        val keyBytes = "a8f2a1b5e9c470814f6b2c3a5d8e7f9c1a2b3c4d5e3f7a8b8cad1e2d0a4d5c5b"
+        val keyBytes = "a8f2a1b5e9c470814f6b2c3a5d8e7f9c1a2b3c4d5e3f7a8b8cad1e2d0a4d5c5d"
             .chunked(2)
             .map { it.toInt(16).toByte() }
             .toByteArray()

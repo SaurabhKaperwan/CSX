@@ -4168,9 +4168,9 @@ object CineStreamExtractors {
         val servers = listOf(
             "https://usa.eat-peach.sbs/holly",
             "https://usa.eat-peach.sbs/multi",
-            "https://usa.eat-peach.sbs/ice",
             "https://usa.eat-peach.sbs/air",
-            "https://usa.eat-peach.sbs/net",
+            "https://uwu.eat-peach.sbs/net",
+            "https://uwu.eat-peach.sbs/moviebox"
         )
 
         servers.safeAmap { server ->
