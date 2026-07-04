@@ -48,10 +48,6 @@ object ProviderRegistry {
 
         // ── Stremio Addons & Subtitles ────────────────────────────
         ProviderDef(
-            key = "p_streamvix", displayName = "Streamvix",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("Streamvix", streamvixAPI, res.imdbId, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_notorrent", displayName = "NoTorrent",
             executeStandard = { res, subCb, cb -> invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
@@ -308,7 +304,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_animedao", displayName = "Animedao",
-            executeAnime = { res, subCb, cb -> invokeAnimedao(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeAnimedao(res.title, res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_anikage", displayName = "Anikage",

@@ -780,15 +780,10 @@ object CineStreamExtractors {
             "myflixerzupcloud",
             "1movies",
             "downloader2",
-            "primewire",
             "m4uhd",
             "hdmovie",
             "cdn",
-            "primesrcme",
-            "visioncine",
-            "overflix",
             "superflix",
-            "cuevana",
             "lamovie",
             "mb-flix",
         )
@@ -4077,9 +4072,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-
-        if(title == null || imdbId == null || tmdbId == null) return
-
+        if (title == null || imdbId == null || tmdbId == null) return
         val headers = mapOf(
             "Accept" to "*/*",
             "Origin" to lordflixBaseAPI,
@@ -4087,38 +4080,33 @@ object CineStreamExtractors {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
         )
 
-        val servers = listOf("Berlin", "Tokyo", "Bogota", "Oslo", "Luna", "LordFlix", "Sakura", "Rio", "Ativa")
+        val servers = app.get("$lordflixAPI/servers", headers = headers)
+            .parsedSafe<LordflixServersResponse>()?.servers?.mapNotNull { it.name }
+            ?: return
 
         servers.safeAmap { server ->
-
             val serverUrl = buildString {
                 append("$lordflixAPI/?title=${quote(title)}&type=")
-                if(season == null) append("movie")
-                if(season != null) append("series")
+                if (season == null) append("movie")
+                if (season != null) append("series")
                 append("&year=$year&imdb=$imdbId&tmdb=$tmdbId&server=$server")
-                if (season  != null) append("&season=$season")
+                if (season != null) append("&season=$season")
                 if (episode != null) append("&episode=$episode")
             }
 
             val encData = app.get("$multiDecryptAPI/enc-lordflix?url=${quote(serverUrl)}").text
             val encJson = JSONObject(encData)
             if (encJson.getInt("status") != 200) return@safeAmap
-
             val result = encJson.getJSONObject("result")
             val encUrl = result.getString("url")
-            val sign   = result.getString("sign")
+            val attestToken = solveLordflixChallenge(headers) ?: return@safeAmap
+            val mediaHeaders = headers + mapOf("x-attest" to attestToken)
 
-            val encData2 = app.get(encUrl, headers = headers).text
-
-
+            val encData2 = app.get(encUrl, headers = mediaHeaders).text
             val decResponse = app.post(
                 "$multiDecryptAPI/dec-lordflix",
-                json = mapOf(
-                    "text" to encData2,
-                    "sign" to sign
-                )
+                json = mapOf("text" to encData2)
             ).parsedSafe<LordflixDecResponse>() ?: return@safeAmap
-
             if (decResponse.status != 200) return@safeAmap
             val decResult = decResponse.result ?: return@safeAmap
             if (decResult.error != null) return@safeAmap
@@ -4131,7 +4119,6 @@ object CineStreamExtractors {
             when (stream.type) {
                 "hls" -> {
                     val playlist = stream.playlist ?: return@safeAmap
-
                     callback.invoke(
                         newExtractorLink(
                             "Lordflix[$server]",
@@ -4144,7 +4131,6 @@ object CineStreamExtractors {
                     )
                 }
             }
-
         }
     }
 
@@ -4328,18 +4314,17 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val searchUrl = "$anikageAPI/api/media/anime/advanced-search?query=$title&sort=trending&page=1&per_page=25&include_adult=true"
+        val searchUrl = "$anikageAPI/api/media/anime/browse?q=$title&sort=popularity&page=1&limit=25&adult=true"
         val searchRes = app.get(searchUrl).parsedSafe<AnikageSearch>() ?: return
-
-        val match = searchRes.results?.find { it.anilistId == aniId } ?: return
+        val match = searchRes.data?.find { it.anilistId == aniId } ?: return
         val slug = match.slug ?: return
 
         Log.d("Anikage", "slug: $slug")
 
         val serversUrl = "$anikageAPI/api/media/anime/$slug/episodes/${episode ?: 1}/servers"
         val serversResponse = app.get(serversUrl).text
-        val servers = tryParseJson<List<AnikageServer>>(serversResponse) ?: return
-        val serverIds = servers.mapNotNull { it.id }
+        val parsed = tryParseJson<AnikageServersResponse>(serversResponse) ?: return
+        val serverIds = parsed.servers?.mapNotNull { it.id } ?: return
 
         Log.d("Anikage", "serverIds: $serverIds")
 
@@ -4403,14 +4388,16 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
 
-        val searchUrl = "$animedaoAPI/search.html?keyword=$title&year%5B%5D=$year&sort=title_az"
+        // val searchUrl = "$animedaoAPI/search.html?keyword=$title&year%5B%5D=$year&sort=title_az"
 
-        val matchedUrl = app.get(searchUrl, referer = "$animedaoAPI/")
-            .document
-            .selectFirst("article.an-anime-card > a")
-            ?.attr("href")
-            ?.replace("/anime/", "/watch-online/")
-            ?: return
+        // val matchedUrl = app.get(searchUrl, referer = "$animedaoAPI/")
+        //     .document
+        //     .selectFirst("article.an-anime-card > a")
+        //     ?.attr("href")
+        //     ?.replace("/anime/", "/watch-online/")
+        //     ?: return
+
+        val matchedUrl = "$animedaoAPI/watch-online/${title.createSlug()}"
 
         Log.d("AnimeDao", "matchedUrl: $matchedUrl")
 
