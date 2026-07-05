@@ -778,14 +778,16 @@ object CineStreamExtractors {
 
         val servers = listOf(
             "myflixerzupcloud",
-            "1movies",
             "downloader2",
             "m4uhd",
             "hdmovie",
             "cdn",
             "superflix",
             "lamovie",
-            "mb-flix",
+            "jett",
+            "tejo",
+            "neon2",
+            "ym"
         )
 
         if(title == null) return
@@ -793,16 +795,22 @@ object CineStreamExtractors {
         val firstPass = quote(title)
         val encTitle = quote(firstPass)
 
+        val enc = 2
+
+        val seedJson = app.get("https://api.wingsdatabase.com/seed?mediaId=$tmdbId", headers = headers).text
+        val json = JSONObject(seedJson)
+        val seed = json.getString("seed")
+
         servers.safeAmap { server ->
             val url = if (season == null) {
-                "$videasyAPI/$server/sources-with-title?title=$encTitle&mediaType=movie&year=$year&tmdbId=$tmdbId&imdbId=$imdbId"
+                "$videasyAPI/$server/sources-with-title?title=$encTitle&mediaType=movie&year=$year&tmdbId=$tmdbId&imdbId=$imdbId&enc=$enc&seed=$seed"
             } else {
-                "$videasyAPI/$server/sources-with-title?title=$encTitle&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season&imdbId=$imdbId"
+                "$videasyAPI/$server/sources-with-title?title=$encTitle&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season&imdbId=$imdbId&enc=$enc&seed=$seed"
             }
 
             val enc_data = app.get(url, headers = headers).text
 
-            val jsonBody = mapOf("text" to enc_data, "id" to tmdbId)
+            val jsonBody = mapOf("text" to enc_data, "id" to tmdbId, "seed" to seed)
             val response = app.post(
                 "$multiDecryptAPI/dec-videasy",
                 json = jsonBody
@@ -1469,7 +1477,8 @@ object CineStreamExtractors {
         val tvtype = if(episode == null) "_(Movie)" else "_(TV)"
         val firstChar = getFirstCharacterOrZero("$title").uppercase()
         val newTitle = title?.replace(" ","_")
-        val doc = app.get("$tokyoInsiderAPI/anime/$firstChar/$newTitle$tvtype", timeout = 500L).document
+        val doc = app.get("$tokyoInsiderAPI/anime/$firstChar/$newTitle$tvtype").document
+
         val selector = if(episode != null) "a.download-link:matches((?i)(episode $episode\\b))" else "a.download-link"
         val aTag = doc.selectFirst(selector)
         val epUrl = aTag?.attr("href") ?: return
@@ -2582,11 +2591,13 @@ object CineStreamExtractors {
     ) {
         val url = "$anizoneAPI/anime?search=$title"
 
-        val link = app.get(url).document.select("div.truncate > a").firstOrNull {
-            it.text().contains(title.toString(), ignoreCase = true)
-        }?.attr("href") ?: return
+        Log.d("Anizone", "url: $url")
 
-        val document = app.get("$link/$episode").document
+        val link = app.get(url).document.select("div.truncate > a").firstOrNull()?.attr("href") ?: return
+
+        Log.d("Anizone", "link: $link/$episode")
+
+        val document = app.get("$link/${episode ?: 1}").document
 
         val subtitles = document.select("track").map {
             subtitleCallback.invoke(
@@ -2854,7 +2865,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val secret = base64Decode("cGxlYXNlZG9udHNjcmFwZW1lc2F5d2FsbGFoaQ==")
+        val secret = base64Decode("QTdrUDl4TTJRdjhMcjROejFIdDZZYzNCdzVKZjBEc1U=")
         val defaultReferer = "$vidzeeApi/"
 
         val servers = listOf(0, 1, 2, 4, 5, 6, 7)
@@ -4388,16 +4399,15 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
 
-        // val searchUrl = "$animedaoAPI/search.html?keyword=$title&year%5B%5D=$year&sort=title_az"
+        val searchUrl = "$animedaoAPI/search.html?keyword=$title&year%5B%5D=$year&sort=title_az"
 
-        // val matchedUrl = app.get(searchUrl, referer = "$animedaoAPI/")
-        //     .document
-        //     .selectFirst("article.an-anime-card > a")
-        //     ?.attr("href")
-        //     ?.replace("/anime/", "/watch-online/")
-        //     ?: return
+        val matchedUrl = cfGet(searchUrl)
+            .document
+            .selectFirst("article.an-anime-card > a")
+            ?.attr("href")
+            ?.replace("/anime/", "/watch-online/")
+            ?: return
 
-        val matchedUrl = "$animedaoAPI/watch-online/${title.createSlug()}"
 
         Log.d("AnimeDao", "matchedUrl: $matchedUrl")
 
