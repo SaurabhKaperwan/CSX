@@ -797,7 +797,7 @@ object CineStreamExtractors {
 
         val enc = 2
 
-        val seedJson = app.get("https://api.wingsdatabase.com/seed?mediaId=$tmdbId", headers = headers).text
+        val seedJson = app.get("$videasyAPI/seed?mediaId=$tmdbId", headers = headers).text
         val json = JSONObject(seedJson)
         val seed = json.getString("seed")
 

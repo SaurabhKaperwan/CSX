@@ -304,7 +304,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_animedao", displayName = "Animedao",
-            executeAnime = { res, subCb, cb -> invokeAnimedao(res.title, res.year, res.episode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeAnimedao(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_anikage", displayName = "Anikage",
