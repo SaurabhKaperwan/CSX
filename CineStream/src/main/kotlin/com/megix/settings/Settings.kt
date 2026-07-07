@@ -1,6 +1,7 @@
 package com.megix.settings
 
 import android.content.Context
+import android.net.Uri
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
 import com.megix.ProviderRegistry
@@ -18,6 +19,7 @@ object Settings {
     const val GRAMCINEMA_TOKEN_KEY     = "gramcinema_bearer_token"
     const val STREMIO_ADDONS_KEY       = "stremio_addons"
     const val NEW_PROVIDER_DEFAULT_ON  = "new_provider_default_on"
+    const val CF_BYPASS_ENABLED        = "cloudflare_webview_bypass_enabled"
 
     private const val SEEN_PROVIDERS_KEY = "seen_providers"
     private const val PROVIDER_ORDER_KEY = "provider_order"
@@ -30,6 +32,64 @@ object Settings {
 
     val activeProviderOrder: List<String>
         get() = getOrder().filter { enabled(it) }
+
+    fun cloudflareBypassEnabled(): Boolean = getKey<Boolean>(CF_BYPASS_ENABLED) ?: false
+
+    private fun normalizeBypassDomain(domain: String): String {
+        return domain.trim()
+            .removePrefix("https://")
+            .removePrefix("http://")
+            .removePrefix("www.")
+            .substringBefore('/')
+            .lowercase()
+            .trim()
+    }
+
+    data class BypassDomain(val domain: String, val displayName: String)
+
+    private val CLOUDFLARE_BYPASS_SITES = listOf(
+        BypassDomain("cinemacity.cc", "CinemaCity"),
+        BypassDomain("anidao.to/search?q=hi", "AniDao"),
+        BypassDomain("animepahe.pw", "AnimePahe")
+    )
+
+    fun getCloudflareBypassDomains(): List<BypassDomain> = CLOUDFLARE_BYPASS_SITES
+
+    fun hasCloudflareBypassForUrl(url: String): Boolean {
+        val host = Uri.parse(url).host?.lowercase()?.trim().orEmpty()
+        if (host.isBlank()) return false
+        return CLOUDFLARE_BYPASS_SITES.any { site ->
+            val normalizedDomain = normalizeBypassDomain(site.domain)
+            normalizedDomain.isNotBlank() && (host == normalizedDomain || host.endsWith(".$normalizedDomain"))
+        }
+    }
+
+    // ── Per-domain cookie persistence (Cloudflare bypass) ────
+    private const val CF_COOKIE_KEY_PREFIX = "cf_cookie_"
+
+    private fun cookieKeyForDomain(urlOrDomain: String): String {
+        val domain = if (urlOrDomain.contains("://")) {
+            Uri.parse(urlOrDomain).host?.lowercase()?.removePrefix("www.")
+                ?: normalizeBypassDomain(urlOrDomain)
+        } else {
+            normalizeBypassDomain(urlOrDomain)
+        }
+        return "$CF_COOKIE_KEY_PREFIX$domain"
+    }
+
+    fun saveCookieForDomain(urlOrDomain: String, cookies: String) {
+        setKey(cookieKeyForDomain(urlOrDomain), cookies.trim())
+    }
+
+    fun getCookieForDomain(urlOrDomain: String): String? =
+        getKey<String>(cookieKeyForDomain(urlOrDomain))?.takeIf { it.isNotBlank() }
+
+    fun hasSavedCookieForDomain(urlOrDomain: String): Boolean =
+        !getCookieForDomain(urlOrDomain).isNullOrBlank()
+
+    fun removeCookieForDomain(urlOrDomain: String) {
+        setKey(cookieKeyForDomain(urlOrDomain), null as String?)
+    }
 
     // ── Dynamic Provider Maps ────────────────────────────────
     // We dynamically pull these from our single source of truth (ProviderRegistry)!

@@ -5,6 +5,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.utils.*
+import android.webkit.CookieManager
 import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.api.Log
 
@@ -38,6 +39,9 @@ import kotlinx.coroutines.sync.withLock
 
 object CineStreamExtractors {
 
+    private const val CF_LOG_TAG = "CineStreamCloudflare"
+    // Must match WebView User-Agent for Cloudflare cookie validation
+    private const val CF_BYPASS_USER_AGENT = "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36"
     private val cfKiller by lazy { CloudflareKiller() }
     private val cfMutex = Mutex()
 
@@ -131,24 +135,95 @@ object CineStreamExtractors {
     }
 
     private fun isCloudflarePage(response: NiceResponse): Boolean {
-        val server = response.headers["Server"] ?: ""
-        return server.contains("cloudflare", true) && response.code in listOf(403, 503)
+        return response.code in listOf(403, 503)
+    }
+
+    private fun injectWebviewCookies(url: String, headers: Map<String, String>): Map<String, String> {
+        val match = Settings.hasCloudflareBypassForUrl(url)
+        Log.d(CF_LOG_TAG, "injectWebviewCookies: match=$match url=$url")
+        if (!match) return headers
+
+        // Try to load saved cookies from SharedPreferences first
+        val savedCookie = Settings.getCookieForDomain(url)
+        val cookieValue = savedCookie?.takeIf { it.isNotBlank() }
+            ?: CookieManager.getInstance().getCookie(url)?.takeIf { it.isNotBlank() }
+
+        if (cookieValue == null) {
+            Log.d(CF_LOG_TAG, "injectWebviewCookies: no cookies found for $url")
+            return headers
+        }
+        Log.d(CF_LOG_TAG, "injectWebviewCookies: injecting cookies for $url => ${cookieValue.take(50)}...")
+
+        val merged = headers.toMutableMap()
+        val existingCookie = merged["Cookie"].orEmpty()
+        merged["Cookie"] = if (existingCookie.isBlank()) cookieValue else "$existingCookie; $cookieValue"
+        Log.d(CF_LOG_TAG, "injectWebviewCookies: Cookie header added for $url")
+        return merged
     }
 
     suspend fun cfGet(url: String, headers: Map<String, String> = emptyMap(), allowRedirects: Boolean = true): NiceResponse {
-        val response = app.get(url, headers = headers, allowRedirects = allowRedirects)
-        return if (isCloudflarePage(response)) {
-            cfMutex.withLock {
-                val retryResponse = app.get(url, headers = headers, interceptor = cfKiller, allowRedirects = allowRedirects)
-                if (isCloudflarePage(retryResponse)) {
-                    cfKiller.savedCookies.clear()
-                    app.get(url, headers = headers, interceptor = cfKiller, allowRedirects = allowRedirects)
-                } else {
-                    retryResponse
-                }
+        Log.d(CF_LOG_TAG, "cfGet start: $url headers=$headers")
+        // Add Cloudflare bypass User-Agent to match WebView for cookie validation
+        val headersWithAgent = headers.toMutableMap()
+        if (!headersWithAgent.containsKey("User-Agent")) {
+            headersWithAgent["User-Agent"] = CF_BYPASS_USER_AGENT
+        }
+        val effectiveHeaders = injectWebviewCookies(url, headersWithAgent)
+        Log.d(CF_LOG_TAG, "cfGet effective headers: User-Agent=${effectiveHeaders["User-Agent"]?.take(50)}...")
+        val response = app.get(url, headers = effectiveHeaders, allowRedirects = allowRedirects)
+        if (!isCloudflarePage(response)) {
+            Log.d(CF_LOG_TAG, "cfGet success: ${response.code} for $url")
+            return response
+        }
+        Log.d(CF_LOG_TAG, "cfGet Cloudflare detected: ${response.code} for $url, retrying with CloudflareKiller")
+        return cfMutex.withLock {
+            val retryResponse = app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
+            if (isCloudflarePage(retryResponse)) {
+                Log.d(CF_LOG_TAG, "cfGet retry blocked again: ${retryResponse.code}, clearing saved cookies and retrying")
+                cfKiller.savedCookies.clear()
+                val finalResponse = app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
+                Log.d(CF_LOG_TAG, "cfGet final response: ${finalResponse.code} for $url")
+                finalResponse
+            } else {
+                Log.d(CF_LOG_TAG, "cfGet retry succeeded: ${retryResponse.code} for $url")
+                retryResponse
             }
-        } else {
-            response
+        }
+    }
+
+    suspend fun cfPost(
+        url: String,
+        headers: Map<String, String> = emptyMap(),
+        data: Map<String, String> = emptyMap(),
+        json: Any? = null,
+        allowRedirects: Boolean = true
+    ): NiceResponse {
+        Log.d(CF_LOG_TAG, "cfPost start: $url headers=$headers data=${data.keys} json=${json != null}")
+        // Add Cloudflare bypass User-Agent to match WebView for cookie validation
+        val headersWithAgent = headers.toMutableMap()
+        if (!headersWithAgent.containsKey("User-Agent")) {
+            headersWithAgent["User-Agent"] = CF_BYPASS_USER_AGENT
+        }
+        val effectiveHeaders = injectWebviewCookies(url, headersWithAgent)
+        Log.d(CF_LOG_TAG, "cfPost effective headers: User-Agent=${effectiveHeaders["User-Agent"]?.take(50)}...")
+        val response = app.post(url, headers = effectiveHeaders, data = data, json = json, allowRedirects = allowRedirects)
+        if (!isCloudflarePage(response)) {
+            Log.d(CF_LOG_TAG, "cfPost success: ${response.code} for $url")
+            return response
+        }
+        Log.d(CF_LOG_TAG, "cfPost Cloudflare detected: ${response.code} for $url, retrying with CloudflareKiller")
+        return cfMutex.withLock {
+            val retryResponse = app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
+            if (isCloudflarePage(retryResponse)) {
+                Log.d(CF_LOG_TAG, "cfPost retry blocked again: ${retryResponse.code}, clearing saved cookies and retrying")
+                cfKiller.savedCookies.clear()
+                val finalResponse = app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
+                Log.d(CF_LOG_TAG, "cfPost final response: ${finalResponse.code} for $url")
+                finalResponse
+            } else {
+                Log.d(CF_LOG_TAG, "cfPost retry succeeded: ${retryResponse.code} for $url")
+                retryResponse
+            }
         }
     }
 
@@ -413,112 +488,107 @@ object CineStreamExtractors {
         }
     }
 
-    // suspend fun invokeCinemacity(
-    //     imdbId: String? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val movieUrl = app.post(
-    //         cinemacityAPI,
-    //         data = mapOf(
-    //             "do"        to "search",
-    //             "subaction" to "search",
-    //             "story"     to "$imdbId",
-    //         )
-    //     ).document
-    //         .selectFirst("div.dar-short_item > a")
-    //         ?.attr("href")
-    //         ?: return
+    suspend fun invokeCinemacity(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val movieUrl = cfGet(
+            "$cinemacityAPI/search/$title/"
+        ).document
+            .selectFirst("a.e-nowrap")
+            ?.attr("href")
+            ?: return
 
 
-    //     val headers = mapOf(
-    //         "Cookie" to CC_COOKIE
-    //     )
+        val headers = mapOf(
+            "Cookie" to CC_COOKIE
+        )
 
-    //     val scriptData = app.get(movieUrl, headers).document
-    //         .select("script:containsData(atob)")
-    //         .getOrNull(1)
-    //         ?.data()
-    //         ?: return
+        val scriptData = cfGet(movieUrl, headers).document
+            .select("script:containsData(atob)")
+            .getOrNull(1)
+            ?.data()
+            ?: return
 
-    //     val playerJson = JSONObject(
-    //         base64Decode(
-    //             scriptData.substringAfter("atob(\"").substringBefore("\")")
-    //         ).substringAfter("new Playerjs(").substringBeforeLast(");")
-    //     )
+        val playerJson = JSONObject(
+            base64Decode(
+                scriptData.substringAfter("atob(\"").substringBefore("\")")
+            ).substringAfter("new Playerjs(").substringBeforeLast(");")
+        )
 
-    //     val fileArray = JSONArray(playerJson.getString("file"))
+        val fileArray = JSONArray(playerJson.getString("file"))
 
-    //     fun extractQuality(url: String): Int {
-    //         return when {
-    //             url.contains("2160p") -> Qualities.P2160.value
-    //             url.contains("1440p") -> Qualities.P1440.value
-    //             url.contains("1080p") -> Qualities.P1080.value
-    //             url.contains("720p") -> Qualities.P720.value
-    //             url.contains("480p") -> Qualities.P480.value
-    //             url.contains("360p") -> Qualities.P360.value
-    //             else -> Qualities.Unknown.value
-    //         }
-    //     }
+        fun extractQuality(url: String): Int {
+            return when {
+                url.contains("2160p") -> Qualities.P2160.value
+                url.contains("1440p") -> Qualities.P1440.value
+                url.contains("1080p") -> Qualities.P1080.value
+                url.contains("720p") -> Qualities.P720.value
+                url.contains("480p") -> Qualities.P480.value
+                url.contains("360p") -> Qualities.P360.value
+                else -> Qualities.Unknown.value
+            }
+        }
 
-    //     suspend fun emitExtractorLinks(files: String) {
-    //         callback.invoke(
-    //             newExtractorLink(
-    //                 "CineCity",
-    //                 "CineCity Multi Audio 🌐",
-    //                 files,
-    //                 INFER_TYPE
-    //             ) {
-    //                 referer = movieUrl
-    //                 quality = extractQuality(files)
-    //             }
-    //         )
-    //     }
+        suspend fun emitExtractorLinks(files: String) {
+            callback.invoke(
+                newExtractorLink(
+                    "CineCity",
+                    "CineCity Multi Audio 🌐",
+                    files,
+                    INFER_TYPE
+                ) {
+                    referer = movieUrl
+                    quality = extractQuality(files)
+                }
+            )
+        }
 
-    //     val first = fileArray.getJSONObject(0)
+        val first = fileArray.getJSONObject(0)
 
-    //     // MOVIE
-    //     if (!first.has("folder")) {
-    //         emitExtractorLinks(
-    //             files = first.getString("file")
-    //         )
-    //         return
-    //     }
+        // MOVIE
+        if (!first.has("folder")) {
+            emitExtractorLinks(
+                files = first.getString("file")
+            )
+            return
+        }
 
-    //     // SERIES
-    //     for (i in 0 until fileArray.length()) {
-    //         val seasonJson = fileArray.getJSONObject(i)
+        // SERIES
+        for (i in 0 until fileArray.length()) {
+            val seasonJson = fileArray.getJSONObject(i)
 
-    //         val seasonNumber = Regex("Season\\s*(\\d+)", RegexOption.IGNORE_CASE)
-    //             .find(seasonJson.optString("title"))
-    //             ?.groupValues
-    //             ?.get(1)
-    //             ?.toIntOrNull()
-    //             ?: continue
+            val seasonNumber = Regex("Season\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                .find(seasonJson.optString("title"))
+                ?.groupValues
+                ?.get(1)
+                ?.toIntOrNull()
+                ?: continue
 
-    //         if (season != null && seasonNumber != season) continue
+            if (season != null && seasonNumber != season) continue
 
-    //         val episodes = seasonJson.getJSONArray("folder")
-    //         for (j in 0 until episodes.length()) {
-    //             val epJson = episodes.getJSONObject(j)
+            val episodes = seasonJson.getJSONArray("folder")
+            for (j in 0 until episodes.length()) {
+                val epJson = episodes.getJSONObject(j)
 
-    //             val episodeNumber = Regex("Episode\\s*(\\d+)", RegexOption.IGNORE_CASE)
-    //                 .find(epJson.optString("title"))
-    //                 ?.groupValues
-    //                 ?.get(1)
-    //                 ?.toIntOrNull()
-    //                 ?: continue
+                val episodeNumber = Regex("Episode\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                    .find(epJson.optString("title"))
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toIntOrNull()
+                    ?: continue
 
-    //             if (episode != null && episodeNumber != episode) continue
+                if (episode != null && episodeNumber != episode) continue
 
-    //             emitExtractorLinks(
-    //                 files = epJson.getString("file")
-    //             )
-    //         }
-    //     }
-    // }
+                emitExtractorLinks(
+                    files = epJson.getString("file")
+                )
+            }
+        }
+    }
 
     suspend fun invokePlaysrc(
         tmdbId: Int? = null,
@@ -2085,25 +2155,25 @@ object CineStreamExtractors {
             "Cookie" to "__ddg2_=1234567890"
         )
 
-        val id = app.get(url ?: return, headers).document.selectFirst("meta[property=og:url]")
+        val id = cfGet(url?.replace(".com", ".pw") ?: return, headers).document.selectFirst("meta[property=og:url]")
             ?.attr("content").toString().substringAfterLast("/")
 
         val animeData =
-            app.get("$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
+            cfGet("$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
                 .parsedSafe<animepahe>()?.data
         val session = if(episode == null) {
             animeData?.firstOrNull()?.session ?: return
         } else {
             animeData?.getOrNull(episode-1)?.session ?: return
         }
-        val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
+        val doc = cfGet("$animepaheAPI/play/$id/$session", headers).document
 
         runLimitedAsync( concurrency = 2,
             {
                 doc.select("div#pickDownload > a").safeAmap {
                     val href = it.attr("href")
                     var type = "SUB"
-                    if(it.select("span").text().contains("eng")) type = "DUB"
+                    if(it.attr("data-audio") == "Eng") type = "DUB"
 
                     Log.d("Animepahe", "href: $href")
 
@@ -2120,7 +2190,7 @@ object CineStreamExtractors {
             {
                 doc.select("div#resolutionMenu > button").safeAmap {
                     var type = "SUB"
-                    if(it.select("span").text().contains("eng")) type = "DUB"
+                    if(it.attr("data-audio") == "Eng") type = "DUB"
                     val quality = it.attr("data-resolution")
                     val href = it.attr("data-src")
                     if (href.contains("kwik.cx")) {
@@ -4446,5 +4516,54 @@ object CineStreamExtractors {
             }
         }
     }
+
+    // suspend fun invokeAnikoto(
+    //     title: String? = null,
+    //     year: Int? = null,
+    //     episode: Int? = null,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
+    // ) {
+    //     val headers = mapOf(
+    //         "referer" to "$anikotoAPI/",
+    //         "x-requested-with" to "XMLHttpRequest"
+    //     )
+
+    //     val document = app.get(
+    //         "$anikotoAPI/filter?keyword=title&type=&year%5B%5D=$year&ep_min=&ep_max=&sort=default"
+    //     ).document
+
+    //     val dataTip = document.selectFirst("div.tip.ani")?.attr("data-tip") ?: return
+    //     //val url = document.selectFirst("a.d-title")?.attr("href") ?: return
+
+    //     val infoJson = app.get("$anikotoAPI/ajax/episode/list/$dataTip?vrf=", headers = headers).text
+    //     val infoParsed = tryParseJson<AnikotoResponse>(infoJson) ?: return
+    //     val infoDocument = Jsoup.parse(infoParsed.result)
+
+    //     val epAnchor = infoDocument.selectFirst("ul.ep-range li a[data-num='$episode']") ?: return
+    //     val dataIds = epAnchor.attr("data-ids")
+    //     // val dataTimestamp = epAnchor.attr("data-timestamp")
+
+    //     // Fetch the server list HTML
+    //     val serversJson = app.get("$anikotoAPI/ajax/server/list?servers=$dataIds", headers = headers).text
+    //     val serversParsed = tryParseJson<AnikotoResponse>(serversJson) ?: return
+    //     val serversDocument = Jsoup.parse(serversParsed.result)
+
+    //     // Iterate through each type block (sub, hsub, dub)
+    //     val serverTypes = serversDocument.select("div.servers div.type")
+
+    //     serverTypes.safeAmap { serverType ->
+    //         val type = serverType.attr("data-type")
+    //         val isDub = type.equals("dub", ignoreCase = true)
+
+    //         val serverList = serverType.select("ul li")
+    //         serverList.safeAmap { server ->
+    //             val serverName = server.text().trim() // e.g., "VidPlay-1", "HD-1"
+    //             val linkId = server.attr("data-link-id") // The encoded string
+    //             val svId = server.attr("data-sv-id") // e.g., "8e4", "323"
+
+    //         }
+    //     }
+    // }
 
 }

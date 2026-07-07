@@ -5,9 +5,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
+import android.webkit.CookieManager
 import android.widget.*
 import com.megix.settings.SettingsTheme.dp
 
@@ -53,6 +55,8 @@ internal object SettingsDialog {
             addView(buildConcurrencyRow(context, pending))
         })
 
+        layout.addView(buildCloudflareBypassCard(context, pending))
+
         // API Tokens card (Febbox + Wyzie Subs)
         layout.addView(buildApiTokensCard(context, pending))
 
@@ -88,7 +92,7 @@ internal object SettingsDialog {
             .setPositiveButton("Save") { _, _ ->
                 pending.forEach { (key, value) ->
                     when {
-                        key == Settings.SHOWBOX_TOKEN_KEY && value == null   -> Settings.clearShowboxToken()
+                                    key == Settings.SHOWBOX_TOKEN_KEY && value == null   -> Settings.clearShowboxToken()
                         key == Settings.SHOWBOX_TOKEN_KEY && value is String -> Settings.saveShowboxToken(value)
                         key == Settings.WYZIE_SUBS_KEY    && value == null   -> Settings.clearWyzieSubsKey()
                         key == Settings.WYZIE_SUBS_KEY    && value is String -> Settings.saveWyzieSubsKey(value)
@@ -215,6 +219,72 @@ internal object SettingsDialog {
                     sw.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
                 }.start()
                 onChanged()
+            }
+        }
+    }
+
+    private fun buildCloudflareBypassCard(
+        context: Context,
+        pending: MutableMap<String, Any?>
+    ): View {
+        val theme = SettingsTheme
+        return buildCollapsibleCard(context, "🌐 Cloudflare Bypass", false,
+            accentA = Color.parseColor("#22C55E"), accentB = Color.parseColor("#16A34A")) {
+            val sites = Settings.getCloudflareBypassDomains()
+
+            addView(TextView(context).apply {
+                text = "Tap a site to open the browser and solve Cloudflare challenge:"; textSize = 12f; setTextColor(theme.TEXT_SECONDARY)
+                setPadding(0, 0, 0, 12.dp(context))
+            })
+
+            // Site buttons with save/remove options
+            sites.forEach { domainObj ->
+                lateinit var statusText: TextView
+                lateinit var actionsRow: LinearLayout
+
+                fun refreshRow() {
+                    val hasCookie = Settings.hasSavedCookieForDomain(domainObj.domain)
+                    statusText.text = if (hasCookie) "✓ Saved" else "Not Saved"
+                    statusText.setTextColor(if (hasCookie) Color.parseColor("#10B981") else Color.parseColor("#6B7280"))
+
+                    actionsRow.removeAllViews()
+                    actionsRow.addView(SettingsWidgets.pillBtn(context, "🌐 Open", Color.parseColor("#60A5FA"), Color.parseColor("#0B1120"), Color.parseColor("#1D4ED8")) {
+                        SettingsWebView.showCloudflareBypass(context, "https://${domainObj.domain}") { refreshRow() }
+                    })
+                    if (hasCookie) {
+                        actionsRow.addView(SettingsWidgets.hSpacer(context, 6))
+                        actionsRow.addView(SettingsWidgets.pillBtn(context, "✕ Remove", Color.parseColor("#EF4444"), Color.parseColor("#0B1120"), Color.parseColor("#DC2626")) {
+                            Settings.removeCookieForDomain(domainObj.domain)
+                            refreshRow()
+                            Toast.makeText(context, "Cookie removed for ${domainObj.displayName}", Toast.LENGTH_SHORT).show()
+                        })
+                    }
+                }
+
+                addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(0, 4.dp(context), 0, 12.dp(context))
+
+                    // Name and status
+                    addView(LinearLayout(context).apply {
+                        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                        addView(TextView(context).apply {
+                            text = "${domainObj.displayName} · "
+                            textSize = 13f; setTypeface(null, Typeface.BOLD); setTextColor(theme.TEXT_PRIMARY)
+                        })
+                        statusText = TextView(context).apply { textSize = 12f }
+                        addView(statusText)
+                    })
+
+                    // Action buttons
+                    actionsRow = LinearLayout(context).apply {
+                        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM
+                        setPadding(0, 6.dp(context), 0, 0)
+                    }
+                    addView(actionsRow)
+
+                    refreshRow()
+                })
             }
         }
     }

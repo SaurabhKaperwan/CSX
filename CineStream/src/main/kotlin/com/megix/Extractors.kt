@@ -819,7 +819,7 @@ class Pahe : ExtractorApi() {
             kwikUrl,
             mapOf(
                 "User-Agent" to USER_AGENT,
-                "Referer"    to "https://kwik.cx/",
+                "Referer"    to referer.toString(),
             ),
         )
         val fContentString = fContent.text
