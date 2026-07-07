@@ -120,6 +120,11 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
         ),
         ProviderDef(
+            key = "p_vaplayer", displayName = "VaPlayer",
+            executeStandard = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_playimdb", displayName = "PlayImdb",
             executeStandard = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }

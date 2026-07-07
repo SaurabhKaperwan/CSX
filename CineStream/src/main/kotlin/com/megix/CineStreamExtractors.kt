@@ -3831,6 +3831,45 @@ object CineStreamExtractors {
 
     }
 
+    suspend fun invokeVaPlayer(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        val url = if(season == null) {
+            "$vaPlayerAPI/api.php?imdb=$imdbId&type=movie"
+        } else {
+            "$vaPlayerAPI/api.php?imdb=$imdbId&type=tv&season=$season&episode=$episode"
+        }
+
+        val json = app.get(url).text
+
+        val res = tryParseJson<VaPlayerResponse>(json) ?: return
+
+        res.data?.stream_urls?.safeAmap { streamUrl ->
+            M3u8Helper.generateM3u8(
+                "VaPlayer",
+                streamUrl,
+                "https://nextgencloudfabric.com/"
+            ).forEach(callback)
+        }
+
+        res.default_subs?.amap { sub ->
+            if (!sub.url.isNullOrBlank()) {
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        sub.lang ?: sub.code ?: "Unknown",
+                        sub.url
+                    )
+                )
+            }
+        }
+
+    }
+
     suspend fun invokePlayImdb(
         imdbId: String? = null,
         season: Int? = null,

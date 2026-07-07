@@ -1018,3 +1018,27 @@ data class FshareSource(
     val id: String,
     val selected: Boolean? = null
 )
+
+//VaPlayer
+
+data class VaPlayerResponse(
+    val status_code: String? = null,
+    val data: VaPlayerData? = null,
+    val default_subs: List<VaPlayerSub>? = null
+)
+
+data class VaPlayerData(
+    val title: String? = null,
+    val imdb_id: String? = null,
+    val season: String? = null,
+    val episode: String? = null,
+    val file_name: String? = null,
+    val backdrop: String? = null,
+    val stream_urls: List<String>? = null
+)
+
+data class VaPlayerSub(
+    val lang: String? = null,
+    val code: String? = null,
+    val url: String? = null
+)
