@@ -4556,53 +4556,124 @@ object CineStreamExtractors {
         }
     }
 
-    // suspend fun invokeAnikoto(
-    //     title: String? = null,
-    //     year: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit,
-    // ) {
-    //     val headers = mapOf(
-    //         "referer" to "$anikotoAPI/",
-    //         "x-requested-with" to "XMLHttpRequest"
-    //     )
+    suspend fun invokeHdGharTv(
+        title: String? = null,
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val type = if(season == null) "movies" else "series"
 
-    //     val document = app.get(
-    //         "$anikotoAPI/filter?keyword=title&type=&year%5B%5D=$year&ep_min=&ep_max=&sort=default"
-    //     ).document
+        val searchJson = app.get("$hdGharTvAPI/api/search?q=$title&type=all&page=1").text
+        val searchResponse = tryParseJson<HdGharSearchResponse>(searchJson) ?: return
+        val allItems = searchResponse.movies.orEmpty() + searchResponse.series.orEmpty()
+        val matchedId = allItems.find { it.tmdbId == tmdbId }?.id ?: return
 
-    //     val dataTip = document.selectFirst("div.tip.ani")?.attr("data-tip") ?: return
-    //     //val url = document.selectFirst("a.d-title")?.attr("href") ?: return
+        val detailsJson = app.get("$hdGharTvAPI/api/$type/public/$matchedId").text
+        val detailsResponse = tryParseJson<HdGharDetailsResponse>(detailsJson) ?: return
 
-    //     val infoJson = app.get("$anikotoAPI/ajax/episode/list/$dataTip?vrf=", headers = headers).text
-    //     val infoParsed = tryParseJson<AnikotoResponse>(infoJson) ?: return
-    //     val infoDocument = Jsoup.parse(infoParsed.result)
+        val extractedLinks = if (type == "movies") {
+            detailsResponse.streamingLinks.orEmpty()
+        } else {
+            val targetSeason = detailsResponse.seasons?.find { it.seasonNumber == season }
+            val targetEpisode = targetSeason?.episodes?.find { it.episodeNumber == episode }
+            targetEpisode?.streamingLinks.orEmpty()
+        }
 
-    //     val epAnchor = infoDocument.selectFirst("ul.ep-range li a[data-num='$episode']") ?: return
-    //     val dataIds = epAnchor.attr("data-ids")
-    //     // val dataTimestamp = epAnchor.attr("data-timestamp")
+        extractedLinks.forEach { link ->
+            val url = link.url ?: return@forEach
+            val quality = getIndexQuality(link.quality)
+            val isM3u8 = link.type?.contains("hls", ignoreCase = true) == true || url.contains(".m3u8")
 
-    //     // Fetch the server list HTML
-    //     val serversJson = app.get("$anikotoAPI/ajax/server/list?servers=$dataIds", headers = headers).text
-    //     val serversParsed = tryParseJson<AnikotoResponse>(serversJson) ?: return
-    //     val serversDocument = Jsoup.parse(serversParsed.result)
+            callback.invoke(
+                newExtractorLink(
+                    "HdGharTv",
+                    "HdGharTv",
+                    url,
+                    if(isM3u8) ExtractorLinkType.M3U8 else INFER_TYPE
+                ) {
+                    this.quality = quality
+                    this.referer = "$hdGharTvAPI/"
+                }
+            )
+        }
 
-    //     // Iterate through each type block (sub, hsub, dub)
-    //     val serverTypes = serversDocument.select("div.servers div.type")
+    }
 
-    //     serverTypes.safeAmap { serverType ->
-    //         val type = serverType.attr("data-type")
-    //         val isDub = type.equals("dub", ignoreCase = true)
+    suspend fun invokeAnikoto(
+        title: String? = null,
+        year: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val headers = mapOf(
+            "referer" to "$anikotoAPI/",
+            "x-requested-with" to "XMLHttpRequest"
+        )
 
-    //         val serverList = serverType.select("ul li")
-    //         serverList.safeAmap { server ->
-    //             val serverName = server.text().trim() // e.g., "VidPlay-1", "HD-1"
-    //             val linkId = server.attr("data-link-id") // The encoded string
-    //             val svId = server.attr("data-sv-id") // e.g., "8e4", "323"
+        val document = app.get(
+            "$anikotoAPI/filter?keyword=$title&type=&year%5B%5D=$year&ep_min=&ep_max=&sort=default"
+        ).document
 
-    //         }
-    //     }
-    // }
+        val dataTip = document.selectFirst("div.tip.ani")?.attr("data-tip") ?: return
+
+        Log.d("Anikoto", "dataTip: $dataTip")
+
+        //val url = document.selectFirst("a.d-title")?.attr("href") ?: return
+
+        val infoJson = app.get("$anikotoAPI/ajax/episode/list/$dataTip?vrf=", headers = headers).text
+
+        Log.d("Anikoto", "infoJson: $infoJson")
+
+        val infoParsed = tryParseJson<AnikotoResponse>(infoJson) ?: return
+        val infoDocument = Jsoup.parse(infoParsed.result)
+
+        val epAnchor = infoDocument.selectFirst("ul.ep-range li a[data-num='$episode']") ?: return
+        val dataIds = epAnchor.attr("data-ids")
+
+        Log.d("Anikoto", "dataIds: $dataIds")
+
+        // val dataTimestamp = epAnchor.attr("data-timestamp")
+
+        // Fetch the server list HTML
+        val serversJson = app.get("$anikotoAPI/ajax/server/list?servers=$dataIds", headers = headers).text
+
+        Log.d("Anikoto", "serversJson: $serversJson")
+
+        val serversParsed = tryParseJson<AnikotoResponse>(serversJson) ?: return
+        val serversDocument = Jsoup.parse(serversParsed.result)
+
+        // Iterate through each type block (sub, hsub, dub)
+        val serverTypes = serversDocument.select("div.servers div.type")
+
+        serverTypes.safeAmap { serverType ->
+            val type = serverType.attr("data-type").capitalizeServer()
+            // val isDub = type.equals("dub", ignoreCase = true)
+
+            val serverList = serverType.select("ul li")
+            serverList.safeAmap { server ->
+                val serverName = server.text().trim()
+                val linkId = server.attr("data-link-id")
+
+                Log.d("Anikoto", "linkId: $linkId")
+
+                // val svId = server.attr("data-sv-id")
+
+                // Log.d("Anikoto", "svId: $svId")
+
+                val serverResponseJson = app.get("$anikotoAPI/ajax/server?get=$linkId", headers = headers).text
+                val serverResponse = tryParseJson<AnikotoServerResponse>(serverResponseJson) ?: return@safeAmap
+                val embedUrl = serverResponse.result?.url ?: return@safeAmap
+
+                Log.d("Anikoto", "Extracted embed URL: $embedUrl")
+
+                loadCustomExtractor("Anikoto[$type]", embedUrl, "$anikotoAPI/", subtitleCallback, callback)
+
+            }
+        }
+    }
 
 }

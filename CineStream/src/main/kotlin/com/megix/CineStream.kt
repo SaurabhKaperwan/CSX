@@ -64,6 +64,9 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Otakuhg())
         registerExtractorAPI(Allanimeups())
         registerExtractorAPI(Bysekoze())
+        registerExtractorAPI(MegaPlay())
+        registerExtractorAPI(Vidtube())
+        registerExtractorAPI(Vidwish())
 
         this.openSettings = { ctx: Context ->
             Settings.showSettingsDialog(ctx) {

@@ -1042,3 +1042,52 @@ data class VaPlayerSub(
     val code: String? = null,
     val url: String? = null
 )
+
+//Anikoto
+
+data class AnikotoResponse(
+    val status: Int,
+    val result: String
+)
+
+data class AnikotoServerResponse(
+    val status: Int? = null,
+    val result: AnikotoServerResult? = null
+)
+
+data class AnikotoServerResult(
+    val url: String? = null,
+)
+
+//HdGharTv
+
+data class HdGharSearchResponse(
+    val movies: List<HdGharSearchItem>? = null,
+    val series: List<HdGharSearchItem>? = null
+)
+
+data class HdGharSearchItem(
+    @param:JsonProperty("_id") val id: String? = null,
+    val tmdbId: Int? = null
+)
+
+data class HdGharDetailsResponse(
+    val streamingLinks: List<HdGharLink>? = null, // For Movies
+    val seasons: List<HdGharSeason>? = null              // For Series
+)
+
+data class HdGharSeason(
+    val seasonNumber: Int? = null,
+    val episodes: List<HdGharEpisode>? = null
+)
+
+data class HdGharEpisode(
+    val episodeNumber: Int? = null,
+    val streamingLinks: List<HdGharLink>? = null
+)
+
+data class HdGharLink(
+    val quality: String? = null,
+    val url: String? = null,
+    val type: String? = null
+)

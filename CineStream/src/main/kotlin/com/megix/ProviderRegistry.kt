@@ -250,6 +250,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeLevidia(res.title, res.year, res.season, res.episode, subCb, cb) },
         ),
         ProviderDef(
+            key = "p_hdghartv", displayName = "HdGharTv",
+            executeStandard = { res, subCb, cb -> if(!res.isAnime) invokeHdGharTv(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
+        ),
+        ProviderDef(
             key = "p_dahmermovies", displayName = "DahmerMovies",
             executeStandard = { res, _, cb -> invokeDahmerMovies(res.title, res.year, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
@@ -310,6 +314,10 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_animedao", displayName = "Animedao",
             executeAnime = { res, subCb, cb -> invokeAnimedao(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_anikoto", displayName = "Anikoto",
+            executeAnime = { res, subCb, cb -> invokeAnikoto(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_anikage", displayName = "Anikage",
