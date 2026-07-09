@@ -4501,6 +4501,7 @@ object CineStreamExtractors {
     }
 
     suspend fun invokeAnimedao(
+        imdbTitle: String? = null,
         title: String? = null,
         year: Int? = null,
         episode: Int? = null,
@@ -4508,15 +4509,22 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
 
-        val searchUrl = "$animedaoAPI/search.html?keyword=$title&year%5B%5D=$year&sort=title_az"
+        var matchedUrl = cfGet("$animedaoAPI/search.html?keyword=$imdbTitle&year%5B%5D=$year&sort=title_az")
+            .document
+            .selectFirst("article.an-anime-card > a")
+            ?.attr("href")
+            ?.replace("/anime/", "/watch-online/")
 
-        val matchedUrl = cfGet(searchUrl)
+        Log.d("AnimeDao", "matchedUrl: $matchedUrl")
+
+        if(matchedUrl == null) {
+            matchedUrl = cfGet("$animedaoAPI/search?q=$title")
             .document
             .selectFirst("article.an-anime-card > a")
             ?.attr("href")
             ?.replace("/anime/", "/watch-online/")
             ?: return
-
+        }
 
         Log.d("AnimeDao", "matchedUrl: $matchedUrl")
 
@@ -4622,8 +4630,6 @@ object CineStreamExtractors {
 
         Log.d("Anikoto", "dataTip: $dataTip")
 
-        //val url = document.selectFirst("a.d-title")?.attr("href") ?: return
-
         val infoJson = app.get("$anikotoAPI/ajax/episode/list/$dataTip?vrf=", headers = headers).text
 
         Log.d("Anikoto", "infoJson: $infoJson")
@@ -4636,8 +4642,6 @@ object CineStreamExtractors {
 
         Log.d("Anikoto", "dataIds: $dataIds")
 
-        // val dataTimestamp = epAnchor.attr("data-timestamp")
-
         // Fetch the server list HTML
         val serversJson = app.get("$anikotoAPI/ajax/server/list?servers=$dataIds", headers = headers).text
 
@@ -4646,12 +4650,10 @@ object CineStreamExtractors {
         val serversParsed = tryParseJson<AnikotoResponse>(serversJson) ?: return
         val serversDocument = Jsoup.parse(serversParsed.result)
 
-        // Iterate through each type block (sub, hsub, dub)
         val serverTypes = serversDocument.select("div.servers div.type")
 
         serverTypes.safeAmap { serverType ->
             val type = serverType.attr("data-type").capitalizeServer()
-            // val isDub = type.equals("dub", ignoreCase = true)
 
             val serverList = serverType.select("ul li")
             serverList.safeAmap { server ->
@@ -4659,10 +4661,6 @@ object CineStreamExtractors {
                 val linkId = server.attr("data-link-id")
 
                 Log.d("Anikoto", "linkId: $linkId")
-
-                // val svId = server.attr("data-sv-id")
-
-                // Log.d("Anikoto", "svId: $svId")
 
                 val serverResponseJson = app.get("$anikotoAPI/ajax/server?get=$linkId", headers = headers).text
                 val serverResponse = tryParseJson<AnikotoServerResponse>(serverResponseJson) ?: return@safeAmap
@@ -4677,3 +4675,4 @@ object CineStreamExtractors {
     }
 
 }
+

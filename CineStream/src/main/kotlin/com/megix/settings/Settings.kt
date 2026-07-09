@@ -49,7 +49,7 @@ object Settings {
 
     private val CLOUDFLARE_BYPASS_SITES = listOf(
         BypassDomain("cinemacity.cc", "CinemaCity"),
-        BypassDomain("anidao.to/search?q=hi", "AniDao"),
+        // BypassDomain("anidao.to/search?q=hi", "AniDao"),
         BypassDomain("animepahe.pw", "AnimePahe")
     )
 

@@ -1196,7 +1196,11 @@ open class Asianload : ExtractorApi() {
 
 //Animedao
 
-class VibePlayer : ExtractorApi() {
+class Bibiemb: VibePlayer() {
+    override val mainUrl = "https://bibiemb.xyz"
+}
+
+open class VibePlayer : ExtractorApi() {
     override val name = "VibePlayer"
     override val mainUrl = "https://vibeplayer.site"
     override val requiresReferer = true
@@ -1209,10 +1213,11 @@ class VibePlayer : ExtractorApi() {
     ) {
         val response = app.get(url, referer = referer).text
 
-        val videoUrl = Regex("""src\s=\s"(.*?)\"""")
+        val videoUrl = Regex("""const\s+src\s*=\s*["']([^"']+)["']""")
             .find(response)
-            ?.groupValues?.get(1)
-            ?.takeIf { it.isNotBlank() }
+            ?.groups
+            ?.get(1)
+            ?.value
             ?: return
 
         M3u8Helper.generateM3u8(
