@@ -151,6 +151,11 @@ object ProviderRegistry {
             executeAnime = { res, _, cb -> invokeAv1encodes(res.imdbTitle, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
+            key = "p_castle", displayName = "Castle",
+            executeStandard = { res, subCb, cb -> invokeCastle(res.title, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeCastle(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_reanime", displayName = "Reanime",
             executeAnime = { res, subCb, cb -> invokeReanime(res.anilistId, res.episode, subCb, cb) }
         ),

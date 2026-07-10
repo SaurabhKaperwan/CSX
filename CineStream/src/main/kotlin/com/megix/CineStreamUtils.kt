@@ -51,6 +51,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import java.math.BigInteger
+import kotlin.math.min
 
 // Settings
 import com.megix.settings.Settings
@@ -1703,4 +1704,69 @@ suspend fun solveLordflixChallenge(headers: Map<String, String>): String? {
         put("signature", challenge.signature)
     }
     return base64Encode(payload.toString().toByteArray())
+}
+
+//Castle
+
+val castleHeaders = mapOf(
+    "User-Agent" to "okhttp/4.9.3",
+    "Accept" to "application/json",
+    "Accept-Language" to "en-US,en;q=0.9",
+    "Connection" to "Keep-Alive",
+    "Referer" to "$castleAPI/"
+)
+
+fun decryptCastle(cipherText: String, base64Key: String): String {
+    val pepperWords = "T!BgJB".toByteArray(Charsets.UTF_8)
+
+    val keyWords = base64DecodeArray(base64Key)
+    val combined = keyWords + pepperWords
+
+    val keyMaterial = ByteArray(16)
+    System.arraycopy(combined, 0, keyMaterial, 0, min(combined.size, 16))
+
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    val secretKeySpec = SecretKeySpec(keyMaterial, "AES")
+    val ivParameterSpec = IvParameterSpec(keyMaterial)
+
+    cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+
+    val cipherBytes = base64DecodeArray(cipherText)
+
+    return String(cipher.doFinal(cipherBytes), Charsets.UTF_8)
+}
+
+suspend fun getCastleSecurityKey(url: String): String {
+    val response = app.get(url, headers = castleHeaders).text
+    val json = JSONObject(response)
+    return json.optString("data")
+}
+
+suspend fun makeCastleApiRequest(
+    url: String,
+    securityKey: String,
+    method: String = "GET",
+    jsonBody: Any? = null
+): JSONObject {
+    val response = if (method == "POST" && jsonBody != null) {
+        app.post(url, headers = castleHeaders, json = jsonBody).text
+    } else {
+        app.get(url, headers = castleHeaders).text
+    }.trim()
+
+    val cipherText = try {
+        val tempJson = JSONObject(response)
+        if (tempJson.has("data") && tempJson.get("data") is String) {
+            tempJson.getString("data")
+        } else {
+            response
+        }
+    } catch (e: Exception) {
+        response
+    }
+
+    val decryptedStr = decryptCastle(cipherText, securityKey)
+
+    val finalJson = JSONObject(decryptedStr)
+    return finalJson.optJSONObject("data") ?: finalJson
 }

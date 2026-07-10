@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 464
+version = 465
 android {
     defaultConfig {
         val properties = Properties()
@@ -9,6 +9,7 @@ android {
         buildConfigField("String", "SIMKL_API", "\"${properties.getProperty("SIMKL_API")}\"")
         buildConfigField("String", "TMDB_KEY", "\"${properties.getProperty("TMDB_KEY")}\"")
         buildConfigField("String", "CC_COOKIE", "\"${properties.getProperty("CC_COOKIE")}\"")
+        buildConfigField("String", "CASTLE_KEY", "\"${properties.getProperty("CASTLE_KEY")}\"")
     }
 }
 
