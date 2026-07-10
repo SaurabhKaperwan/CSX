@@ -3988,13 +3988,15 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit
     ) {
 
+        val referer = "https://nextgencloudfabric.com/"
+
         val url = if(season == null) {
             "$vaPlayerAPI/api.php?imdb=$imdbId&type=movie"
         } else {
             "$vaPlayerAPI/api.php?imdb=$imdbId&type=tv&season=$season&episode=$episode"
         }
 
-        val json = app.get(url).text
+        val json = app.get(url, referer = referer).text
 
         val res = tryParseJson<VaPlayerResponse>(json) ?: return
 
@@ -4002,7 +4004,7 @@ object CineStreamExtractors {
             M3u8Helper.generateM3u8(
                 "VaPlayer",
                 streamUrl,
-                "https://nextgencloudfabric.com/"
+                referer
             ).forEach(callback)
         }
 
