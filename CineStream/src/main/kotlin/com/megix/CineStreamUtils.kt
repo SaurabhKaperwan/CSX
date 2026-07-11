@@ -1770,3 +1770,123 @@ suspend fun makeCastleApiRequest(
     val finalJson = JSONObject(decryptedStr)
     return finalJson.optJSONObject("data") ?: finalJson
 }
+
+//CtgMovies
+
+fun unescapeNextChunk(raw: String): String {
+    val sb = StringBuilder(raw.length)
+    var i = 0
+    while (i < raw.length) {
+        val c = raw[i]
+        if (c == '\\' && i + 1 < raw.length) {
+            when (raw[i + 1]) {
+                '"' -> { sb.append('"'); i += 2 }
+                '\\' -> { sb.append('\\'); i += 2 }
+                'n' -> { sb.append('\n'); i += 2 }
+                't' -> { sb.append('\t'); i += 2 }
+                'u' -> {
+                    if (i + 5 < raw.length) {
+                        val hex = raw.substring(i + 2, i + 6)
+                        sb.append(hex.toInt(16).toChar())
+                        i += 6
+                    } else { sb.append(c); i++ }
+                }
+                else -> { sb.append(raw[i + 1]); i += 2 }
+            }
+        } else {
+            sb.append(c); i++
+        }
+    }
+    return sb.toString()
+}
+
+// Concatenate every self.__next_f.push chunk into one big decoded blob
+fun buildRscBlob(html: String): String {
+    val NEXT_F_PREFIX = "self.__next_f.push([1,\""
+    val NEXT_F_SUFFIX = "\"])"
+    val blob = StringBuilder()
+    var searchFrom = 0
+    while (true) {
+        val start = html.indexOf(NEXT_F_PREFIX, searchFrom)
+        if (start == -1) break
+        val contentStart = start + NEXT_F_PREFIX.length
+        val end = html.indexOf(NEXT_F_SUFFIX, contentStart)
+        if (end == -1) break
+        val raw = html.substring(contentStart, end)
+        blob.append(unescapeNextChunk(raw))
+        searchFrom = end + NEXT_F_SUFFIX.length
+    }
+    return blob.toString()
+}
+
+// Extract EVERY balanced "links":[...] JSON array found in the blob.
+fun extractAllLinksArraysJson(blob: String): List<String> {
+    val key = "\"links\":["
+    val results = mutableListOf<String>()
+    var searchFrom = 0
+    while (true) {
+        val keyIdx = blob.indexOf(key, searchFrom)
+        if (keyIdx == -1) break
+        val arrStart = keyIdx + key.length - 1 // position of '['
+        var depth = 0
+        var i = arrStart
+        var arrEnd = -1
+        while (i < blob.length) {
+            when (blob[i]) {
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) { arrEnd = i; break }
+                }
+            }
+            i++
+        }
+        if (arrEnd == -1) break
+        results.add(blob.substring(arrStart, arrEnd + 1))
+        searchFrom = arrEnd + 1
+    }
+    return results
+}
+
+fun parseCtgLinks(html: String): List<CTGLink> {
+    val blob = buildRscBlob(html)
+    val arrJsonList = extractAllLinksArraysJson(blob)
+    if (arrJsonList.isEmpty()) return emptyList()
+
+    val result = mutableListOf<CTGLink>()
+    for (arrJson in arrJsonList) {
+        val arr = runCatching { JSONArray(arrJson) }.getOrNull() ?: continue
+        for (idx in 0 until arr.length()) {
+            val obj = arr.optJSONObject(idx) ?: continue
+            val url = obj.optString("url").takeIf { it.isNotBlank() } ?: continue
+
+            val audioTracks = mutableListOf<Pair<String, String>>()
+            obj.optJSONArray("audio_tracks")?.let { tracksArr ->
+                for (j in 0 until tracksArr.length()) {
+                    val t = tracksArr.optJSONObject(j) ?: continue
+                    val aUrl = t.optString("url")
+                    val label = t.optString("label", t.optString("language", ""))
+                    if (aUrl.isNotBlank()) audioTracks.add(aUrl to label)
+                }
+            }
+
+            result.add(
+                CTGLink(
+                    quality = obj.optString("quality"),
+                    url = url,
+                    hlsUrl = obj.optString("hls_url").takeIf { it.isNotBlank() && it != "null" },
+                    type = obj.optString("type"),
+                    source = obj.optString("source"),
+                    language = obj.optString("language"),
+                    sizeBytes = obj.optLong("size_bytes", -1L).takeIf { it >= 0 },
+                    seasonNumber = obj.optInt("season_number", -1).takeIf { it >= 0 },
+                    episodeNumber = obj.optInt("episode_number", -1).takeIf { it >= 0 },
+                    audioTracks = audioTracks
+                )
+            )
+        }
+    }
+
+    // Dedup in case the same link array got captured twice via overlapping matches
+    return result.distinctBy { it.url }
+}

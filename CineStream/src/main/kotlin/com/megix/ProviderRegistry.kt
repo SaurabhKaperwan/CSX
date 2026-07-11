@@ -78,11 +78,6 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_mkvbase", displayName = "MkvBase",
-            executeStandard = { res, subCb, cb -> invokeMkvbase(res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeMkvbase(res.imdbTitle, res.imdbYear ,res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_cinemacity", displayName = "Cinemacity",
             executeStandard = { res, subCb, cb -> invokeCinemacity(res.title, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeCinemacity(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
@@ -128,6 +123,11 @@ object ProviderRegistry {
             key = "p_playimdb", displayName = "PlayImdb",
             executeStandard = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_ctgmovies", displayName = "CtgMovies",
+            executeStandard = { res, subCb, cb -> invokeCtgMovies(res.title, res.season, res.episode, "normal" ,subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeCtgMovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, "anime" ,subCb, cb) }
         ),
         ProviderDef(
             key = "p_vidzee", displayName = "Vidzee",

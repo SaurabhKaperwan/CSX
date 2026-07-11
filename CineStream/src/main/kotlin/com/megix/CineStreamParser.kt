@@ -891,18 +891,6 @@ data class AnidbLanguage(
     @param:JsonProperty("embed_url") val embedUrl: String? = null
 )
 
-
-//MkvBase
-
-data class MkvBaseResponse(
-    val results: List< MkvBaseSearchResult>? = null,
-)
-
-data class  MkvBaseSearchResult(
-    val title: String? = null,
-    val url: String? = null,
-)
-
 //Vidcore
 
 data class VidcoreResponse(
@@ -1090,4 +1078,19 @@ data class HdGharLink(
     val quality: String? = null,
     val url: String? = null,
     val type: String? = null
+)
+
+//CtgMovies
+
+data class CTGLink(
+    val quality: String,
+    val url: String,
+    val hlsUrl: String?,
+    val type: String,
+    val source: String,
+    val language: String,
+    val sizeBytes: Long?,
+    val seasonNumber: Int?,
+    val episodeNumber: Int?,
+    val audioTracks: List<Pair<String, String>>
 )
