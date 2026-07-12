@@ -1890,3 +1890,28 @@ fun parseCtgLinks(html: String): List<CTGLink> {
     // Dedup in case the same link array got captured twice via overlapping matches
     return result.distinctBy { it.url }
 }
+
+//MovieBlast
+
+fun generateSignedUrl(url: String): String? {
+    return try {
+        val uri = URI(url)
+
+        val path = uri.rawPath
+
+        val timestamp = (System.currentTimeMillis() / 1000).toString()
+
+        val mac = Mac.getInstance("HmacSHA256")
+        val secretKeySpec = SecretKeySpec(MOVIEBLAST_KEY.toByteArray(Charsets.UTF_8), "HmacSHA256")
+        mac.init(secretKeySpec)
+
+        val hmacData = mac.doFinal((path + timestamp).toByteArray(Charsets.UTF_8))
+
+        val signature = base64Encode(hmacData)
+        val encodedSignature = URLEncoder.encode(signature, "UTF-8")
+
+        "$url?verify=$timestamp-$encodedSignature"
+    } catch (e: Exception) {
+        null
+    }
+}

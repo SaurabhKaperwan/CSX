@@ -53,6 +53,10 @@ jobs:
           TMDB_KEY: ${{ secrets.TMDB_KEY }}
           CC_COOKIE: ${{ secrets.CC_COOKIE }}
           CASTLE_KEY: ${{ secrets.CASTLE_KEY }}
+          MOVIEBLAST_TOKEN: ${{ secrets.MOVIEBLAST_TOKEN }}
+          MOVIEBLAST_API: ${{ secrets.MOVIEBLAST_API }}
+          MOVIEBLAST_KEY: ${{ secrets.MOVIEBLAST_KEY }}
+
         run: |
           cd $GITHUB_WORKSPACE/src
           # Create file if it doesn't exist
@@ -61,6 +65,9 @@ jobs:
           echo "TMDB_KEY=$TMDB_KEY" >> local.properties
           echo "CC_COOKIE=$CC_COOKIE" >> local.properties
           echo "CASTLE_KEY=$CASTLE_KEY" >> local.properties
+          echo "MOVIEBLAST_TOKEN=$MOVIEBLAST_TOKEN" >> local.properties
+          echo "MOVIEBLAST_API=$MOVIEBLAST_API" >> local.properties
+          echo "MOVIEBLAST_KEY=$MOVIEBLAST_KEY" >> local.properties
 
       - name: Build Plugins
         run: |

@@ -83,6 +83,10 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeCinemacity(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_movieblast", displayName = "MovieBlast",
+            executeStandard = { res, subCb, cb -> invokeMovieBlast(res.title, res.season, res.episode, subCb, cb) },
+        ),
+        ProviderDef(
             key = "p_allmovieland", displayName = "Allmovieland",
             executeStandard = { res, _, cb -> invokeAllmovieland(res.imdbId, res.season, res.episode, cb) },
         ),

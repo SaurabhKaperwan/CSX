@@ -1094,3 +1094,43 @@ data class CTGLink(
     val episodeNumber: Int?,
     val audioTracks: List<Pair<String, String>>
 )
+
+//MovieBlast
+
+data class MovieBlastSearchResponse(
+    @param:JsonProperty("search") val search: List<MovieBlastSearchItem>?
+)
+
+data class MovieBlastSearchItem(
+    @param:JsonProperty("id") val id: Int?,
+    @param:JsonProperty("type") val type: String?,
+    @param:JsonProperty("name") val name: String?,
+    @param:JsonProperty("original_name") val originalName: String?
+)
+
+data class MovieBlastDetailsResponse(
+    @param:JsonProperty("videos") val videos: List<MovieBlastVideo>?,
+    @param:JsonProperty("seasons") val seasons: List<MovieBlastSeason>?,
+    @param:JsonProperty("substitles") val subtitles: List<MovieBlastSubtitle>?
+)
+
+data class MovieBlastSeason(
+    @param:JsonProperty("season_number") val seasonNumber: Int?,
+    @param:JsonProperty("episodes") val episodes: List<MovieBlastEpisode>?
+)
+
+data class MovieBlastEpisode(
+    @param:JsonProperty("episode_number") val episodeNumber: Int?,
+    @param:JsonProperty("videos") val videos: List<MovieBlastVideo>?
+)
+
+data class MovieBlastVideo(
+    @param:JsonProperty("link") val link: String?,
+    @param:JsonProperty("server") val server: String?,
+    @param:JsonProperty("lang") val lang: String?
+)
+
+data class MovieBlastSubtitle(
+    @param:JsonProperty("link") val link: String?,
+    @param:JsonProperty("lang") val lang: String?
+)
