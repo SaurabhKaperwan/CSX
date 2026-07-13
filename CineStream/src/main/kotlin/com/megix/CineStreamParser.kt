@@ -1134,3 +1134,44 @@ data class MovieBlastSubtitle(
     @param:JsonProperty("link") val link: String?,
     @param:JsonProperty("lang") val lang: String?
 )
+
+//Vidup
+
+data class VidupResponse(
+    val status: Int? = null,
+    val result: VidupResult? = null,
+    val info: String? = null
+)
+
+data class VidupResult(
+    val servers: String? = null,
+    val stream: String? = null,
+    val token: String? = null
+)
+
+data class VidupServersResponse(
+    val status: Int? = null,
+    val result: List<VidupServer>? = null
+)
+
+data class VidupServer(
+    val name: String? = null,
+    val description: String? = null,
+    val image: String? = null,
+    val data: String? = null
+)
+
+data class VidupStreamResponse(
+    val status: Int? = null,
+    val result: VidupStreamResult? = null
+)
+
+data class VidupStreamResult(
+    val url: String? = null,
+    val tracks: List<VidupTrack>? = emptyList()
+)
+
+data class VidupTrack(
+    val file: String? = null,
+    val label: String? = null
+)
