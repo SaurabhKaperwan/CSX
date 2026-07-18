@@ -1196,6 +1196,10 @@ open class Asianload : ExtractorApi() {
 
 //Animedao
 
+class Vivibebe: VibePlayer() {
+    override val mainUrl = "https://vivibebe.site"
+}
+
 class Bibiemb: VibePlayer() {
     override val mainUrl = "https://bibiemb.xyz"
 }

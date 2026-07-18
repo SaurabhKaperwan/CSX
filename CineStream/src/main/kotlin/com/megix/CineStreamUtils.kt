@@ -1676,36 +1676,6 @@ fun decodeToBeParsed(encoded: String): String? {
     }
 }
 
-//Lordflix
-
-fun sha256Hex(input: String): String {
-    val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
-    return digest.joinToString("") { "%02x".format(it) }
-}
-
-suspend fun solveLordflixChallenge(headers: Map<String, String>): String? {
-    val challenge = app.get("$lordflixAPI/challenge", headers = headers)
-        .parsedSafe<LordflixChallenge>() ?: return null
-
-    var solvedNumber = -1
-    for (number in 0..challenge.maxnumber) {
-        if (sha256Hex("${challenge.salt}$number") == challenge.challenge) {
-            solvedNumber = number
-            break
-        }
-    }
-    if (solvedNumber == -1) return null
-
-    val payload = JSONObject().apply {
-        put("algorithm", challenge.algorithm)
-        put("challenge", challenge.challenge)
-        put("number", solvedNumber)
-        put("salt", challenge.salt)
-        put("signature", challenge.signature)
-    }
-    return base64Encode(payload.toString().toByteArray())
-}
-
 //Castle
 
 val castleHeaders = mapOf(

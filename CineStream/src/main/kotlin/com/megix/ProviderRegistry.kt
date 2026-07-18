@@ -103,10 +103,6 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokePlaysrc(res.tmdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
-            key = "p_lordflix", displayName = "Lordflix",
-            executeStandard = { res, subCb, cb -> invokeLordflix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_fshare", displayName = "Fshare",
             executeStandard = { res, subCb, cb -> if (res.season == null) invokeFshare(res.title, res.imdbId, subCb, cb) }
         ),

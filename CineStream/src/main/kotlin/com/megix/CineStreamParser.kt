@@ -798,46 +798,6 @@ data class AnimeSaltData(
     val securedLink: String? = null,
 )
 
-//Lordflix
-
-data class LordflixServer(
-    val name: String
-)
-
-data class LordflixServersResponse(
-    val servers: List<LordflixServer>?
-)
-
-data class LordflixChallenge(
-    val algorithm: String,
-    val challenge: String,
-    val maxnumber: Int,
-    val salt: String,
-    val signature: String
-)
-
-
-data class LordflixCaption(
-    val url: String,
-    val language: String?
-)
-
-data class LordflixStream(
-    val type: String,
-    val playlist: String? = null,
-    val captions: List<LordflixCaption>? = null
-)
-
-data class LordflixDecResult(
-    val stream: List<LordflixStream>? = null,
-    val error: String? = null
-)
-
-data class LordflixDecResponse(
-    val status: Int,
-    val result: LordflixDecResult? = null
-)
-
 //Zinkmovies
 
 data class ZinkTokenResponse(

@@ -31,6 +31,7 @@ import java.security.SecureRandom
 import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
+import java.util.concurrent.ConcurrentHashMap
 
 import com.megix.settings.Settings
 
@@ -42,8 +43,8 @@ object CineStreamExtractors {
     private const val CF_LOG_TAG = "CineStreamCloudflare"
     // Must match WebView User-Agent for Cloudflare cookie validation
     private const val CF_BYPASS_USER_AGENT = "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36"
-    private val cfKiller by lazy { CloudflareKiller() }
-    private val cfMutex = Mutex()
+    private val cfMutexMap = ConcurrentHashMap<String, Mutex>()
+    private val cfKillerMap = ConcurrentHashMap<String, CloudflareKiller>()
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
@@ -134,6 +135,12 @@ object CineStreamExtractors {
         }
     }
 
+    private fun mutexFor(url: String): Mutex =
+        cfMutexMap.getOrPut(url.getHost()) { Mutex() }
+
+    private fun killerFor(url: String): CloudflareKiller =
+        cfKillerMap.getOrPut(url.getHost()) { CloudflareKiller() }
+
     private fun isCloudflarePage(response: NiceResponse): Boolean {
         return response.code in listOf(403, 503)
     }
@@ -143,27 +150,21 @@ object CineStreamExtractors {
         Log.d(CF_LOG_TAG, "injectWebviewCookies: match=$match url=$url")
         if (!match) return headers
 
-        // Try to load saved cookies from SharedPreferences first
         val savedCookie = Settings.getCookieForDomain(url)
         val cookieValue = savedCookie?.takeIf { it.isNotBlank() }
             ?: CookieManager.getInstance().getCookie(url)?.takeIf { it.isNotBlank() }
+            ?: return headers
 
-        if (cookieValue == null) {
-            Log.d(CF_LOG_TAG, "injectWebviewCookies: no cookies found for $url")
-            return headers
-        }
         Log.d(CF_LOG_TAG, "injectWebviewCookies: injecting cookies for $url => ${cookieValue.take(50)}...")
 
         val merged = headers.toMutableMap()
         val existingCookie = merged["Cookie"].orEmpty()
         merged["Cookie"] = if (existingCookie.isBlank()) cookieValue else "$existingCookie; $cookieValue"
-        Log.d(CF_LOG_TAG, "injectWebviewCookies: Cookie header added for $url")
         return merged
     }
 
     suspend fun cfGet(url: String, headers: Map<String, String> = emptyMap(), allowRedirects: Boolean = true): NiceResponse {
         Log.d(CF_LOG_TAG, "cfGet start: $url headers=$headers")
-        // Add Cloudflare bypass User-Agent to match WebView for cookie validation
         val headersWithAgent = headers.toMutableMap()
         if (!headersWithAgent.containsKey("User-Agent")) {
             headersWithAgent["User-Agent"] = CF_BYPASS_USER_AGENT
@@ -171,21 +172,20 @@ object CineStreamExtractors {
         val effectiveHeaders = injectWebviewCookies(url, headersWithAgent)
         Log.d(CF_LOG_TAG, "cfGet effective headers: User-Agent=${effectiveHeaders["User-Agent"]?.take(50)}...")
         val response = app.get(url, headers = effectiveHeaders, allowRedirects = allowRedirects)
-        if (!isCloudflarePage(response)) {
-            Log.d(CF_LOG_TAG, "cfGet success: ${response.code} for $url")
-            return response
-        }
+        if (!isCloudflarePage(response)) return response
+
         Log.d(CF_LOG_TAG, "cfGet Cloudflare detected: ${response.code} for $url, retrying with CloudflareKiller")
-        return cfMutex.withLock {
+
+        return mutexFor(url).withLock {
+            val cfKiller = killerFor(url)
             val retryResponse = app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
+
+            Log.d(CF_LOG_TAG, "cfGet retryResponse code: ${retryResponse.code} for $url")
+
             if (isCloudflarePage(retryResponse)) {
-                Log.d(CF_LOG_TAG, "cfGet retry blocked again: ${retryResponse.code}, clearing saved cookies and retrying")
                 cfKiller.savedCookies.clear()
-                val finalResponse = app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
-                Log.d(CF_LOG_TAG, "cfGet final response: ${finalResponse.code} for $url")
-                finalResponse
+                app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
             } else {
-                Log.d(CF_LOG_TAG, "cfGet retry succeeded: ${retryResponse.code} for $url")
                 retryResponse
             }
         }
@@ -198,30 +198,21 @@ object CineStreamExtractors {
         json: Any? = null,
         allowRedirects: Boolean = true
     ): NiceResponse {
-        Log.d(CF_LOG_TAG, "cfPost start: $url headers=$headers data=${data.keys} json=${json != null}")
-        // Add Cloudflare bypass User-Agent to match WebView for cookie validation
         val headersWithAgent = headers.toMutableMap()
         if (!headersWithAgent.containsKey("User-Agent")) {
             headersWithAgent["User-Agent"] = CF_BYPASS_USER_AGENT
         }
         val effectiveHeaders = injectWebviewCookies(url, headersWithAgent)
-        Log.d(CF_LOG_TAG, "cfPost effective headers: User-Agent=${effectiveHeaders["User-Agent"]?.take(50)}...")
         val response = app.post(url, headers = effectiveHeaders, data = data, json = json, allowRedirects = allowRedirects)
-        if (!isCloudflarePage(response)) {
-            Log.d(CF_LOG_TAG, "cfPost success: ${response.code} for $url")
-            return response
-        }
-        Log.d(CF_LOG_TAG, "cfPost Cloudflare detected: ${response.code} for $url, retrying with CloudflareKiller")
-        return cfMutex.withLock {
+        if (!isCloudflarePage(response)) return response
+
+        return mutexFor(url).withLock {
+            val cfKiller = killerFor(url)
             val retryResponse = app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
             if (isCloudflarePage(retryResponse)) {
-                Log.d(CF_LOG_TAG, "cfPost retry blocked again: ${retryResponse.code}, clearing saved cookies and retrying")
                 cfKiller.savedCookies.clear()
-                val finalResponse = app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
-                Log.d(CF_LOG_TAG, "cfPost final response: ${finalResponse.code} for $url")
-                finalResponse
+                app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
             } else {
-                Log.d(CF_LOG_TAG, "cfPost retry succeeded: ${retryResponse.code} for $url")
                 retryResponse
             }
         }
@@ -2168,11 +2159,11 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val res1 = cfGet("$bollyflixAPI/search/$id").document
+        val res1 = app.get("$bollyflixAPI/search/$id").document
 
         res1.select("div > article > a").safeAmap {
             val url = it.attr("href")
-            val res = cfGet(url).document
+            val res = app.get(url).document
             val hTag = if (season == null) "h5" else "h4"
             val sTag = if (season == null) "" else "Season $season"
             val entries =
@@ -2647,7 +2638,7 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val url = cfGet("$uhdmoviesAPI/search/$title $year").document
+        val url = app.get("$uhdmoviesAPI/search/$title $year").document
             .select("article div.entry-image a").attr("href")
         val doc = app.get(url).document
 
@@ -2764,7 +2755,7 @@ object CineStreamExtractors {
         } else {
             url = "$api/search/$id $season"
         }
-        var href = cfGet(url).document.selectFirst("#content_box article > a")?.attr("href")
+        var href = app.get(url).document.selectFirst("#content_box article > a")?.attr("href")
 
         Log.d("Moviesmod", "$href")
 
@@ -2847,7 +2838,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val privatereferer = "https://allmanga.to"
+        val privatereferer = "https://mkissa.to/"
         val ephash = "d405d0edd690624b66baba3068e0edc3ac90f1597d898a1ec8db4e5c43c00fec"
         val queryhash = "a24c500a1b765c68ae1d8dd85174931f661c71369c89b92b88b75a725afc471c"
 
@@ -2858,7 +2849,7 @@ object CineStreamExtractors {
             type = "TV"
         }
 
-        val query = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$name"},"limit":26,"page":1,"translationType":"sub","countryOrigin":"ALL"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
+        val query = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$name"},"limit":26,"page":1,"translationType":"sub"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
         val res = app.get(query, referer = privatereferer)
 
         Log.d("Allanime", "res: ${res.text}")
@@ -4348,78 +4339,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeLordflix(
-        title: String? = null,
-        imdbId: String? = null,
-        tmdbId: Int? = null,
-        year: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        if (title == null || imdbId == null || tmdbId == null) return
-        val headers = mapOf(
-            "Accept" to "*/*",
-            "Origin" to lordflixBaseAPI,
-            "Referer" to "$lordflixBaseAPI/",
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-        )
-
-        val servers = app.get("$lordflixAPI/servers", headers = headers)
-            .parsedSafe<LordflixServersResponse>()?.servers?.mapNotNull { it.name }
-            ?: return
-
-        servers.safeAmap { server ->
-            val serverUrl = buildString {
-                append("$lordflixAPI/?title=${quote(title)}&type=")
-                if (season == null) append("movie")
-                if (season != null) append("series")
-                append("&year=$year&imdb=$imdbId&tmdb=$tmdbId&server=$server")
-                if (season != null) append("&season=$season")
-                if (episode != null) append("&episode=$episode")
-            }
-
-            val encData = app.get("$multiDecryptAPI/enc-lordflix?url=${quote(serverUrl)}").text
-            val encJson = JSONObject(encData)
-            if (encJson.getInt("status") != 200) return@safeAmap
-            val result = encJson.getJSONObject("result")
-            val encUrl = result.getString("url")
-            val attestToken = solveLordflixChallenge(headers) ?: return@safeAmap
-            val mediaHeaders = headers + mapOf("x-attest" to attestToken)
-
-            val encData2 = app.get(encUrl, headers = mediaHeaders).text
-            val decResponse = app.post(
-                "$multiDecryptAPI/dec-lordflix",
-                json = mapOf("text" to encData2)
-            ).parsedSafe<LordflixDecResponse>() ?: return@safeAmap
-            if (decResponse.status != 200) return@safeAmap
-            val decResult = decResponse.result ?: return@safeAmap
-            if (decResult.error != null) return@safeAmap
-            val stream = decResult.stream?.firstOrNull() ?: return@safeAmap
-
-            stream.captions?.forEach { caption ->
-                subtitleCallback.invoke(newSubtitleFile(getLanguage(caption.language) ?: "Unknown", caption.url))
-            }
-
-            when (stream.type) {
-                "hls" -> {
-                    val playlist = stream.playlist ?: return@safeAmap
-                    callback.invoke(
-                        newExtractorLink(
-                            "Lordflix[$server]",
-                            "Lordflix[$server]",
-                            playlist,
-                            ExtractorLinkType.M3U8
-                        ) {
-                            this.headers = headers
-                        }
-                    )
-                }
-            }
-        }
-    }
-
     suspend fun invokePeachify(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -4635,8 +4554,7 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-
-        var matchedUrl = cfGet("$animedaoAPI/search.html?keyword=$imdbTitle&year%5B%5D=$year&sort=title_az")
+        var matchedUrl = cfGet("$animedaoAPI/search.html?keyword=${URLEncoder.encode(imdbTitle, "UTF-8")}&year%5B%5D=$year&sort=title_az")
             .document
             .selectFirst("article.an-anime-card > a")
             ?.attr("href")
@@ -4645,7 +4563,7 @@ object CineStreamExtractors {
         Log.d("AnimeDao", "matchedUrl: $matchedUrl")
 
         if(matchedUrl == null) {
-            matchedUrl = cfGet("$animedaoAPI/search?q=$title")
+            matchedUrl = cfGet("$animedaoAPI/search?q=${URLEncoder.encode(imdbTitle, "UTF-8")}")
             .document
             .selectFirst("article.an-anime-card > a")
             ?.attr("href")

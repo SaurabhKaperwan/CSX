@@ -11,15 +11,13 @@ const val WYZIESubsAPI = "https://sub.wyzie.io"
 const val MostraguardaAPI = "https://mostraguarda.stream"
 const val CC_COOKIE = BuildConfig.CC_COOKIE
 const val CASTLE_KEY = BuildConfig.CASTLE_KEY
-
 const val MOVIEBLAST_TOKEN = BuildConfig.MOVIEBLAST_TOKEN
 const val MOVIEBLAST_API = BuildConfig.MOVIEBLAST_API
 const val MOVIEBLAST_KEY = BuildConfig.MOVIEBLAST_KEY
-
 const val animepaheAPI = "https://animepahe.pw"
 const val allmovielandAPI = "https://allmovieland.one"
 const val anizoneAPI = "https://anizone.to"
-const val AllanimeAPI = "https://api.allanime.day/api"
+const val AllanimeAPI = "https://api.mkissa.net/api"
 const val PrimeSrcApi = "https://primesrc.me"
 const val asiaflixAPI = "https://asiaflix.net"
 const val dahmerMoviesAPI = "https://a.111477.xyz"
@@ -52,8 +50,6 @@ const val onetouchtvAPI = "https://api3.devcorp.me"
 const val playImdbAPI = "https://streamimdb.me"
 const val av1encodesAPI = "https://av1encodes.com"
 const val peachifyBaseAPI = "https://peachify.top"
-const val lordflixBaseAPI = "https://lordflix.org"
-const val lordflixAPI = "https://hongkong.lordflix.club"
 const val reanimeAPI = "https://reanime.to"
 const val animesaltAPI = "https://animesalt.ac"
 const val anidbAPI = "https://anidb.app"

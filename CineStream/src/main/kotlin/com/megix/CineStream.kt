@@ -60,6 +60,7 @@ open class CineStream: Plugin() {
         registerExtractorAPI(FlixCloud())
         registerExtractorAPI(VibePlayer())
         registerExtractorAPI(Bibiemb())
+        registerExtractorAPI(Vivibebe())
         registerExtractorAPI(Playmogo())
         registerExtractorAPI(Otakuvid())
         registerExtractorAPI(Otakuhg())
