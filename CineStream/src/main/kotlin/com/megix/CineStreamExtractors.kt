@@ -642,6 +642,8 @@ object CineStreamExtractors {
             ?.attr("href")
             ?: return
 
+        Log.d("CineCity", "movieUrl: $movieUrl")
+
 
         val headers = mapOf(
             "Cookie" to CC_COOKIE
@@ -653,11 +655,15 @@ object CineStreamExtractors {
             ?.data()
             ?: return
 
+        Log.d("CineCity", "scriptData: $scriptData")
+
         val playerJson = JSONObject(
             base64Decode(
                 scriptData.substringAfter("atob(\"").substringBefore("\")")
             ).substringAfter("new Playerjs(").substringBeforeLast(");")
         )
+
+        Log.d("CineCity", "playerJson: $playerJson")
 
         val fileArray = JSONArray(playerJson.getString("file"))
 
@@ -688,6 +694,8 @@ object CineStreamExtractors {
         }
 
         val first = fileArray.getJSONObject(0)
+
+        Log.d("CineCity", "first: $first")
 
         // MOVIE
         if (!first.has("folder")) {
@@ -3511,7 +3519,7 @@ object CineStreamExtractors {
 
         Log.d("Vidfast", "response: $response")
 
-        val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
+        val encodedText = Regex("""\\"token\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
 
         Log.d("Vidfast", "encodedText: $encodedText")
 
@@ -3606,7 +3614,7 @@ object CineStreamExtractors {
         }
 
         val pageContent = app.get(baseUrl).text
-        val regex = Regex("""\\\"en\\\":\\\"(.*?)\\\"""")
+        val regex = Regex("""\\\"token\\\":\\\"(.*?)\\\"""")
         val match = regex.find(pageContent) ?: return
         val encryptedText = match.groupValues[1]
 
@@ -4747,7 +4755,7 @@ object CineStreamExtractors {
         }
 
         val text = app.get(url).text
-        val regex = Regex("""\\"en\\":\\"(.*?)\\"""")
+        val regex = Regex("""\\"token\\":\\"(.*?)\\"""")
         val enc = regex.find(text)?.groupValues?.get(1) ?: return
 
         val responseText = app.get("$multiDecryptAPI/enc-vidup?text=$enc", headers = headers).text
