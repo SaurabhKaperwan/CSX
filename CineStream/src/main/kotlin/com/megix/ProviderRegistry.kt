@@ -87,6 +87,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeMovieBlast(res.title, res.season, res.episode, subCb, cb) },
         ),
         ProviderDef(
+            key = "p_fibwatch", displayName = "Fibwatch",
+            executeStandard = { res, subCb, cb -> invokeFibwatch(res.title, res.season, res.episode, subCb, cb) },
+        ),
+        ProviderDef(
             key = "p_allmovieland", displayName = "Allmovieland",
             executeStandard = { res, _, cb -> invokeAllmovieland(res.imdbId, res.season, res.episode, cb) },
         ),
@@ -345,11 +349,6 @@ object ProviderRegistry {
             executeMalSync = { data, subCb, cb -> invokeAnimetoshoHttp(data.title, data.malId, data.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_allanime", displayName = "AllAnime",
-            executeAnime = { res, subCb, cb -> invokeAllanime(res.originalTitle ?: res.title, res.year, res.episode, subCb, cb) },
-            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAllanime(data.title, data.year, data.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_tokyoinsider", displayName = "TokyoInsider",
             executeAnime = { res, subCb, cb -> invokeTokyoInsider(res.originalTitle ?: res.title, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeTokyoInsider(data.title, data.episode, subCb, cb) }
@@ -363,11 +362,6 @@ object ProviderRegistry {
             key = "p_animes", displayName = "Animes*",
             executeAnime = { res, subCb, cb -> invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subCb, cb) }
         ),
-        // ProviderDef(
-        //     key = "p_gojo", displayName = "Animetsu",
-        //     executeAnime = { res, subCb, cb -> invokeGojo(res.title, res.anilistId, res.episode, subCb, cb) },
-        //     executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeGojo(data.title, data.aniId, data.episode, subCb, cb) }
-        // ),
         ProviderDef(
             key = "p_animekizz", displayName = "Animekizz",
             executeAnime = { res, subCb, cb -> invokeAnimekizz(res.title, res.anilistId, res.episode, subCb, cb) },

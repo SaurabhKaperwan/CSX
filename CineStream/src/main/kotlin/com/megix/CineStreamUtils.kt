@@ -1107,147 +1107,6 @@ suspend fun generateMagnetLink(url: String, hash: String?): String {
     }
 }
 
-//Allanime
-fun decrypthex(inputStr: String): String {
-    val hexString = if (inputStr.startsWith("-")) {
-        inputStr.substringAfterLast("-")
-    } else {
-        inputStr
-    }
-
-    val bytes = ByteArray(hexString.length / 2) { i ->
-        val hexByte = hexString.substring(i * 2, i * 2 + 2)
-        (hexByte.toInt(16) and 0xFF).toByte()
-    }
-
-    return bytes.joinToString("") { (it.toInt() xor 56).toChar().toString() }
-}
-
-suspend fun getM3u8Qualities(
-    m3u8Link: String,
-    referer: String,
-    qualityName: String,
-): List<ExtractorLink> {
-    return M3u8Helper.generateM3u8(
-        qualityName,
-        m3u8Link,
-        referer
-    )
-}
-
-fun String.fixUrlPath(): String {
-    return if (this.contains(".json?")) "https://allanime.day" + this
-    else "https://allanime.day" + URI(this).path + ".json?" + URI(this).query
-}
-
-fun fixSourceUrls(url: String, source: String?): String? {
-    return if (source == "Ak" || url.contains("/player/vitemb")) {
-        tryParseJson<AkIframe>(base64Decode(url.substringAfter("=")))?.idUrl
-    } else {
-        url.replace(" ", "%20")
-    }
-}
-
-fun getGojoId(jsonString: String, title: String): String? {
-
-    val results = JSONObject(jsonString).getJSONArray("results")
-
-    for( i in 0 until results.length() ) {
-        val item = results.getJSONObject(i)
-
-        val titleObject = item.optJSONObject("title") ?: continue
-
-        val englishTitle = titleObject.optString("english", "")
-        val romajiTitle = titleObject.optString("romaji", "")
-
-        if (englishTitle.equals(title, ignoreCase = true) ||
-            romajiTitle.equals(title, ignoreCase = true)) {
-            return item.getString("id")
-        }
-    }
-
-    // for (i in 0 until results.length()) {
-    //     val item = results.getJSONObject(i)
-    //     if (item.optInt("anilist_id") == aniId) {
-    //         return item.getString("id")
-    //     }
-    // }
-
-    return null
-}
-
-fun getGojoServers(jsonString: String): List<String> {
-    val jsonArray = JSONArray(jsonString)
-    val ids = mutableListOf<String>()
-
-    for (i in 0 until jsonArray.length()) {
-        val id = jsonArray.getJSONObject(i).optString("id")
-        if (id.isNotEmpty()) {
-            ids.add(id)
-        }
-    }
-    return ids
-}
-
-suspend fun getGojoStreams(
-    json: String,
-    lang: String,
-    provider: String,
-    gojoBaseAPI: String,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-) {
-    try {
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer" to "$gojoBaseAPI/",
-            "Origin" to gojoBaseAPI
-        )
-
-        val jsonObject = JSONObject(json)
-        val serverName = jsonObject.optString("server", "")
-        if(serverName != provider) return
-        val sourcesArray = jsonObject.optJSONArray("sources") ?: return
-
-        for (i in 0 until sourcesArray.length()) {
-            val source = sourcesArray.optJSONObject(i) ?: continue
-            val url = source.optString("url").takeIf { it.isNotEmpty() } ?: continue
-            val videoType = source.optString("type", "m3u8")
-            val quality = source.optString("quality").replace("p", "").toIntOrNull()
-
-            callback.invoke(
-                newExtractorLink(
-                    "Animetsu [${lang.uppercase()}] [${provider.uppercase()}]",
-                    "Animetsu [${lang.uppercase()}] [${provider.uppercase()}]",
-                    fixUrl(url, "https://swiftstream.top/proxy"),
-                    type = if (videoType == "video/mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
-                ) {
-                    this.quality = quality ?: Qualities.P1080.value
-                    this.referer = gojoBaseAPI
-                    this.headers = headers
-                }
-            )
-        }
-
-        val subtitles = jsonObject.optJSONArray("subtitles") ?: return
-
-        for (i in 0 until subtitles.length()) {
-            val item = subtitles.optJSONObject(i) ?: continue
-            val url = item.optString("url").takeIf { it.isNotEmpty() } ?: continue
-            val lang = item.optString("lang").takeIf { it.isNotEmpty() } ?: continue
-
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    getLanguage(lang) ?: lang,
-                    url
-                )
-            )
-        }
-    } catch (e: Exception) {
-        println("Error parsing Gojo streams for $provider [$lang]: ${e.message}")
-    }
-}
-
 suspend fun getRedirectLinks(url: String): String {
     fun encode(value: String): String {
         return base64Encode(value.toByteArray())
@@ -1884,4 +1743,91 @@ fun generateSignedUrl(url: String): String? {
     } catch (e: Exception) {
         null
     }
+}
+
+//Fibwatch
+
+val fibwatchHeaders = mapOf(
+    "User-Agent" to USER_AGENT,
+    "Referer" to "$fibwatchBaseUrl/"
+)
+
+val fibwatchPlaybackHeaders = mapOf(
+    "User-Agent" to USER_AGENT,
+    "Referer" to "https://urlshortlink.top/",
+    "Origin" to "https://urlshortlink.top"
+)
+
+fun extractFibwatchQuality(raw: String?): String {
+    val lower = raw?.lowercase() ?: ""
+    return when {
+        lower.contains("2160") || lower.contains("4k") -> "4K"
+        lower.contains("1080") -> "1080p"
+        lower.contains("720") -> "720p"
+        lower.contains("480") -> "480p"
+        lower.contains("360") -> "360p"
+        else -> "Unknown"
+    }
+}
+
+suspend fun resolveFibwatchStream(initialUrl: String, fallbackQuality: String): Pair<String, String>? {
+    var currentUrl = initialUrl
+    var html = runCatching { app.get(currentUrl, headers = fibwatchHeaders).text }.getOrNull() ?: return null
+
+    val doc1 = Jsoup.parse(html)
+
+    val genericMediaRegex = Regex("""https?://[a-zA-Z0-9-.]+(?:/[^\s"'`<>]*)?\.(?:mp4|mkv|m3u8)""", RegexOption.IGNORE_CASE)
+    val fibwatchCdnRegex = Regex("""https?://[a-zA-Z0-9-]+\.b-cdn\.net/[^\s"'`<>]+\.(?:mkv|mp4|m3u8)""", RegexOption.IGNORE_CASE)
+
+    var nextPath = doc1.selectFirst("a.hidden-button.buttonDownloadnew")?.attr("href")
+    if (nextPath.isNullOrBlank()) {
+        nextPath = doc1.select("a").firstOrNull { it.attr("href").contains("watch2=1") }?.attr("href")
+    }
+
+    if (!nextPath.isNullOrBlank()) {
+        var targetUrl = nextPath
+        if (nextPath.contains("url=http")) {
+            val encoded = nextPath.substringAfter("url=").substringBefore("&").trim()
+            targetUrl = runCatching { URLDecoder.decode(encoded, "UTF-8") }.getOrDefault(encoded)
+            if (genericMediaRegex.containsMatchIn(targetUrl) || fibwatchCdnRegex.containsMatchIn(targetUrl)) {
+                return targetUrl to fallbackQuality
+            }
+        }
+
+        currentUrl = URI(currentUrl).resolve(targetUrl).toString()
+        html = runCatching { app.get(currentUrl, headers = fibwatchHeaders).text }.getOrNull() ?: return null
+    }
+
+    val doc2 = Jsoup.parse(html)
+    var streamUrl = fibwatchCdnRegex.find(html)?.value
+
+    if (streamUrl == null) {
+        val iframeSrc = doc2.select("iframe").map { it.attr("src") }
+            .firstOrNull { it.isNotBlank() && !it.contains("youtube") && !it.contains("google") }
+
+        if (iframeSrc != null) {
+            val absoluteIframeUrl = URI(currentUrl).resolve(iframeSrc).toString()
+            val iframeHtml = runCatching { app.get(absoluteIframeUrl, headers = fibwatchPlaybackHeaders).text }.getOrNull()
+            if (iframeHtml != null) {
+                streamUrl = fibwatchCdnRegex.find(iframeHtml)?.value ?: genericMediaRegex.find(iframeHtml)?.value
+            }
+        }
+    }
+
+    if (streamUrl == null) {
+        streamUrl = genericMediaRegex.find(html)?.value
+    }
+
+    if (streamUrl != null) {
+        if (streamUrl.contains("url=http", ignoreCase = true)) {
+            val encoded = streamUrl.substringAfter("url=").substringBefore("&").trim()
+            streamUrl = runCatching { URLDecoder.decode(encoded, "UTF-8") }.getOrDefault(encoded)
+        }
+
+        val realQuality = extractFibwatchQuality(streamUrl)
+        val finalQuality = if (realQuality != "Unknown") realQuality else fallbackQuality
+        return streamUrl to finalQuality
+    }
+
+    return null
 }

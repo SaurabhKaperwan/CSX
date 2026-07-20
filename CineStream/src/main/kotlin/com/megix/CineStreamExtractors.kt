@@ -178,13 +178,13 @@ object CineStreamExtractors {
 
         return mutexFor(url).withLock {
             val cfKiller = killerFor(url)
-            val retryResponse = app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
+            val retryResponse = app.get(url, interceptor = cfKiller, allowRedirects = allowRedirects)
 
             Log.d(CF_LOG_TAG, "cfGet retryResponse code: ${retryResponse.code} for $url")
 
             if (isCloudflarePage(retryResponse)) {
                 cfKiller.savedCookies.clear()
-                app.get(url, headers = effectiveHeaders, interceptor = cfKiller, allowRedirects = allowRedirects)
+                app.get(url, interceptor = cfKiller, allowRedirects = allowRedirects)
             } else {
                 retryResponse
             }
@@ -208,10 +208,10 @@ object CineStreamExtractors {
 
         return mutexFor(url).withLock {
             val cfKiller = killerFor(url)
-            val retryResponse = app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
+            val retryResponse = app.post(url, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
             if (isCloudflarePage(retryResponse)) {
                 cfKiller.savedCookies.clear()
-                app.post(url, headers = effectiveHeaders, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
+                app.post(url, data = data, json = json, interceptor = cfKiller, allowRedirects = allowRedirects)
             } else {
                 retryResponse
             }
@@ -1244,60 +1244,6 @@ object CineStreamExtractors {
             } catch (e: Exception) {
                 println("Error fetching/parsing subtitle from: $subUrl - ${e.message}")
             }
-        }
-    }
-
-    suspend fun invokeGojo(
-        title: String? = null,
-        aniId: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if (title == null) return
-
-        val episodeNumber = episode ?: 1
-        val gojoAPI = "$gojoBaseAPI/v2"
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
-            "Referer" to "$gojoBaseAPI/",
-            "Origin" to gojoBaseAPI
-        )
-
-        val searchJson = app.get("$gojoAPI/api/anime/search/?query=$title", headers = headers).text
-
-        Log.d("Gojo", "searchJson: $searchJson")
-
-        val id = getGojoId(searchJson, title) ?: return
-
-        Log.d("Gojo", "id: $id")
-
-        val epDetailsJson = app.get("$gojoAPI/api/anime/servers/$id/$episodeNumber", headers = headers).text
-        val servers = getGojoServers(epDetailsJson)
-
-        Log.d("Gojo", "servers: $servers")
-
-        if (servers.isEmpty()) return
-
-        servers.safeAmap { server ->
-            runLimitedAsync ( concurrency = 2,
-                {
-                    try {
-                        val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=sub", headers = headers).text
-                        getGojoStreams(json, "sub", server, gojoBaseAPI, subtitleCallback ,callback)
-                    } catch (e: Exception) {
-                        println("Error Gojo Sub: $e")
-                    }
-                },
-                {
-                    try {
-                        val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=dub", headers = headers).text
-                        getGojoStreams(json, "dub", server, gojoBaseAPI, subtitleCallback ,callback)
-                    } catch (e: Exception) {
-                        println("Error Gojo Dub: $e")
-                    }
-                }
-            )
         }
     }
 
@@ -2829,164 +2775,6 @@ object CineStreamExtractors {
                 this.quality = Qualities.P1080.value
             }
         )
-    }
-
-    suspend fun invokeAllanime(
-        name: String? = null,
-        year: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val privatereferer = "https://mkissa.to/"
-        val ephash = "d405d0edd690624b66baba3068e0edc3ac90f1597d898a1ec8db4e5c43c00fec"
-        val queryhash = "a24c500a1b765c68ae1d8dd85174931f661c71369c89b92b88b75a725afc471c"
-
-        var type = ""
-        if (episode == null) {
-            type = "Movie"
-        } else {
-            type = "TV"
-        }
-
-        val query = """$AllanimeAPI?variables={"search":{"types":["$type"],"query":"$name"},"limit":26,"page":1,"translationType":"sub"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$queryhash"}}"""
-        val res = app.get(query, referer = privatereferer)
-
-        Log.d("Allanime", "res: ${res.text}")
-
-        val response = res.parsedSafe<Anichi>()?.data?.shows?.edges
-
-        Log.d("Allanime", "response: $response")
-
-        val headers =
-            mapOf(
-                "app-version" to "android_c-253",
-                "platformstr" to "android_c",
-                "Referer" to privatereferer,
-                "from-app" to base64Decode("YW5pbWVjaGlja2Vu")
-            )
-
-        if (response != null) {
-            val id = response.firstOrNull()?.id ?: return
-            val langTypes = listOf("sub", "dub")
-            langTypes.safeAmap { i ->
-                val epData =
-                    """$AllanimeAPI?variables={"showId":"$id","translationType":"$i","episodeString":"${episode ?: 1}"}&extensions={"persistedQuery":{"version":1,"sha256Hash":"$ephash"}}"""
-
-                val responseText = app.get(
-                    epData,
-                    referer = privatereferer,
-                ).text
-
-                Log.d("Allanime", "responseText: $responseText")
-
-                val episodeLinks = run {
-                    val encrypted = tryParseJson<EncryptedResponse>(responseText)
-                        ?.data
-                        ?.tobeparsed
-
-                    val finalJson = encrypted
-                        ?.let { decodeToBeParsed(it) }
-                        ?: responseText
-
-                    tryParseJson<AnichiEP>(finalJson)?.let {
-                        it.data?.episode?.sourceUrls
-                            ?: it.episode?.sourceUrls
-                    }
-                } ?: return@safeAmap
-
-                Log.d("Allanime", "Episode Links: $episodeLinks")
-
-                episodeLinks.safeAmap { source ->
-                    safeApiCall {
-                        val sourceUrl = source.sourceUrl
-
-                        if (sourceUrl.startsWith("http")) {
-                            val sourcename = sourceUrl.getHost()
-                            loadCustomExtractor(
-                                "Allanime [${i.uppercase()}] [$sourcename]",
-                                sourceUrl,
-                                "",
-                                subtitleCallback,
-                                callback,
-                            )
-                        }
-                        else if (URI(sourceUrl).isAbsolute || sourceUrl.startsWith("//")) {
-                            val fixedLink = if (sourceUrl.startsWith("//")) "https:$sourceUrl" else sourceUrl
-                            val host = fixedLink.getHost()
-
-                            loadCustomExtractor(
-                                "Allanime [$host]  [${i.uppercase()}]",
-                                fixedLink,
-                                "",
-                                subtitleCallback,
-                                callback
-                            )
-
-                            return@safeApiCall
-                        }
-
-                        else {
-                            val decodedlink = if (sourceUrl.startsWith("--"))
-                            {
-                                decrypthex(sourceUrl)
-                            }
-                            else sourceUrl
-                            val fixedLink = decodedlink.fixUrlPath()
-                            val links = try {
-                                app.get(fixedLink, headers = headers).parsedSafe<AnichiVideoApiResponse>()?.links ?: emptyList()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                return@safeApiCall
-                            }
-                            links.forEach { server ->
-                                val host = server.link.getHost()
-                                when {
-                                    source.sourceName.contains("Default") && (server.resolutionStr == "SUB" || server.resolutionStr == "Alt vo_SUB") -> {
-                                        getM3u8Qualities(
-                                            server.link,
-                                            "https://static.crunchyroll.com/",
-                                            "Allanime [SUB] $host"
-                                        ).forEach(callback)
-                                    }
-
-                                    server.hls == null -> {
-                                        callback.invoke(
-                                            newExtractorLink(
-                                                "Allanime [${i.uppercase()}] ${host.replaceFirstChar { it.uppercase() }}",
-                                                "Allanime [${i.uppercase()}] ${host.replaceFirstChar { it.uppercase() }}",
-                                                server.link,
-                                                INFER_TYPE
-                                            )
-                                            {
-                                                this.quality = Qualities.P1080.value
-                                            }
-                                        )
-                                    }
-
-                                    server.hls == true -> {
-                                        val endpoint = "https://allanime.day/player?uri=" +
-                                                (if (URI(server.link).host.isNotEmpty())
-                                                    server.link
-                                                else "https://allanime.day" + URI(server.link).path)
-
-                                        getM3u8Qualities(server.link, server.headers?.referer ?: endpoint, "Allanime [SUB] $host").forEach(callback)
-                                    }
-
-                                    else -> {
-                                        server.subtitles?.forEach { sub ->
-                                            val lang = SubtitleHelper.fromTagToEnglishLanguageName(sub.lang ?: "") ?: sub.lang.orEmpty()
-                                            val src = sub.src ?: return@forEach
-                                            subtitleCallback(newSubtitleFile(getLanguage(lang) ?: "", httpsify(src)))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     suspend fun invokePrimeSrc(
@@ -4798,6 +4586,141 @@ object CineStreamExtractors {
                         sub.lang ?: "English",
                         if (subLink.startsWith("http")) subLink else "https://$subLink"
                     )
+                )
+            }
+        }
+    }
+
+    suspend fun invokeFibwatch(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if (title.isNullOrBlank()) return
+        val isTv = season != null && episode != null
+
+        val fibwatchSeEpisodeRegex = Regex("""s(\d{1,2})e(\d{1,3})""")
+        val fibwatchDirectMediaRegex = Regex("""\.(mp4|mkv|m3u8)""", RegexOption.IGNORE_CASE)
+
+        val searchUrl = """$fibwatchBaseUrl/search?keyword=${URLEncoder.encode(title, "UTF-8")}&page_id=1"""
+
+        Log.d("Fibwatch", "searchUrl: $searchUrl")
+
+        val searchDoc = app.get(searchUrl, headers = fibwatchHeaders).document
+
+        val searchResults = searchDoc.select("div.video-thumb").mapNotNull { el ->
+            val href = el.selectFirst("a")?.attr("href") ?: return@mapNotNull null
+            val resultTitle = el.selectFirst("p.hptag")?.text()?.trim()
+                ?: el.selectFirst("div.video-thumb img")?.attr("alt")
+                ?: ""
+            resultTitle to href
+        }
+
+        Log.d("Fibwatch", "searchResults: $searchResults")
+
+        if (searchResults.isEmpty()) return
+
+        val titleLower = title.lowercase()
+        val match = searchResults.firstOrNull { it.first.lowercase().contains(titleLower) }
+            ?: searchResults.first()
+
+        Log.d("Fibwatch", "match: $match")
+
+        val detailUrl = if (match.second.startsWith("http")) match.second else fibwatchBaseUrl + match.second
+
+        Log.d("Fibwatch", "detailUrl: $detailUrl")
+
+        val detailDoc = app.get(detailUrl, headers = fibwatchHeaders).document
+        val videoId = detailDoc.selectFirst("input#video-id")?.attr("value") ?: return
+
+        Log.d("Fibwatch", "videoId: $videoId")
+
+        val candidates = mutableListOf<FibwatchSource>()
+
+        if (isTv) {
+            val episodesUrl = "$fibwatchBaseUrl/ajax/episodes.php?video_id=$videoId"
+            val episodesResp = app.get(episodesUrl, headers = fibwatchHeaders)
+                .parsedSafe<FibwatchEpisodesResponse>()
+            val episodes = episodesResp?.episodes.orEmpty()
+            if (episodes.isEmpty()) return
+
+            var episodePageUrl = episodes.firstNotNullOfOrNull { ep ->
+                val epTitleLower = ep.title?.lowercase() ?: return@firstNotNullOfOrNull null
+                val m = fibwatchSeEpisodeRegex.find(epTitleLower) ?: return@firstNotNullOfOrNull null
+                val epSeason = m.groupValues[1].toIntOrNull()
+                val epNum = m.groupValues[2].toIntOrNull()
+                if (epSeason == season && epNum == episode) ep.url else null
+            }
+            if (episodePageUrl.isNullOrBlank()) {
+                episodePageUrl = episodes.firstOrNull()?.url
+            }
+            if (episodePageUrl.isNullOrBlank()) return
+
+            val fullEpisodeUrl =
+                if (episodePageUrl.startsWith("http")) episodePageUrl else fibwatchBaseUrl + episodePageUrl
+            val episodeDoc = app.get(fullEpisodeUrl, headers = fibwatchHeaders).document
+            val episodeVideoId = episodeDoc.selectFirst("input#video-id")?.attr("value") ?: return
+
+            val switcherUrl = "$fibwatchBaseUrl/ajax/resolution_switcher.php?video_id=$episodeVideoId"
+            val switcherResp = app.get(switcherUrl, headers = fibwatchHeaders).parsedSafe<FibwatchSwitcherResponse>()
+            candidates.addAll(switcherResp?.current.orEmpty())
+            candidates.addAll(switcherResp?.popup.orEmpty())
+        } else {
+            val switcherUrl = "$fibwatchBaseUrl/ajax/resolution_switcher.php?video_id=$videoId"
+            val switcherResp = app.get(switcherUrl, headers = fibwatchHeaders).parsedSafe<FibwatchSwitcherResponse>()
+            candidates.addAll(switcherResp?.current.orEmpty())
+            candidates.addAll(switcherResp?.popup.orEmpty())
+        }
+
+        val seenUrls = mutableSetOf<String>()
+
+        Log.d("Fibwatch", "candidates: $candidates")
+
+        candidates.safeAmap { candidate ->
+            var candUrl = candidate.url?.trim().takeUnless { it.isNullOrBlank() } ?: return@safeAmap
+            if (!candUrl.startsWith("http")) candUrl = fibwatchBaseUrl + candUrl
+
+            Log.d("Fibwatch", "candUrl: $candUrl")
+
+            val fallbackQuality = extractFibwatchQuality(candidate.res ?: candUrl)
+
+            val resolvedUrl: String
+            val quality: String
+
+            if (fibwatchDirectMediaRegex.containsMatchIn(candUrl)) {
+                resolvedUrl = candUrl
+                quality = fallbackQuality
+            } else {
+                val result = resolveFibwatchStream(candUrl, fallbackQuality) ?: return@safeAmap
+                resolvedUrl = result.first
+                quality = result.second
+            }
+
+            Log.d("Fibwatch", "FINAL resolvedUrl: $resolvedUrl")
+
+            if (!seenUrls.add(resolvedUrl)) return@safeAmap
+
+            val type = if(isTv) "(Combined)" else ""
+
+            if (resolvedUrl.contains(".m3u8", ignoreCase = true)) {
+                M3u8Helper.generateM3u8(
+                    "FibWatch $type",
+                    resolvedUrl,
+                    referer = fibwatchPlaybackHeaders["Referer"] ?: "",
+                    headers = fibwatchPlaybackHeaders
+                ).forEach(callback)
+            } else {
+                callback.invoke(
+                    newExtractorLink(
+                        "FibWatch $type",
+                        "FibWatch $type",
+                        resolvedUrl,
+                    ) {
+                        this.quality = getIndexQuality(quality)
+                        this.headers = fibwatchPlaybackHeaders
+                    }
                 )
             }
         }
