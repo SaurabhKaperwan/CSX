@@ -1176,15 +1176,37 @@ fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String? {
     }
 }
 
-fun getVidrockUrlEncode(itemId: String): String {
-    val passphrase = "x7k9mPqT2rWvY8zA5bC3nF6hJ2lK4mN9"
-    val keyBytes = passphrase.toByteArray(Charsets.UTF_8)
-    val ivBytes = keyBytes.copyOfRange(0, 16)
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(keyBytes, "AES"), IvParameterSpec(ivBytes))
-    val encryptedBytes = cipher.doFinal(itemId.toByteArray(Charsets.UTF_8))
-    val base64Encoded = base64Encode(encryptedBytes)
-    return URLEncoder.encode(base64Encoded, "UTF-8").replace("%2F", "/")
+
+//Vidrock
+
+fun decryptVidrockUrl(encryptedPayload: String): String? {
+    return try {
+        val aesKeyHex = "7f3e9c2a8b5d1f4e6a9c3b7d2e5f8a1c4b6d9e2f5a8c1b4d7e9f2a5c8b1d4e7f"
+        val keyBytes = aesKeyHex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+
+        var standardBase64 = encryptedPayload.replace("-", "+").replace("_", "/")
+
+        while (standardBase64.length % 4 != 0) {
+            standardBase64 += "="
+        }
+
+        val encryptedData = base64DecodeArray(standardBase64)
+
+        val nonce = encryptedData.copyOfRange(0, 12)
+        val cipherTextWithTag = encryptedData.copyOfRange(12, encryptedData.size)
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val keySpec = SecretKeySpec(keyBytes, "AES")
+        val gcmSpec = GCMParameterSpec(128, nonce)
+
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
+        val decryptedBytes = cipher.doFinal(cipherTextWithTag)
+
+        String(decryptedBytes, Charsets.UTF_8)
+    } catch (e: Exception) {
+        Log.e("Vidrock", "Decryption failed")
+        null
+    }
 }
 
 //Xpass

@@ -595,6 +595,63 @@ object CineStreamExtractors {
             val videoData = makeCastleApiRequest(videoUrl, securityKey, method = "POST", jsonBody = body)
             Log.d("Castle", "videoData: $videoData")
 
+            // Emit Video Links
+            val defaultVideoUrl = videoData.optString("videoUrl", "")
+
+            if (defaultVideoUrl.isEmpty()) return
+
+            callback.invoke(
+                newExtractorLink(
+                    "Castle",
+                    "Castle Auto (USE VLC)",
+                    defaultVideoUrl,
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.referer = castleAPI
+                }
+            )
+
+            // val videosArray = videoData.optJSONArray("videos")
+
+            // if (videosArray != null && videosArray.length() > 0) {
+            //     for (i in 0 until videosArray.length()) {
+            //         val videoObj = videosArray.getJSONObject(i)
+            //         val description = videoObj.optString("resolutionDescription", "Unknown")
+            //         val resNumberMatch = Regex("""(\d+)P""").find(description)
+            //         val resNumber = resNumberMatch?.groupValues?.get(1)
+
+            //         if (resNumber != null) {
+            //             val qualityUrl = defaultVideoUrl.replace(
+            //                 Regex("""/(\d{3,4})/index"""),
+            //                 "/$resNumber/index"
+            //             )
+
+            //             callback.invoke(
+            //                 newExtractorLink(
+            //                     "Castle",
+            //                     "Castle $description (USE VLC)",
+            //                     qualityUrl,
+            //                     ExtractorLinkType.M3U8
+            //                 ) {
+            //                     this.referer = castleAPI
+            //                     this.quality = getIndexQuality(description)
+            //                 }
+            //             )
+            //         }
+            //     }
+            // } else {
+            //     callback.invoke(
+            //         newExtractorLink(
+            //             "Castle",
+            //             "Castle Auto (USE VLC)",
+            //             defaultVideoUrl,
+            //             ExtractorLinkType.M3U8
+            //         ) {
+            //             this.referer = castleAPI
+            //         }
+            //     )
+            // }
+
             // Emit Subtitles
             val subtitles = videoData.optJSONArray("subtitles")
             if (subtitles != null) {
@@ -608,21 +665,6 @@ object CineStreamExtractors {
                 }
             }
 
-            // Emit Video Links
-            val finalVideoUrl = videoData.optString("videoUrl")
-
-            callback.invoke(
-                newExtractorLink(
-                    "Castle",
-                    "Castle (USE VLC)",
-                    finalVideoUrl,
-                    if(finalVideoUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
-                ) {
-                    this.referer = castleAPI
-                    this.quality = Qualities.P720.value
-                }
-            )
-
         } catch (e: Exception) {
             Log.e("Castle", "CRASHED: ${e.message}")
         }
@@ -635,8 +677,13 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        val headers = mapOf(
+            "Cookie" to CC_COOKIE
+        )
+
         val movieUrl = cfGet(
-            "$cinemacityAPI/search/$title/"
+            "$cinemacityAPI/search/$title/",
+            headers = headers
         ).document
             .selectFirst("a.e-nowrap")
             ?.attr("href")
@@ -644,10 +691,6 @@ object CineStreamExtractors {
 
         Log.d("CineCity", "movieUrl: $movieUrl")
 
-
-        val headers = mapOf(
-            "Cookie" to CC_COOKIE
-        )
 
         val scriptData = cfGet(movieUrl, headers).document
             .select("script:containsData(atob)")
@@ -736,50 +779,6 @@ object CineStreamExtractors {
                 )
             }
         }
-    }
-
-    suspend fun invokePlaysrc(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-
-        data class VideoResponse(
-            @param:JsonProperty("file") val file: String?,
-            @param:JsonProperty("headers") val headers: Map<String, String>?
-        )
-
-        val url = if(season == null) {
-            "https://api.madplay.site/api/playsrc?id=$tmdbId&token=direct"
-        } else {
-            "https://madplay.site/api/movies/holly?id=${tmdbId}&season=${season}&episode=${episode}&token=direct"
-        }
-
-        val jsonText = app.get(url).text
-
-        val parsedList = try {
-            parseJson<List<VideoResponse>>(jsonText)
-        } catch (e: Exception) {
-            println("Failed to parse JSON: ${e.message}")
-            return
-        }
-
-        val firstItem = parsedList.firstOrNull() ?: return
-
-        val videoUrl = firstItem.file ?: return
-        val headerMap = firstItem.headers ?: emptyMap()
-
-        callback.invoke(
-            newExtractorLink(
-                "Playsrc",
-                "Playsrc",
-                videoUrl,
-                ExtractorLinkType.M3U8
-            ) {
-                headers = headerMap
-            }
-        )
     }
 
     suspend fun invokeXpass(
@@ -3396,11 +3395,12 @@ object CineStreamExtractors {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        if(tmdbId == null) return
+        if (tmdbId == null) return
         val type = if (season == null) "movie" else "tv"
         val query = if (type == "movie") "$tmdbId" else "${tmdbId}_${season}_${episode}"
-        val urlEncoded = getVidrockUrlEncode(query)
-        val apiUrl = "$vidrockAPI/api/$type/$urlEncoded"
+
+        val apiUrl = "$vidrockAPI/api/$type/$query/"
+
         val headers = mapOf(
             "Origin" to vidrockAPI,
             "Referer" to "$vidrockAPI/",
@@ -3412,29 +3412,24 @@ object CineStreamExtractors {
 
         jsonObject.keys().forEach { serverName ->
             val serverData = jsonObject.optJSONObject(serverName) ?: return@forEach
+            val encryptedUrl = serverData.optString("url", "")
 
-            val url = serverData.optString("url", "")
+            if (encryptedUrl.isNotEmpty() && encryptedUrl != "error" && encryptedUrl != "null") {
+                val decryptedUrl = decryptVidrockUrl(encryptedUrl) ?: return@forEach
+                Log.d("Vidrock", "$serverName decrypted url: $decryptedUrl")
 
-            if (url.isNotEmpty() || url != "error" || url != "null") {
+                val linkType = if (decryptedUrl.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
 
-                Log.d("Vidrock", "$serverName url: $url")
-
-                if(serverName == "Astra" || serverName == "Atlas") {
-                    return@forEach
-                } else {
-                    val type = if(url.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "Vidrock[$serverName]",
-                            "Vidrock[$serverName]",
-                            url,
-                            type
-                        ) {
-                            this.headers = headers
-                        }
-                    )
-                }
+                callback.invoke(
+                    newExtractorLink(
+                        "Vidrock[$serverName]",
+                        "Vidrock[$serverName]",
+                        decryptedUrl,
+                        linkType
+                    ) {
+                        this.headers = headers
+                    }
+                )
             }
         }
     }
@@ -3519,7 +3514,7 @@ object CineStreamExtractors {
 
         Log.d("Vidfast", "response: $response")
 
-        val encodedText = Regex("""\\"token\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
+        val encodedText = Regex("""\\"(?:en|token)\\":\\"(.*?)\\"""").find(response)?.groupValues?.get(1) ?: return
 
         Log.d("Vidfast", "encodedText: $encodedText")
 
@@ -3614,7 +3609,7 @@ object CineStreamExtractors {
         }
 
         val pageContent = app.get(baseUrl).text
-        val regex = Regex("""\\\"token\\\":\\\"(.*?)\\\"""")
+        val regex = Regex("""\\"(?:en|token)\\":\\"(.*?)\\"""")
         val match = regex.find(pageContent) ?: return
         val encryptedText = match.groupValues[1]
 
@@ -4755,7 +4750,7 @@ object CineStreamExtractors {
         }
 
         val text = app.get(url).text
-        val regex = Regex("""\\"token\\":\\"(.*?)\\"""")
+        val regex = Regex("""\\"(?:en|token)\\":\\"(.*?)\\"""")
         val enc = regex.find(text)?.groupValues?.get(1) ?: return
 
         val responseText = app.get("$multiDecryptAPI/enc-vidup?text=$enc", headers = headers).text
