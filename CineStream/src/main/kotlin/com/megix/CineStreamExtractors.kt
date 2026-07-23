@@ -1159,7 +1159,7 @@ object CineStreamExtractors {
         val enc_data = JSONObject(json).getString("result")
 
         val headers = mapOf(
-            "User-Agent" to USER_AGENT,
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$vidlinkAPI/",
             "Origin" to vidlinkAPI,
@@ -1176,14 +1176,34 @@ object CineStreamExtractors {
         Log.d("Vidlink", "ep response: $epJson")
 
         val data = parseJson<VidlinkResponse>(epJson)
-        val m3u8 = data.stream.playlist
 
-        M3u8Helper.generateM3u8(
-            "Vidlink",
-            m3u8,
-            "$vidlinkAPI/",
-            headers = headers
-        ).forEach(callback)
+        data.stream?.qualities?.forEach { (quality, qualityData) ->
+            val videoUrl = qualityData.url ?: return@forEach
+
+            callback(
+                newExtractorLink(
+                    "Vidlink",
+                    "Vidlink",
+                    videoUrl,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.headers = headers
+                    this.quality = getQualityFromName(quality)
+                }
+            )
+        }
+
+        data.stream?.captions?.forEach { caption ->
+            val subUrl = caption.url ?: return@forEach
+            val lang = caption.language ?: "Unknown"
+
+            subtitleCallback(
+                newSubtitleFile(
+                    lang = lang,
+                    url = subUrl
+                )
+            )
+        }
     }
 
     suspend fun invokeToonstream(

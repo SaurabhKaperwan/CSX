@@ -179,6 +179,11 @@ internal object SettingsWebView {
 
         webViewContainer.addView(webView)
 
+        // ── TV D-pad touch cursor ─────────────────────────────
+        // Lets Android TV users (D-pad only, no touchscreen) tap through
+        // touch-only elements such as Cloudflare CAPTCHA checkboxes.
+        val tvCursor = TvTouchCursor(context, webViewContainer, webView)
+
         val titleBar = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             setPadding(16.dp(context), 12.dp(context), 10.dp(context), 12.dp(context))
@@ -189,6 +194,15 @@ internal object SettingsWebView {
                 text = "🌐 Cloudflare Bypass"; textSize = 14f; setTypeface(null, Typeface.BOLD)
                 setTextColor(theme.TEXT_PRIMARY)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(SettingsWidgets.hSpacer(context, 8))
+            addView(SettingsWidgets.pillBtn(context, "🖱 TV Cursor", Color.parseColor("#22C55E"), theme.BG_CARD, Color.parseColor("#22C55E")) {
+                tvCursor.toggle()
+                Toast.makeText(
+                    context,
+                    if (tvCursor.isActive) "Touch cursor ON — D-pad to move, OK to tap" else "Touch cursor OFF",
+                    Toast.LENGTH_SHORT
+                ).show()
             })
             addView(SettingsWidgets.hSpacer(context, 8))
             addView(SettingsWidgets.pillBtn(context, "✕ Close", theme.TEXT_SECONDARY, theme.BG_CARD, Color.parseColor("#2A2D3E")) { dialogRef?.dismiss() })
@@ -207,9 +221,23 @@ internal object SettingsWebView {
             })
         }
 
-        dialogRef = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen).apply {
+        dialogRef = object : Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen) {
+            override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+                // BACK first turns the cursor off (if on) instead of closing the dialog.
+                if (event.keyCode == android.view.KeyEvent.KEYCODE_BACK
+                    && event.action == android.view.KeyEvent.ACTION_UP
+                    && tvCursor.isActive
+                ) {
+                    tvCursor.hide()
+                    return true
+                }
+                if (tvCursor.onKeyEvent(event)) return true
+                return super.dispatchKeyEvent(event)
+            }
+        }.apply {
             requestWindowFeature(Window.FEATURE_NO_TITLE); setContentView(root); setCancelable(true)
             setOnDismissListener {
+                tvCursor.destroy()
                 webView.stopLoading(); webView.destroy()
                 onCookiesChanged()
             }
@@ -388,6 +416,9 @@ internal object SettingsWebView {
 
         webViewContainer.addView(webView)
 
+        // ── TV D-pad touch cursor ─────────────────────────────
+        val tvCursor = TvTouchCursor(context, webViewContainer, webView)
+
         val titleBar = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             setPadding(16.dp(context), 12.dp(context), 10.dp(context), 12.dp(context))
@@ -398,6 +429,15 @@ internal object SettingsWebView {
                 text = cfg.title; textSize = 14f; setTypeface(null, Typeface.BOLD)
                 setTextColor(theme.TEXT_PRIMARY)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(SettingsWidgets.hSpacer(context, 8))
+            addView(SettingsWidgets.pillBtn(context, "🖱 TV Cursor", cfg.accentColor, theme.BG_CARD, cfg.accentColor) {
+                tvCursor.toggle()
+                Toast.makeText(
+                    context,
+                    if (tvCursor.isActive) "Touch cursor ON — D-pad to move, OK to tap" else "Touch cursor OFF",
+                    Toast.LENGTH_SHORT
+                ).show()
             })
             addView(SettingsWidgets.hSpacer(context, 8))
             addView(SettingsWidgets.pillBtn(context, "✕ Close", theme.TEXT_SECONDARY, theme.BG_CARD, Color.parseColor("#2A2D3E")) { dialogRef?.dismiss() })
@@ -414,9 +454,21 @@ internal object SettingsWebView {
             })
         }
 
-        dialogRef = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen).apply {
+        dialogRef = object : Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen) {
+            override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+                if (event.keyCode == android.view.KeyEvent.KEYCODE_BACK
+                    && event.action == android.view.KeyEvent.ACTION_UP
+                    && tvCursor.isActive
+                ) {
+                    tvCursor.hide()
+                    return true
+                }
+                if (tvCursor.onKeyEvent(event)) return true
+                return super.dispatchKeyEvent(event)
+            }
+        }.apply {
             requestWindowFeature(Window.FEATURE_NO_TITLE); setContentView(root); setCancelable(true)
-            setOnDismissListener { webView.stopLoading(); webView.destroy() }
+            setOnDismissListener { tvCursor.destroy(); webView.stopLoading(); webView.destroy() }
             window?.apply {
                 setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
                 clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)

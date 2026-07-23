@@ -167,12 +167,25 @@ data class AnimetoshoRelease(
 )
 
 //Vidlink
+
 data class VidlinkResponse(
-    @param:JsonProperty("stream") val stream: VidlinkStream
+    @param:JsonProperty("stream") val stream: VidlinkStream?
 )
 
 data class VidlinkStream(
-    @param:JsonProperty("playlist") val playlist: String
+    @param:JsonProperty("qualities") val qualities: Map<String, VidlinkQuality>? = null,
+    @param:JsonProperty("captions") val captions: List<VidlinkCaption>? = null
+)
+
+data class VidlinkQuality(
+    @param:JsonProperty("type") val type: String?,
+    @param:JsonProperty("url") val url: String?
+)
+
+data class VidlinkCaption(
+    @param:JsonProperty("url") val url: String?,
+    @param:JsonProperty("language") val language: String?,
+    @param:JsonProperty("type") val type: String?
 )
 
 data class TmdbDate(

@@ -48,10 +48,6 @@ object ProviderRegistry {
 
         // ── Stremio Addons & Subtitles ────────────────────────────
         ProviderDef(
-            key = "p_notorrent", displayName = "NoTorrent",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_wyziesubs", displayName = "WYZIESubs",
             executeStandard = { res, subCb, _ -> invokeWYZIESubs(res.imdbId, res.season, res.episode, subCb) },
             executeAnime = { res, subCb, _ -> invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb) }
