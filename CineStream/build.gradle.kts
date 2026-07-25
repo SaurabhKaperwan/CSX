@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.Properties
 
-version = 475
+version = 476
 android {
     defaultConfig {
         val properties = Properties()
@@ -13,6 +13,7 @@ android {
         buildConfigField("String", "MOVIEBLAST_TOKEN", "\"${properties.getProperty("MOVIEBLAST_TOKEN")}\"")
         buildConfigField("String", "MOVIEBLAST_API", "\"${properties.getProperty("MOVIEBLAST_API")}\"")
         buildConfigField("String", "MOVIEBLAST_KEY", "\"${properties.getProperty("MOVIEBLAST_KEY")}\"")
+        buildConfigField("String", "NETMIRROR_TOKEN", "\"${properties.getProperty("NETMIRROR_TOKEN")}\"")
     }
 }
 

@@ -14,6 +14,7 @@ const val CASTLE_KEY = BuildConfig.CASTLE_KEY
 const val MOVIEBLAST_TOKEN = BuildConfig.MOVIEBLAST_TOKEN
 const val MOVIEBLAST_API = BuildConfig.MOVIEBLAST_API
 const val MOVIEBLAST_KEY = BuildConfig.MOVIEBLAST_KEY
+const val NETMIRROR_TOKEN = BuildConfig.NETMIRROR_TOKEN
 const val animepaheAPI = "https://animepahe.pw"
 const val allmovielandAPI = "https://allmovieland.one"
 const val anizoneAPI = "https://anizone.to"

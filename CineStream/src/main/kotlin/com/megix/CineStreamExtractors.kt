@@ -1159,7 +1159,7 @@ object CineStreamExtractors {
         val enc_data = JSONObject(json).getString("result")
 
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$vidlinkAPI/",
             "Origin" to vidlinkAPI,
@@ -1177,6 +1177,22 @@ object CineStreamExtractors {
 
         val data = parseJson<VidlinkResponse>(epJson)
 
+        val videoHeaders = mapOf(
+            "accept" to "*/*",
+            "accept-encoding" to "gzip, deflate, br, zstd",
+            "accept-language" to "en-GB,en-US;q=0.9,en;q=0.8",
+            "dnt" to "1",
+            "priority" to "u=1, i",
+            "sec-ch-ua" to "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
+            "sec-ch-ua-mobile" to "?0",
+            "sec-ch-ua-platform" to "\"Linux\"",
+            "sec-fetch-dest" to "empty",
+            "sec-fetch-mode" to "cors",
+            "sec-fetch-site" to "cross-site",
+            "sec-gpc" to "1",
+            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        )
+
         data.stream?.qualities?.forEach { (quality, qualityData) ->
             val videoUrl = qualityData.url ?: return@forEach
 
@@ -1187,7 +1203,7 @@ object CineStreamExtractors {
                     videoUrl,
                     ExtractorLinkType.VIDEO
                 ) {
-                    this.headers = headers
+                    this.headers = videoHeaders
                     this.quality = getQualityFromName(quality)
                 }
             )
@@ -1694,7 +1710,8 @@ object CineStreamExtractors {
         val headers = mapOf(
             "ott" to ottCode,
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
-            "x-requested-with" to "NetmirrorNewTV v1.0"
+            "x-requested-with" to "NetmirrorNewTV v1.0",
+            "usertoken" to NETMIRROR_TOKEN
         )
 
         val searchUrl = "$nfmirrorAPI/search.php?s=$title"
@@ -1743,14 +1760,21 @@ object CineStreamExtractors {
 
         Log.d("Netmirror", "$serviceName playlist: $playlist")
 
+        val videoHeaders = mapOf(
+            "referer" to "${playlist.referer}",
+            "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
+            "x-requested-with" to "NetmirrorNewTV v1.0",
+            "connection" to "keep-alive"
+        )
+
         callback.invoke(
             newExtractorLink(
                 serviceName,
-                serviceName,
-                playlist.video_link,
+                "$serviceName (Multi Audio)",
+                playlist.video_link ?: return,
                 ExtractorLinkType.M3U8
             ) {
-                this.referer = playlist.referer
+                this.headers = videoHeaders
                 this.quality = Qualities.P1080.value
             }
         )

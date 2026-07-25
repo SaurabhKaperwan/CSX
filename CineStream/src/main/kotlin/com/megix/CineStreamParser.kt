@@ -330,10 +330,15 @@ data class NfSearchResult(
 )
 
 data class NfPlaylist(
-    val status: String,
-    val usertoken: String,
-    val video_link: String,
-    val referer: String,
+    val status: String? = null,
+    val ott: String? = null,
+    val video_link: String? = null,
+    val referer: String? = null,
+    val title: String? = null,
+    val ep: String? = null,
+    val ep_title: String? = null,
+    val t: String? = null,
+    val usertoken: String? = null
 )
 
 data class NetflixSources(

@@ -56,6 +56,7 @@ jobs:
           MOVIEBLAST_TOKEN: ${{ secrets.MOVIEBLAST_TOKEN }}
           MOVIEBLAST_API: ${{ secrets.MOVIEBLAST_API }}
           MOVIEBLAST_KEY: ${{ secrets.MOVIEBLAST_KEY }}
+          NETMIRROR_TOKEN: ${{ secrets.NETMIRROR_TOKEN}}
 
         run: |
           cd $GITHUB_WORKSPACE/src
@@ -68,6 +69,7 @@ jobs:
           echo "MOVIEBLAST_TOKEN=$MOVIEBLAST_TOKEN" >> local.properties
           echo "MOVIEBLAST_API=$MOVIEBLAST_API" >> local.properties
           echo "MOVIEBLAST_KEY=$MOVIEBLAST_KEY" >> local.properties
+          echo "NETMIRROR_TOKEN=$NETMIRROR_TOKEN" >> local.properties
 
       - name: Build Plugins
         run: |
