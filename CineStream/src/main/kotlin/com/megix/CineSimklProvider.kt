@@ -28,6 +28,7 @@ import kotlinx.coroutines.coroutineScope
 
 // JSON Parsing
 import org.json.JSONObject
+import org.jsoup.parser.Parser
 
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
@@ -109,6 +110,11 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
+    // Unescapes &#039;, &amp;, &quot;, and all other HTML entities
+    private fun String?.decodeHtml(): String? {
+        return this?.let { Parser.unescapeEntities(it, false) }
+    }
+
     private suspend fun extractNameAndYear(imdbId: String? = null): Pair<String?, Int?>? {
         return try {
             if (imdbId.isNullOrBlank()) return null
@@ -166,7 +172,7 @@ class CineSimklProvider: MainAPI() {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
                     val title = it.title_en ?: it.title ?: return@mapNotNull null
-                    newMovieSearchResponse(title, "${mainUrl}${it.url}") {
+                    newMovieSearchResponse(title.decodeHtml() ?: "", "${mainUrl}${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -224,7 +230,7 @@ class CineSimklProvider: MainAPI() {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
                     val title = it.title ?: return@mapNotNull null
-                    newMovieSearchResponse(title, "${mainUrl}${it.url?.replace("movie", "movies")}") {
+                    newMovieSearchResponse(title.decodeHtml() ?: "", "${mainUrl}${it.url?.replace("movie", "movies")}") {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -274,8 +280,10 @@ class CineSimklProvider: MainAPI() {
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
         val anilist_meta = anilistId?.let { getAniListInfo(it) }
-        val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
-        val originalTitle = anilist_meta?.romajiTitle ?: json.title
+        val rawEnTitle = anilist_meta?.title ?: json.en_title ?: json.title
+        val enTitle = rawEnTitle.decodeHtml()
+        val rawOriginalTitle = anilist_meta?.romajiTitle ?: json.title
+        val originalTitle = rawOriginalTitle.decodeHtml()
 
         val plot = if (tvType == "anime") {
             val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
@@ -369,6 +377,9 @@ class CineSimklProvider: MainAPI() {
             }
         } else {
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
+
+            Log.d("CineSimkl", "epsJson: $epsJson")
+
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
@@ -399,7 +410,7 @@ class CineSimklProvider: MainAPI() {
                     this.episode = it.episode
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
-                    addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
+                    addDate(it.date, "yyyy-MM-dd'T'HH:mm:ssXXX")
                 }
             }
 

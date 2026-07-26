@@ -160,21 +160,21 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeZinkmovies(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeZinkmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_netflix", displayName = "Netflix",
-            executeStandard = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_primevideo", displayName = "Prime Video",
-            executeStandard = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_disney", displayName = "Hotstar",
-            executeStandard = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
+        // ProviderDef(
+        //     key = "p_netflix", displayName = "Netflix",
+        //     executeStandard = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.title, res.year, res.season, res.episode, subCb, cb) },
+        //     executeAnime = { res, subCb, cb -> invokeNetmirror("Netflix", "nf", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        // ),
+        // ProviderDef(
+        //     key = "p_primevideo", displayName = "Prime Video",
+        //     executeStandard = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.title, res.year, res.season, res.episode, subCb, cb) },
+        //     executeAnime = { res, subCb, cb -> invokeNetmirror("PrimeVideo", "pv", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        // ),
+        // ProviderDef(
+        //     key = "p_disney", displayName = "Hotstar",
+        //     executeStandard = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.title, res.year, res.season, res.episode, subCb, cb) },
+        //     executeAnime = { res, subCb, cb -> invokeNetmirror("Hotstar", "hs", res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        // ),
         ProviderDef(
             key = "p_bollywood", displayName = "Gramcinema",
             executeStandard = { res, _, cb -> invokeBollywood(res.title, res.year, res.season, res.episode, cb) },
@@ -315,6 +315,10 @@ object ProviderRegistry {
             key = "p_toonstream", displayName = "Toonstream",
             executeStandard = { res, subCb, cb -> if (res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_anineko", displayName = "Anineko",
+            executeAnime = { res, subCb, cb -> invokeAnineko(res.title, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_animedao", displayName = "Animedao",

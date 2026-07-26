@@ -1055,3 +1055,17 @@ data class FibwatchSwitcherResponse(
     @JsonProperty("current") val current: List<FibwatchSource>? = null,
     @JsonProperty("popup") val popup: List<FibwatchSource>? = null
 )
+
+//Anineko
+
+data class AninekoSearchResponse(
+    @JsonProperty("success") val success: Boolean? = null,
+    @JsonProperty("results") val results: List<AninekoSearchResult>? = null
+)
+
+data class AninekoSearchResult(
+    @JsonProperty("title") val title: String? = null,
+    @JsonProperty("url") val url: String? = null,
+    @JsonProperty("image") val image: String? = null,
+    @JsonProperty("meta") val meta: String? = null
+)

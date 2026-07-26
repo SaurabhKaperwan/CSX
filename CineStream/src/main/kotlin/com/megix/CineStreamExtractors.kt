@@ -708,6 +708,10 @@ object CineStreamExtractors {
 
         Log.d("CineCity", "playerJson: $playerJson")
 
+        playerJson.toString().chunked(4000).forEachIndexed { index, chunk ->
+            Log.d("CineCity", "playerJson chunk $index: $chunk")
+        }
+
         val fileArray = JSONArray(playerJson.getString("file"))
 
         fun extractQuality(url: String): Int {
@@ -719,6 +723,20 @@ object CineStreamExtractors {
                 url.contains("480p") -> Qualities.P480.value
                 url.contains("360p") -> Qualities.P360.value
                 else -> Qualities.Unknown.value
+            }
+        }
+
+        suspend fun emitSubtitles(subtitleStr: String?) {
+            if (subtitleStr.isNullOrEmpty()) return
+
+            val regex = Regex("""\[(.*?)\](https?://[^,]+)""")
+            regex.findAll(subtitleStr).forEach { match ->
+                val lang = match.groupValues[1]
+                val url = match.groupValues[2]
+
+                subtitleCallback.invoke(
+                    newSubtitleFile(getLanguage(lang) ?: lang, url)
+                )
             }
         }
 
@@ -774,9 +792,8 @@ object CineStreamExtractors {
 
                 if (episode != null && episodeNumber != episode) continue
 
-                emitExtractorLinks(
-                    files = epJson.getString("file")
-                )
+                emitSubtitles(epJson.optString("subtitle"))
+                emitExtractorLinks(files = epJson.getString("file"))
             }
         }
     }
@@ -1708,10 +1725,13 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mapOf(
+            "accept" to "application/json, text/plain, */*",
             "ott" to ottCode,
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
             "x-requested-with" to "NetmirrorNewTV v1.0",
-            "usertoken" to NETMIRROR_TOKEN
+            "usertoken" to NETMIRROR_TOKEN,
+            "host" to "tv.imgcdn.kim",
+            "connection" to "keep-alive"
         )
 
         val searchUrl = "$nfmirrorAPI/search.php?s=$title"
@@ -1749,6 +1769,12 @@ object CineStreamExtractors {
 
         if (finalId == null) return
 
+        val checkHeaders = mapOf(
+            "videoid" to finalId,
+            "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
+            "x-requested-with" to "NetmirrorNewTV v1.0",
+        )
+
         Log.d("Netmirror", "$serviceName finalId: $finalId")
 
         val playlistUrl = "$nfmirrorAPI/player.php?id=$finalId"
@@ -1764,7 +1790,8 @@ object CineStreamExtractors {
             "referer" to "${playlist.referer}",
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
             "x-requested-with" to "NetmirrorNewTV v1.0",
-            "connection" to "keep-alive"
+            "connection" to "keep-alive",
+            "host" to "tv.imgcdn.kim",
         )
 
         callback.invoke(
@@ -4381,6 +4408,49 @@ object CineStreamExtractors {
 
     }
 
+    suspend fun invokeAnineko(
+        title: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val responseText = app.get("$aninekoAPI/ajax/search?q=$title").text
+        val parsedData = tryParseJson<AninekoSearchResponse>(responseText)
+        val firstMatch = parsedData?.results?.firstOrNull() ?: return
+        val showPath = firstMatch.url ?: return
+        val epUrl = "$aninekoAPI$showPath/ep-${episode ?: 1}"
+        val epDoc = app.get(epUrl).document
+        val serverButtons = epDoc.select("button.server-video")
+
+        val vttRegex = Regex("""(https?://[^&"']+\.vtt)""")
+        val langRegex = Regex("""(?:sub_1|c1_label)=([^&]+)""")
+
+        serverButtons.safeAmap { button ->
+            val rawVideoUrl = button.attr("data-video")
+            if (rawVideoUrl.isBlank()) return@safeAmap
+            val serverName = button.ownText().trim()
+            val type = button.selectFirst("span")?.text()?.trim() ?: "SUB"
+            val sourceName = "Anineko $serverName [$type]"
+
+            vttRegex.findAll(rawVideoUrl).forEach { match ->
+                val subUrl = match.groupValues[1]
+
+                val langMatch = langRegex.find(rawVideoUrl)
+                val lang = langMatch?.groupValues?.get(1) ?: "English"
+
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        lang = lang,
+                        url = subUrl
+                    )
+                )
+            }
+
+            loadCustomExtractor(sourceName, rawVideoUrl, "$aninekoAPI/", subtitleCallback, callback)
+        }
+
+    }
+
     suspend fun invokeAnimedao(
         imdbTitle: String? = null,
         title: String? = null,
@@ -4615,7 +4685,7 @@ object CineStreamExtractors {
             callback.invoke(
                 newExtractorLink(
                     "MovieBlast",
-                    "MovieBlast",
+                    "MovieBlast(Multi Audio)",
                     signedUrl,
                     if(signedUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
                 ) {
