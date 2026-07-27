@@ -1176,7 +1176,7 @@ object CineStreamExtractors {
         val enc_data = JSONObject(json).getString("result")
 
         val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+            "User-Agent" to "Mozilla/5.0 (Linux; Android 11; Mi 9T Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Mobile Safari/537.36 EdgA/95.0.1020.48",
             "Connection" to "keep-alive",
             "Referer" to "$vidlinkAPI/",
             "Origin" to vidlinkAPI,
@@ -1192,51 +1192,58 @@ object CineStreamExtractors {
 
         Log.d("Vidlink", "ep response: $epJson")
 
-        val data = parseJson<VidlinkResponse>(epJson)
+        val streamRes = tryParseJson<VidLinkStreamResponse>(epJson)
+        val qualitiesMap = streamRes?.stream?.qualities
 
-        val videoHeaders = mapOf(
-            "accept" to "*/*",
-            "accept-encoding" to "gzip, deflate, br, zstd",
-            "accept-language" to "en-GB,en-US;q=0.9,en;q=0.8",
-            "dnt" to "1",
-            "priority" to "u=1, i",
-            "sec-ch-ua" to "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\"",
-            "sec-ch-ua-mobile" to "?0",
-            "sec-ch-ua-platform" to "\"Linux\"",
-            "sec-fetch-dest" to "empty",
-            "sec-fetch-mode" to "cors",
-            "sec-fetch-site" to "cross-site",
-            "sec-gpc" to "1",
-            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
-        )
+        if (qualitiesMap.isNullOrEmpty()) return
 
-        data.stream?.qualities?.forEach { (quality, qualityData) ->
-            val videoUrl = qualityData.url ?: return@forEach
+        qualitiesMap.forEach { (qualityKey, qualityData) ->
+            val videoUrl = qualityData.url
+            if (!videoUrl.isNullOrEmpty()) {
 
-            callback(
-                newExtractorLink(
-                    "Vidlink",
-                    "Vidlink",
-                    videoUrl,
-                    ExtractorLinkType.VIDEO
-                ) {
-                    this.headers = videoHeaders
-                    this.quality = getQualityFromName(quality)
+                val mappedQuality = when (qualityKey) {
+                    "1080" -> Qualities.P1080.value
+                    "720" -> Qualities.P720.value
+                    "480" -> Qualities.P480.value
+                    "360" -> Qualities.P360.value
+                    else -> Qualities.Unknown.value
                 }
-            )
-        }
 
-        data.stream?.captions?.forEach { caption ->
-            val subUrl = caption.url ?: return@forEach
-            val lang = caption.language ?: "Unknown"
-
-            subtitleCallback(
-                newSubtitleFile(
-                    lang = lang,
-                    url = subUrl
+                val streamHeaders = qualityData.headers ?: mapOf(
+                    "Referer" to "https://filmboom.top/",
+                    "Origin" to "https://filmboom.top"
                 )
-            )
+
+                val isM3u8 = qualityData.type == "m3u8" || videoUrl.contains(".m3u8", true)
+
+                callback(
+                    newExtractorLink(
+                        source = "VidLink",
+                        name = "VidLink",
+                        url = videoUrl,
+                        if(isM3u8) ExtractorLinkType.M3U8 else INFER_TYPE
+                    ) {
+                        this.referer = streamHeaders["referer"] ?: streamHeaders["Referer"] ?: "https://filmboom.top/"
+                        this.headers = streamHeaders
+                        this.quality = mappedQuality
+                    }
+                )
+            }
         }
+
+        val captions = streamRes.stream?.captions
+
+        captions?.forEach { caption ->
+            if (!caption.url.isNullOrEmpty() && !caption.language.isNullOrEmpty()) {
+                subtitleCallback(
+                    newSubtitleFile(
+                        lang = caption.language,
+                        url = caption.url
+                    )
+                )
+            }
+        }
+
     }
 
     suspend fun invokeToonstream(
@@ -3889,29 +3896,6 @@ object CineStreamExtractors {
 
     }
 
-    suspend fun invokePlayImdb(
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = if(season == null) {
-            "$playImdbAPI/embed/$imdbId"
-        } else {
-            "$playImdbAPI/embed/tv?imdb=$imdbId&season=$season&episode=$episode"
-        }
-
-        var iframe = app.get(url).document.selectFirst("#player_iframe")?.attr("src") ?: return
-
-        if(!iframe.contains("https:")) iframe = "https:" + iframe
-
-        Log.d("Playimdb", "iframe: $iframe")
-
-        loadCustomExtractor("Playimdb", iframe, playImdbAPI, subtitleCallback, callback)
-
-    }
-
     suspend fun invokeFshare(
         title: String? = null,
         imdbId: String? = null,
@@ -3977,7 +3961,7 @@ object CineStreamExtractors {
     ) {
         if(title == null) return
 
-        val slug = title.lowercase().trim().replace(Regex("\\s+"), "-")
+        val slug = title.lowercase().trim().replace(Regex("\\s+"), "-").replace(":", "")
 
         val slug2 = if(season == null) {
             "movie/1920%20x%201080"
@@ -3990,6 +3974,8 @@ object CineStreamExtractors {
         } else {
             "$av1encodesAPI/episodes/$slug/$slug2"
         }
+
+        Log.d("Av1encodes", "url: $url")
 
         val headers = mapOf(
             "accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -4006,7 +3992,7 @@ object CineStreamExtractors {
             "sec-fetch-user" to "?1",
             "sec-gpc" to "1",
             "upgrade-insecure-requests" to "1",
-            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+            "user-agent" to "Mozilla/5.0 (Linux; Android 11; Mi 9T Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Mobile Safari/537.36 EdgA/95.0.1020.48"
         )
 
         val document = app.get(
@@ -4099,7 +4085,7 @@ object CineStreamExtractors {
             "sec-fetch-site" to "cross-site",
             "sec-gpc" to "1",
             "upgrade-insecure-requests" to "1",
-            "user-agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+            "user-agent" to "Mozilla/5.0 (Linux; Android 11; Mi 9T Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Mobile Safari/537.36 EdgA/95.0.1020.48"
         )
 
         callback.invoke(

@@ -106,19 +106,14 @@ object ProviderRegistry {
             key = "p_videasy", displayName = "Videasy",
             executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
         ),
-        // ProviderDef(
-        //     key = "p_vidlink", displayName = "Vidlink",
-        //     executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
-        // ),
+        ProviderDef(
+            key = "p_vidlink", displayName = "Vidlink",
+            executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
+        ),
         ProviderDef(
             key = "p_vaplayer", displayName = "VaPlayer",
             executeStandard = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_playimdb", displayName = "PlayImdb",
-            executeStandard = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokePlayImdb(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_ctgmovies", displayName = "CtgMovies",
@@ -143,7 +138,6 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_av1encodes", displayName = "Av1encodes",
-            executeStandard = { res, _, cb -> invokeAv1encodes(res.title, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeAv1encodes(res.imdbTitle, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
