@@ -611,47 +611,6 @@ object CineStreamExtractors {
                 }
             )
 
-            // val videosArray = videoData.optJSONArray("videos")
-
-            // if (videosArray != null && videosArray.length() > 0) {
-            //     for (i in 0 until videosArray.length()) {
-            //         val videoObj = videosArray.getJSONObject(i)
-            //         val description = videoObj.optString("resolutionDescription", "Unknown")
-            //         val resNumberMatch = Regex("""(\d+)P""").find(description)
-            //         val resNumber = resNumberMatch?.groupValues?.get(1)
-
-            //         if (resNumber != null) {
-            //             val qualityUrl = defaultVideoUrl.replace(
-            //                 Regex("""/(\d{3,4})/index"""),
-            //                 "/$resNumber/index"
-            //             )
-
-            //             callback.invoke(
-            //                 newExtractorLink(
-            //                     "Castle",
-            //                     "Castle $description (USE VLC)",
-            //                     qualityUrl,
-            //                     ExtractorLinkType.M3U8
-            //                 ) {
-            //                     this.referer = castleAPI
-            //                     this.quality = getIndexQuality(description)
-            //                 }
-            //             )
-            //         }
-            //     }
-            // } else {
-            //     callback.invoke(
-            //         newExtractorLink(
-            //             "Castle",
-            //             "Castle Auto (USE VLC)",
-            //             defaultVideoUrl,
-            //             ExtractorLinkType.M3U8
-            //         ) {
-            //             this.referer = castleAPI
-            //         }
-            //     )
-            // }
-
             // Emit Subtitles
             val subtitles = videoData.optJSONArray("subtitles")
             if (subtitles != null) {
@@ -660,7 +619,7 @@ object CineStreamExtractors {
                     val subUrl = sub.optString("url")
                     if (subUrl.isNotBlank()) {
                         val lang = sub.optString("abbreviate").ifEmpty { sub.optString("title", "English") }
-                        subtitleCallback.invoke(newSubtitleFile(lang, subUrl))
+                        mySubtitleCallback(lang, subUrl, subtitleCallback, "Castle")
                     }
                 }
             }
@@ -734,9 +693,7 @@ object CineStreamExtractors {
                 val lang = match.groupValues[1]
                 val url = match.groupValues[2]
 
-                subtitleCallback.invoke(
-                    newSubtitleFile(getLanguage(lang) ?: lang, url)
-                )
+                mySubtitleCallback(lang, url, subtitleCallback, "CineCity")
             }
         }
 
@@ -943,7 +900,7 @@ object CineStreamExtractors {
                 ).filterValues { it.isNotBlank() }
             })
 
-            s.subtitles?.forEach { subtitleCallback(newSubtitleFile(getLanguage(it.lang) ?: it.lang, it.url)) }
+            s.subtitles?.forEach { mySubtitleCallback(it.lang, it.url, subtitleCallback, sourceName) }
         }
     }
 
@@ -1087,12 +1044,7 @@ object CineStreamExtractors {
                     val source = obj.getString("url")
                     val language = obj.getString("language")
 
-                    subtitleCallback.invoke(
-                        newSubtitleFile(
-                            getLanguage(language) ?: language,
-                            source
-                        )
-                    )
+                    mySubtitleCallback(language, source, subtitleCallback, "Videasy")
                 }
             }
         }
@@ -1235,12 +1187,7 @@ object CineStreamExtractors {
 
         captions?.forEach { caption ->
             if (!caption.url.isNullOrEmpty() && !caption.language.isNullOrEmpty()) {
-                subtitleCallback(
-                    newSubtitleFile(
-                        lang = caption.language,
-                        url = caption.url
-                    )
-                )
+                mySubtitleCallback(caption.language, caption.url, subtitleCallback, "VidLink")
             }
         }
 
@@ -1300,12 +1247,7 @@ object CineStreamExtractors {
                     val lang = it.lang ?: it.lang_code
                     val fileUrl = it.url
                     if(lang != null && fileUrl != null) {
-                        subtitleCallback.invoke(
-                            newSubtitleFile(
-                                getLanguage(lang) ?: lang,
-                                fileUrl,
-                            )
-                        )
+                        mySubtitleCallback(lang, fileUrl, subtitleCallback, "StremioSubtitle")
                     }
                 }
             } catch (e: Exception) {
@@ -1563,12 +1505,7 @@ object CineStreamExtractors {
         }
 
         playbackData.track.forEach { subtitle ->
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    subtitle.name,
-                    subtitle.file
-                )
-            )
+            mySubtitleCallback(subtitle.name, subtitle.file, subtitleCallback, "Onetouchtv")
         }
 
     }
@@ -1687,7 +1624,7 @@ object CineStreamExtractors {
         if (subResponse.code != 200) return
 
         tryParseJson<List<KisskhSubtitle>>(subResponse.text)?.forEach { sub ->
-            subtitleCallback.invoke(newSubtitleFile(getLanguage(sub.label) ?: return@forEach, sub.src ?: return@forEach))
+            mySubtitleCallback(sub.label ?: return@forEach, sub.src ?: return@forEach, subtitleCallback, "Kisskh")
         }
     }
 
@@ -2484,12 +2421,7 @@ object CineStreamExtractors {
 
         data.forEach {
             val lang = it.display ?: it.language
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    getLanguage(lang) ?: return@forEach,
-                    it.url
-                )
-            )
+            mySubtitleCallback(lang ?: return@forEach, it.url, subtitleCallback, "WyzieSubs")
         }
     }
 
@@ -2841,12 +2773,7 @@ object CineStreamExtractors {
         val document = app.get("$link/${episode ?: 1}").document
 
         val subtitles = document.select("track").map {
-            subtitleCallback.invoke(
-                newSubtitleFile(
-                    getLanguage(it.attr("label")) ?: it.attr("label"),
-                    it.attr("src")
-                )
-            )
+            mySubtitleCallback(it.attr("label"), it.attr("src"), subtitleCallback, "Anizone")
         }
 
         val source = document.select("media-player").attr("src")
@@ -3019,7 +2946,7 @@ object CineStreamExtractors {
                     val sub = subs.getJSONObject(i)
                     val subLang = sub.optString("lang", "Unknown")
                     val subUrl = sub.optString("url")
-                    if (subUrl.isNotBlank()) subtitleCallback(newSubtitleFile(subLang, subUrl))
+                    if (subUrl.isNotBlank()) mySubtitleCallback(subLang, subUrl, subtitleCallback, "Vidzee")
                 }
 
             } catch (e: Exception) {
@@ -3247,9 +3174,7 @@ object CineStreamExtractors {
                     val slink = s.optString("url")
                     if (slink.isNotEmpty()) {
                         val lan = s.optString("lan")
-                        subtitleCallback.invoke(
-                            newSubtitleFile(getLanguage(lan) ?: lan, slink)
-                        )
+                        mySubtitleCallback(lan, slink, subtitleCallback, "Moviebox")
                     }
                 }
             }
@@ -3340,12 +3265,7 @@ object CineStreamExtractors {
             val lang = it.lang ?: it.lang_code
             val fileUrl = it.url
             if(lang != null && fileUrl != null) {
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        getLanguage(lang) ?: lang,
-                        fileUrl,
-                    )
-                )
+                mySubtitleCallback(lang, fileUrl, subtitleCallback, sourceName)
             }
         }
     }
@@ -3638,12 +3558,7 @@ object CineStreamExtractors {
 
             streamData.tracks?.forEach { track ->
                 if (track.file != null && track.label != null) {
-                    subtitleCallback.invoke(
-                        newSubtitleFile(
-                            getLanguage(track.label) ?: track.label,
-                            track.file
-                        )
-                    )
+                    mySubtitleCallback(track.label, track.file, subtitleCallback, "Vidfast")
                 }
             }
 
@@ -3737,12 +3652,7 @@ object CineStreamExtractors {
             ).forEach(callback)
 
             decryptedStream.tracks?.forEach { track ->
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        getLanguage(track.label) ?: track.label,
-                        track.file
-                    )
-                )
+                mySubtitleCallback(track.label, track.file, subtitleCallback, "Vidcore")
             }
         }
 
@@ -3885,12 +3795,7 @@ object CineStreamExtractors {
 
         res.default_subs?.amap { sub ->
             if (!sub.url.isNullOrBlank()) {
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        sub.lang ?: sub.code ?: "Unknown",
-                        sub.url
-                    )
-                )
+                mySubtitleCallback(sub.lang ?: sub.code, sub.url, subtitleCallback, "VaPlayer")
             }
         }
 
@@ -4377,7 +4282,7 @@ object CineStreamExtractors {
                 sourceRes.subtitles?.forEach { sub ->
                     val file = sub.file ?: return@forEach
                     val label = sub.label ?: "Unknown"
-                    subtitleCallback(newSubtitleFile(label, file))
+                    mySubtitleCallback(label, file, subtitleCallback, "Anikage")
                 }
 
                 //Handles embeds
@@ -4424,12 +4329,8 @@ object CineStreamExtractors {
                 val langMatch = langRegex.find(rawVideoUrl)
                 val lang = langMatch?.groupValues?.get(1) ?: "English"
 
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        lang = lang,
-                        url = subUrl
-                    )
-                )
+                mySubtitleCallback(lang, subUrl, subtitleCallback, "Anineko")
+
             }
 
             loadCustomExtractor(sourceName, rawVideoUrl, "$aninekoAPI/", subtitleCallback, callback)
@@ -4493,7 +4394,7 @@ object CineStreamExtractors {
                     ?: queryParams["c1_label"]
                     ?: "English"
 
-                if(subtitleUrl != null) subtitleCallback(newSubtitleFile(subtitleLang, subtitleUrl))
+                if(subtitleUrl != null) mySubtitleCallback(subtitleLang, subtitleUrl, subtitleCallback, "Animedao")
 
                 loadCustomExtractor("Animedao[$type] $server", rawUrl, "$animedaoAPI/", subtitleCallback, callback)
             }
@@ -4682,14 +4583,10 @@ object CineStreamExtractors {
         }
 
         detailsData.subtitles?.forEach { sub ->
-            val subLink = sub.link
+            var subLink = sub.link
             if (!subLink.isNullOrEmpty()) {
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        sub.lang ?: "English",
-                        if (subLink.startsWith("http")) subLink else "https://$subLink"
-                    )
-                )
+                subLink =  if(subLink.startsWith("http")) subLink else "https://$subLink"
+                mySubtitleCallback(sub.lang, subLink, subtitleCallback, "MovieBlast")
             }
         }
     }
@@ -4928,12 +4825,7 @@ object CineStreamExtractors {
                     val subLabel = track.label ?: "Unknown"
 
                     if (subUrl != null) {
-                        subtitleCallback.invoke(
-                            newSubtitleFile(
-                                subLabel,
-                                subUrl
-                            )
-                        )
+                        mySubtitleCallback(subLabel, subUrl, subtitleCallback, "Vidup")
                     }
                 }
 

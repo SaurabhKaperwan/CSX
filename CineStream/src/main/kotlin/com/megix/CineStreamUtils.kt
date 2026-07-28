@@ -293,6 +293,20 @@ val languageMap = mapOf(
     "Yiddish" to listOf("yi", "yid")
 )
 
+suspend fun mySubtitleCallback(
+    lang: String? = null,
+    url: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    source: String? = null,
+) {
+    subtitleCallback.invoke(
+        newSubtitleFile(
+            getLanguage(lang) ?: lang ?: "Unknown",
+            url
+        )
+    )
+}
+
 fun getLanguage(language: String?): String? {
 
     language ?: return null
