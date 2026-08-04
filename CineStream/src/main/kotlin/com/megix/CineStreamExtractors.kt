@@ -1851,10 +1851,21 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val url = "$skymoviesAPI/search.php?search=$title ($year)&cat=All"
+        val url = """$skymoviesAPI/search.php?search=${URLEncoder.encode("$title ($year)", "UTF-8")}&cat=All"""
+
+        Log.d("Skymovies", "url: $url")
+
         val (sSlug, eSlug) = getEpisodeSlug(1, episode)
         app.get(url).document.select("div.L a").safeAmap {
-            if(!it.text().trim().startsWith("$title ($year)")) return@safeAmap
+            val titleText = it.text()
+
+            Log.d("Skymovies", "titleText: $titleText")
+
+            val titleLink = it.attr("href")
+
+            Log.d("Skymovies", "titleLink: $titleLink")
+
+            if(!titleText.trim().startsWith("$title ($year)")) return@safeAmap
             val regex = Regex("""S\d{2}E\d{2}""", RegexOption.IGNORE_CASE)
             var singleEpEntry = false
 
@@ -1871,8 +1882,13 @@ object CineStreamExtractors {
                 }
             }
 
-            app.get(skymoviesAPI + it.attr("href")).document.select("div.Bolly > a").safeAmap {
+            Log.d("Skymovies", "singleEpEntry: $singleEpEntry")
+
+            app.get(skymoviesAPI + titleLink).document.select("div.Bolly > a").safeAmap {
                 val text = it.text()
+
+                Log.d("Skymovies", "text: $text")
+
                 if(episode == null || singleEpEntry) {
                   loadSourceNameExtractor(
                         "Skymovies",
@@ -1917,6 +1933,9 @@ object CineStreamExtractors {
     ) {
         val searchQuery = if(season == null) "${title?.replace(" ", "+")}+${year}" else "${title?.replace(" ", "+")}+season+${season}"
         val searchUrl = "$movies4uAPI/?s=$searchQuery"
+
+        Log.d("Movies4u", "searchUrl: $searchUrl")
+
         val headers = mapOf(
             "Cookie" to "xla=s4t",
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
@@ -2241,6 +2260,8 @@ object CineStreamExtractors {
                     headers = mapOf("X-Requested-With" to "XMLHttpRequest")
                 ).parsed<ResponseHash>().embed_url
                 val link = source.substringAfter("\"").substringBefore("\"")
+
+                Log.d("Multimovies", "link: $link")
 
                 when {
                     !link.contains("youtube") -> {
@@ -3948,7 +3969,7 @@ object CineStreamExtractors {
             "sec-fetch-user" to "?1",
             "sec-gpc" to "1",
             "upgrade-insecure-requests" to "1",
-            "user-agent" to "Mozilla/5.0 (Linux; Android 11; Mi 9T Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Mobile Safari/537.36 EdgA/95.0.1020.48"
+            "user-agent" to "Mozilla/5.0 (Linux; Android 8.1.0; A502DL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36"
         )
 
         val document = app.get(

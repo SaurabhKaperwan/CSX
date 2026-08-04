@@ -15,10 +15,10 @@ import org.json.JSONObject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
 import java.util.concurrent.ConcurrentHashMap
-import android.util.Log
+import com.lagradost.api.Log
 
 open class MoviesmodProvider : MainAPI() {
-    override var mainUrl = "https://moviesmod.army"
+    override var mainUrl = "https://moviesleech.rest"
     override var name = "Moviesmod"
     override val hasMainPage = true
     override var lang = "en"
@@ -76,7 +76,7 @@ open class MoviesmodProvider : MainAPI() {
     fun Element.toSearchResult(): SearchResponse? {
         val title = this.select("a").attr("title").replace("Download ", "")
         val href = this.select("a").attr("href")
-        val posterUrl = this.selectFirst("div > img")?.attr("data-src") ?: this.select("div > img").attr("src")
+        val posterUrl = this.select("div > img").attr("src")
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
@@ -98,6 +98,9 @@ open class MoviesmodProvider : MainAPI() {
         var description = document.select("div.imdbwp__teaser").text()
         val div = document.select("div.thecontent").text()
         val tvtype = if (div.contains("season", ignoreCase = true) == true) "series" else "movie"
+
+        Log.d("Moviesmod", "tvtype: $tvtype")
+
         val imdbUrl = document.select("a[href*=\"imdb.com\"]").attr("href")
         val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
         val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
@@ -140,6 +143,7 @@ open class MoviesmodProvider : MainAPI() {
                     async {
                         runCatching {
                             var link = button.attr("href")
+
                             val seasonText = button.parent()?.previousElementSibling()?.text().orEmpty()
                             val realSeason = Regex("""(?:Season |S)(\d+)""")
                                 .find(seasonText)
@@ -152,12 +156,20 @@ open class MoviesmodProvider : MainAPI() {
                                 link = base64Decode(base64Value)
                             }
 
+                            Log.d("Moviesmod", "link: $link")
+
                             val doc = app.get(link).document
                             val hTags = doc.select("h3,h4")
+
+                            Log.d("Moviesmod", "hTags: $hTags")
+
                             var e = 1
 
                             hTags.forEach { hTag ->
                                 val epUrl = hTag.select("a").attr("href").takeIf { it.isNotBlank() } ?: return@forEach
+
+                                Log.d("Moviesmod", "epUrl: $epUrl")
+
                                 val key = Pair(realSeason, e)
                                 episodesMap.compute(key) { _, current ->
                                     (current ?: mutableListOf()).apply { add(epUrl) }
@@ -201,6 +213,7 @@ open class MoviesmodProvider : MainAPI() {
         else {
             val data = document.select("a.maxbutton-download-links").mapNotNull {
                 var link = it.attr("href")
+
                 if(link.contains("url=")) {
                     val base64Value = link.substringAfter("url=")
                     link = base64Decode(base64Value)
@@ -208,6 +221,7 @@ open class MoviesmodProvider : MainAPI() {
 
                 val doc = app.get(link).document
                 val source = doc.select("a.maxbutton-1, a.maxbutton-5").attr("href")
+
                 EpisodeLink(
                     source
                 )

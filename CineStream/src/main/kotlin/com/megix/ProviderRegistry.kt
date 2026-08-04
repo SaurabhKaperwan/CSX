@@ -106,10 +106,10 @@ object ProviderRegistry {
             key = "p_videasy", displayName = "Videasy",
             executeStandard = { res, subCb, cb -> invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_vidlink", displayName = "Vidlink",
-            executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
-        ),
+        // ProviderDef(
+        //     key = "p_vidlink", displayName = "Vidlink",
+        //     executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
+        // ),
         ProviderDef(
             key = "p_vaplayer", displayName = "VaPlayer",
             executeStandard = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.season, res.episode, subCb, cb) },
@@ -252,11 +252,11 @@ object ProviderRegistry {
             key = "p_hdghartv", displayName = "HdGharTv",
             executeStandard = { res, subCb, cb -> if(!res.isAnime) invokeHdGharTv(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
         ),
-        ProviderDef(
-            key = "p_dahmermovies", displayName = "DahmerMovies",
-            executeStandard = { res, _, cb -> invokeDahmerMovies(res.title, res.year, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
-        ),
+        // ProviderDef(
+        //     key = "p_dahmermovies", displayName = "DahmerMovies",
+        //     executeStandard = { res, _, cb -> invokeDahmerMovies(res.title, res.year, res.season, res.episode, cb) },
+        //     executeAnime = { res, _, cb -> invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, cb) }
+        // ),
         ProviderDef(
             key = "p_animesalt", displayName = "Animesalt",
             executeStandard = { res, subCb, cb -> if (res.isAnime || res.isCartoon) invokeAnimesalt(res.title, res.season, res.episode, subCb, cb) },
