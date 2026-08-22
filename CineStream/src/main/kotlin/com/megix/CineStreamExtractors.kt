@@ -2991,60 +2991,55 @@ object CineStreamExtractors {
             "User-Agent" to USER_AGENT,
             "Authorization" to "Bearer ${Settings.getGramCinemaToken() ?: return}"
         )
-
         Log.d("Bollywood", "Headers: $headers")
-
         val url = if (season == null) {
             "$bollywoodAPI/mix_media_files/search?q=${titleSlug}.${year}&page=1"
         } else {
             "$bollywoodAPI/mix_media_files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"
         }
-
         val response = app.get(
             url,
             headers = headers,
             timeout = 300000
         ).text
-
         Log.d("Bollywood", "Response: $response")
-
         val jsonObject = JSONObject(response)
+        if (!jsonObject.has("files")) return
 
-        if (jsonObject.has("files")) {
-            val filesArray = jsonObject.getJSONArray("files")
-
-            for (i in 0 until filesArray.length()) {
-                val item = filesArray.getJSONObject(i)
-                val fileName = item.optString("file_name")
-                if (fileName.contains(".$titleSlug")) continue
-                val fileId = item.optString("id")
-                Log.d("Bollywood", "Processing file ID: $fileId")
-                val size = formatSize(item.optString("file_size").toLong())
-                val res = app.get(
-                    "$bollywoodAPI/genLink?type=mix_media&id=$fileId",
+        val filesArray = jsonObject.getJSONArray("files")
+        (0 until filesArray.length())
+            .map { filesArray.getJSONObject(it) }
+            .filter { item -> !item.optString("file_name").contains(".$titleSlug") }
+            .take(5)
+            .map { item ->
+                item to app.get(
+                    "$bollywoodAPI/genLink?type=mix_media&id=${item.optString("id")}",
                     headers = headers
                 ).text
+            }
+            .forEach { (item, res) ->
+                val fileName = item.optString("file_name")
+                val fileId = item.optString("id")
+                val size = formatSize(item.optString("file_size").toLong())
                 Log.d("Bollywood", "Link response for file ID $fileId: $res")
 
                 val linkJson = JSONObject(res)
-                if (linkJson.has("url")) {
-                    val streamUrl = linkJson.optString("url")
-                    val simplifiedTitle = getSimplifiedTitle("$fileName $size")
+                if (!linkJson.has("url")) return@forEach
 
-                    callback.invoke(
-                        newExtractorLink(
-                            "GramCinema",
-                            "[GramCinema]".toSansSerifBold() + " ${simplifiedTitle}",
-                            streamUrl,
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.quality = getIndexQuality(fileName)
-                            this.referer = bollywoodBaseAPI
-                        }
-                    )
-                }
+                val streamUrl = linkJson.optString("url")
+                val simplifiedTitle = getSimplifiedTitle("$fileName $size")
+                callback.invoke(
+                    newExtractorLink(
+                        "GramCinema",
+                        "[GramCinema]".toSansSerifBold() + " ${simplifiedTitle}",
+                        streamUrl,
+                        ExtractorLinkType.VIDEO
+                    ) {
+                        this.quality = getIndexQuality(fileName)
+                        this.referer = bollywoodBaseAPI
+                    }
+                )
             }
-        }
     }
 
     suspend fun invokeMoviebox(
@@ -3662,7 +3657,7 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mutableMapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "User-Agent" to USER_AGENT,
             "Referer" to "$vidcoreAPI/",
             "X-Requested-With" to "XMLHttpRequest"
         )
@@ -3969,7 +3964,7 @@ object CineStreamExtractors {
             "sec-fetch-user" to "?1",
             "sec-gpc" to "1",
             "upgrade-insecure-requests" to "1",
-            "user-agent" to "Mozilla/5.0 (Linux; Android 8.1.0; A502DL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36"
+            "user-agent" to "Mozilla/5.0 (Linux; Android 9; moto e(6) plus) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.86 Mobile Safari/537.36"
         )
 
         val document = app.get(
