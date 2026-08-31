@@ -722,6 +722,11 @@ open class HubCloud : ExtractorApi() {
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")
             }
+            else if (text.contains("Buzz Server")) {
+                val baseBuzzUrl = getBaseUrl(link)
+                val redirectUrl = app.get(link).document.selectFirst(".download-btn") ?: return@safeAmap
+                myCallback(baseBuzzUrl + redirectUrl, "[Buzz Server]")
+            }
             else if (text.contains("Gofile")) loadExtractor(link, "", subtitleCallback, callback)
             else { Log.d("Error", "No Server matched") }
         }

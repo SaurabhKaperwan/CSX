@@ -316,58 +316,6 @@ data class AniSearch(@param:JsonProperty("data") var data: AniData? = AniData())
 data class AniIds(var id: Int? = null, var idMal: Int? = null)
 
 
-//NF
-data class NFVerifyUrl(
-    val nfverifyurl: String
-)
-
-data class NfSearchData(
-    val searchResult: List<NfSearchResult>,
-)
-
-data class NfSearchResult(
-    val id: String,
-    val t: String
-)
-
-data class NfPlaylist(
-    val status: String? = null,
-    val ott: String? = null,
-    val video_link: String? = null,
-    val referer: String? = null,
-    val title: String? = null,
-    val ep: String? = null,
-    val ep_title: String? = null,
-    val t: String? = null,
-    val usertoken: String? = null
-)
-
-data class NetflixSources(
-    @param:JsonProperty("file") val file: String? = null,
-    @param:JsonProperty("label") val label: String? = null,
-)
-
-data class NetflixEpisodes(
-    @param:JsonProperty("id") val id: String? = null,
-    @param:JsonProperty("t") val t: String? = null,
-    @param:JsonProperty("s") val s: String? = null,
-    @param:JsonProperty("ep") val ep: String? = null,
-)
-
-data class NetflixSeason(
-    @param:JsonProperty("s") val s: String? = null,
-    @param:JsonProperty("id") val id: String? = null,
-)
-
-data class NetflixResponse(
-    @param:JsonProperty("title") val title: String? = null,
-    @param:JsonProperty("year") val year : String? = null,
-    @param:JsonProperty("season") val season: ArrayList<NetflixSeason>? = arrayListOf(),
-    @param:JsonProperty("episodes") val episodes: ArrayList<NetflixEpisodes>? = arrayListOf(),
-    @param:JsonProperty("sources") val sources: ArrayList<NetflixSources>? = arrayListOf(),
-    @param:JsonProperty("nextPageShow") val nextPageShow: Int? = null,
-)
-
 //StreamAsia
 
 data class StreamAsiaSearch(
