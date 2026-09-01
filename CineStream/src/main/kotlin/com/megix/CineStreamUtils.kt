@@ -52,6 +52,7 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import java.math.BigInteger
 import kotlin.math.min
+import java.util.Base64
 
 // Settings
 import com.megix.settings.Settings
@@ -1852,4 +1853,19 @@ suspend fun resolveFibwatchStream(initialUrl: String, fallbackQuality: String): 
     }
 
     return null
+}
+
+//Cinejoy
+
+fun decodeBase64UrlSafe(data: String): ByteArray {
+    val padding = when (data.length % 4) {
+        2 -> "=="
+        3 -> "="
+        else -> ""
+    }
+    return Base64.getUrlDecoder().decode(data + padding)
+}
+
+fun encodeBase64UrlSafeNoPadding(data: ByteArray): String {
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(data)
 }

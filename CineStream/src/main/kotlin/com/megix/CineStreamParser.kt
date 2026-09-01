@@ -1027,3 +1027,63 @@ data class AninekoSearchResult(
     @JsonProperty("image") val image: String? = null,
     @JsonProperty("meta") val meta: String? = null
 )
+
+//Cinejoy
+
+data class CinejoyServersResponse(
+    var servers: List<CinejoyServers>? = null
+)
+
+data class CinejoyServers(
+    var name: String? = null
+)
+
+data class CinejoyEncResponse(
+    var status: Int? = null,
+    var result: CinejoyEnc? = null
+)
+
+data class CinejoyEnc(
+    var data: String? = null,
+    var state: CinejoyState? = null
+)
+
+data class CinejoyState(
+    var responseKey: String? = null,
+    var aad: String? = null
+)
+
+data class CinejoyDecResponse(
+    var status: Int? = null,
+    var result: CinejoyDecResultOuter? = null
+)
+
+data class CinejoyDecResultOuter(
+    var data: CinejoyDecData? = null,
+    var status: Int? = null
+)
+
+data class CinejoyDecData(
+    var stream: List<CinejoyStream>? = null,
+    var error: String? = null
+)
+
+data class CinejoyStream(
+    var type: String? = null,
+    var id: String? = null,
+    var playlist: String? = null,
+    var qualities: Map<String, CinejoyQuality>? = null,
+    var captions: List<CinejoyCaption>? = null
+)
+
+data class CinejoyQuality(
+    var type: String? = null,
+    var url: String? = null
+)
+
+data class CinejoyCaption(
+    var type: String? = null,
+    var id: String? = null,
+    var url: String? = null,
+    var language: String? = null
+)

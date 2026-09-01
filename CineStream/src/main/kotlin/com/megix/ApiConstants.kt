@@ -56,6 +56,8 @@ const val meowtvBaseAPI = "https://meowtv.ru"
 const val meowtvAPI = "https://api.meowtv.ru"
 const val hdGharTvAPI = "https://hdghartv.cc"
 const val aninekoAPI = "https://anineko.to"
+const val cinejoyAPI = "https://api.shegu.st"
+const val cinejoyBaseAPI = "https://cinejoy.to"
 const val torrentioAPI = "https://torrentio.strem.fun/limit=4"
 const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 

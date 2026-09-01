@@ -124,6 +124,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_cinejoy", displayName = "Cinejoy",
+            executeStandard = { res, subCb, cb -> invokeCinejoy(res.title, res.imdbId ,res.tmdbId, res.year ,res.season, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_vidcore", displayName = "Vidcore",
             executeStandard = { res, subCb, cb -> invokeVidcore(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
