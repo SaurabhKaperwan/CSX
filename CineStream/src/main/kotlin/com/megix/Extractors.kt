@@ -724,7 +724,7 @@ open class HubCloud : ExtractorApi() {
             }
             else if (text.contains("Buzz Server")) {
                 val baseBuzzUrl = getBaseUrl(link)
-                val redirectUrl = app.get(link).document.selectFirst(".download-btn") ?: return@safeAmap
+                val redirectUrl = app.get(link).document.selectFirst(".download-btn")?.attr("href") ?: return@safeAmap
                 myCallback(baseBuzzUrl + redirectUrl, "[Buzz Server]")
             }
             else if (text.contains("Gofile")) loadExtractor(link, "", subtitleCallback, callback)

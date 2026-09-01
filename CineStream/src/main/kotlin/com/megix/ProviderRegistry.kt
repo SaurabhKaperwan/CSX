@@ -90,10 +90,6 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeHexa(res.tmdbId, res.season, res.episode, cb) },
         ),
         ProviderDef(
-            key = "p_xpass", displayName = "Xpass",
-            executeStandard = { res, subCb, cb -> invokeXpass(res.tmdbId, res.season, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_fshare", displayName = "Fshare",
             executeStandard = { res, subCb, cb -> if (res.season == null) invokeFshare(res.title, res.imdbId, subCb, cb) }
         ),

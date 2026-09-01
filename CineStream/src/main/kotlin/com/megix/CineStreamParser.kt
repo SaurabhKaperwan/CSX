@@ -50,6 +50,15 @@ data class EncDecResult(
     @param:JsonProperty("token") val token: String?,
 )
 
+data class EncDecStreamResponse(
+    @param:JsonProperty("result") val result: EncDecStream?
+)
+
+data class EncDecStream(
+    @param:JsonProperty("url") val url: String?,
+    @param:JsonProperty("language") val language: String?,
+)
+
 // Vidfast
 data class VidfastServers(
     @param:JsonProperty("name") val name: String?,

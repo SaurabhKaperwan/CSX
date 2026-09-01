@@ -629,60 +629,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeXpass(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val embedUrl = if(season == null) "$xpassAPI/e/movie/$tmdbId" else "$xpassAPI/e/tv/$tmdbId/$season/$episode"
-        val html = app.get(embedUrl, referer = "$xpassAPI/").text
-        val backups = extractXpassBackups(html)
-
-        Log.d("Xpass", "backups: $backups")
-
-        backups.safeAmap { (name, url) ->
-            val fullUrl  = if (url.startsWith("http")) url else xpassAPI + url
-
-            Log.d("Xpass", "fullUrl: $fullUrl")
-
-            val json     = app.get(fullUrl).text
-            val sources  = JSONObject(json)
-                .optJSONArray("playlist")
-                ?.optJSONObject(0)
-                ?.optJSONArray("sources") ?: return@safeAmap
-
-            for (i in 0 until sources.length()) {
-                val source = sources.getJSONObject(i)
-                val file   = source.optString("file").takeIf {
-                    it.isNotBlank() && it.startsWith("http")
-                } ?: continue
-                val isM3u8 = source.optString("type").contains("hls", ignoreCase = true)
-                        || file.contains(".m3u8")
-
-                if(isM3u8) {
-                    M3u8Helper.generateM3u8(
-                        "Xpass [$name]",
-                        file,
-                        "$xpassAPI/",
-                    ).forEach(callback)
-                } else {
-                    callback.invoke(
-                        newExtractorLink(
-                            "Xpass [$name]",
-                            "Xpass [$name]",
-                            file
-                        ) {
-                            this.referer = "$xpassAPI/"
-                        }
-                    )
-                }
-            }
-
-        }
-    }
-
     suspend fun invokeRtally(
         title: String? = null,
         season: Int? = null,
@@ -1591,7 +1537,8 @@ object CineStreamExtractors {
 
         Log.d("Skymovies", "url: $url")
 
-        val (sSlug, eSlug) = getEpisodeSlug(1, episode)
+        val (sSlug, eSlug) = getEpisodeSlug(1, episode ?: 1)
+
         app.get(url).document.select("div.L a").safeAmap {
             val titleText = it.text()
 
@@ -3306,9 +3253,9 @@ object CineStreamExtractors {
         val url = if (season == null) "$vidfastProApi/movie/$tmdbId/" else "$vidfastProApi/tv/$tmdbId/$season/$episode/"
 
         val headers = mutableMapOf(
-            "User-Agent" to USER_AGENT,
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
             "Referer" to "$vidfastProApi/",
-            "X-Requested-With" to "XMLHttpRequest",
+            // "X-Requested-With" to "XMLHttpRequest",
         )
 
         val response = app.get(url, headers = headers).text
@@ -3933,6 +3880,22 @@ object CineStreamExtractors {
 
             Log.d("Meowtv", "decResponse: $decResponse")
 
+            val parsed = tryParseJson<EncDecStreamResponse>(decResponse)?.result ?: return@safeAmap
+
+            if(parsed.url == null) return@safeAmap
+
+            callback.invoke(
+                newExtractorLink(
+                    "Meowtv",
+                    "Meowtv[$server] ${parsed.language}",
+                    parsed.url,
+                    if(parsed.url.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+                ) {
+                    this.quality = Qualities.P1080.value
+                    this.headers = headers
+                }
+            )
+
         }
     }
 
@@ -3943,14 +3906,9 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
-            "Accept"          to "*/*",
-            "Accept-Language" to "en-US,en;q=0.5",
             "Origin"          to "$peachifyBaseAPI",
             "Referer"         to "$peachifyBaseAPI/",
-            "Sec-Fetch-Dest"  to "empty",
-            "Sec-Fetch-Mode"  to "cors",
-            "Sec-Fetch-Site"  to "cross-site",
-            "User-Agent"      to "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+            "User-Agent"      to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
         )
 
         val servers = listOf("multi", "hr", "holly", "air", "moviebox")
@@ -4096,25 +4054,25 @@ object CineStreamExtractors {
                 Log.d("Anikage", "sourceRes: $sourceRes")
 
                 //Handles sources
-                // sourceRes.sources?.forEach { source ->
-                //     val encodedUrl = source.url ?: return@forEach
-                //     val isM3U8 = source.isM3U8 ?: false
-                //     val proxiedUrl = "https://prox.anikage.cc/${if(isM3U8) "m3u8" else "stream"}/$encodedUrl"
+                sourceRes.sources?.forEach { source ->
+                    val encodedUrl = source.url ?: return@forEach
+                    val isM3U8 = source.isM3U8 ?: false
+                    val proxiedUrl = "https://og.bakayaro.live/${if(isM3U8) "m3u8" else "stream"}/$encodedUrl"
 
-                //     Log.d("Anikage", "proxiedUrl: $proxiedUrl")
+                    Log.d("Anikage", "proxiedUrl: $proxiedUrl")
 
-                //     callback.invoke(
-                //         newExtractorLink(
-                //             "Anikage[${server.capitalizeServer()}] ${lang.capitalizeServer()}",
-                //             "Anikage[${server.capitalizeServer()}] ${lang.capitalizeServer()}",
-                //             proxiedUrl,
-                //             if(isM3U8) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-                //         ) {
-                //             this.quality = 1080
-                //             this.referer = "$anikageAPI/"
-                //         }
-                //     )
-                // }
+                    callback.invoke(
+                        newExtractorLink(
+                            "Anikage[${server.capitalizeServer()}] ${lang.capitalizeServer()}",
+                            "Anikage[${server.capitalizeServer()}] ${lang.capitalizeServer()}",
+                            proxiedUrl,
+                            if(isM3U8) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+                        ) {
+                            this.quality = 1080
+                            this.referer = "$anikageAPI/"
+                        }
+                    )
+                }
 
                 //Handles embeds
                 sourceRes.embeds?.safeAmap { embed ->
