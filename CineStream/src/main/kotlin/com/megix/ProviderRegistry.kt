@@ -3,18 +3,6 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-/** Container for data fetched during MALSync requests */
-data class MalSyncData(
-    val title: String?,
-    val animepaheUrl: String?,
-    val aniId: Int?,
-    val malId: Int?,
-    val episode: Int?,
-    val year: Int?,
-    val origin: String,
-    val animepaheTitle: String?,
-)
-
 /** * Defines a provider and its execution logic for Standard, Anime, and MALSync data.
  * The `CineStreamExtractors.` receiver allows direct access to internal scraping functions.
  */
@@ -24,7 +12,6 @@ data class ProviderDef(
     val isTorrent: Boolean = false,
     val executeStandard: (suspend CineStreamExtractors.(res: AllLoadLinksData, subCb: (SubtitleFile) -> Unit, cb: (ExtractorLink) -> Unit) -> Unit)? = null,
     val executeAnime: (suspend CineStreamExtractors.(res: AllLoadLinksData, subCb: (SubtitleFile) -> Unit, cb: (ExtractorLink) -> Unit) -> Unit)? = null,
-    val executeMalSync: (suspend CineStreamExtractors.(data: MalSyncData, subCb: (SubtitleFile) -> Unit, cb: (ExtractorLink) -> Unit) -> Unit)? = null
 )
 
 object ProviderRegistry {
@@ -267,16 +254,6 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeSkymovies(res.title, res.airedYear ?: res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_hdmovie2", displayName = "HDMovie2",
-            executeStandard = { res, subCb, cb -> if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear ?: res.year, res.episode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_mostraguarda", displayName = "Mostraguarda",
-            executeStandard = { res, subCb, cb -> if (res.season == null) invokeMostraguarda(res.imdbId, subCb, cb) }
-        ),
-
-        // ── Asian Drama & Anime Specific (Including MALSync logic) ─
-        ProviderDef(
             key = "p_kisskh", displayName = "KissKH",
             executeStandard = { res, subCb, cb -> if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subCb, cb) }
         ),
@@ -310,31 +287,20 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeAnidb(res.imdbTitle ?: res.title, res.year, res.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_animepahe", displayName = "AnimePahe",
-            executeMalSync = { data, subCb, cb -> invokeAnimepahe(data.animepaheUrl, data.episode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_animetoshohttp", displayName = "AnimeToshoHttp",
-            executeMalSync = { data, subCb, cb -> invokeAnimetoshoHttp(data.title, data.malId, data.episode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeAnimetoshoHttp(res.title, res.malId, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_tokyoinsider", displayName = "TokyoInsider",
             executeAnime = { res, subCb, cb -> invokeTokyoInsider(res.originalTitle ?: res.title, res.episode, subCb, cb) },
-            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeTokyoInsider(data.title, data.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_anizone", displayName = "Anizone",
             executeAnime = { res, subCb, cb -> invokeAnizone(res.originalTitle ?: res.title, res.episode, subCb, cb) },
-            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnizone(data.title, data.episode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_animes", displayName = "Animes*",
-            executeAnime = { res, subCb, cb -> invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subCb, cb) }
         ),
         ProviderDef(
             key = "p_animekizz", displayName = "Animekizz",
             executeAnime = { res, subCb, cb -> invokeAnimekizz(res.title, res.anilistId, res.episode, subCb, cb) },
-            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnimekizz(data.title, data.aniId, data.episode, subCb, cb) }
         ),
     )
 

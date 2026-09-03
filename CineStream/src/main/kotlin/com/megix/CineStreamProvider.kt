@@ -26,7 +26,6 @@ import org.json.JSONObject
 
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
-import com.megix.CineStreamExtractors.invokeAnimes
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -319,40 +318,30 @@ open class CineStreamProvider : MainAPI() {
                 true
             }
             else -> {
-                runAllAsync(
-                    {
-                        invokeAllSources(
-                            AllLoadLinksData(
-                                res.title,
-                                res.id,
-                                res.tmdbId,
-                                res.anilistId,
-                                res.malId,
-                                res.kitsuId,
-                                year,
-                                seasonYear,
-                                res.season,
-                                res.episode,
-                                res.isAnime,
-                                res.isBollywood,
-                                res.isAsian,
-                                res.isCartoon,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                            ),
-                            subtitleCallback,
-                            callback
-                        )
-                    },
-                    {
-                        if (res.isAnime) {
-                            val (aniId, malId) = convertImdbToAnimeId(res.title, year, res.firstAired, if (res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime)
-                            invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
-                        }
-                    }
+                invokeAllSources(
+                    AllLoadLinksData(
+                        res.title,
+                        res.id,
+                        res.tmdbId,
+                        res.anilistId,
+                        res.malId,
+                        res.kitsuId,
+                        year,
+                        seasonYear,
+                        res.season,
+                        res.episode,
+                        res.isAnime,
+                        res.isBollywood,
+                        res.isAsian,
+                        res.isCartoon,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                    ),
+                    subtitleCallback,
+                    callback
                 )
                 true
             }

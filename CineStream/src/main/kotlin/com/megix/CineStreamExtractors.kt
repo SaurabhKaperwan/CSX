@@ -79,44 +79,6 @@ object CineStreamExtractors {
         runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
-    suspend fun invokeAnimes(
-        malId: Int? = null,
-        aniId: Int? = null,
-        episode: Int? = null,
-        year: Int? = null,
-        origin: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}").parsedSafe<MALSyncResponses>()
-
-        Log.d("Malsync", "mal_response: $mal_response")
-
-        val title = mal_response?.title
-        val malsync = mal_response?.sites
-
-        val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull {
-            (it as? Map<*, *>)?.get("url") as? String
-        }
-
-        val animepaheTitle = malsync?.animepahe?.values?.firstNotNullOfOrNull {
-            (it as? Map<*, *>)?.get("title") as? String
-        }
-
-        // Package the API results for the registry
-        val malData = MalSyncData(title, animepaheUrl, aniId, malId, episode, year, origin, animepaheTitle)
-
-        Log.d("Malsync", "malData: $malData")
-
-        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
-            ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
-                suspend { this.action(malData, subtitleCallback, callback) }
-            }
-        }
-
-        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
-    }
-
     private fun getDynamicStremioMap(
         imdbId: String?,
         season: Int?,
@@ -1434,99 +1396,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeHdmovie2(
-        title: String? = null,
-        year: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT
-        )
-
-        val document = app.get("$hdmovie2API/movies/${title.createSlug()}-$year", headers = headers, allowRedirects = true).document
-        val ajaxUrl = "$hdmovie2API/wp-admin/admin-ajax.php"
-        val commonHeaders = mapOf(
-            "Accept" to "*/*",
-            "X-Requested-With" to "XMLHttpRequest"
-        )
-
-        suspend fun String.getIframe(): String = Jsoup.parse(this).select("iframe").attr("src")
-
-        suspend fun fetchSource(post: String, nume: String, type: String): String {
-            val response = app.post(
-                url = ajaxUrl,
-                data = mapOf(
-                "action" to "doo_player_ajax",
-                "post" to post,
-                "nume" to nume,
-                "type" to type
-            ),
-            referer = hdmovie2API,
-            headers = commonHeaders
-            ).parsed<ResponseHash>()
-            return response.embed_url.getIframe()
-        }
-
-        var link = ""
-
-        if (episode != null) {
-            document.select("ul#playeroptionsul > li").getOrNull(1)?.let { ep ->
-                val post = ep.attr("data-post")
-                val nume = (episode + 1).toString()
-                link = fetchSource(post, nume, "movie")
-        }
-        } else {
-            document.select("ul#playeroptionsul > li")
-                .firstOrNull { it.text().contains("v2", ignoreCase = true) }
-                ?.let { mv ->
-                    val post = mv.attr("data-post")
-                    val nume = mv.attr("data-nume")
-                    link = fetchSource(post, nume, "movie")
-                }
-        }
-
-        val (sSlug, eSlug) = getEpisodeSlug(1, episode)
-
-        if (link.isEmpty()) {
-            document.select("a[href*=dwo]").safeAmap { anchor ->
-                val anchorText = anchor.text()
-
-                val type = if (episode != null && !anchorText.contains("ep", ignoreCase = true)) {
-                    " (Combined)"
-                } else {
-                    ""
-                }
-
-                if (episode != null && type == "" && !anchorText.contains("ep$eSlug", ignoreCase = true)) {
-                    return@safeAmap
-                }
-
-                val innerDoc = app.get(anchor.attr("href")).document
-                innerDoc.select("div > p > a").safeAmap {
-                    loadSourceNameExtractor(
-                        "Hdmovie2$type",
-                        it.attr("href"),
-                        "",
-                        subtitleCallback,
-                        callback
-                    )
-                }
-            }
-        }
-
-        if (link.isNotEmpty()) {
-            loadSourceNameExtractor(
-                "Hdmovie2",
-                link,
-                hdmovie2API,
-                subtitleCallback,
-                callback,
-            )
-        }
-    }
-
     suspend fun invokeSkymovies(
         title: String? = null,
         year: Int? = null,
@@ -1957,77 +1826,6 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeAnimepahe(
-        url: String? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
-            "Cookie" to "__ddgid_=hpbphjdici5GLR3T; __ddg2_=dwDduNWZhLGsqnEO; __ddg1_=wjyiWsat7aykGAi7bi42;"
-        )
-
-        Log.d("Animepahe", "url: $url")
-
-        val id = cfGet(url?.replace(".com", ".pw") ?: return, headers).document.selectFirst("meta[property=og:url]")
-            ?.attr("content").toString().substringAfterLast("/")
-
-        Log.d("Animepahe", "id: $id")
-
-        val animeData =
-            cfGet("$animepaheAPI/api?m=release&id=$id&sort=episode_asc&page=1", headers)
-                .parsedSafe<animepahe>()?.data
-        val session = if(episode == null) {
-            animeData?.firstOrNull()?.session ?: return
-        } else {
-            animeData?.getOrNull(episode-1)?.session ?: return
-        }
-
-        Log.d("Animepahe", "session: $session")
-
-        val doc = cfGet("$animepaheAPI/play/$id/$session", headers).document
-
-        runLimitedAsync( concurrency = 2,
-            {
-                doc.select("div#pickDownload > a").safeAmap {
-                    val href = it.attr("href")
-                    var type = "SUB"
-                    if(it.attr("data-audio") == "Eng") type = "DUB"
-
-                    Log.d("Animepahe", "href: $href")
-
-                    loadCustomExtractor(
-                        "Animepahe [$type]",
-                        href,
-                        "$animepaheAPI/",
-                        subtitleCallback,
-                        callback,
-                        getIndexQuality(it.text())
-                    )
-                }
-            },
-            {
-                doc.select("div#resolutionMenu > button").safeAmap {
-                    var type = "SUB"
-                    if(it.attr("data-audio") == "Eng") type = "DUB"
-                    val quality = it.attr("data-resolution")
-                    val href = it.attr("data-src")
-                    if (href.contains("kwik.cx")) {
-                        loadCustomExtractor(
-                            "Animepahe(VLC) [$type]",
-                            href,
-                            "$animepaheAPI/",
-                            subtitleCallback,
-                            callback,
-                            getQualityFromName(quality)
-                        )
-                    }
-                }
-            },
-        )
-    }
-
     suspend fun invoke4khdhub(
         title: String? = null,
         year: Int? = null,
@@ -2095,27 +1893,6 @@ object CineStreamExtractors {
                         callback
                     )
                 }
-            }
-        }
-    }
-
-    suspend fun invokeMostraguarda(
-        id: String? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = "$MostraguardaAPI/movie/$id"
-        val doc = app.get(
-            url,
-            headers = mapOf(
-                "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-            )
-        ).document
-
-        doc.select("ul > li").safeAmap {
-            if(it.text().contains("supervideo")) {
-                val source = "https:" + it.attr("data-link")
-                SuperVideo().getUrl(source, "", subtitleCallback, callback)
             }
         }
     }

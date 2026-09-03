@@ -9,7 +9,6 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.megix.CineStreamExtractors.invokeAllSources
-import com.megix.CineStreamExtractors.invokeAnimes
 
 class CineTmdbProvider: MainAPI() {
     override var name = "CineTmdb"
@@ -280,40 +279,30 @@ class CineTmdbProvider: MainAPI() {
         val year = res.airedYear ?: res.year
         val seasonYear = res.year ?: res.airedYear
 
-        runAllAsync(
-            {
-                invokeAllSources(
-                    AllLoadLinksData(
-                        res.title,
-                        res.imdbId,
-                        res.id,
-                        res.aniId?.toIntOrNull(),
-                        null,
-                        null,
-                        year,
-                        seasonYear,
-                        res.season,
-                        res.episode,
-                        res.isAnime,
-                        res.isBollywood,
-                        res.isAsian,
-                        res.isCartoon,
-                        res.orgTitle,
-                        null,
-                        null,
-                        null,
-                        null,
-                    ),
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if (res.isAnime) {
-                    val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
-                    invokeAnimes(malId, aniId, res.episode, res.airedYear, "imdb", subtitleCallback, callback)
-                }
-            }
+        invokeAllSources(
+            AllLoadLinksData(
+                res.title,
+                res.imdbId,
+                res.id,
+                res.aniId?.toIntOrNull(),
+                null,
+                null,
+                year,
+                seasonYear,
+                res.season,
+                res.episode,
+                res.isAnime,
+                res.isBollywood,
+                res.isAsian,
+                res.isCartoon,
+                res.orgTitle,
+                null,
+                null,
+                null,
+                null,
+            ),
+            subtitleCallback,
+            callback
         )
 
         return true

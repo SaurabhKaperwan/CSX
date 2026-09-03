@@ -115,8 +115,9 @@ class Gofile : ExtractorApi() {
     override val mainUrl = "https://gofile.io"
     override val requiresReferer = false
     private val mainApi = "https://api.gofile.io"
-    private val browserLanguage = "en-US"
-    private val secret = "9844d94d963d30"
+    private val browserLanguage = "en-GB"
+    private val secret = "12af056dacea0b"
+    private val userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
 
     override suspend fun getUrl(
         url: String,
@@ -124,31 +125,36 @@ class Gofile : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        Log.d(name, "url: $url")
+
         val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
 
-        val websiteTokenForAccountCreation = generateWebsiteToken(USER_AGENT, "")
+        val defaultHeaders = mapOf(
+            "User-Agent" to userAgent,
+            "Referer" to "$mainUrl/",
+            "Origin" to mainUrl
 
-        val token = app.post(
-            "$mainApi/accounts",
-            headers = mapOf(
-                "X-Website-Token" to websiteTokenForAccountCreation,
-                "X-BL" to browserLanguage
-            )
-        ).parsedSafe<AccountResponse>()?.data?.token ?: return
+        )
 
+        val token = app.post("$mainApi/accounts", headers = defaultHeaders)
+            .parsedSafe<AccountResponse>()?.data?.token ?: return
 
-        val hashedToken = generateWebsiteToken(USER_AGENT, token)
+        Log.d(name, "token: $token")
+
+        val hashedToken = generateWebsiteToken(userAgent, token)
+
+        Log.d(name, "hashedToken: $hashedToken")
 
         val headers = mapOf(
             "Referer" to "$mainUrl/",
-            "User-Agent" to USER_AGENT,
+            "User-Agent" to userAgent,
             "Authorization" to "Bearer $token",
             "X-BL" to browserLanguage,
             "X-Website-Token" to hashedToken
         )
 
         val parsedResponse = app.get(
-            "$mainApi/contents/$id?cache=true&sortField=createTime&sortDirection=1",
+            "$mainApi/contents/$id?page=1&pageSize=100&sortField=name&sortDirection=1",
             headers = headers
         ).parsedSafe<GofileResponse>()
 
@@ -733,253 +739,6 @@ open class HubCloud : ExtractorApi() {
     }
 }
 
-open class SuperVideo : ExtractorApi() {
-    override val name = "SuperVideo"
-    override val mainUrl = "https://supervideo.cc"
-    override val requiresReferer = false
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val res = app.get(url.replace("tv","cc"), referer = referer)
-        val script =
-            res.document.selectFirst("script:containsData(function(p,a,c,k,e,d))")?.data()
-        val unpacked = getAndUnpack(script ?: return)
-        val m3u8 = Regex("file:\"(.*?m3u8.*?)").find(unpacked)?.groupValues?.getOrNull(1) ?:""
-        M3u8Helper.generateM3u8(
-            this.name,
-            m3u8,
-            referer = "$mainUrl/",
-        ).forEach(callback)
-    }
-}
-
-class Kwik : ExtractorApi() {
-    override val name            = "Kwik"
-    override val mainUrl         = "https://kwik.cx"
-    override val requiresReferer = true
-
-    override suspend fun getUrl(url: String, referer: String?, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit) {
-        val res = app.get(url, referer = referer)
-        val script =
-            res.document.selectFirst("script:containsData(function(p,a,c,k,e,d))")?.data()
-        val unpacked = getAndUnpack(script ?: return)
-        val m3u8 =Regex("source=\\s*'(.*?m3u8.*?)'").find(unpacked)?.groupValues?.getOrNull(1) ?:""
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                m3u8,
-                type = ExtractorLinkType.M3U8
-            ) {
-                this.referer = url
-            }
-        )
-    }
-}
-
-class Pahe : ExtractorApi() {
-    override val name = "Pahe"
-    override val mainUrl = "https://pahe.win"
-    override val requiresReferer = true
-
-    private val kwikParamsRegex = Regex("""\("(\w+)",\d+,"(\w+)",(\d+),(\d+),\d+\)""")
-    private val kwikDUrl = Regex("action=\"([^\"]+)\"")
-    private val kwikDToken = Regex("value=\"([^\"]+)\"")
-
-    private fun decrypt(fullString: String, key: String, v1: Int, v2: Int): String {
-        val keyIndexMap = key.withIndex().associate { it.value to it.index }
-        val sb = StringBuilder()
-        var i = 0
-        val toFind = key[v2]
-        while (i < fullString.length) {
-            val nextIndex = fullString.indexOf(toFind, i)
-            val decodedCharStr = buildString {
-                for (j in i until nextIndex) {
-                    append(keyIndexMap[fullString[j]] ?: -1)
-                }
-            }
-            i = nextIndex + 1
-            sb.append((decodedCharStr.toInt(v2) - v1).toChar())
-        }
-        return sb.toString()
-    }
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val kwikUrl = "https://" + app.get(
-            "$url/i",
-            allowRedirects = false
-        ).headers["location"]!!.substringAfterLast("https://")
-
-        Log.d("Kwik", "Kwik URL: $kwikUrl")
-
-        val fContent = app.get(
-            kwikUrl,
-            mapOf(
-                "User-Agent" to USER_AGENT,
-                "Referer"    to referer.toString(),
-            ),
-        )
-        val fContentString = fContent.text
-
-        Log.d("Kwik", "fcontent : ${fContentString.take(100)}")
-
-        val (fullString, key, v1, v2) = kwikParamsRegex.find(fContentString)!!.destructured
-        val decrypted = decrypt(fullString, key, v1.toInt(), v2.toInt())
-        val uri = kwikDUrl.find(decrypted)!!.destructured.component1()
-        val tok = kwikDToken.find(decrypted)!!.destructured.component1()
-
-        var code = 419
-        var tries = 0
-        var location = ""
-
-        while (code != 302 && tries < 20) {
-            val response = app.post(
-                uri,
-                headers = mapOf(
-                    "User-Agent" to USER_AGENT,
-                    "Referer"    to fContent.url
-                ),
-                data = mapOf("_token" to tok),
-                allowRedirects = false
-            )
-            code = response.code
-            if (code == 302) {
-                location = response.headers["location"] ?: ""
-            }
-            tries++
-        }
-
-        if (location.isBlank()) return
-
-        callback.invoke(
-            newExtractorLink(name, name, location) {
-                this.referer = "https://kwik.cx/"
-            }
-        )
-    }
-
-    companion object {
-        const val USER_AGENT =
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-    }
-}
-
-class Akamaicdn : ExtractorApi() {
-    override val name = "Akamaicdn"
-    override val mainUrl = "https://molop.art"
-    override val requiresReferer = true
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers= mapOf("user-agent" to "okhttp/4.12.0")
-        val res = app.get(url, referer = referer, headers = headers).document
-        val sniffScript = res.selectFirst("script:containsData(sniff\\()")
-            ?.data()
-            ?.substringAfter("sniff(")
-            ?.substringBefore(");") ?: return
-
-        val cleaned = sniffScript.replace(Regex("\\[.*?\\]"), "")
-        val regex = Regex("\"(.*?)\"")
-        val args = regex.findAll(cleaned).map { it.groupValues[1].trim() }.toList()
-        val token = args.lastOrNull().orEmpty()
-        val m3u8 = "$mainUrl/m3u8/${args[1]}/${args[2]}/master.txt?s=1&cache=1&plt=$token"
-        M3u8Helper.generateM3u8(name, m3u8, mainUrl, headers = headers).forEach(callback)
-    }
-}
-
-
-class Cloudorchestranova : Cloudnestra() {
-    override val mainUrl: String = "https://cloudorchestranova.com"
-}
-
-open class Cloudnestra : ExtractorApi() {
-    override val name = "Cloudnestra"
-    override val mainUrl = "https://cloudnestra.com"
-    override val requiresReferer = true
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "Accept-Language" to "en-GB,en-US;q=0.9,en;q=0.8",
-            "Referer" to "$referer/",
-            "Sec-Fetch-Dest" to "document",
-            "Sec-Fetch-Mode" to "navigate",
-            "Sec-Fetch-Site" to "none",
-            "Upgrade-Insecure-Requests" to "1",
-        )
-        val iframeHtml = app.get(url, headers = headers).text
-        val srcMatch = Regex("""src:\s*['"]([^'"]+)['"]""", RegexOption.IGNORE_CASE).find(iframeHtml)
-        val prorcpSrc = srcMatch?.groupValues?.get(1) ?: return
-        val cloudHtml = app.get(url = "$mainUrl$prorcpSrc", headers = headers).text
-
-        val divMatch = Regex("""<div id="([^"]+)"[^>]*style=["']display\s*:\s*none;?["'][^>]*>([a-zA-Z0-9:\/.,{}\-_=+ ]+)</div>""", RegexOption.IGNORE_CASE).find(cloudHtml)
-        val divId = divMatch?.groupValues?.get(1) ?: return
-        val divText = divMatch.groupValues.get(2)
-
-        val decrypted = app.post(
-            url = "$multiDecryptAPI/dec-cloudnestra",
-            json = mapOf("text" to divText, "div_id" to divId),
-            headers = mapOf("Content-Type" to "application/json")
-        ).text
-
-        val jsonObject = JSONObject(decrypted)
-        if (jsonObject.getInt("status") != 200) return
-        val resultArray = jsonObject.getJSONArray("result")
-
-        // cache tokens per host so we don't call generate.php repeatedly for same domain
-        val tokenCache = mutableMapOf<String, String>()
-
-        suspend fun fetchToken(host: String): String {
-            return tokenCache.getOrPut(host) {
-                app.get("https://$host/generate.php", headers = headers).text.trim()
-            }
-        }
-
-        for (i in 0 until resultArray.length()) {
-            var streamUrl = resultArray.getString(i)
-
-            when {
-                streamUrl.contains("__TOKENPG__") -> {
-                    val token = fetchToken("app2.putgate.com")
-                    streamUrl = streamUrl.replace("__TOKENPG__", token)
-                }
-                streamUrl.contains("__TOKEN__") -> {
-                    val host = streamUrl.toHttpUrlOrNull()?.host
-                        ?: Regex("""https?://([^/]+)""").find(streamUrl)?.groupValues?.get(1)
-                        ?: continue
-                    val token = fetchToken(host)
-                    streamUrl = streamUrl.replace("__TOKEN__", token)
-                }
-            }
-
-            M3u8Helper.generateM3u8(
-                name,
-                streamUrl,
-                "$mainUrl/",
-            ).forEach(callback)
-        }
-    }
-}
-
 class FlixCloud : ExtractorApi() {
     override val name = "FlixCloud"
     override val mainUrl = "https://flixcloud.cc"
@@ -1248,17 +1007,6 @@ class Otakuvid: VidHidePro() {
 class Otakuhg: VidHidePro() {
     override var mainUrl = "https://otakuhg.site"
 }
-
-//Allanime
-
-class Allanimeups : VidStack() {
-    override var mainUrl = "https://allanime.uns.bio"
-}
-
-class Bysekoze  : ByseSX() {
-    override var mainUrl = "https://bysekoze.com"
-}
-
 
 open class PpzjYoutube : ExtractorApi() {
     override val name = "PpzjYoutube"
