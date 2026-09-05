@@ -47,7 +47,6 @@ class CineTmdbProvider: MainAPI() {
         "discover/tv?api_key=$apiKey&with_networks=49" to "HBO",
         "discover/tv?api_key=$apiKey&with_networks=4330" to "Paramount+",
         "discover/tv?api_key=$apiKey&with_networks=3353" to "Peacock",
-        "discover/movie?api_key=$apiKey&language=en-US&page=1&sort_by=popularity.desc&with_origin_country=IN&release_date.gte=${getDate().lastWeekStart}&release_date.lte=${getDate().today}" to "Trending Indian Movies",
         "discover/movie?api_key=$apiKey&with_keywords=210024|222243" to "Anime Movies",
         // "movie/top_rated?api_key=$apiKey&region=US" to "Top Rated Movies",
         "tv/top_rated?api_key=$apiKey&region=US" to "Top Rated TV Shows",

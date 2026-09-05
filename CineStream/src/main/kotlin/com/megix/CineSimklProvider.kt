@@ -442,6 +442,9 @@ class CineSimklProvider: MainAPI() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
+
+        Log.d("CineSimkl", data)
+
         val res = parseJson<LoadLinksData>(data)
         if(res.isAnime) {
             val (imdbTitle, imdbYear) = try {

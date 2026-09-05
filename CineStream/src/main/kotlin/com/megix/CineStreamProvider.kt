@@ -23,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 
 // JSON Parsing
 import org.json.JSONObject
+import com.fasterxml.jackson.annotation.JsonProperty
 
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
@@ -39,7 +40,6 @@ open class CineStreamProvider : MainAPI() {
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val image_proxy = "https://wsrv.nl/?url="
-    val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -52,7 +52,7 @@ open class CineStreamProvider : MainAPI() {
     override val mainPage = mainPageOf(
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
-        "$aiometa_url/catalog/anime/mal.airing/skip=###" to "Top Airing Anime",
+        "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
@@ -179,9 +179,11 @@ open class CineStreamProvider : MainAPI() {
         if(isKitsu && id.contains("mal")) {
            id = movieData?.id ?: id
         }
-        val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else  null
+
+        val externalIds = if(isKitsu) getExternalIds(kitsuId,"kitsu") else  null
         val malId = if(externalIds != null) externalIds.myanimelist else null
         val anilistId = if(externalIds != null) externalIds.anilist else null
+
         val title = movieData?.name.toString()
         val engTitle = movieData?.aliases?.firstOrNull() ?: title
         val posterUrl = getPosterUrl(movieData?.poster)
@@ -189,8 +191,12 @@ open class CineStreamProvider : MainAPI() {
         val imdbRating = movieData?.imdbRating?.toDoubleOrNull()
         val year = movieData?.year
         val releaseInfo = movieData?.releaseInfo
-        val tmdbId = movieData?.moviedb_id
+        var tmdbId = movieData?.moviedb_id
         id = if(!isKitsu) movieData?.imdb_id.toString() else id
+
+        id = if(id == null || isKitsu) externalIds?.imdb.toString() else id
+        tmdbId = if(tmdbId == null || isKitsu) externalIds?.themoviedb else null
+
         val description = movieData?.awards?.let { "[${it.toSansSerifBold()}] ${movieData.description}" } ?: movieData?.description
         val actors = if(isKitsu) {
             null
@@ -265,9 +271,9 @@ open class CineStreamProvider : MainAPI() {
                         isBollywood,
                         isAsian,
                         isCartoon,
-                        ep.imdb_id,
-                        ep.imdbSeason,
-                        ep.imdbEpisode,
+                        ep.imdb_id ?: id,
+                        ep.imdbSeason ?: externalIds?.thetvdbSeason ?: ep.season,
+                        ep.imdbEpisode ?: ep.episode,
                         isKitsu,
                         anilistId,
                         malId,
@@ -308,6 +314,9 @@ open class CineStreamProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+
+        Log.d("CineStream", data)
+
         val res = parseJson<LoadLinksData>(data)
         val year = getYear(res)
         val seasonYear = getSeasonYear(res)
@@ -451,20 +460,26 @@ open class CineStreamProvider : MainAPI() {
         val hasMore: Boolean = true,
     )
 
-    data class ExtenalIds(
-        val anilist: Int?,
-        val anidb: Int?,
-        val myanimelist: Int?,
-        val kitsu: Int?,
-        val anisearch: Int?,
-        val livechart: Int?,
-        val themoviedb: Int?,
+    data class ExternalIds(
+        val anilist: Int? = null,
+        val imdb: String? = null,
+        val kitsu: Int? = null,
+        val myanimelist: Int? = null,
+        val simkl: Int? = null,
+        val themoviedb: Int? = null,
+        val thetvdb: Int? = null,
+        @param:JsonProperty("thetvdb-season")
+        val thetvdbSeason: Int? = null
     )
 
-    suspend fun getExternalIds(id: String, type: String) : ExtenalIds? {
+    suspend fun getExternalIds(id: String?, type: String) : ExternalIds? {
+        if(id == null) return null
+
         val url = "$haglund_url/ids?source=$type&id=$id"
+        Log.d("CineStream", "url: $url")
         val json = app.get(url).text
-        return tryParseJson<ExtenalIds>(json) ?: return null
+        Log.d("CineStream", "json: $json")
+        return tryParseJson<ExternalIds>(json) ?: return null
     }
 
     private fun getYear(res: LoadLinksData): Int? {

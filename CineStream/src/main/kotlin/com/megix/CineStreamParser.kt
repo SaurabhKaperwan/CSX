@@ -166,25 +166,25 @@ data class AnimetoshoRelease(
 
 //Vidlink
 data class VidLinkStreamResponse(
-    @JsonProperty("stream") val stream: VidLinkStreamData? = null
+    @param:JsonProperty("stream") val stream: VidLinkStreamData? = null
 )
 
 data class VidLinkStreamData(
-    @JsonProperty("qualities") val qualities: Map<String, VidLinkQuality>? = null,
-    @JsonProperty("captions") val captions: List<VidLinkCaption>? = null
+    @param:JsonProperty("qualities") val qualities: Map<String, VidLinkQuality>? = null,
+    @param:JsonProperty("captions") val captions: List<VidLinkCaption>? = null
 )
 
 data class VidLinkQuality(
-    @JsonProperty("type") val type: String? = null,
-    @JsonProperty("url") val url: String? = null,
-    @JsonProperty("headers") val headers: Map<String, String>? = null,
-    @JsonProperty("requiresProxy") val requiresProxy: Boolean? = null
+    @param:JsonProperty("type") val type: String? = null,
+    @param:JsonProperty("url") val url: String? = null,
+    @param:JsonProperty("headers") val headers: Map<String, String>? = null,
+    @param:JsonProperty("requiresProxy") val requiresProxy: Boolean? = null
 )
 
 data class VidLinkCaption(
-    @JsonProperty("url") val url: String? = null,
-    @JsonProperty("language") val language: String? = null,
-    @JsonProperty("type") val type: String? = null
+    @param:JsonProperty("url") val url: String? = null,
+    @param:JsonProperty("language") val language: String? = null,
+    @param:JsonProperty("type") val type: String? = null
 )
 
 data class TmdbDate(
@@ -835,36 +835,36 @@ data class VidupTrack(
 //Fibwatch
 
 data class FibwatchEpisode(
-    @JsonProperty("title") val title: String? = null,
-    @JsonProperty("url") val url: String? = null
+    @param:JsonProperty("title") val title: String? = null,
+    @param:JsonProperty("url") val url: String? = null
 )
 
 data class FibwatchEpisodesResponse(
-    @JsonProperty("episodes") val episodes: List<FibwatchEpisode>? = null
+    @param:JsonProperty("episodes") val episodes: List<FibwatchEpisode>? = null
 )
 
 data class FibwatchSource(
-    @JsonProperty("url") val url: String? = null,
-    @JsonProperty("res") val res: String? = null
+    @param:JsonProperty("url") val url: String? = null,
+    @param:JsonProperty("res") val res: String? = null
 )
 
 data class FibwatchSwitcherResponse(
-    @JsonProperty("current") val current: List<FibwatchSource>? = null,
-    @JsonProperty("popup") val popup: List<FibwatchSource>? = null
+    @param:JsonProperty("current") val current: List<FibwatchSource>? = null,
+    @param:JsonProperty("popup") val popup: List<FibwatchSource>? = null
 )
 
 //Anineko
 
 data class AninekoSearchResponse(
-    @JsonProperty("success") val success: Boolean? = null,
-    @JsonProperty("results") val results: List<AninekoSearchResult>? = null
+    @param:JsonProperty("success") val success: Boolean? = null,
+    @param:JsonProperty("results") val results: List<AninekoSearchResult>? = null
 )
 
 data class AninekoSearchResult(
-    @JsonProperty("title") val title: String? = null,
-    @JsonProperty("url") val url: String? = null,
-    @JsonProperty("image") val image: String? = null,
-    @JsonProperty("meta") val meta: String? = null
+    @param:JsonProperty("title") val title: String? = null,
+    @param:JsonProperty("url") val url: String? = null,
+    @param:JsonProperty("image") val image: String? = null,
+    @param:JsonProperty("meta") val meta: String? = null
 )
 
 //Cinejoy
