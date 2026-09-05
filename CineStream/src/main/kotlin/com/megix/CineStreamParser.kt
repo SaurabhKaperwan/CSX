@@ -926,3 +926,71 @@ data class CinejoyCaption(
     var url: String? = null,
     var language: String? = null
 )
+
+//Just4Anime
+
+data class Just4Anime(
+    val success: Boolean? = null,
+    val data: Just4AnimeData? = null
+)
+
+data class Just4AnimeData(
+    val animeId: String? = null,
+    val malId: Long? = null,
+    val servers: List<Just4AnimeServer> = emptyList()
+)
+
+data class Just4AnimeServer(
+    val code: String? = null,
+    val displayName: String? = null,
+    val animeId: String? = null,
+    val episodeId: String? = null,
+    val hasEpisode: Boolean = false,
+    val totalEpisodes: Int = 0,
+    val types: List<String> = emptyList()
+)
+
+data class Just4AnimeMetaSources(
+    val success: Boolean? = null,
+    val data: Just4AnimeMetaSourceData? = null
+)
+
+data class Just4AnimeMetaSourceData(
+    val episode: Just4AnimeMetaEpisode? = null,
+    val isDub: Boolean? = null,
+    val type: String? = null,
+    val sources: List<Just4AnimeSourceItem> = emptyList(),
+    val subtitles: List<Just4AnimeSubtitleItem> = emptyList(),
+    val iframe: List<Just4AnimeIframeItem> = emptyList()
+)
+
+data class Just4AnimeMetaEpisode(
+    val number: Int? = null,
+    val id: String? = null,
+    val title: String? = null
+)
+
+data class Just4AnimeSourceItem(
+    val url: String? = null,
+    val quality: String? = null,
+    val isM3U8: Boolean = false,
+    val isDub: Boolean? = null,
+    val server: String? = null,
+    val headers: Map<String, String>? = null,
+    val proxied: Boolean? = null
+)
+
+data class Just4AnimeSubtitleItem(
+    val url: String? = null,
+    val lang: String? = null,
+    val language: String? = null,
+    val format: String? = null,
+    val headers: Map<String, String>? = null
+)
+
+data class Just4AnimeIframeItem(
+    val url: String? = null,
+    val quality: String? = null,
+    val server: String? = null,
+    val category: String? = null
+)

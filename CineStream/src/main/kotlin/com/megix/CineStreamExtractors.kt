@@ -4084,7 +4084,7 @@ object CineStreamExtractors {
                                 callback.invoke(
                                     newExtractorLink(
                                         "Cinejoy",
-                                        "Cinejoy - ${stream.id ?: server} ($qualityKey)",
+                                        "Cinejoy - ${server.capitalizeServer()} ($qualityKey)",
                                         fileUrl,
                                         if(fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
                                     ) {
@@ -4543,6 +4543,84 @@ object CineStreamExtractors {
             }
         }
 
+    }
+
+    suspend fun invokeJust4Anime(
+        aniId: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        if (aniId == null || episode == null) return
+
+        val serversJson = app.get("$just4animeAPI/meta/availability/$aniId/servers", referer = "$just4animeBaseAPI/").text
+        val serversList = tryParseJson<Just4Anime>(serversJson)?.data?.servers ?: return
+
+        serversList
+            .filter { it.hasEpisode && !it.code.isNullOrBlank() }
+            .safeAmap { server ->
+                val code = server.code ?: return@safeAmap
+                val serverName = server.displayName ?: code
+
+                server.types.safeAmap { type ->
+                    val cleanType = type.replace("h-sub", "hsub")
+                    val json = app.get(
+                        "$just4animeAPI/meta/sources/$aniId?provider=$code&num=$episode&type=$cleanType",
+                        referer = "$just4animeBaseAPI/"
+                    ).text
+
+                    val meta = tryParseJson<Just4AnimeMetaSources>(json)?.data ?: return@safeAmap
+
+                    meta.subtitles.forEach { sub ->
+                        val subUrl = sub.url ?: return@forEach
+                        subtitleCallback.invoke(
+                            newSubtitleFile(
+                                lang = sub.language ?: sub.lang ?: "English",
+                                url = subUrl
+                            )
+                        )
+                    }
+
+                    val label = "Just4Anime [${serverName.capitalizeServer()}] [${type.capitalizeServer()}]"
+
+                    meta.sources.forEach { src ->
+                        val streamUrl = src.url ?: return@forEach
+
+                        if (src.isM3U8 || streamUrl.contains(".m3u8")) {
+                            M3u8Helper.generateM3u8(
+                                source = label,
+                                streamUrl = streamUrl,
+                                referer = src.headers?.get("referer") ?: "$just4animeBaseAPI/",
+                                headers = src.headers ?: emptyMap()
+                            ).forEach(callback)
+                        } else {
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = label,
+                                    name = label,
+                                    url = streamUrl,
+                                ) {
+                                    referer = src.headers?.get("referer") ?: "$just4animeBaseAPI/"
+                                    headers = src.headers ?: emptyMap()
+                                    quality = getIndexQuality(src.quality)
+                                }
+                            )
+                        }
+                    }
+
+                    meta.iframe.forEach { iframe ->
+                        val iframeUrl = iframe.url ?: return@forEach
+
+                        loadSourceNameExtractor(
+                            label,
+                            iframeUrl,
+                            "$just4animeAPI/",
+                            subtitleCallback,
+                            callback
+                        )
+                    }
+                }
+            }
     }
 
     suspend fun invokeAnikoto(

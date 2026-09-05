@@ -132,6 +132,10 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeReanime(res.anilistId, res.episode, subCb, cb) }
         ),
         ProviderDef(
+            key = "p_just4anime", displayName = "Just4Anime",
+            executeAnime = { res, subCb, cb -> invokeJust4Anime(res.anilistId, res.episode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_zinkmovies", displayName = "Zinkmovies",
             executeStandard = { res, subCb, cb -> invokeZinkmovies(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeZinkmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
