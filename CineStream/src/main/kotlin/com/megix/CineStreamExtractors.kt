@@ -52,6 +52,9 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        Log.d("res", "$res")
+
         val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
 
         val executionList = Settings.activeProviderOrder.mapNotNull { key ->
@@ -68,6 +71,9 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        Log.d("res", "$res")
+
         val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
 
         val executionList = Settings.activeProviderOrder.mapNotNull { key ->

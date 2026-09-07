@@ -194,7 +194,7 @@ open class CineStreamProvider : MainAPI() {
         var tmdbId = movieData?.moviedb_id
         id = if(!isKitsu) movieData?.imdb_id.toString() else id
 
-        id = if(id == null || isKitsu) externalIds?.imdb.toString() else id
+        id = if(isKitsu) externalIds?.imdb.toString() else id
         tmdbId = if(tmdbId == null || isKitsu) externalIds?.themoviedb else null
 
         val description = movieData?.awards?.let { "[${it.toSansSerifBold()}] ${movieData.description}" } ?: movieData?.description

@@ -5,7 +5,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-// Cloudstream Static Helpers (AppUtils, CommonActivity, LoadResponse)
+// Cloudstream Helpers
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
@@ -46,7 +46,6 @@ class CineSimklProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = true
-    // override val providerType = ProviderType.MetaProvider
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private val simklDataAPI = "https://data.simkl.in"
@@ -57,9 +56,8 @@ class CineSimklProvider: MainAPI() {
     private val repo = SyncRepo(AccountManager.simklApi)
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
-    // private val haglund_url = "https://arm.haglund.dev/api/v2"
     private val image_proxy = "https://wsrv.nl/?url="
-    // private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
+    private val no_image = "https://wsrv.nl/?url=https://simkl.in/poster_no_pic.png"
 
     override val mainPage = mainPageOf(
         "/discover/trending/movies/today_500.json" to "Trending Movies Today",
@@ -72,18 +70,10 @@ class CineSimklProvider: MainAPI() {
         "/discover/trending/tv/month_500.json" to "Trending Series This Month",
         "/discover/trending/month_500.json" to "Trending This Month",
         "/discover/trending/anime/month_500.json" to "Trending Anime This Month",
-        // "/movies/genres/all/all-types/all-countries/this-year/rank?limit=$mediaLimit" to "Top Rated Movies This Year",
-        // "/tv/genres/all/all-types/all-countries/all-networks/this-year/rank?limit=$mediaLimit" to "Top Rated Shows This Year",
-        // "/tv/genres/all/all-types/all-countries/netflix/all-years/popular-today?limit=$mediaLimit" to "Trending Netflix Shows",
-        // "/tv/genres/all/all-types/all-countries/disney/all-years/popular-today?limit=$mediaLimit" to "Trending Disney Shows",
-        // "/tv/genres/all/all-types/all-countries/hbo/all-years/popular-today?limit=$mediaLimit" to "Trending HBO Shows",
-        // "/tv/genres/all/all-types/all-countries/appletv/all-years/popular-today?limit=$mediaLimit" to "Trending Apple TV+ Shows",
-        // "/movies/genres/all/all-types/all-countries/this-year/revenue?limit=$mediaLimit" to "Box Office Hits This Year",
         "/movies/genres/all/all-types/all-countries/all-years/rank?limit=$mediaLimit" to "Top Rated Movies",
         "/tv/genres/all/all-types/all-countries/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Shows",
         "/anime/genres/all/all-types/all-countries/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Anime",
         "/tv/genres/all/all-types/kr/all-networks/all-years/rank?limit=$mediaLimit" to "Top Rated Korean Shows",
-        // "/movies/genres/all/all-countries/all-years/most-anticipated?limit=$mediaLimit" to "Most Anticipated Movies",
         "/anime/premieres/soon?type=all&limit=$mediaLimit" to "Upcoming Anime",
         "Personal" to "Personal",
     )
@@ -409,7 +399,7 @@ class CineSimklProvider: MainAPI() {
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
-                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
+                    this.posterUrl = getPosterUrl(it.img, "episode") ?: no_image
                     addDate(it.date, "yyyy-MM-dd'T'HH:mm:ssXXX")
                 }
             }

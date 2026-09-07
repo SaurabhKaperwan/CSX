@@ -11,6 +11,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 
 import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.GDMirrorbot
 import com.lagradost.cloudstream3.extractors.DoodLaExtractor
 import com.lagradost.cloudstream3.extractors.VidStack
 import com.lagradost.cloudstream3.extractors.ByseSX
@@ -1008,6 +1009,10 @@ class Otakuhg: VidHidePro() {
     override var mainUrl = "https://otakuhg.site"
 }
 
+class Minochinos: VidHidePro() {
+    override var mainUrl = "https://minochinos.com"
+}
+
 open class PpzjYoutube : ExtractorApi() {
     override val name = "PpzjYoutube"
     override val mainUrl = "https://if9.ppzj-youtube.cfd"
@@ -1333,4 +1338,32 @@ open class MegaPlay : ExtractorApi() {
         val label: String? = null,
         val kind: String? = null
     )
+}
+
+open class Modiplay : ExtractorApi() {
+    override val name = "Modiplay"
+    override val mainUrl = "https://rozgarlelo.modiplay.xyz"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val doc = app.get(url).document
+        val regex = """switchServer\(['"](https?:\/\/[^'"]+)""".toRegex()
+        val urls = regex.findAll(doc.toString()).map { it.groupValues[1] }.toList()
+
+        urls.safeAmap { embed ->
+            Log.d("Multimovies", "embed: $embed")
+            loadExtractor(embed, "", subtitleCallback, callback)
+        }
+    }
+}
+
+class Iqsmartgames: GDMirrorbot() {
+    override var name = "Iqsmartgames"
+    override var mainUrl = "https://streams.iqsmartgames.com"
+    override var requiresReferer = true
 }
