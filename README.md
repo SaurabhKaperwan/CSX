@@ -1,3 +1,13 @@
+<div align="center">
+
+[![Status: Hiatus](https://img.shields.io/badge/Status-On_Hiatus-orange?style=for-the-badge&logo=clock)](https://github.com)
+
+**This repository is currently on hiatus. Maintenance, bug fixes, and new extension updates are paused until further notice.**
+
+---
+
+</div>
+
 ### 🕹 Tools and Programming languages used :
 <p align="left">
   <a href="https://skillicons.dev">
