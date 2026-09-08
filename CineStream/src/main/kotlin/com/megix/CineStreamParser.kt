@@ -703,39 +703,6 @@ data class AnikotoServerResult(
     val url: String? = null,
 )
 
-//HdGharTv
-
-data class HdGharSearchResponse(
-    val movies: List<HdGharSearchItem>? = null,
-    val series: List<HdGharSearchItem>? = null
-)
-
-data class HdGharSearchItem(
-    @param:JsonProperty("_id") val id: String? = null,
-    val tmdbId: Int? = null
-)
-
-data class HdGharDetailsResponse(
-    val streamingLinks: List<HdGharLink>? = null, // For Movies
-    val seasons: List<HdGharSeason>? = null              // For Series
-)
-
-data class HdGharSeason(
-    val seasonNumber: Int? = null,
-    val episodes: List<HdGharEpisode>? = null
-)
-
-data class HdGharEpisode(
-    val episodeNumber: Int? = null,
-    val streamingLinks: List<HdGharLink>? = null
-)
-
-data class HdGharLink(
-    val quality: String? = null,
-    val url: String? = null,
-    val type: String? = null
-)
-
 //CtgMovies
 
 data class CTGLink(
@@ -993,4 +960,18 @@ data class Just4AnimeIframeItem(
     val quality: String? = null,
     val server: String? = null,
     val category: String? = null
+)
+
+//Hdhub4u
+
+data class Hdhub4u (
+  var hits : ArrayList<Hdhub4uHits> = arrayListOf(),
+)
+
+data class Hdhub4uHits (
+  var document : Hdhub4uDocument? = Hdhub4uDocument(),
+)
+
+data class Hdhub4uDocument (
+  var permalink : String? = null,
 )

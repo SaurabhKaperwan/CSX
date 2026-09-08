@@ -1740,3 +1740,34 @@ fun decodeBase64UrlSafe(data: String): ByteArray {
 fun encodeBase64UrlSafeNoPadding(data: ByteArray): String {
     return Base64.getUrlEncoder().withoutPadding().encodeToString(data)
 }
+
+//Hdhub4u
+
+suspend fun getHdhub4uStreams(
+    url: String,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit,
+) {
+    if(url.contains("greenmountmotors") || url.contains("hubcdn")) {
+        val source = getRedirectLinks(url)
+
+        Log.d("Hdhub4u", "source: $source")
+
+        loadSourceNameExtractor(
+            "Hdhub4u",
+            source,
+            "",
+            subtitleCallback,
+            callback
+        )
+
+    } else {
+        loadSourceNameExtractor(
+            "Hdhub4u",
+            url,
+            "",
+            subtitleCallback,
+            callback
+        )
+    }
+}

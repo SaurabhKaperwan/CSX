@@ -1832,6 +1832,102 @@ object CineStreamExtractors {
         }
     }
 
+    suspend fun invokeHdhub4u(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        if (imdbId.isNullOrEmpty()) return
+
+        val url = "https://search.pingora.fyi/collections/post/documents/search?q=$imdbId&query_by=post_title%2Ccategory%2Cstars%2Cdirector%2Cimdb_id&query_by_weights=4%2C2%2C2%2C2%2C4&sort_by=sort_by_date%3Adesc&limit=15&highlight_fields=none&use_cache=true&page=1"
+        val json = app.get(url, referer = "$hdhub4uAPI/").text
+        val searchResponse = tryParseJson<Hdhub4u>(json) ?: return
+
+        val permalinks: List<String> = searchResponse.hits.mapNotNull { hit ->
+            hit.document?.permalink?.let { rawPermalink ->
+                val path = java.net.URI(rawPermalink).rawPath.removePrefix("/")
+                "$hdhub4uAPI/$path"
+            }
+        }
+
+        permalinks.safeAmap { permalink ->
+            Log.d("Hdhub4u", "permalink: $permalink")
+            val document = app.get(permalink).document
+
+            if (season == null) {
+                val links = document.select("div.mod a[data-wpel-link=external]")
+                links.safeAmap { link ->
+                    val href = link.attr("href")
+                    if (href.isNotBlank()) {
+                        Log.d("Hdhub4u", "link: $href")
+                        getHdhub4uStreams(href, subtitleCallback, callback)
+                    }
+                }
+            } else {
+                val pageTitle = document.selectFirst("h1.page-title, h2.kno-ecr-pt")?.text().orEmpty()
+                val seasonRegex = Regex("(?i)(?:Season\\s*0*|S0*)$season\\b")
+
+                if (!seasonRegex.containsMatchIn(pageTitle) && !seasonRegex.containsMatchIn(document.title())) {
+                    Log.d("Hdhub4u", "Skipping: Season $season not found in title: $pageTitle")
+                    return@safeAmap
+                }
+
+                val targetEp = episode ?: 1
+                val epRegex = Regex("(?i)\\bEPiSODE\\s*0*$targetEp\\b")
+                val anyEpRegex = Regex("(?i)\\bEPiSODE\\s*\\d+\\b")
+
+                var epHeader = document.select("h3, h4, h5, p").firstOrNull { element ->
+                    epRegex.containsMatchIn(element.text())
+                }
+
+                while (epHeader != null && epHeader.parent() != null && epHeader.parent()?.`is`("h3, h4, h5, p") == true) {
+                    epHeader = epHeader.parent()
+                }
+
+                val episodeLinks = mutableListOf<String>()
+
+                if (epHeader != null) {
+                    val directLinks = epHeader.select("a[data-wpel-link=external]")
+                    for (a in directLinks) {
+                        val href = a.attr("href")
+                        if (href.isNotBlank()) {
+                            episodeLinks.add(href)
+                        }
+                    }
+
+                    var sibling = epHeader.nextElementSibling()
+                    while (sibling != null) {
+                        if (sibling.`is`("hr") || anyEpRegex.containsMatchIn(sibling.text())) {
+                            break
+                        }
+
+                        val siblingAnchors = sibling.select("a[data-wpel-link=external]")
+                        for (a in siblingAnchors) {
+                            val href = a.attr("href")
+                            if (href.isNotBlank()) {
+                                episodeLinks.add(href)
+                            }
+                        }
+                        sibling = sibling.nextElementSibling()
+                    }
+                }
+
+                val filteredLinks = episodeLinks.distinct().filter { link ->
+                    !link.contains("whatsapp.com", ignoreCase = true) &&
+                    !link.contains("telegram", ignoreCase = true) &&
+                    !link.contains("catimages", ignoreCase = true)
+                }
+
+                filteredLinks.safeAmap { link ->
+                    Log.d("Hdhub4u", "Season $season Episode $targetEp link: $link")
+                    getHdhub4uStreams(link, subtitleCallback, callback)
+                }
+            }
+        }
+    }
+
     suspend fun invoke4khdhub(
         title: String? = null,
         year: Int? = null,
@@ -4066,7 +4162,7 @@ object CineStreamExtractors {
                     callback.invoke(
                         newExtractorLink(
                             "Cinejoy",
-                            "Cinejoy - ${stream.id ?: server}",
+                            "Cinejoy - ${server.capitalizeServer()}",
                             stream.playlist!!,
                             ExtractorLinkType.M3U8
                         ) {
@@ -4115,113 +4211,6 @@ object CineStreamExtractors {
                 }
             }
 
-        }
-    }
-
-    suspend fun invokeHdGharTv(
-        title: String? = null,
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val type = if(season == null) "movies" else "series"
-
-        val searchJson = app.get("$hdGharTvAPI/api/search?q=$title&type=all&page=1").text
-        val searchResponse = tryParseJson<HdGharSearchResponse>(searchJson) ?: return
-        val allItems = searchResponse.movies.orEmpty() + searchResponse.series.orEmpty()
-        val matchedId = allItems.find { it.tmdbId == tmdbId }?.id ?: return
-
-        val detailsJson = app.get("$hdGharTvAPI/api/$type/public/$matchedId").text
-        val detailsResponse = tryParseJson<HdGharDetailsResponse>(detailsJson) ?: return
-
-        val extractedLinks = if (type == "movies") {
-            detailsResponse.streamingLinks.orEmpty()
-        } else {
-            val targetSeason = detailsResponse.seasons?.find { it.seasonNumber == season }
-            val targetEpisode = targetSeason?.episodes?.find { it.episodeNumber == episode }
-            targetEpisode?.streamingLinks.orEmpty()
-        }
-
-        extractedLinks.forEach { link ->
-            val url = link.url ?: return@forEach
-            val quality = getIndexQuality(link.quality)
-            val isM3u8 = link.type?.contains("hls", ignoreCase = true) == true || url.contains(".m3u8")
-
-            callback.invoke(
-                newExtractorLink(
-                    "HdGharTv",
-                    "HdGharTv",
-                    url,
-                    if(isM3u8) ExtractorLinkType.M3U8 else INFER_TYPE
-                ) {
-                    this.quality = quality
-                    this.referer = "$hdGharTvAPI/"
-                }
-            )
-        }
-
-    }
-
-    suspend fun invokeCtgMovies(
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        type: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val contentType = if(type == "anime") {
-            "anime"
-        } else if (season != null) {
-            "tv"
-        } else {
-            "movies"
-        }
-
-        val slug = title.createSlug() ?: return
-
-        val html = app.get("$ctgMoviesBaseAPI/$contentType/$slug").text
-        val allLinks = parseCtgLinks(html)
-        if (allLinks.isEmpty()) return
-
-        val links = if (season != null && episode != null) {
-            allLinks.filter { it.seasonNumber == season && it.episodeNumber == episode }
-                .ifEmpty { allLinks }
-        } else {
-            allLinks
-        }
-
-        if (links.isEmpty()) return
-
-        val STREAM_HEADERS = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Accept" to "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Accept-Encoding" to "identity",
-            "Referer" to "$ctgMoviesBaseAPI/",
-            "Sec-Fetch-Dest" to "video",
-            "Sec-Fetch-Mode" to "no-cors",
-            "Sec-Fetch-Site" to "cross-site",
-            "DNT" to "1"
-        )
-
-        links.forEach { link ->
-            val playUrl = link.hlsUrl ?: link.url
-            val isM3u8 = playUrl.contains(".m3u8") || link.hlsUrl != null
-
-            callback.invoke(
-                newExtractorLink(
-                    "CTGMovies",
-                    "CTGMovies ${link.source}",
-                    playUrl,
-                    type = if (isM3u8) ExtractorLinkType.M3U8 else INFER_TYPE
-                ) {
-                    this.quality = getIndexQuality(link.quality)
-                    this.headers = STREAM_HEADERS
-                }
-            )
         }
     }
 

@@ -73,6 +73,10 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeAllmovieland(res.imdbId, res.season, res.episode, cb) },
         ),
         ProviderDef(
+            key = "p_hdhub4u", displayName = "Hdhub4u",
+            executeStandard = { res, subCb, cb -> invokeHdhub4u(res.imdbId, res.season, res.episode, subCb ,cb) },
+        ),
+        ProviderDef(
             key = "p_hexa", displayName = "Hexa",
             executeStandard = { res, _, cb -> invokeHexa(res.tmdbId, res.season, res.episode, cb) },
         ),
@@ -92,11 +96,6 @@ object ProviderRegistry {
             key = "p_vaplayer", displayName = "VaPlayer",
             executeStandard = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeVaPlayer(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
-            key = "p_ctgmovies", displayName = "CtgMovies",
-            executeStandard = { res, subCb, cb -> invokeCtgMovies(res.title, res.season, res.episode, "normal" ,subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeCtgMovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, "anime" ,subCb, cb) }
         ),
         ProviderDef(
             key = "p_vidzee", displayName = "Vidzee",
@@ -222,10 +221,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_levidia", displayName = "Levidia",
             executeStandard = { res, subCb, cb -> invokeLevidia(res.title, res.year, res.season, res.episode, subCb, cb) },
-        ),
-        ProviderDef(
-            key = "p_hdghartv", displayName = "HdGharTv",
-            executeStandard = { res, subCb, cb -> if(!res.isAnime) invokeHdGharTv(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
         ),
         ProviderDef(
             key = "p_animesalt", displayName = "Animesalt",

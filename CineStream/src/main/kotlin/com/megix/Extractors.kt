@@ -452,6 +452,31 @@ class Linksmod : ExtractorApi() {
     }
 }
 
+class HdStream4u : VidHidePro() {
+    override var mainUrl = "https://hdstream4u.com"
+}
+
+class Hubstream : VidStack() {
+    override var mainUrl = "https://hubstream.art"
+}
+
+open class Hblinks : ExtractorApi() {
+    override val name = "Hblinks"
+    override val mainUrl = "https://hblinks.*"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        app.get(url).document.select("div#primary p > a").safeAmap {
+            loadExtractor(it.attr("href"), "", subtitleCallback, callback)
+        }
+    }
+}
+
 open class Hubdrive : ExtractorApi() {
     override val name = "Hubdrive"
     override val mainUrl = "https://hubdrive.*"
