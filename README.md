@@ -23,6 +23,9 @@ These extensions are Free: You can use, study, share and modify it at your will.
 [GNU General Public License](https://www.gnu.org/licenses/gpl.html) version 3 or later published by the Free Software Foundation.
 
 
+### Links
+[Official CloudStream repo](https://github.com/recloudstream/cloudstream) · [CloudStream Wiki](https://cloudstream.miraheze.org/wiki/Main_Page)
+
 ### DMCA
 We hereby issue this notice to inform you that these extensions just function like an ordinary browser (like your browser) that fetch video files from internet,
 and do not violate the provisions of the Digital Millennium Copyright Act (DMCA). 
